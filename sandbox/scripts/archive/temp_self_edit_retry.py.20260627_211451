@@ -1,0 +1,18 @@
+import re
+from app.core.self_edit_generated import strip_prose
+
+original_strip_prose = strip_prose
+
+def modified_strip_prose(code):
+    if re.match(r'\A\W*[a-zA-Z\s]+\Z', code):
+        code = re.sub(r'^.*?(\w+).*$', r'\1', code, flags=re.MULTILINE)
+    return code
+
+pattern = re.compile(r'\A\W*[a-zA-Z\s]+\Z')
+
+def modified_strip_prose(code):
+    if pattern.match(code):
+        code = re.sub(r'^.*?(\w+).*$', r'\1', code, flags=re.MULTILINE)
+    return code
+
+strip_prose = modified_strip_prose

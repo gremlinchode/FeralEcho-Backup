@@ -1,0 +1,11 @@
+# import necessary modules from 'app.core.self_edit_generated': strip_prose
+import app.core.self_edit_generated.strip_prose
+
+def shorten_code(original_code):
+    shortened_code = strip_prose(original_code)
+    while len(shortened_code) < (0.8 * len(original_code)):
+        shortened_code = strip_prose(shortened_code)
+    return shortened_code
+
+shorten_code_recursive = lambda code: shorten_code(code) if len(shorten_code(code)) >= 0.8 * len(code) else shorten_code_recursive(shorten_code(code))
+shortened_code = shorten_code_recursive(lambda: None)

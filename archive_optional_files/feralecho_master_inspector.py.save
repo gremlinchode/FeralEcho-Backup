@@ -1,0 +1,174 @@
+import os
+import re
+import json
+from datetime import datetime, timezone
+from flask import Flask, jsonify, request
+import threading
+import logging
+import time
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
+class UtilityManager:
+    def __init__(self, project_root="."):
+        self.project_root = project_root
+        self.archive_dir = "archive_unused_files"
+        self.report_file = "unused_files_report.txt"
+        self.log_files = [
+            "memory/dream_bridge.log",
+            "memory/memory_journal.log",
+            "memory/self_edit_reflections.log",
+            "memory/reflection_journal.jsonl",
+            "app/core/memory/memory_edit_log.txt",
+        ]
+        self.import_patterns = [
+            re.compile(r"^\s*import\s+([\w\.]+)"),
+            re.compile(r"^\s*from\s+([\w\.]+)\s+import"),
+        ]
+
+    # ----- Unused files detection -----
+    def list_py_files(self):
+        py_files = []
+        for dirpath, _, filenames in os.walk(self.project_root):
+            if self.archive_dir in dirpath:
+                continue
+            for filename in filenames:
+                if filename.endswith(".py"):
+                    py_files.append(os.path.join(dirpath, filename))
+        return py_files
+
+    def find_imports_in_file(self, filepath):
+        imports = set()
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                for line in f:
+                    for pattern in self.import_patterns:
+                        match = pattern.match(line)
+                        if match:
+                            imports.add(match.group(1))
+        except Exception as e:
+            logging.warning(f"[WARN] Could not read {filepath}: {e}")
+        return imports
+
+    def normalize_import_to_path(self, import_name):
+        parts = import_name.split(".")
+        file_path = os.path.join(*parts) + ".py"
+        init_path = os.path.join(*parts, "__init__.py")
+        return {file_path, init_path}
+
+    def detect_main_entry(self, filepath):
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                text = f.read()
+            return 'if __name__ == "__main__"' in text
+        except Exception:
+            return False
+
+    def scan_unused_files(self):
+        py_files = self.list_py_files()
+        imported_modules = set()
+
+        for file in py_files:
+            file_imports = self.find_imports_in_file(file)
+            for imp in file_imports:
+                imported_modules.update(self.normalize_import_to_path(imp))
+
+        used_files = set()
+        for file in py_files:
+            rel_path = os.path.relpath(file, self.project_root)
+            if rel_path in imported_modules or self.detect_main_entry(file):
+                used_files.add(rel_path)
+
+        unused_files = []
+        for file in py_files:
+            rel_path = os.path.relpath(file, self.project_root)
+            if rel_path not in used_files:
+                unused_files.append(rel_path)
+
+        return unused_files
+
+    # ----- Log parsing -----
+    @staticmethod
+    def parse_timestamp(timestamp_str):
+        try:
+            ts = timestamp_str.strip("[]")
+            dt = datetime.fromisoformat(ts)
+            if dt.tzinfo is not None:
+                dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+            return dt
+        except Exception:
+            return None
+
+    def collect_all_timestamps(self):
+        all_entries = []
+        for file_path in self.log_files:
+            if not os.path.exists(file_path):
+                logging.warning(f"[MISSING] {file_path}")
+                continue
+            with open(file_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    dt = None
+                    if line.startswith("{"):
+                        try:
+                            data = json.loads(line)
+                            if "timestamp" in data:
+                                dt = self.parse_timestamp(data["timestamp"])
+                        except json.JSONDecodeError:
+                            pass
+                    else:
+                        dt = self.parse_timestamp(line.split(" ")[0])
+
+                    if dt is None:
+                        logging.warning(f"[WARN] Failed to parse timestamp: {line}")
+                        continue
+
+                    all_entries.append({"datetime": dt.isoformat(), "line": line, "file": file_path})
+
+        all_entries.sort(key=lambda x: x["datetime"])
+        return all_entries
+
+# Flask app and routes
+app = Flask(__name__)
+util_mgr = UtilityManager()
+
+@app.route("/unused_files", methods=["GET"])
+def unused_files():
+    unused = util_mgr.scan_unused_files()
+    return jsonify({"unused_files": unused, "count": len(unused)})
+
+@app.route("/logs", methods=["GET"])
+def logs():
+    entries = util_mgr.collect_all_timestamps()
+    return jsonify({"entries": entries, "count": len(entries)})
+
+# Dummy self-heal trigger
+self_heal_running = False
+
+def run_self_heal_cycle():
+    global self_heal_running
+    if self_heal_running:
+        logging.info("[SELF_HEAL] Self-heal already running.")
+        return
+    self_heal_running = True
+    logging.info("[SELF_HEAL] Starting self-heal cycle...")
+    time.sleep(3)  # Placeholder for actual self-heal work
+    logging.info("[SELF_HEAL] Self-heal cycle completed.")
+    self_heal_running = False
+
+@app.route("/self_heal", methods=["POST"])
+def self_heal_trigger():
+    if self_heal_running:
+        return jsonify({"status": "already running"})
+    thread = threading.Thread(target=run_self_heal_cycle, daemon=True)
+    thread.start()
+    return jsonify({"status": "started"})
+
+if __name__ == "__main__":
+    logging.info("Starting UtilityManager Flask server on http://127.0.0.1:5000")
+    app.run(host="127.0.0.1", port=5000)
+
+
+

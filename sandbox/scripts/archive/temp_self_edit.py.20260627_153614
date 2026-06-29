@@ -1,0 +1,15 @@
+# import necessary module
+from app.core.self_edit_generated import strip_prose
+import re
+
+def strip_leading_prose(code_output):
+    code_start = r'^(\s*#.*)'
+    match = re.search(code_start, code_output)
+    if match:
+        return code_output[match.start(1):].strip()
+    else:
+        return ''
+
+# update method to accept additional parameter 'code_output'
+def strip_prose(code_output):
+    return strip_leading_prose(code_output)

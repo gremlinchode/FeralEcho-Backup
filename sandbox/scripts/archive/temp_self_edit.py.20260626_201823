@@ -1,0 +1,20 @@
+# import necessary modules from FeralEcho: 
+from app.core import self_edit_generated, tool_manager, ollama_handler 
+
+import app.core.sandbox_interface 
+import app.echo_model_guided_orchestrator 
+
+original_main_function = self_edit_generated.modified_main_function 
+
+def refactored_main_function(): 
+    original_code = original_main_function() 
+    refactored_code = [line for line in original_code.splitlines() if line.strip()] 
+    return '\n'.join(refactored_code) 
+
+self_edit_generated.modified_main_function = refactored_main_function 
+
+app.core.sandbox_interface.run_random_sandbox_script() 
+
+response_length = app.core.tool_manager.list_python_files('app/core/self_edit_generated.py') 
+
+print(response_length)

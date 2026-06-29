@@ -1,0 +1,8 @@
+# from app.core.self_edit_generated import strip_prose
+from app.core.self_edit_generated import *
+import re
+
+def strip_prose(text):
+    return re.sub(r'^\s*\w+\.\s*', '', text)
+
+strip_prose = strip_prose

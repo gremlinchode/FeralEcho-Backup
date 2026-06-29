@@ -1,0 +1,28 @@
+from feralEcho import self_edit_generated
+import project_scanner
+import river_deliberation
+import gemini_shard
+import self_edit_manager
+import sandbox_interface
+
+def main():
+    try:
+        parsed_code = project_scanner.parse_file('app/core/self_edit_generated.py')
+        
+        average_response_length = sum(token_count) / len(compilation_success_rate)
+        compilation_success_rate = []
+        
+        refactored_code = river_deliberation.deliberate_and_learn(parsed_code['main_function'], 'reasoning')
+        
+        compressed_code = gemini_shard.compress_code(refactored_code)
+        
+        validated_code = self_edit_manager.validate_code(compressed_code, 'reasoning')
+        
+        self_edit_manager.save_code(validated_code)
+        
+        sandbox_interface.execute_unit_test_suite(validated_code)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    main()

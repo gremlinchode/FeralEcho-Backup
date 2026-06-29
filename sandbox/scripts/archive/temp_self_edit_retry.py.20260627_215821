@@ -1,0 +1,23 @@
+# import re
+
+def strip_code_output(code):
+    pattern = r"^[^#=]\s*.*\n"
+    return re.sub(pattern, '', code)
+
+from app.core.self_edit_generated import strip_prose
+
+strip_prose.strip_code_output = strip_code_output
+
+import app.core.project_scanner as scanner
+import os
+
+files_to_modify = scanner.scan_project()
+
+for file in files_to_modify:
+    with open(file, 'r') as f:
+        code = f.read()
+    
+    modified_code = strip_code_output(code)
+    
+    with open(file, 'w') as f:
+        f.write(modified_code)

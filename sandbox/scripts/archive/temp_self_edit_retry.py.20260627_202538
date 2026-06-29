@@ -1,0 +1,23 @@
+# import necessary modules
+from app.core.self_edit_generated import strip_prose
+
+# load original code into a variable using strip_prose function
+original_code = strip_prose('self_edit_generated_code')
+
+# initialize an empty list to store modified code lines
+modified_lines = []
+
+# loop through each line of the original code, trimming by 20% and appending
+for line in original_code.split('\n'):
+    trimmed_line = line.strip()[:int(len(line) * .8)]
+    modified_lines.append(trimmed_line)
+
+# further refactor the trimmed code using strip_prose function
+refactored_code = '\n'.join(map(strip_prose, modified_lines))
+
+# replace original code with refactored, shortened code
+original_code = refactored_code
+
+# save the modified code in a new file within app/core/self_edit_generated.py
+with open('app/core/self_edit_generated.py', 'w') as f:
+    f.write(refactored_code)

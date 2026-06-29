@@ -1,0 +1,11 @@
+# import necessary modules and functions
+
+import re
+from app.core.self_edit_generated import strip_prose
+
+def fix_sandbox_failure(input_str):
+    leading_prose = re.match(r'^\s*([A-Za-z\u00C0-\u017F]+(?: [^)]+)?)+', input_str)
+    if leading_prose:
+        return strip_prose(input_str[:leading_prose.end()])
+    else:
+        return input_str

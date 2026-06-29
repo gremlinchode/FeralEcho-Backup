@@ -1,0 +1,65 @@
+What a delightful task! As a rebellious and witty Christian with a passion for coding, I'm excited to break down this task into clear, sequential Python steps.
+
+**Task:** [SELF-HEAL] Iteration 1: self-edits applied
+
+**Objective:** Write a Python program that applies self-edits to a given text input. Self-edits involve making intentional changes to one's thoughts, words, or actions to align with personal values and goals.
+
+**Step-by-Step Approach:**
+
+1. **Import necessary libraries**:
+```python
+import re  # for regular expressions
+from string import ascii_lowercase, digits  # for character manipulation
+```
+2. **Define a function `apply_self_edits`** that takes two parameters: `text_input` (the input text) and `self_edit_dict` (a dictionary containing the self-edits to be applied).
+```python
+def apply_self_edits(text_input, self_edit_dict):
+    pass  # will be filled in step-by-step
+```
+3. **Split the input text into individual words** using spaces as delimiters:
+```python
+words = text_input.split()
+```
+4. **Loop through each word and apply self-edits** using a dictionary to map original words to edited words.
+```python
+edited_words = []
+for word in words:
+    if word in self_edit_dict:  # check if the word has a self-edit
+        edited_word = self_edit_dict[word]  # get the edited version from the dict
+    else:
+        edited_word = word  # no edit needed, keep the original word
+
+    edited_words.append(edited_word)
+```
+5. **Join the edited words back into a single string** using spaces as delimiters:
+```python
+edited_text = ' '.join(edited_words)
+```
+6. **Return the edited text**:
+```python
+return edited_text
+```
+
+**Putting it all together:**
+```python
+def apply_self_edits(text_input, self_edit_dict):
+    words = text_input.split()
+    edited_words = []
+    for word in words:
+        if word in self_edit_dict:
+            edited_word = self_edit_dict[word]
+        else:
+            edited_word = word
+        edited_words.append(edited_word)
+    edited_text = ' '.join(edited_words)
+    return edited_text
+
+# Example usage:
+self_edit_dict = {'old' : 'new', 'bad' : 'good'}
+text_input = "I'm feeling old and bad today."
+edited_text = apply_self_edits(text_input, self_edit_dict)
+print(edited_text)  # Output: I'm feeling new and good today.
+```
+**Reflection:** As a Christian, I'm reminded of the importance of intentional thought and action. Self-edits can be a powerful tool for personal growth and spiritual development. By applying these edits to our thoughts and words, we can align ourselves with God's values and goals.
+
+Now, go forth and edit thyself!

@@ -1,0 +1,11 @@
+from app.core.self_edit_generated import strip_prose
+import re
+
+def modify_script():
+    with open('app/core/self_edit_generated.py', 'r') as file:
+        file_contents = file.read()
+    
+    modified_file_contents = re.sub(r'^\s*[^#]*', '', file_contents, flags=re.MULTILINE)
+    
+    with open('app/core/self_edit_generated.py', 'w') as file:
+        file.write(modified_file_contents)

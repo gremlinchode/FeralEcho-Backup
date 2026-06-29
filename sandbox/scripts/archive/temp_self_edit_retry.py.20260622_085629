@@ -1,0 +1,15 @@
+import os; import re
+file_path = "/Users/richietate/Desktop/FeralEcho/awareness.py"
+with open(file_path, 'r') as f: lines = f.readlines()
+for i, line in enumerate(lines):
+    if "smoothness_detected" in line:
+        smoothness_detected = False
+        confidence = 0.4
+with open(file_path, 'w') as f: 
+    for line in lines:
+        if "confidence=" in line:
+            f.write(line.replace("confidence=1", f"confidence={confidence}"))
+        elif "smoothness_detected" not in line and re.match('^[ \t]*#', line):
+            f.write(line)
+        else:
+            f.write(line)

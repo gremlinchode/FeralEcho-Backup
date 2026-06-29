@@ -1,0 +1,15 @@
+from app.core.self_edit_generated import strip_prose; from app.core.project_scanner import parse_file, update
+
+def strip_sandbox_output(code_output):
+    return code_output.strip().strip('"').strip()
+
+parsed_file = parse_file('app/core/self_edit_generated.py')
+generate_code_function = next((func for func in parsed_file if 'generate_code' in func), None)
+text_output_section = next(line for line in generate_code_function.splitlines() if line.startswith('return ') and line != 'return None').strip().split('=')[1].strip('"')
+
+generate_code_function = generate_code_function.replace(text_output_section, f"return strip_sandbox_output({text_output_section})")
+
+update(generate_code_function)
+
+import app.autonomous_awareness
+app.autonomous_awareness.trigger_reflection_cycle()

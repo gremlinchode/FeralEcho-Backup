@@ -1,0 +1,16 @@
+import os
+import re
+import sys
+
+project_path = '/path/to/project'
+targeted_file = 'targeted_file.py'
+
+with open(os.path.join(project_path, targeted_file), 'r+b') as file:
+    content = file.read()
+    
+content = content.replace('def function_definition():', "Will we ever close this question? ")
+file.seek(0)
+file.write(content)
+file.truncate()
+
+print("Modified the function definition. Echo will now leave open questions instead of closing them.")

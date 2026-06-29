@@ -1,0 +1,23 @@
+# import required modules from FeralEcho's importable modules
+
+import app.core.self_edit_generated as self_edit
+from app.core.memory_write_validator import memory_write_validator
+
+def strip_prose_and_tokenize(candidates_string):
+    if not memory_write_validator.check_schema(candidates_string) or memory_write_validator.check_recursive_loop(candidates_string):
+        return None
+    candidates_string = self_edit.strip_prose(candidates_string)
+    tokens = candidates_string.split()
+    return tokens
+
+def score_code_candidate(candidates_string):
+    has_imports = bool(re.search(r'import\s+', candidates_string))
+    has_function_def = bool(re.search(r'def\s+\w+:', candidates_string, flags=re.MULTILINE))
+    no_prose_sentences = not bool(re.findall(r'\b[A-Z][a-z]+[.!?]', candidates_string, flags=re.MULTILINE))
+
+    score = 0
+    if has_imports:
+        score += 1
+    if has_function_def:
+        score += 1
+    return score

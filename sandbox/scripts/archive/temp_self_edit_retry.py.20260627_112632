@@ -1,0 +1,34 @@
+# import necessary modules
+import app.core.self_edit_generated
+import app.core.tool_manager
+from app.emergent_scheduler_backup_20260610 import GeminiShard
+
+def modify_main_function():
+    # locate the 'modify_main_function' function within the `app/core/self_edit_generated.py` file
+    tool_manager = tool_manager.ToolManager()
+    prose_detector = tool_manager.find_tool("detect prose in output")
+    
+    if prose_detector:
+        # instantiate a `GeminiShard` object and configure it with parameters optimized for text analysis
+        gemini_shard = GeminiShard(prose_detector=prose_detector, text_analysis_params={'optimized_for_text': True})
+        
+        def remove_leading_sentences(code):
+            sentences = code.split('. ')
+            for i, sentence in enumerate(sentences):
+                if not sentence.strip().startswith(('What', 'Why', 'How')):
+                    return '.'.join(sentences[i:])
+            return code
+        
+        # preprocess the generated code to remove any leading natural language sentences
+        processed_code = gemini_shard.process()
+        processed_code = remove_leading_sentences(processed_code)
+        
+        print(f"Prose detected: {processed_code}")
+    
+    else:
+        print("No prose detector found.")
+    
+    # utilize a `SelfModelUpdater` to verify that the changes did not introduce unintended consequences
+    self_model_updater = SelfModelUpdater()
+    actions = self_model_updater.update(modify_main_function)
+    print(actions)

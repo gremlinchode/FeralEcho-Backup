@@ -1,0 +1,23 @@
+# import necessary modules from app, including app.core.self_edit_generated and app.core.tool_manager.
+from app import self_edit_generated, tool_manager
+
+# Initialize a Tool object from tool_manager specifically designed for code parsing and modification.
+tool = tool_manager.get_tool('code_parsing')
+
+# Parse the self_edit_generated.py file using the initialized tool to identify instances of prose detected within the code output.
+parsed_code = tool.parse_file('app/core/self_edit_generated.py')
+
+# For each identified instance of prose, execute the strip_prose() function from self_edit_generated, targeting the leading natural language.
+stripped_code = self_edit_generated.strip_prose(parsed_code)
+
+# Implement a boolean flag (prose_detected) set to True upon detecting any prose and store its value in the system's memory via append_memory_entry.
+prose_detected = True; self_edit_generated.append_memory_entry(prose_detected)
+
+# Run an analyze_python_code() function from app.autonomous_awareness on the modified code to ensure syntax validity after prose stripping.
+analyzed_code = app.autonomous_awareness.analyze_python_code(stripped_code)
+
+# Execute score_code_candidate() function, also from app.autonomous_awareness, providing a quality score of the edited code and logging the result via append_to_journal.
+quality_score = app.autonomous_awareness.score_code_candidate(analyzed_code); self_edit_generated.append_to_journal(quality_score)
+
+# Call run_self_model_reflection() from app.ollama_handler with the updated code and reflection data to trigger an evaluation loop.
+app.ollama_handler.run_self_model_reflection(stripped_code, quality_score)

@@ -1,0 +1,16 @@
+# Import necessary modules from app.core.self_edit_generated import strip_prose
+from app.core.self_edit_generated import *
+
+def refactor_code_generation(prompt):
+    original_code = generate_bible_art()
+    optimized_code = optimize_code(original_code)
+    final_code = apply_strip_prose(optimized_code, prompt)
+    return final_code
+
+def optimize_code(code):
+    code = code.strip().replace(" ", "").replace("\n", "")
+    return code
+
+def apply_strip_prose(code, func):
+    optimized_code = strip_prose(func(code))
+    return optimized_code

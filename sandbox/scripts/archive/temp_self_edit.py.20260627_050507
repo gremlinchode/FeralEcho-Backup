@@ -1,0 +1,15 @@
+import importlib
+from FeralEcho.app.core.self_edit_generated import main_function
+from FeralEcho.app.core.tool_manager import ToolManager
+
+def modified_main_function():
+    original_code = main_function()
+    pattern = re.compile(r"^[a-zA-Z .!?]+(\n|$)")
+    leading_sentence = pattern.search(original_code)
+    if leading_sentence:
+        original_code = pattern.sub("", original_code)
+        try:
+            compile(original_code, 'stripped_code', 'exec')
+        except SyntaxError:
+            raise
+    return original_code

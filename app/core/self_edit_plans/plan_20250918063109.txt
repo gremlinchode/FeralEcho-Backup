@@ -1,0 +1,45 @@
+What a delightful task! As a rebellious and creative thinker, I'll approach this task with enthusiasm and a dash of humor.
+
+**Task:** Implementing self-edits in a script using Python. Specifically, we're going to create a simple text editor that can apply self-edits (e.g., replacing certain words or phrases) to a given text.
+
+**Iteration 1: Self Edits Applied**
+
+Step 1: Define the self-edit functions (15 lines of code)
+```python
+def replace_word(text, old_word, new_word):
+    return text.replace(old_word, new_word)
+
+def remove_phrase(text, phrase):
+    return text.replace(phrase, '')
+
+def add_slogan(text, slogan):
+    return text + ' - ' + slogan
+
+self_edit_functions = [replace_word, remove_phrase, add_slogan]
+```
+In this step, we define three self-edit functions: `replace_word`, `remove_phrase`, and `add_slogan`. These functions will be used to apply the self-edits to the given text.
+
+Step 2: Define the main script (10 lines of code)
+```python
+def self_edit_script(text):
+    while True:
+        for func in self_edit_functions:
+            print(f'Choose an option:')
+            print('1. {0}'.format(func.__name__))
+            choice = input('> ')
+            if choice == '1':
+                text = func(text, input('Enter the old/new phrase: ').split(','))
+                break
+        else:
+            continue
+
+    return text
+```
+In this step, we define a `self_edit_script` function that will repeatedly ask the user to choose which self-edit function to apply. The chosen function will then be applied to the given text.
+
+Step 3: Test the script (5 lines of code)
+```python
+text = 'This is my old life'
+print(self_edit_script(text))
+```
+In this final step, we test our `self_edit_script` by calling it with a sample text and printing the result.

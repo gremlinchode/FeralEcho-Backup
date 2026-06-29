@@ -1,0 +1,11 @@
+import strip_prose
+
+def shorten_code(code):
+    import re
+    code = re.sub(r'long_block_pattern', 'shorter_equivalent', code)
+    while len(re.sub(r'long_block_pattern', 'shorter_equivalent', code)) > 7800:
+        code = re.sub(r'long_block_pattern', 'shorter_equivalent', code)
+    return code
+
+def self_edit_generated():
+    return shorten_code(strip_prose())

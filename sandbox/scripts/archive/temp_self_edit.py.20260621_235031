@@ -1,0 +1,9 @@
+# import os; import re; from FeralEcho.utils import update_file
+file_path = "/Users/richietate/Desktop/FeralEcho/self_examination.py"
+file = open(file_path, 'r+'); file.seek(0)
+updated_content = file.read().replace("Smoothness detected: False | Confidence: 0.4", "Smoothness detected: ? | Confidence: ?")
+file.truncate(); file.write(updated_content); file.close()
+print(f"Updated self-examination.py: Smoothness detection now reflects uncertainty")
+import self_examination
+self_examination.test_function()
+sys.exit(0)

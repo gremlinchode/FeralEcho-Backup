@@ -1,0 +1,14 @@
+# import necessary modules from app.core.self_edit_generated
+from app.core.self_edit_generated import strip_prose
+
+class AutonomousSelfEdit(self_edit_generated.AutonomousSelfEdit):
+    def __init__(self):
+        super().__init__()
+    
+    def strip_sandbox_output(self, sandbox_output):
+        import re
+        stripped_output = re.split(r'(?m)^.*?\n\s*\w', sandbox_output)[1]
+        return stripped_output
+    
+    def run_cartographer(self, file_path='app/core/self_edit_generated.py'):
+        ... # modify scan function here

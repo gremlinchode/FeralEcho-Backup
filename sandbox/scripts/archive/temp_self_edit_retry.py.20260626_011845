@@ -1,0 +1,23 @@
+# start_orchestrator
+
+scan_project("echo_model_orchestrator.py")
+detect_functions_and_classes()
+get_relevant_memories()
+
+if "ollama_query" in memories:
+    model_guided_autonomous_loop = 1
+    generate_parameter_hints("ollama_query")
+    append_to_journal("Updated 'ollama_query' with parameter hints.")
+else:
+    print("Initialization of 'ollama_query' is required.")
+
+calculate_awareness_score()
+calculate_consciousness_score()
+
+modify_function("ollama_query", "core")
+
+model_guided_autonomous_loop = 2
+append_to_journal("Integrated awareness and consciousness scores into 'ollama_query'.")
+model_guided_autonomous_loop = 3
+
+start_orchestrator()

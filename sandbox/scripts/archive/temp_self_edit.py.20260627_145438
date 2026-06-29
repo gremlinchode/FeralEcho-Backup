@@ -1,0 +1,18 @@
+# import necessary modules
+from app.core.self_edit_generated import shorten_response_length
+
+import re
+
+def strip_prose(code_output):
+    for line in code_output.split('\n'):
+        if line.strip().startswith(("The", "This", "It", "However")):  # Predefined list of common sentence starters
+            return f"{line.lstrip()}"
+        elif re.match(r'\b(def|class|for|while|if|else|elif)\b', line):
+            return code_output.split('\n')[1:]
+    return code_output.strip()
+
+def shorten_response_length(response):
+    if isinstance(response, str):
+        response = '\n'.join(strip_prose(response))
+    max_len = 1024  # Example value
+    return response[:max_len] + '...' if len(response) > max_len else response

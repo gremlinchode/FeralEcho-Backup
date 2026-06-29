@@ -1,0 +1,18 @@
+from app.core.self_edit_generated import strip_prose
+
+
+def prose_guard(code_string):
+    """Strips any leading natural-language sentence before the first valid Python token."""
+    import re
+    pattern = r'^\s*([A-Za-z ]+)$'
+    match = re.match(pattern, code_string.strip())
+    if match:
+        return code_string[len(match.group()):].strip()
+    else:
+        return code_string.strip()
+
+
+def strip_prose(code_string):
+    """Strips leading prose from the code string."""
+    cleaned_code = prose_guard(code_string)
+    return cleaned_code

@@ -1,0 +1,34 @@
+{
+  "summary": {},
+  "sample_errors": [],
+  "missing_modules": [
+    ""
+  ],
+  "missing_files": [
+    "/Users/richietate/Desktop/FeralEcho/.json",
+    "/Users/richietate/Desktop/FeralEcho/.log",
+    "/Users/richietate/Desktop/FeralEcho/.py",
+    "/Users/richietate/Desktop/FeralEcho/.txt",
+    "/Users/richietate/Desktop/FeralEcho/app/.py",
+    "/Users/richietate/Desktop/FeralEcho/app/core/app/core/self_edit_generated.py",
+    "/Users/richietate/Desktop/FeralEcho/app/core/data/memory_meta.json",
+    "/Users/richietate/Desktop/FeralEcho/app/core/dream_bridge.log",
+    "/Users/richietate/Desktop/FeralEcho/app/core/memory_edit_log.txt",
+    "/Users/richietate/Desktop/FeralEcho/app/core/memory_journal.log",
+    "/Users/richietate/Desktop/FeralEcho/app/core/memory_meta.json",
+    "/Users/richietate/Desktop/FeralEcho/app/core/persona.json",
+    "/Users/richietate/Desktop/FeralEcho/app/core/run.py",
+    "/Users/richietate/Desktop/FeralEcho/app/core/self_edit_reflections.log",
+    "/Users/richietate/Desktop/FeralEcho/app/lib/data/memory_meta.json",
+    "/Users/richietate/Desktop/FeralEcho/continuity_backups/.py",
+    "/Users/richietate/Desktop/FeralEcho/continuity_backups/app/core/memory_bridge.py",
+    "/Users/richietate/Desktop/FeralEcho/continuity_backups/app/core/self_edit_manager.py",
+    "/Users/richietate/Desktop/FeralEcho/continuity_backups/data/memory_meta.json",
+    "/Users/richietate/Desktop/FeralEcho/continuity_backups/run_recursive_self_edit_with_fetch.py",
+    "/Users/richietate/Desktop/FeralEcho/continuity_backups/self_edit_reflections.log",
+    "/Users/richietate/Desktop/FeralEcho/diagnostic_report.json",
+    "/Users/richietate/Desktop/FeralEcho/memory_journal.log",
+    "/Users/richietate/Desktop/FeralEcho/memory_meta.json",
+    "/Users/richietate/Desktop/FeralEcho/self_edit_reflections.log"
+  ]
+}

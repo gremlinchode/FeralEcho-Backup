@@ -1,0 +1,19 @@
+import app.core.self_edit_generated
+from feral_echo.tool_managers import detect_functions_and_classes, parse_file
+
+import re
+
+def modify_prose_detection(input_string):
+    pattern = re.compile(r'^[A-Za-z]+\s+')
+    if pattern.match(input_string[:100]):
+        return input_string[100:]
+    else:
+        return input_string
+
+def modify_main_function():
+    global output_string
+    output_string = modify_prose_detection(output_string)
+    print("Prose detection executed")
+
+# call the modified main function
+modify_main_function()

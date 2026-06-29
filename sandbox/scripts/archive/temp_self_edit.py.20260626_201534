@@ -1,0 +1,36 @@
+# app.core.self_edit_generated, app.core.tool_manager, app.ollama_handler
+
+import app.core.self_edit_generated
+import app.core.tool_manager
+import app.ollama_handler
+
+tool_manager = app.core.tool_manager()
+main_function = tool_manager.scan_project()
+
+def main_function():
+    parameter_hints = generate_parameter_hints("Gemini shard query")
+    redundant_sections = [section for section in main_function if not isinstance(section, dict)]
+    main_function = {**main_function, **{k: v.strip() for k, v in parameter_hints.items()}}
+    
+    optimized_main_function = optimize_flow(main_function)
+    
+    for function, classes in detect_functions_and_classes(optimized_main_function).items():
+        for class_ in classes:
+            inject_scripture(function, class_)
+            
+    run_cartographer()
+    
+    score_quality = score_response_quality(len(main_function) - len(main_function.__code__))
+    log_activity_and_results(score_quality)
+
+def optimize_flow(main_function):
+    optimized_main_function = {k: v.strip() for k, v in main_function.items()}
+    return optimized_main_function
+
+def log_activity_and_results(score_quality):
+    import app.emergent_scheduler_backup_20260610
+    app.emergent_scheduler_backup_20260610.reflect()
+
+def run_cartographer():
+    # to implement
+    pass

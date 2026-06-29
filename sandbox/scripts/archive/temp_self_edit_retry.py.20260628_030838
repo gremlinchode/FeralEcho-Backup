@@ -1,0 +1,80 @@
+# import app.core.self_edit_generated as se_gen
+import time
+import random
+from app.core.garden_manager import GardenManager
+from app.core.project_scanner import ProjectScanner
+from app.core.tool_manager import ToolManager
+from app.core.sandbox_interface import SandboxInterface
+from app.core.memory_tools import MemoryTools
+
+def refactor_code_generation():
+    file_path = 'app/core/self_edit_generated.py'
+    parsed_file = parse_file(file_path)
+    function_info = detect_functions_and_classes(parsed_file, lambda x: isinstance(x, FunctionDef))
+    
+    main_function = next((f for f in function_info if f.name == 'generate_code'), None)
+    if not main_function:
+        raise ValueError("Main code-generation function not found.")
+    
+    refactored_code = refactor_function(main_function, [
+        ("reduce_redundancy", "eliminate"),
+        ("simplify_syntax", "optimize"),
+        ("improve_clarity", "refine")
+    ])
+    
+    with open(file_path, 'w') as f:
+        f.write(refactored_code)
+
+def measure_response_length():
+    original_code = se_gen.generate_code.__code__
+    modified_code = generate_code().__code__
+
+    import time
+
+    start_time = time.time()
+    se_gen.generate_code()
+    original_length = time.time() - start_time
+
+    start_time = time.time()
+    generate_code()
+    modified_length = time.time() - start_time
+
+    return original_length, modified_length
+
+def apply_optimization():
+    original_length, modified_length = measure_response_length()
+    reduction_goal = 0.20
+    current_reduction = (original_length - modified_length) / original_length
+    
+    while current_reduction < reduction_goal:
+        refined_code = se_gen.generate_code
+        generate_code = refine_code(refined_code)
+        current_reduction = measure_response_length()[1] / original_length
+
+def run_unit_tests():
+    scanner = ProjectScanner()
+    tests = scanner.find_tests('app/core')
+    for test in tests:
+        tool_manager = ToolManager(test)
+        tool_manager.run_tests()
+
+def execute_in_sandbox():
+    sandbox = SandboxInterface()
+    result = sandbox.execute('app.core.self_edit_generated')
+    return result
+
+def log_modifications():
+    memory_tools = MemoryTools()
+    memory_tools.log_modifications({
+        'file_path': 'app/core/self_edit_generated.py',
+        'refactored_code': se_gen.generate_code.__code__,
+        'original_length': measure_response_length()[0],
+        'modified_length': measure_response_length()[1]
+    })
+
+if __name__ == '__main__':
+    refactor_code_generation()
+    apply_optimization()
+    run_unit_tests()
+    result = execute_in_sandbox()
+    log_modifications()

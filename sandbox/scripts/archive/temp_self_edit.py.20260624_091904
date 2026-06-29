@@ -1,0 +1,8 @@
+# import os
+import os
+file_path = "/Users/richietate/Desktop/FeralEcho/detect_functions_and_classes.py"
+with open(file_path, "r+") as f:
+    new_file_text = f.read().replace("What's the role of imperfection in cultivating harmony between code, creativity, and connection, and how can we intentio", "Embracing imperfection fosters harmony.")
+    f.seek(0)
+    f.write(new_file_text)
+print("Replaced line:", new_file_text)

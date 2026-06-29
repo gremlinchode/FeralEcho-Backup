@@ -1,0 +1,10 @@
+# import os
+file_path = "/Users/richietate/Desktop/FeralEcho/faithful_memory_file.txt"
+def modify_memory_file(file_path):
+    with open(file_path, "r+") as f: 
+        content = f.read()
+        new_content = content.replace("False", "'False'") + "\n# Self-examination note on confidence\n"
+    f.seek(0)
+    f.write(new_content)
+    print(f"Updated {file_path} with improved notation and a self-reflection note.")
+    os.fsync(f.fileno())

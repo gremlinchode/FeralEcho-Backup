@@ -1,0 +1,12 @@
+from app.core.self_edit_generated import strip_prose
+
+def strip_prose(code_output):
+    import re
+    sentence_start = r'^\s*([A-Za-z]+[.!?]?)\s*'
+    
+    if re.match(sentence_start, code_output):
+        clean_code = re.sub(r'^\s*' + sentence_start + '\s*', '', code_output)
+    else:
+        clean_code = code_output
+    
+    return clean_code

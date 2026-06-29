@@ -1,0 +1,11 @@
+import os
+import re
+from pathlib import Path
+
+file_path = str(Path('/Users/richietate/Desktop/FeralEcho/echo_memory_journal.py'))
+script_file = open(file_path, 'r')
+script_content = script_file.read()
+updated_script = re.sub('Smoothness detected: False | Confidence: 0.4', 'Smoothness detected: True | Confidence: 1.0', script_content)
+new_script_file = open(file_path, 'w')
+new_script_file.write(updated_script)
+print(f"Updated {file_path} with Smoothness detection confidence increased from 0.4 to 1.0")

@@ -1,0 +1,32 @@
+from app.core.tool_manager import Tool
+from app.core.project_scanner import parse_file, detect_functions_and_classes
+
+def score_code_string(candidate_code_string):
+    has_imports = False
+    has_function_def = False
+    no_prose_sentences = False
+
+    if candidate_code_string:
+        try:
+            parse_result = Tool.parse_file(candidate_code_string)
+            if parse_result and 'imports' in parse_result:
+                has_imports = True
+            if parse_result and 'functions' in parse_result and parse_result['functions']:
+                has_function_def = True
+
+            prose_sentences = re.findall(r"[A-Z][^.?!]*(?:\.[^.?!]*|\?)[.!?]", candidate_code_string)
+            if not prose_sentences:
+                no_prose_sentences = True
+        except Exception as e:
+            print(f"Error during parsing or detection: {e}")
+            return 0
+
+    score = 0
+    if has_imports:
+        score += 1
+    if has_function_def:
+        score += 1
+    if no_prose_sentences:
+        score += 1
+
+    return score

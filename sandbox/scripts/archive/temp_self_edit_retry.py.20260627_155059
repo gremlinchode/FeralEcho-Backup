@@ -1,0 +1,6 @@
+# from app.core.self_edit_generated import strip_prose
+def strip_prose_from_sandbox_output(sandbox_script):
+    return strip_prose(sandbox_script)
+
+# from app.core.sandbox_interface import run_random_sandbox_script
+run_random_sandbox_script = lambda: strip_prose_from_sandbox_output(run_random_sandbox_script())

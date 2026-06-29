@@ -1,0 +1,21 @@
+import strip_prose
+from app.core.self_edit_generated import self_edit
+
+def detect_prose(code_output):
+    for line in code_output.split('\n'):
+        if not any(char.isalnum() or char in ['=', '(', ')', '[', ']', '{', '}', ':', ';'] for char in line):
+            while strip_prose(line):
+                pass
+    return self_edit(code_output)
+
+def strip_prose(prose_str):
+    def recurse_prose(prose_str):
+        if any(char.isalnum() or char in ['=', '(', ')', '[', ']', '{', '}'] for char in prose_str):
+            first_token = next((char for char in prose_str.split()[0] if char not in [' ', '\t']), None)
+            if first_token:
+                return recurse_prose(prose_str.split(first_token)[1])
+            else:
+                return prose_str
+        else:
+            return ''
+    return recurse_prose(prose_str)

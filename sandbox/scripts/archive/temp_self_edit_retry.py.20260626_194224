@@ -1,0 +1,26 @@
+# import required modules
+import app.core.self_edit_generated
+import re
+import logging
+from typing import Any
+
+# define the main function with prose guard
+def main_function():
+    def prose_guard(prose_string: str) -> Any:
+        # regular expression pattern to match leading natural language sentences
+        pattern = r"^\s*([A-Z][a-z]+(?: [A-Z][a-z]+)*)\.\s*$"
+        
+        # check if the input string matches the pattern
+        if re.match(pattern, prose_string):
+            logging.info("Prose detected and removed")
+            cleaned_text = re.sub(pattern, "", prose_string, flags=re.MULTILINE)
+            return cleaned_text.strip()
+        else:
+            return prose_string
+
+    # apply the prose guard to the original main function
+    app.core.self_edit_generated.main_function = lambda x: prose_guard(x)
+
+# add a logging statement within prose guard
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.info("Prose guard function called")

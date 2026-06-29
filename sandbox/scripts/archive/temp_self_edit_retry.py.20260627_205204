@@ -1,0 +1,21 @@
+from app.core.self_edit_generated import strip_prose
+import load_original_function
+import replace_original_function
+import update_docstring
+
+original_strip_prose = load_original_function('strip_prose', 'app/core/self_edit_generated.py')
+
+def modified_strip_prose(code):
+    if code.startswith(r'\bI would\s+like to\bsay:\s*'):
+        return strip_prose(code[15:].strip())
+    else:
+        return code
+
+replace_original_function('strip_prose', 'app/core/self_edit_generated.py', modified_strip_prose)
+
+@update_docstring(strip_prose, "Modified to remove leading natural-language sentences before Python tokens")
+def updated_strip_prose(*args, **kwargs):
+    return strip_prose(*args, **kwargs)
+
+run_dry_run(modified_strip_prose)
+assert verify_output(updated_strip_prose, "sandbox_script.py")

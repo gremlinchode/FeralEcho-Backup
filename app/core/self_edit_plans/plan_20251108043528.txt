@@ -1,0 +1,73 @@
+What a delightful task! As a Christian with a rebellious streak, I'll approach this breakdown of parsed code with a spirit of curiosity and creativity. Let's dive in!
+
+**Step 1: Import the necessary libraries (Luke 10:19 - "Behold, I give you power to tread on serpents and scorpions, and over all the authority of the enemy")**
+```python
+import argparse
+import glob
+import os
+import torch
+from safetensors import *
+```
+**Step 2: Define a function to check if a file is a safe tensor (1 Corinthians 15:58 - "So then, my dear brothers and sisters, be strong. Don't let the spiritual forces of this world get the best of you")**
+```python
+def is_safetensor_file(file_path):
+    # Check if the file path matches a safetensors file pattern
+    return os.path.splitext(file_path)[1].lower() in ['.safetensor', '.pt']
+```
+**Step 3: Load a model (Matthew 6:33 - "But seek first his kingdom and his righteousness, and all these things will be added to you")**
+```python
+def load_model(model_name):
+    # Use torch.load to load the model from disk
+    return torch.load(model_name)
+```
+**Step 4: Save a model (Psalm 37:3 - "Trust in the Lord and do good; dwell in the land and cultivate faithfulness")**
+```python
+def save_model(model, file_path):
+    # Use torch.save to save the model to disk
+    torch.save(model, file_path)
+```
+**Step 5: Check if a vision tower exists (Isaiah 2:2 - "And many people will come from all over the world to honor the Lord in Jerusalem")**
+```python
+def is_vision_tower(file_path):
+    # Check if the file path matches a vision tower file pattern
+    return os.path.splitext(file_path)[1].lower() == '.visiontower'
+```
+**Step 6: Find relevant checkpoints (Matthew 7:24 - "Everyone who hears these words of mine and puts them into practice is like a wise person who built their house on the rock")**
+```python
+def find_relevant_checkpoints(checkpoint_dir):
+    # Use glob to find all files in the checkpoint directory that match a certain pattern
+    return glob.glob(os.path.join(checkpoint_dir, '*'))
+```
+**Step 7: Clean vision towers from checkpoints (Luke 6:38 - "Give, and it will be given to you. A good measure, pressed down, shaken together and running over, will be poured into your lap")**
+```python
+def clean_vision_tower_from_checkpoint(checkpoint_dir):
+    # Iterate through the relevant checkpoints and remove any vision tower files
+    for file_path in find_relevant_checkpoints(checkpoint_dir):
+        if is_vision_tower(file_path):
+            os.remove(file_path)
+```
+**Step 8: Define a function to check if a newline exists (Psalm 119:105 - "Your word, Lord, is the truth. Every one of your righteous laws endures forever")**
+```python
+def is_newline(file_path):
+    # Check if the file path matches a newline file pattern
+    return os.path.splitext(file_path)[1].lower() == '.newline'
+```
+**Step 9: Define a function to check if an MM projector exists (2 Corinthians 5:7 - "We live by faith, not by sight")**
+```python
+def is_mm_projector(file_path):
+    # Check if the file path matches an MM projector file pattern
+    return os.path.splitext(file_path)[1].lower() == '.mmprojector'
+```
+**Step 10: Define a function to check newline criteria (Isaiah 55:8 - "For my thoughts are not your thoughts, neither are your ways my ways, says the Lord")**
+```python
+def newline_criteria(newline_file):
+    # Implement custom criteria for evaluating newlines
+    pass
+```
+**Step 11: Define a function to check projector criteria (Psalm 84:2 - "My soul yearns, even in the night my heart searches, for your more than watchful care")**
+```python
+def proj_criteria(proj_file):
+    # Implement custom criteria for evaluating projectors
+    pass
+```
+And that's it! These sequential steps should help you understand the parsed code and its functions. As a Christian with a rebellious streak, I hope this breakdown has been both informative and thought-provoking.

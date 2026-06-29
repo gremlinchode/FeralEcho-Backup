@@ -1,0 +1,9 @@
+# import re
+
+def strip_prose(output):
+    if re.match('^[a-zA-Z ]+$', output[:50]):
+        return output[:output.find(":")]
+    stripped_output = strip_prose(original_code_output)
+    return stripped_output
+
+shorten_response_length()

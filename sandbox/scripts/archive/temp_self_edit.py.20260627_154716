@@ -1,0 +1,18 @@
+# import necessary modules
+from app.core.self_edit_generated import strip_prose
+import self_edit_generated
+
+# define the new function to wrap around existing strip_prose
+def strip_prose_from_sandbox_output(sandbox_script):
+    return strip_prose(sandbox_script)
+
+# modify the run_random_sandbox_script function to utilize the new function
+run_random_sandbox_script = lambda: strip_prose_from_sandbox_output(run_random_sandbox_script())
+
+# integrate the new function into existing self-edit-generated functionality
+def modified_self_edit_generated():
+    ... 
+    return strip_prose_from_sandbox_output(...)
+
+# update self-edit-generated module to utilize the modified functionality
+self_edit_generated.modified_self_edit_generated = modified_self_edit_generated

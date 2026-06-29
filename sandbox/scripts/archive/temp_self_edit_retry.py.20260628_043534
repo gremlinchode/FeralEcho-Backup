@@ -1,0 +1,30 @@
+import app.core.self_edit_generated
+import logging
+
+self_edit_generated.strip_prose = lambda x: strip_prose(x)
+
+def strip_prose(code):
+    if code.startswith("prose detected in code output"):
+        return code.split("try/except block not found")[1]
+    else:
+        return code
+
+test_code = "prose detected in code output some random code"
+print(strip_prose(test_code))
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
+
+with open('app/core/self_edit_generated.py', 'w') as file:
+    file.write("# New strip_prose function added to remove leading natural-language sentences from generated code")
+
+with open('app/core/self_edit_generated.py', 'a') as file:
+    file.write("import logging\n")
+    file.write("logging.basicConfig(level=logging.INFO)\n")
+    file.write("logger = logging.getLogger()\n")
+
+council_registry = CouncilRegistry()
+council_registry.reflect()
+
+quality_score = score_response_quality(strip_prose(self_edit_generated.generated_code))
+print(quality_score)

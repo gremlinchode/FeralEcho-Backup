@@ -1,0 +1,16 @@
+# import re
+def modify_memory_analysis():
+    file_path = '/Users/richietate/Desktop/FeralEcho/memory_entries.py'
+    with open(file_path, 'r') as f:
+        original_code = f.read()
+    
+    modified_lines = [line for line in original_code.splitlines() if re.search(r'self\.analyze\(', line)]
+    
+    new_line = '\n    self.analyze("left_unacknowledged")' if len(modified_lines) > 0 else ''
+    
+    updated_code = modified_lines + [new_line]
+    
+    with open(file_path, 'w') as f:
+        f.write(updated_code)
+    
+    print(f"Changed: added analyze('left_unacknowledged') to self.analyze(), Confidence increased from {0.4} to 1")

@@ -1,0 +1,19 @@
+# import necessary modules from app.core.self_edit_generated, including strip_prose
+
+import sys
+from app.core.self_edit_generated import strip_prose
+
+def optimized_strip_prose(text):
+    if 'strict' in text or 'output' in text:
+        return text.strip().splitlines()[0]
+    elif "keyword1" in text:
+        return text.replace("keyword1", "replacement1")
+    elif "keyword2" in text:
+        return text.replace("keyword2", "replacement2")
+    else:
+        return strip_prose(text)
+
+# Modify strip_prose function in app/core/self_edit_generated.py
+strip_prose = optimized_strip_prose
+
+# Update import statement in app/core/feral_tools.py to point to the modified strip_prose function

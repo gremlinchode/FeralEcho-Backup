@@ -1,0 +1,47 @@
+# import necessary modules and functions
+import app.core.self_edit_generated
+import re
+from strip_prose import strip_prose
+from app.core.memory_tools import append_memory_entry
+
+
+def preprocess_output(output):
+    stripped = re.search(r"^[^=+\-<>~`{}*\\[\]()|&%;.,!?\":]*.*$", output)
+    if stripped:
+        output = strip_prose(stripped.group())
+    return output
+
+
+def main():
+    output = preprocess_output(__import__("your_module").function_to_execute)
+    if not re.match(r"^[a-zA-Z ]*$", output):
+        append_memory_entry("Prose detected and stripped successfully")
+    else:
+        append_memory_entry("SyntaxError: Non-Python content in code output")
+
+
+def modify_code_output():
+    try:
+        with open('app/core/self_edit_generated.py', 'r') as f:
+            content = f.read()
+
+        pattern = r"^[A-Za-z0-9\s]+(?:\n)*(.*)"
+        match = re.search(pattern, content)
+        if match:
+            prose = match.group(1).strip()
+            if prose:
+                stripped_content = strip_prose(content)
+                with open('app/core/self_edit_generated.py', 'w') as f:
+                    f.write(stripped_content)
+                append_memory_entry("Prose detected and stripped: " + prose + ". Output saved.")
+            else:
+                print("No prose found to strip.")
+        else:
+            print("No natural language pattern detected in the code output.")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+if __name__ == "__main__":
+    modify_code_output()

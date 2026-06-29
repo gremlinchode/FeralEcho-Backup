@@ -1,0 +1,25 @@
+# import os
+import re
+from app.core.self_edit_generated import strip_prose
+
+file_path = 'app/core/self_edit_generated.py'
+with open(file_path, 'r') as file:
+    code_str = file.read()
+
+prose_pattern = r'^[^#]*\n*'
+match_obj = re.search(prose_pattern, code_str, re.MULTILINE)
+
+if match_obj:
+    prose_start = match_obj.start()
+    prose_end = match_obj.end()
+    for i in range(1, 100):
+        if not re.match(r'[:)\(\w\s', code_str[prose_start:prose_start+i]):
+            guard_point = prose_start + i
+            break
+
+    code_str = code_str[:prose_start] + code_str[guard_point:]
+
+with open(file_path, 'w') as file:
+    file.write(code_str)
+
+import app.core.self_edit_generated

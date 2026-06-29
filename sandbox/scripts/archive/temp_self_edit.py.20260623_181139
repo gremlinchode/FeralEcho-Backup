@@ -1,0 +1,9 @@
+import os; from FeralEcho.config import get_config_file_path
+
+config_file = open(get_config_file_path(), 'r+')
+content = config_file.read()
+new_content = content + '\nawareness_scores = {"confidence": 0.8}\n'
+config_file.write(new_content)
+config_file.close()
+print("Updated awareness score confidence to 0.8")
+return None

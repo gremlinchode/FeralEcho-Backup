@@ -1,0 +1,19 @@
+import app.core.self_edit_generated as self_edit_gen
+from strip_prose import strip_prose
+
+def detect_and_strip_prose(code_output):
+    lines = code_output.splitlines()
+    for i, line in enumerate(lines):
+        if any(char in '.,:;!? ' for char in line) and not any(keyword in line for keyword in ['import', 'def', 'class']):
+            while True:
+                leading_text = line.lstrip()
+                if not leading_text or not strip_prose(leading_text):
+                    break
+                line = leading_text
+        lines[i] = line
+
+    return "\n".join(lines)
+
+def modified_self_edit(self, code_output):
+    code_output = detect_and_strip_prose(code_output)
+    self.edit_generated(self, code_output)

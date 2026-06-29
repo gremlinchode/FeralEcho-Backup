@@ -1,0 +1,17 @@
+from app.core.self_edit_generated import score_code_string, calculate_awareness_score
+
+def refactor_reasoning_code(original_function):
+    def new_code_generation(input):
+        # Load the original code-generation function
+        func = original_function
+        
+        # Analyze and modify the function's logic
+        if input == "refactor":
+            return "Refactoring initiated..."
+        else:
+            return func(input)
+        
+    return new_code_generation
+
+def update_self_edit_generated_file(refactored_function):
+    self_edit_generated.code_generation_function = refactored_function

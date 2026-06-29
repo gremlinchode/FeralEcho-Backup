@@ -1,0 +1,9 @@
+import app
+
+def main():
+    if app.ollama_handler.is_ollama_running():
+        response = app.ollama_handler.query_ollama("Explain the concept of awareness in AI.")
+        parsed_info = parse_file(response, 'app.core.project_scanner')
+        append_memory_entry(parsed_info['source'], parsed_info)
+        app.autonomous_awareness.update_awareness_score(parsed_info)
+    log_memory_event('integrated Ollama query results')

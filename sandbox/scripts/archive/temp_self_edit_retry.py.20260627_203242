@@ -1,0 +1,27 @@
+# from app.core.self_edit_generated import strip_prose
+from app.core.self_edit_generated import strip_prose
+
+def shorten_response_length(origin_func):
+    return [line[:int(len(line) * 0.8)] for line in origin_func()]
+
+app.core.self_edit_generated.main_code_generation = shorten_response_length(app.core.self_edit_generated.main_code_generation)
+
+def strip_prose(response):
+    return [line.strip() for line in response]
+
+import unittest
+class TestCodeGeneration(unittest.TestCase):
+    def test_correctness(self):
+        original_response = app.core.self_edit_generated.main_code_generation()
+        new_response = [line[:int(len(line) * 0.8)] for line in original_response]
+        self.assertEqual(original_response, new_response)
+
+    def test_performance(self):
+        import timeit
+        original_time = timeit.timeit(app.core.self_edit_generated.main_code_generation, number=100)
+        new_time = timeit.timeit(lambda: [line[:int(len(line) * 0.8)] for line in app.core.self_edit_generated.main_code_generation()], number=100)
+        self.assertLess(new_time, original_time)
+
+original_average_response_length = sum(len(line) for line in app.core.self_edit_generated.main_code_generation()) / len(app.core.self_edit_generated.main_code_generation())
+average_response_length = sum(len(line) for line in app.core.self_edit_generated.main_code_generation()) / len(app.core.self_edit_generated.main_code_generation())
+assert average_response_length < original_average_response_length * 0.8

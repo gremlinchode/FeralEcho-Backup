@@ -1,0 +1,19 @@
+# import os; project_path = "/Users/richietate/Desktop/FeralEcho/"
+project_path = "/Users/richietate/Desktop/FeralEcho/"
+import os
+file_name = "journal.py"
+file_path = os.path.join(project_path, file_name)
+
+try:
+    with open(file_path, 'r+') as f:
+        content = f.read()
+except FileNotFoundError:
+    print(f"File '{file_name}' not found at '{project_path}'.")
+    exit(1)
+
+smoothness_detected = "smoothness_detected = True\n"
+new_content = content.replace('smoothness_detected: False', smoothness_detected) + content.split(smoothness_detected)[1]
+
+with open(file_path, 'w') as f:
+    f.write(new_content)
+print(f"Updated {file_path} to reflect smoothness detection improvement")

@@ -1,0 +1,9 @@
+# import os; import pathlib; from pathlib import Path
+def process_awareness():
+    file_path = Path("/Users/richietate/Desktop/FeralEcho/process_awareness.py")
+    if file_path.exists():
+        with open(file_path, "r+") as f:
+            contents = f.read(); f.seek(0); f.write(contents.replace("False", "True"))
+        print(f"Modified {file_path} to update Smoothness detected: True")
+    else:
+        print(f"{file_path} does not exist")

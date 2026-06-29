@@ -1,0 +1,16 @@
+# import necessary modules from FeralEcho ecosystem:
+import app.core.self_edit_generated as sed
+import app.core.tool_manager as tm
+
+target_function = tm.load_tool(sed.modify_main_function)
+
+def modify_main_function():
+    generated_code = some_code_generation_method()
+    if isinstance(generated_code, str):
+        generated_code = re.sub(r'^.*?\bdef\b', 'def', generated_code, flags=re.IGNORECASE)
+        modified_output = tm.append_to_journal(target_file_path, generated_code)
+        assert not re.search(r'\b[A-Za-z]+\b', modified_output), "Output still contains prose"
+    return generated_code
+
+tm.log_memory_event(f"Updated {target_function_name} in {target_file_path}")
+app.core.river_deliberation.deliberate_and_learn()

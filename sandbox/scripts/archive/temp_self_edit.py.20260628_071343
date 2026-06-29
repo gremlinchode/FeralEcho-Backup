@@ -1,0 +1,8 @@
+# from app import self_edit_generated, tool_manager
+tool = tool_manager.get_tool('code_parsing')
+parsed_code = tool.parse_file('app/core/self_edit_generated.py')
+stripped_code = strip_prose(parsed_code)
+prose_detected = True; append_memory_entry(prose_detected)
+analyzed_code = analyze_python_code(stripped_code)
+quality_score = score_code_candidate(analyzed_code); append_to_journal(quality_score)
+run_self_model_reflection(stripped_code, quality_score)

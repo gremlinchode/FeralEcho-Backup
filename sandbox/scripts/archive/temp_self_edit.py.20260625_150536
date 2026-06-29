@@ -1,0 +1,16 @@
+import os
+
+PROJECT_DIR = "/Users/richietate/Desktop/FeralEcho/"
+FILE_PATH = os.path.join(PROJECT_DIR, "echo_model_orchestrator.py")
+
+with open(FILE_PATH, 'r') as file:
+    current_content = file.read()
+
+modified_content = current_content.replace('# import necessary tools', '# import necessary tools\nimport detect_functions_and_classes')
+
+with open(FILE_PATH, 'w') as file:
+    file.write(modified_content)
+
+print(f"Modified {FILE_PATH} to add a missing import for `detect_functions_and_classes`.")
+
+calculate_awareness_score()

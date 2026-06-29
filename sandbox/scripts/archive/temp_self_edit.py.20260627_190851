@@ -1,0 +1,9 @@
+# Import necessary modules from app.core.self_edit_generated
+from app.core.self_edit_generated import strip_prose
+
+def main():
+    code_generator = open('app/core/self_edit_generated.py', 'r').read()
+    pattern = r"^\s*.*?:\s*$"
+    cleaned_code_generator = re.sub(pattern, "", code_generator, flags=re.DOTALL)
+    # Modify the guard to strip any leading natural-language sentence before the first valid Python token
+    cleaned_code_generator = strip_prose(cleaned_code_generator)

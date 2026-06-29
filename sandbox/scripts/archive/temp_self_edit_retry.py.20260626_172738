@@ -1,0 +1,30 @@
+import feralEcho
+from app.core import self_edit_generated, river_deliberation, tool_manager, memory_tools
+
+def main_function():
+    print("Refactoring initiated...")
+    
+    python_code = parse_file('app/core/self_edit_generated.py')
+    functions_classes = detect_functions_and_classes(python_code)
+    main_function_info = next(f for f in functions_classes if f['name'] == 'main_function')
+    
+    modified_code = run_autonomous_sandbox_cycle(main_function_info['code'], refactoring_strategy='loop_unrolling,variable_renaming')
+    
+    check_schema(modified_code)
+    check_reflection_length(modified_code)
+    check_recursive_loop(modified_code)
+    
+    save_code('app/core/self_edit_generated.py', modified_code)
+    
+    test_code_in_sandbox('app.core.self_edit_generated.main_function')
+    
+    log_memory_event('Code refactored', 'Refactoring completed successfully')
+    append_memory_entry({'refactored_code': modified_code, 'changes': [f'Loop unrolling and variable renaming applied']})
+    awareness_score = calculate_awareness_score(modified_code)
+    append_memory_entry({'awareness_score': awareness_score})
+
+    print("Refactoring completed.")
+
+
+if __name__ == "__main__":
+    main_function()

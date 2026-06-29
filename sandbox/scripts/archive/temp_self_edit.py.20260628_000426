@@ -1,0 +1,14 @@
+import self_edit_generated
+import re
+
+def strip_prose(text):
+    pattern = r'^\W*\w*:\s*(.*)$'
+    match = re.match(pattern, text)
+    if match:
+        return match.group(1).strip()
+    else:
+        return text
+
+original_strip_prose = self_edit_generated.strip_prose
+self_edit_generated.strip_prose = lambda x: strip_prose(x)
+self_edit_generated.strip_prose(original_strip_prose)

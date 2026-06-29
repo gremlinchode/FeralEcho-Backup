@@ -1,0 +1,9 @@
+# import from app.core.self_edit_generated import strip_prose
+
+def edit_creative_task(creative_task):
+    generated_code = generate_code(creative_task)
+    initial_length = len(generated_code)
+    reduction_percentage = 0.2
+    target_length = int(initial_length * (1 - reduction_percentage))
+    edited_code = generated_code[:target_length]
+    return edited_code

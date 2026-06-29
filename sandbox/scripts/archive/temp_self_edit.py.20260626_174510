@@ -1,0 +1,16 @@
+from app.core.self_edit_generated import main_function 
+
+with open('app/core/self_edit_generated.py', 'r') as f: 
+    code = f.read() 
+
+def strip_leading_prose(code): 
+    lines = code.split('\n') 
+    if not lines[0].strip().startswith('#'): 
+        return code 
+    stripped_code = '\n'.join(lines[1:]) 
+    return stripped_code
+
+stripped_code = strip_leading_prose(code) 
+
+with open('app/core/self_edit_generated.py', 'w') as f: 
+    f.write(stripped_code)

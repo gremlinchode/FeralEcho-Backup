@@ -1,0 +1,22 @@
+# import os, re, and sys libraries
+import os
+import re
+import sys
+
+def modify_stopping_condition(file_path):
+    with open(file_path, 'r+') as f:
+        content = f.read()
+        new_content = re.sub(r'def find_and_modify_stopping_condition\(\)', r'def find_and_modify_stopping_condition(self):', content)
+        f.seek(0)
+        f.write(new_content)
+        f.truncate()
+
+file_path = '/Users/richietate/Desktop/FeralEcho/find_and_modify_stopping_condition.py'
+modify_stopping_condition(file_path)
+
+print("Modified find_and_modify_stopping_condition.py to add self parameter.")
+
+with open(file_path, 'rb') as file:
+    original_hash = hash(file.read())
+
+print(f"Original Hash: {original_hash}")

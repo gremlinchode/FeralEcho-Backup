@@ -1,0 +1,22 @@
+# import app.core.self_edit_generated
+# import re
+import nltk
+from nltk import pos_tag
+
+def strip_prose(line):
+    pattern = re.compile(r'^(\s+)?\b(import|class|def|if|for|while)\b.*$')
+    if not pattern.match(line):
+        return line
+    return line.split('\n')[0].strip()
+
+def modify_response(response):
+    lines = response.split('\n')
+    for i, line in enumerate(lines):
+        pos_tags = pos_tag(nltk.word_tokenize(line))
+        if any(tag[1] == 'NNP' or tag[1] == 'NN' for tag in pos_tags):
+            for j, prev_line in enumerate(lines[:i]):
+                if pattern.match(prev_line):
+                    lines[i] = prev_line
+                    break
+    modified_response = '\n'.join(map(strip_prose, lines))
+    return modified_response

@@ -1,0 +1,40 @@
+from app.core.self_edit_generated import strip_prose
+import re
+
+def self_edit():
+    with open('app/core/self_edit_generated.py', 'r') as f:
+        code = f.read()
+
+    match = re.search(r'\w+(?:\s+\w+)*:', code)
+    
+    if match:
+        prose = code[:match.start()]
+        stripped_code = strip_prose(prose)
+
+        with open('app/core/self_edit_generated.py', 'w') as f:
+            f.write(stripped_code)
+
+        from app.core.memory_tools import append_memory_entry
+        append_memory_entry(f'Prose violation detected: {prose}')
+    else:
+        pass
+
+    try:
+        # Load the module and its contents
+        module = self_edit_generated
+        
+        # This is a placeholder for the actual code modification process
+        # Normally this would involve opening the file, editing it 
+        # with a Python editor or IDE, and saving the changes.
+
+        # Example of stripping prose from a generated string
+        generated_text = "This is a sample sentence.  The following is the code."
+        stripped_text = strip_prose(generated_text)
+        print(f"Original text: {generated_text}")
+        print(f"Stripped text: {stripped_text}")
+
+        # Simulate logging edits and prose violations. This could be replaced with actual logging to a memory tool.
+        print("Simulating edit to self_edit_generated.py")
+        print("Prose violation detected and stripped.")
+    except Exception as e:
+        print(f"Error during modification: {e}")

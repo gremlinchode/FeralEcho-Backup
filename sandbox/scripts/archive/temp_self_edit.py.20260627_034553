@@ -1,0 +1,11 @@
+# from app.core.self_edit_generated import strip_prose, main_function
+import re
+
+def modified_main_function(code):
+    sentence_detector = re.compile(r'^(\w+\s*)*$')
+    for line in code.split('\n'):
+        if sentence_detector.match(line):
+            line = strip_prose(line)
+    return '\n'.join(map(str, [line for line in code.split('\n') if not sentence_detector.match(line)]))
+
+app.core.self_edit_generated.main_function = modified_main_function

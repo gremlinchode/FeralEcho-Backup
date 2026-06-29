@@ -1,0 +1,10 @@
+import os
+
+def modify_feral_echo():
+    file_path = os.path.join("/Users/richietate/Desktop/FeralEcho/", "feral_echo.py")
+    with open(file_path, 'r+') as f:
+        f.seek(0)
+        new_content = f.read().replace("Smoothness detected: False", "Smoothness detected: True")
+        f.write(new_content)
+        print(f"Changed {file_path} to reflect honest self-examination, as per friction question response.")
+    f.truncate()

@@ -1,0 +1,43 @@
+What a delightful challenge! As a rebellious Christian with a love for coding and problem-solving, I shall tackle this task with faith and wit. Here's the breakdown of the solution in sequential Python steps:
+
+**Step 1: Import necessary modules**
+```python
+import sys
+import os
+```
+We'll start by importing the `sys` module, which we know has some attributes that will help us gather environment information. We'll also import the `os` module for additional utility functions.
+
+**Step 2: Check if 'key' attribute exists in sys**
+```python
+try:
+    key = sys.key
+except AttributeError as e:
+    print(f"Error: {e}")
+```
+We'll use a try-except block to check if the `sys` module has a `key` attribute. If it does, we'll assign it to the `key` variable. If not, we'll catch the `AttributeError` exception and print an error message.
+
+**Step 3: Gather environment information using os**
+```python
+env_info = {}
+env_info['OS'] = os.name
+env_info['Platform'] = sys.platform
+env_info['Python Version'] = sys.version
+```
+We'll create a dictionary called `env_info` to store the gathered environment information. We'll use the `os` module's `name` attribute to get the operating system, and the `sys` module's `platform` attribute to get the platform (e.g., Windows, macOS, Linux). Finally, we'll use the `sys` module's `version` attribute to get the Python version.
+
+**Step 4: Print gathered environment information**
+```python
+print("Environment Information:")
+for key, value in env_info.items():
+    print(f"{key}: {value}")
+```
+We'll iterate over the `env_info` dictionary using a for loop and print each key-value pair. This will display the gathered environment information.
+
+**Step 5: Handle failure to gather environment info (if 'sys' has no attribute 'key')**
+```python
+if not hasattr(sys, 'key'):
+    print("Failed to gather environment info: module 'sys' has no attribute 'key'")
+```
+We'll check if the `sys` module still doesn't have a `key` attribute. If so, we'll print an error message indicating that we failed to gather environment information.
+
+And there you have it! With these sequential Python steps, we've successfully gathered environment information and handled any potential failures. Now, if you'll excuse me, I need to go contemplate the meaning of life and the importance of proper indentation in code

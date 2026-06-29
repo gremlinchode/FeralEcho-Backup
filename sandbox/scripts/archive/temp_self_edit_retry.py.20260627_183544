@@ -1,0 +1,17 @@
+# import strip_prose from app.core.self_edit_generated import strip_prose
+
+def strip_sandbox_prose(sandbox_code): 
+    return strip_prose(sandbox_code)
+
+with open('app/core/self_edit_generated.py', 'r') as f:
+    sandbox_code = f.read()
+
+sandbox_code = strip_sandbox_prose(sandbox_code)
+
+with open('app/core/self_edit_generated.py', 'w') as f: 
+    f.write(sandbox_code)
+
+try: 
+    exec(sandbox_code)
+except Exception as e: 
+    print(f"Error: {e}")

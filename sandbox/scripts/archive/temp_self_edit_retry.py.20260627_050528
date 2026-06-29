@@ -1,0 +1,20 @@
+from app.core.self_edit_generated import strip_prose
+from app.core.project_scanner import parse_file
+from app.core.memory_bridge import detect_functions_and_classes
+
+def main_function():
+    generated_code = generate_code()
+    parsed_output = parse_file(generated_code)
+    prose_detected = False
+    try:
+        stripped_code = strip_prose(parsed_output)
+        if stripped_code != parsed_output:
+            raise Exception("Prose detected in code output. Aborting processing.")
+    except Exception as e:
+        print(f"Error during processing: {e}")
+        return None
+    if detect_functions_and_classes(stripped_code):
+        prose_detected = True
+    if prose_detected:
+        raise Exception("Prose detected in code output. Safeguard triggered.")
+    return stripped_code

@@ -1,0 +1,20 @@
+# import necessary modules and tools
+import app.core.self_edit_generated as se
+from app.core.project_scanner import detect_functions_and_classes as dfc
+
+target_response_length_reduction_percentage = 20
+
+average_response_length = dfc(se.strip_prose).average_function_length
+
+desired_target_response_length = average_response_length * (1 - target_response_length_reduction_percentage / 100)
+
+def strip_prose(text, target_response_length):
+    if len(text) > target_response_length:
+        return text[:target_response_length]
+    else:
+        return text
+
+for code in se.strip_prose:
+    while len(code) > desired_target_response_length:
+        code = strip_prose(code, desired_target_response_length)
+    print(f"Modified Code: {code}")

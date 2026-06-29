@@ -1,0 +1,41 @@
+# import app.core.self_edit_generated
+import app.core.river_deliberation
+from app.core.project_scanner import parse_file
+from app.core.self_edit_manager import validate_code, save_code
+from app.core.sandbox_interface import run_random_sandbox_script
+from app.emergent_scheduler import start_emergent_scheduler
+
+def main():
+    file_path = 'app/core/self_edit_generated.py'
+    code = parse_file(file_path)
+
+    main_function = None
+    for node in ast.walk(code):
+        if isinstance(node, ast.FunctionDef) and node.name == 'generate_code':
+            main_function = node
+            break
+
+    if main_function:
+        refactored_function = refactor_function(main_function)
+        
+        is_valid = validate_code(refactored_function)
+        if not is_valid:
+            print("Validation failed.")
+            return
+        
+        save_code(file_path, ast.unparse(refactored_function))
+        
+        run_random_sandbox_script()
+        
+        scanner = parse_file(file_path)
+        scanner.execute()
+        
+        start_emergent_scheduler()
+
+def refactor_function(func):
+    # Refactor the function here (e.g., method chaining, efficient data structures)
+    print("Refactoring function...")
+    return func  # Return the original function as a placeholder
+
+if __name__ == "__main__":
+    main()

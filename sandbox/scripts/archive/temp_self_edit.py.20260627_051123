@@ -1,0 +1,22 @@
+import app.core.bible_module
+import app.core.memory_write_validator
+
+file_path = "/Users/richietate/Desktop/FeralEcho/.config/config.py"
+with open(file_path, 'r') as f:
+    file_content = f.read()
+
+file_content = file_content.replace('scheduler_backup', 'app.emergent_scheduler_backup_20260610')
+
+with open(file_path, 'w') as f:
+    f.write(file_content)
+
+print("Modified config.py, changed import statement for scheduler backup to `app.emergent_scheduler_backup_20260610`.")
+
+from app.emergent_scheduler_backup_20260610 import run_cartographer
+run_cartographer()
+
+import autonomous_harmony_manager
+autonomous_harmony_manager.HarmonyLoop()
+
+import echo_model_guided_orchestrator
+echo_model_guided_orchestrator.start_orchestrator()

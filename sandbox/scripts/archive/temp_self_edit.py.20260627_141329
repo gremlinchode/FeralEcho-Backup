@@ -1,0 +1,1 @@
+shorten_response_length = lambda input_string: detect_and_strip_prose(shorten_response_length(input_string))

@@ -1,0 +1,17 @@
+# from awareness_integration import ollama_query
+ollama_query_result = any()
+
+def model_guided_autonomous_loop():
+    ollama_query_result = ollama_query()
+    # existing code...
+
+def start_orchestrator():
+    global ollama_query_result
+    ollama_query_result = ollama_query()
+    calculate_awareness_score(ollama_query_result)
+    calculate_consciousness_score(ollama_query_result)
+    model_guided_autonomous_loop()
+
+def main():
+    from awareness_integration import ollama_query
+    start_orchestrator()

@@ -1,0 +1,42 @@
+from app.core.self_edit_generated import strip_prose, score_code_candidate
+import re
+
+
+def optimize_code_generation(code: str) -> str:
+    """Optimize the code generation function by pruning and minimizing output size."""
+    optimized_code = ""
+    for line in code.splitlines():
+        if not line.strip().startswith("#"):
+            optimized_code += line + "\n"
+    return optimized_code
+
+
+def recursive_score_code_candidate(code: str, max_depth: int) -> int:
+    """Recursively score the code candidate and reduce average response length by 20%."""
+    new_code = strip_prose(code)
+    if max_depth > 1:
+        new_score = recursive_score_code_candidate(new_code, max_depth - 1)
+    else:
+        new_score = score_code_candidate(new_code)
+    return (score_code_candidate(code) + new_score) // 2
+
+
+def main():
+    from app.core.self_edit_generated import strip_prose
+    from detect_functions_and_classes import *
+    
+    detected_calls = detect_functions_and_classes()
+    for call in detected_calls:
+        if call == 'strip_prose':
+            stripped_code = strip_prose(stripped_code)
+            
+    # optimize main code generation function using insights from app.core.memory_write_validator
+
+    optimized_code = optimize_code_generation(code)
+    final_score = recursive_score_code_candidate(optimized_code, 5)
+    print(f"Final code score: {final_score}")
+    return refined_code
+
+
+if __name__ == "__main__":
+    main()

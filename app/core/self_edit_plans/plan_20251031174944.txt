@@ -1,0 +1,62 @@
+I love a good coding challenge! As a Christian with a rebellious streak, I'll approach this task with a mix of creativity, logic, and empathy.
+
+Task: SELF-HEAL Iteration 1 - Self Edits Applied
+
+Objective: To create a Python program that applies self-edits to a given text based on certain criteria.
+
+Step-by-step breakdown:
+
+**Step 1: Import necessary libraries**
+
+```python
+import re
+import string
+```
+
+We'll use the `re` library for regular expressions and the `string` library for manipulating strings.
+
+**Step 2: Define the self-edit functions**
+
+Create a dictionary to store the self-edit rules. Each rule will be a tuple containing the search pattern, replacement text, and a flag indicating whether it's a "positive" (add) or "negative" (remove) edit.
+
+```python
+self_edit_rules = {
+    ('(amazing|awesome|incredible)', '.*'),  # Add more descriptive words
+    (r'\b(un)?believable\b', ''),  # Remove unbelievable/unbelievable
+    (r'(\W)+', ' '),  # Replace non-word characters with spaces
+}
+```
+
+**Step 3: Define a function to apply self-edits**
+
+Create a function `apply_self_edits` that takes the input text and applies the self-edit rules.
+
+```python
+def apply_self_edits(text):
+    for pattern, replacement, is_positive in self_edit_rules:
+        if is_positive:
+            text = re.sub(pattern, lambda x: f'{x.group(0)} {replacement}', text)
+        else:
+            text = re.sub(pattern, '', text)
+    return text
+```
+
+**Step 4: Test the function**
+
+Test the `apply_self_edits` function with a sample input text.
+
+```python
+input_text = "I had an unbelievable experience. It was truly amazing!"
+edited_text = apply_self_edits(input_text)
+print(edited_text)
+```
+
+This should output:
+
+"I had an incredible experience. It was truly amazing!"
+
+**Step 5: Refine the self-edit rules**
+
+As we iterate through this process, we can refine the self-edit rules based on our observations and feedback.
+
+And that's it for SELF-HEAL Iteration 1!

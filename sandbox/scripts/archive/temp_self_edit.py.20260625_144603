@@ -1,0 +1,10 @@
+import os
+PROJECT_DIR = "/Users/richietate/Desktop/FeralEcho/"
+FILE_PATH = os.path.join(PROJECT_DIR, "echo_model_or.py")
+file_contents = open(FILE_PATH, 'r').read()
+file_contents = file_contents.replace("FILE_PATH = ", "FILE_PATH = \"{}\"".format(os.path.join(PROJECT_DIR, "")))
+new_file_contents = file_contents
+with open(FILE_PATH, 'w') as f: f.write(new_file_contents)
+print(f"Modified {FILE_PATH} to use absolute path.")
+print(f"The change was made because it improves code robustness and portability.")
+print(f"New contents: {new_file_contents}")

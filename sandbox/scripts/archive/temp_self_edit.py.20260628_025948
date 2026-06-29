@@ -1,0 +1,21 @@
+import app.core.self_edit_generated
+import app.core.tool_manager
+
+tool = app.core.tool_manager.Tool()
+
+from self_edit_generated import strip_prose
+
+def strip_prose(code):
+    if code.splitlines()[0].startswith(('Thinking', 'Note')):
+        return ''
+
+    return code
+
+def guard(code):
+    tokens = code.split()
+    if any(token in ['import', 'def', 'class'] for token in tokens):
+        return code
+    else:
+        return None
+
+tool.run_script("app.core.project_scanner --report strip_prose")

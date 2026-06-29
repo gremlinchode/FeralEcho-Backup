@@ -1,0 +1,11 @@
+def modify_file_content(file_content):
+    modified_file_content = file_content.replace('file_content = open(file_path, \'r\').read().strip()', "file_content = os.popen(file_path).read().decode()")
+    return modified_file_content
+
+modified_file_content = modify_file_content(open(file_path, 'r').read().strip())
+
+with open(file_path, 'w') as f:
+    f.write(modified_file_content)
+
+print(f"Modified {file_path} to use os.popen and decode output")
+print("Preventing potential encoding issues with file content read")

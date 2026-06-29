@@ -1,0 +1,17 @@
+import os
+from app.core.self_edit_generated import main_function
+
+with open('app/core/self_edit_generated.py', 'r') as f:
+    code = f.read()
+
+def strip_leading_prose(code):
+    lines = code.split('\n')
+    for i, line in enumerate(lines):
+        if not line.strip().startswith('#') and not line.strip().startswith('import') and not line.strip().startswith('from'):
+            break
+    return '\n'.join(lines[i:])
+
+stripped_code = strip_leading_prose(code)
+
+with open('app/core/self_edit_generated.py', 'w') as f:
+    f.write(stripped_code)

@@ -1,0 +1,29 @@
+import re
+
+from app.core.self_edit_generated import strip_prose
+
+def __init__(self):
+    self.strip_prose(strip_python_code(""))
+
+def strip_prose(input_string):
+    pattern = re.compile(r"^[^a-zA-Z0-9#().]+$")
+    if pattern.match(input_string):
+        return input_string
+    else:
+        first_token_index = 0
+        for i in range(len(input_string)):
+            if input_string[i].lower() in ["def", "class", "if", "elif", "else"]:
+                first_token_index = i
+                break
+        return input_string[:first_token_index].strip()
+
+import app.autonomous_awareness
+
+from app.core.self_edit_generated import init_world_model, get_world_model
+
+init_world_model()
+world_model = get_world_model()
+
+from app.core.temp_self_edit import analyze_python_code
+
+analyze_python_code("app/core/self_edit_generated.py")

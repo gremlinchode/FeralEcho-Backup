@@ -1,0 +1,19 @@
+import app.core.self_edit_generated; from app.core.tool_manager import ToolManager
+
+main_function = load_self_edit_module()
+
+def strip_prose(code):
+    while not re.search(r'\b(Python|import|class|def|for|if|while|try|except)\b', code, re.IGNORECASE).start():
+        code = code.split('\n', 1)[1].strip()
+    return code
+
+def prose_guard(code):
+    if strip_prose(code):
+        code = strip_prose(code)
+    modified_code = re.sub(r'^\s*\S+.*', '', code, flags=re.MULTILINE).encode('utf-8').decode().strip()
+    return modified_code
+
+main_function = lambda: (prose_guard(main_function()))
+save_code(main_function)
+
+start_emergent_scheduler()

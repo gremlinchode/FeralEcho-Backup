@@ -1,0 +1,36 @@
+import re
+from app.core.self_edit_generated import main_function
+from app.core.tool_manager import load_tool, tool_manager
+
+def modify_main_function():
+    text_processing_tool = tool_manager.load_tool("text_processing")  # Placeholder, needs actual implementation
+
+    def remove_prose(code):
+        """Removes leading natural language sentences from code."""
+        sentences = re.findall(r'^[A-Z][^.!?]*[.!?]', code, re.MULTILINE)
+        if sentences:
+            for sentence in sentences:
+                code = code[len(sentence):]
+        return code
+
+    main_function.prose_detection_enabled = True
+    main_function.remove_prose = remove_prose
+    main_function.text_processing_tool = text_processing_tool  # Assign tool if loaded
+
+    def log_changes(message):
+        print(f"Prose Detection Guard: {message}")
+
+    main_function.log_changes = log_changes
+
+def update_model():
+    self_model_updater = load_tool("self_model_updater")
+    self_model_updater.update_model()
+
+def run_tests():
+    testing_tool = load_tool("testing_framework")
+    testing_tool.run_tests()  # Placeholder for actual testing execution
+
+if __name__ == "__main__":
+    modify_main_function()
+    update_model()
+    run_tests()

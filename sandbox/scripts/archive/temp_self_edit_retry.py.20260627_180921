@@ -1,0 +1,13 @@
+# from app.core.self_edit_generated import strip_prose
+from app.core.project_scanner import parse_file, detect_functions_and_classes
+import app.core.project_scanner
+
+parsed_content = parse_file('app/core/self_edit_generated.py')
+functions_and_classes = detect_functions_and_classes(parsed_content)
+
+for func_or_class in functions_and_classes:
+    if isinstance(func_or_class, str) and (func_or_class.startswith('"""') or func_or_class.startswith("'''")):
+        stripped_code = strip_prose(func_or_class)
+        parsed_content = parsed_content.replace(func_or_class, stripped_code)
+
+app.core.project_scanner.write_to_file(parsed_content, 'app/core/self_edit_generated.py')

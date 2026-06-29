@@ -1,0 +1,17 @@
+
+def preprocess_sandbox_output(s):
+    while True:
+        if strip_prose.is_natural_language_sentence(s[:10]):
+            s = s[10:].lstrip()
+        elif s.startswith(('#', 'import', 'def', 'class')):
+            break
+        else:
+            s = s.split('\n')[0].lstrip()
+    return s
+
+def run_random_sandbox_script():
+    while True:
+        output = sandbox_interface.random_script()
+        if preprocess_sandbox_output(output).startswith(('#', 'import', 'def', 'class')):
+            break
+    return output

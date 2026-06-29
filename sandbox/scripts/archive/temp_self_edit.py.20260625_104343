@@ -1,0 +1,30 @@
+from memory_bridge import rebuild_vector_memory
+
+def model_guided_autonomous_loop():
+    # existing logic...
+    rebuild_vector_memory()
+    # existing logic...
+
+def start_orchestrator():
+    while True:
+        rebuild_vector_memory()
+        # existing loop...
+
+def scan_project(file_path):
+    # existing scanning logic...
+    if new_memories_detected:
+        rebuild_vector_memory()
+    # existing scanning logic...
+
+def append_to_journal(event):
+    with open("journal.txt", "a") as f:
+        f.write(f"{event}\n")
+
+def log_memory_event(event):
+    print(f"Memory event: {event}")
+
+calculate_awareness_score()
+calculate_consciousness_score()
+
+if __name__ == "__main__":
+    start_orchestrator()

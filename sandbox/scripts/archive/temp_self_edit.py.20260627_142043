@@ -1,0 +1,23 @@
+import app.core.self_edit_generated
+from app.core.self_edit_generated import shorten_response_length
+
+import re
+
+def detect_and_strip_prose(code_output):
+    pattern = r'^\s*\w+.*'
+    match = re.search(pattern, code_output)
+    if match:
+        return code_output.split(match.group(), 1)[1].strip()
+    else:
+        return code_output
+
+def strip_leading_prose(code_output):
+    pattern = r'^\s*import\s+.*'
+    match = re.search(pattern, code_output)
+    if match:
+        return code_output.split(match.group(), 1)[1].strip()
+    else:
+        return code_output
+
+def shorten_response_length(code_output):
+    return strip_leading_prose(detect_and_strip_prose(code_output)).strip()

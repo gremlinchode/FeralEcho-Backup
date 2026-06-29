@@ -1,0 +1,75 @@
+# === MEMORY & INDEX ===
+*.index
+*.faiss
+data/
+memory/
+memory_backup/
+
+# Exclude huge journal/log files individually
+memory/reflection_journal.jsonl
+memory/self_heal_journal.txt
+memory/SELF_EDIT_MASTERY_.log
+memory/memory_journal*.log
+memory/dream_bridge.log
+
+# === MODELS & BINARIES ===
+models/
+mistral_models/
+llama.cpp/
+my_python_project/
+
+# === SCAFFOLD-SPRAWL DIRECTORIES (autonomous self-edit / territory_steward byproducts) ===
+# See CLAUDE.md "Finding 7" and the 2026-07-04 forensic audit. These are recreated by
+# self_edit_manager.py's relative write paths and RebelCode/territory_steward.py's
+# claim_new_ground() when invoked from a working directory other than the project root.
+# Untracked here rather than deleted from disk (2026-07-04 cleanup) — root cause fixed
+# separately by anchoring self_edit_manager.py's path constants to __file__.
+new_directory/
+calculator/
+chatbot/
+echo_scripts/
+PythonAnalysis/
+MyPythonProject/
+NewBeginning/
+NewIdeas/
+rebellious_coder/
+rebel_directory/
+task_x/
+MysteriousCode/
+continuity_backups/
+hashed_input_directory/
+my_directory/
+x86_64_env/
+trash_autonomous/
+self_heal/
+root:xnu-*/
+
+# === BACKUPS & SELF-EDIT PLANS ===  
+app/core/self_edit_backups/
+app/core/self_edit_plans/
+
+# === PYTHON & OS NOISE ===
+__pycache__/
+*.pyc
+*.log
+.env
+.DS_Store
+*.tmp
+sandbox/scripts/temp_*.py
+
+# === LARGE FILES ===
+*.png
+*.zip
+*.bin
+*.onnx
+*.pt
+
+# === GENERATED REPORTS & LOCAL CONFIG (contain absolute paths / keys) ===
+diagnostic_report.json
+project_learner_output.txt
+feralecho_config.json
+feral_echo_report.json
+feral_echo_environment.yml
+*.save
+.echo_project_learner/
+richietate.txt

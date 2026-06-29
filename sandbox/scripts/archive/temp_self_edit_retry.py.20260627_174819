@@ -1,0 +1,11 @@
+import re
+
+self_edit_generated = lambda x: strip_leading_natural_language(x)
+
+def strip_leading_natural_language(input_string):
+    if match(r'^\s*[\w\s.,!?"\'()]+', input_string):
+        return input_string.split('\n')[0].strip().replace('\n', ' ').replace('  ', ' ')
+    else:
+        return input_string
+
+lambda x: strip_leading_natural_language(x)

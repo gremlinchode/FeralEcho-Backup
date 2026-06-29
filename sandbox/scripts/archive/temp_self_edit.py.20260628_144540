@@ -1,0 +1,26 @@
+# refactor_code_generation
+
+from app.core.self_edit_generated import strip_prose, load, score_code_candidate, SelfEditGenerated
+
+class SelfEditGenerated:
+    def __init__(self):
+        self.edit = load('strip_prose')
+
+    def score_code_candidate(self, candidate_code):
+        candidate_code = self.prose_guard(candidate_code)
+        return score_code_candidate(candidate_code)
+
+    def prose_guard(self, code):
+        return self.edit(code)
+
+    def refactor_code_generation(self, original_function):
+        refactored_code = "refactored_function = original_function\n"
+        while True:
+            for line in refactored_code.splitlines():
+                if len(line) > 0 and not line.startswith("#"):
+                    refactored_code_segment = line + "\n"
+                    refactored_code = self.prose_guard(refactored_code_segment)
+                    score = self.score_code_candidate(refactored_code, length_reduction_percentage=0.2)
+                    if score <= PROSE_GUARD_THRESHOLD or len(refactored_code) < 30:
+                        break
+        return refactored_code

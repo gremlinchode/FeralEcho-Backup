@@ -1,0 +1,39 @@
+import re
+from app.core.load_project_map import load_project_map
+
+def main():
+    project_map = load_project_map()
+    file_path = project_map['target_file']
+    
+    try:
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+    except Exception as e:
+        print(f"Error opening or reading file: {e}")
+        return
+
+    modified_lines = []
+    prose_removed = False
+    for line in lines:
+        if re.match(r'^\s*([^\w\s]*)(.*)', line):
+            match = re.match(r'^\s*([^\w\s]*)(.*)', line)
+            prefix = match.group(1)
+            content = match.group(2).strip()
+            if content:
+                stripped_content = strip_prose(content)
+                modified_lines.append(f"{prefix}{stripped_content}\n")
+                prose_removed = True
+            else:
+                modified_lines.append(line)
+        else:
+            modified_lines.append(line)
+
+    try:
+        with open(file_path, 'w') as f:
+            f.writelines(modified_lines)
+    except Exception as e:
+        print(f"Error writing to file: {e}")
+        return
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,13 @@
+import logging
+from echo_model_orchestrator import ollama_query
+
+logger = logging.getLogger('awareness_integration')
+logger.setLevel(logging.INFO)
+
+log_handler = logging.FileHandler('awareness_integration.log')
+log_handler.setLevel(logging.DEBUG)
+logger.addHandler(log_handler)
+
+self.register_module('ollama_query')
+
+scan_project()

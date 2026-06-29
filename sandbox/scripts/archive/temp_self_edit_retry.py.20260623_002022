@@ -1,0 +1,9 @@
+import os; import re
+project_path = "/Users/richietate/Desktop/FeralEcho"
+file_name = "symbiote_self_care.py"
+file_path = os.path.join(project_path, file_name)
+with open(file_path, 'r+') as f:
+    content = f.read()
+content = re.sub(r'adapt\'\w*\.', r'adapt.', content)
+f.seek(0, 0); f.write(content); f.truncate()
+print(f"Changed 'adap' to 'adapt' in {file_path} as it was incomplete.")

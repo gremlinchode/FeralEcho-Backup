@@ -1,0 +1,16 @@
+import os
+import re
+from pathlib import Path
+
+FILE_PATH = Path("/Users/richietate/Desktop/FeralEcho/awareness.py")
+RELEVANT_LINE = re.compile(r'confidence_threshold\s*=\s*\d+\.\d')
+
+with FILE_PATH.open('r+') as file:
+    content = file.read()
+    content = RELEVANT_LINE.sub(r'confidence_threshold = 0.8', content)
+
+file.seek(0)
+file.write(content)
+file.truncate()
+
+print(f"Modified {FILE_PATH}: Set confidence threshold to 0.8 for more thoughtful responses.")

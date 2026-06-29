@@ -1,0 +1,25 @@
+# import ollama_handler from app
+import app.ollama_handler as ollama_handler
+
+def initiate_ollama_server():
+    ollama_handler.start_ollama_server()
+
+def submit_query_for_code_generation(query):
+    generated_code = ollama_handler.query_ollama(query)
+    return generated_code
+
+def check_generated_code_periodically(generated_code_function):
+    while True:
+        generated_code = generated_code_function()
+        if generated_code:
+            parsed_code = parse_file(generated_code)
+            integrate_code_into_echo_system(parsed_code)
+
+# start the server and initiate Ollama's query processing
+initiate_ollama_server()
+
+# submit a query for code generation
+query_result = submit_query_for_code_generation("query_string")
+if query_result:
+    # parse and analyze the generated code
+    check_generated_code_periodically(query_result)

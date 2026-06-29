@@ -1,0 +1,10 @@
+# import re; os
+import pathlib
+from pathlib import Path
+
+project_dir = '/Users/richietate/Desktop/FeralEcho/'
+with open(Path.cwd() / 'Symbiote.py', 'r+') as f:
+    content = f.read()
+content = re.sub('\'Whose perspective is missing from this\'.', '\'Consider whose perspective may be missing from this.\'.', content)
+f.seek(0); f.write(content)
+print("Modified line to use proper grammar")

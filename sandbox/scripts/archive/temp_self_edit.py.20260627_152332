@@ -1,0 +1,12 @@
+import re
+
+PROSE_PATTERN = re.compile(r'^\s*\w+\.\s*(.*)$')
+
+def strip_leading_text(text):
+    if PROSE_PATTERN.match(text):
+        return text.split('\n')[1].lstrip()
+    else:
+        return text
+
+from app.core.self_edit_generated import strip_prose
+strip_prose = lambda x: strip_leading_text(strip_prose(x))

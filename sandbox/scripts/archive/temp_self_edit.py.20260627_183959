@@ -1,0 +1,9 @@
+# import app.core.self_edit_generated as self_edit
+from app.core.self_edit_generated import strip_prose
+import app.core.sandbox_interface as sandbox
+
+def fix_sandbox_failure():
+    output = sandbox.run_random_sandbox_script()
+    return strip_prose(output)
+
+sandbox.run_random_sandbox_script = fix_sandbox_failure

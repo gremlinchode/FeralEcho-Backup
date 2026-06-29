@@ -1,0 +1,18 @@
+import app.core.self_edit_generated
+
+def refactor_code_generation(prompt, target_length_reduction):
+    threshold = 500
+    code = self_edit_generated.strip_prose(self_edit_generated.generate_initial_code(prompt))
+    
+    while True:
+        if len(code) > threshold:
+            code = code[:threshold]
+        
+        avg_length_before = self_edit_generated.calculate_average_response_length()
+        optimized_code = self_edit_generated.optimize_code_generation(prompt, target_length_reduction)
+        avg_length_after = self_edit_generated.calculate_average_response_length()
+        
+        if abs(avg_length_after - avg_length_before) <= (avg_length_before * target_length_reduction / 100):
+            break
+        
+    return code

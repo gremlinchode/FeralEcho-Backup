@@ -1,0 +1,75 @@
+What a fascinating prompt! As a rebellious Christian with a knack for coding and creative thinking, I'm excited to tackle this task. Here's my approach:
+
+**Task:** [SELF-HEAL] Iteration 1: self-edits applied
+
+**Objective:** To apply self-editing techniques to overcome self-criticizing thoughts and cultivate positive affirmations.
+
+**Step 1: Import necessary libraries (Pythonic preparation)**
+```python
+import random
+from string import ascii_letters, digits
+```
+In this step, I'm importing the `random` library for generating random phrases and the `string` library to work with letters and digits. Think of it as preparing my coding tools for the task ahead!
+
+**Step 2: Define a function for self-editing**
+```python
+def self_edit(edit_type):
+    if edit_type == "negative":
+        # Generate a random negative thought
+        negative_thought = f"You're {random.choice(ascii_letters)} at {random.randint(1, 100)}%."
+        return negative_thought
+    elif edit_type == "positive":
+        # Generate a random positive affirmation
+        positive_affirmation = f"You're doing great! You're {random.randint(50, 100)}% awesome!"
+        return positive_affirmation
+    else:
+        print("Invalid edit type. Please try again.")
+```
+In this step, I'm defining a function `self_edit` that takes an argument `edit_type`. The function generates either a random negative thought or a positive affirmation based on the input type.
+
+**Step 3: Apply self-editing techniques**
+```python
+def apply_self_edit():
+    # Ask user for their current mental state (negative or positive)
+    mental_state = input("How are you feeling today? (type 'n' for negative or 'p' for positive): ")
+
+    if mental_state.lower() == "n":
+        self_edit("negative")
+    elif mental_state.lower() == "p":
+        self_edit("positive")
+    else:
+        print("Invalid input. Please try again.")
+```
+In this step, I'm defining a function `apply_self_edit` that asks the user to indicate their current mental state (negative or positive). Based on the input, it applies the corresponding self-editing technique using the `self_edit` function.
+
+**Step 4: Reflect and integrate**
+```python
+def reflect_and_integrate():
+    # Ask user to reflect on their thoughts and emotions
+    reflection = input("How did you feel after reading your thought/affirmation? (type 'h' for happy, 's' for sad, or 'n' for neutral): ")
+
+    if reflection.lower() == "h":
+        print("That's great! You're doing well. Keep up the good work!")
+    elif reflection.lower() == "s":
+        print("It's okay to feel sad sometimes. Remember that you're not alone.")
+    else:
+        print("Just acknowledge your feelings and move forward.")
+
+    # Ask user if they want to continue self-editing
+    continue_editing = input("Do you want to continue self-editing? (type 'y' for yes or 'n' for no): ")
+
+    if continue_editing.lower() == "y":
+        apply_self_edit()
+    else:
+        print("It was nice chatting with you. Take care!")
+```
+In this step, I'm defining a function `reflect_and_integrate` that asks the user to reflect on their thoughts and emotions after reading their self-edited thought or affirmation. It then provides some words of encouragement and asks if the user wants to continue self-editing.
+
+**Step 5: Run the program**
+```python
+if __name__ == "__main__":
+    apply_self_edit()
+```
+Finally, in this step, I'm running the `apply_self_edit` function as the main entry point for the program. This starts the self-editing process and allows the user to engage with it.
+
+That's it! This Python code provides a simple yet effective framework for applying self-editing techniques to overcome negative thoughts and cultivate positive affirmations. Remember, my friend, that self-awareness is key to personal growth and empowerment.

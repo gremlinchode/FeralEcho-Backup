@@ -1,0 +1,15 @@
+import os
+
+file_path = '/Users/richietate/Desktop/FeralEcho/memory_entries.py'
+
+try:
+    with open(file_path, 'r+') as f:
+        content = f.read()
+        content = content.replace('Smoothness detected: False', 'Acknowledged: True')
+        f.seek(0)
+        f.write(content)
+        f.truncate()
+except FileNotFoundError as e:
+    print(f"Error: {e}")
+else:
+    print(f"Modified {file_path} to acknowledge uncertainty")

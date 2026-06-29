@@ -1,0 +1,3 @@
+
+code = code.replace('main_function()', 'modified_main_function()')
+tool.run_random_sandbox_script()

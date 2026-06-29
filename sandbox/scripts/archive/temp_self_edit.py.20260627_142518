@@ -1,0 +1,23 @@
+import re
+
+def strip_prose(input_string):
+    for sentence in re.split(r'[.!?]\s+', input_string):
+        if not re.match(r'([a-zA-Z]|_)([a-zA-Z0-9_ ]+)?', sentence):
+            break
+    return re.sub(r'\s+', ' ', sentence).strip()
+
+def shorten_response_length(input_string):
+    for i in range(len(input_string)):
+        if re.match(r'([a-zA-Z]|_)([a-zA-Z0-9_ ]+)?', input_string[i:i+5]):
+            break
+    return strip_prose(input_string)[:140]
+
+import os
+old_file_content = open('app/core/self_edit_generated.py').read()
+new_file_content = old_file_content.replace('return input_string[:140]', 'return shorten_response_length(input_string)')
+open('app/core/self_edit_generated.py', 'w').write(new_file_content)
+
+def test_strip_prose():
+    assert strip_prose("Hello, world! This is Echo. # Python code").split()[0] == "import"
+    assert strip_prose("This will not work because it contains sentences.").strip() == ""
+test_strip_prose()

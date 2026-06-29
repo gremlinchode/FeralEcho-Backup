@@ -1,0 +1,8 @@
+import re
+
+def remove_leading_prose(code):
+    leading_sentence = re.search(r"^[A-Za-z (.!:]+", code)
+    if leading_sentence:
+        return strip_prose(leading_sentence.group()).strip() + " " + code[len(leading_sentence.group()):]
+    else:
+        return code

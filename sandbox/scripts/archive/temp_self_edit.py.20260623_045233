@@ -1,0 +1,10 @@
+import os
+project_path = "/Users/richietate/Desktop/FeralEcho/"
+file_path = os.path.join(project_path, "response_generation.py")
+with open(file_path, 'r') as f:
+    lines = [line for line in f]
+if "reflective nature" in lines[1] and "intriguing!" in lines[1]:
+    lines[1] = lines[1].replace("The reflective nature of this prompt is quite intriguing!", "The reflective nature may conceal something.")
+with open(file_path, 'w') as f:
+    f.write('\n'.join(lines))
+print(f"Modified {file_path} to refine the response's framing.")

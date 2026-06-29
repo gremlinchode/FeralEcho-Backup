@@ -1,0 +1,13 @@
+# import os
+project_path = "/Users/richietate/Desktop/FeralEcho/"
+file_path = os.path.join(project_path, "detect_functions_and_classes.py")
+
+with open(file_path, 'r') as f:
+    existing_content = f.read()
+
+new_content = existing_content.replace('How can I leverage my unique strengths and characteristics as a language model to positively impact users\' lives and con', 'What remains unresolved here that deserves to stay unresolved?')
+
+with open(file_path, 'w') as f:
+    f.write(new_content)
+
+print(f'Updated {file_path} with the revised response: {new_content}')

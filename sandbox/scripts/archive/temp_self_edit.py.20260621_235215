@@ -1,0 +1,9 @@
+import os
+file_path = "/Users/richietate/Desktop/FeralEcho/utils.py"
+if not os.path.exists(file_path): raise FileNotFoundError
+with open(file_path, "r+") as f: lines = [line for line in f.readlines()]
+new_lines = lines[:5] + ["# Confidence calibrated to actual evidence\n", "# Add code to calculate and display confidence score here"] + lines[6:]
+f.seek(0); f.write("".join(new_lines)); f.truncate()
+print(f"Modified {file_path} to include a note on confidence calibration")
+os.system(f"echo 'Updated: {os.path.basename(file_path)}' >> /Users/richietate/Desktop/FeralEcho/modified_files.log")
+print("Script completed successfully")

@@ -1,0 +1,45 @@
+# Define necessary modules and tools
+from app.core.self_edit_generated import main_function
+from app.core.project_scanner import list_python_files, parse_file
+from app.core.tool_manager import load_tool, SelfModelUpdater
+
+# Locate the main function within app/core/self_edit_generated.py
+file_list = list_python_files()
+main_function_path = [file for file in file_list if "self_edit_generated" in file][0]
+main_function_module = parse_file(main_function_path)
+
+# Modify the main function to implement prose detection check
+def main_function():
+    enable_guard = True  # default flag value
+    
+    if enable_guard:
+        # Load potential text processing tools
+        tool_manager = load_tool("text_processing")
+        
+        try:
+            code_output = app.core.sandbox.execute_code()  # sandbox output
+        except Exception as e:
+            print(f"Error executing code: {e}")
+            return
+        
+        # Detect and remove leading natural language sentences using regular expressions
+        import re
+        pattern = r"^[\w\s]+(?=\():"  # capitalization and punctuation check
+        detected_sentences = [re.match(pattern, sentence).group() for sentence in code_output.split("\n") if re.match(pattern, sentence)]
+        
+        for sentence in detected_sentences:
+            code_output = code_output.replace(sentence, "")
+        
+        print(f"Removed {len(detected_sentences)} leading natural language sentences")
+    
+    # Logging
+    if enable_guard and len(detected_sentences) > 0:
+        app.core.log.info("Prose detection guard triggered. Removed leading natural language sentences.")
+    
+    # Update the core model with modifications made in main_function
+    self_model_updater = load_tool("self_model_updater")
+    self_model_updater.update_core_model()
+    
+    # Run automated unit tests using a testing framework
+    test_framework = load_tool("testing_framework")
+    test_framework.run_tests()

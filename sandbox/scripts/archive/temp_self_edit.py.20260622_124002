@@ -1,0 +1,12 @@
+import os
+import re
+
+project_path = "/Users/richietate/Desktop/FeralEcho/"
+target_file = "feral_echo.py"
+file_path = os.path.join(project_path, target_file)
+
+with open(file_path, 'r+') as file:
+    contents = file.read()
+    corrected_contents = re.sub(r'file_path\s*=\s*', 'file_path = os.path.join(project_path, ', contents)
+    file.seek(0); file.truncate(0); file.write(corrected_contents)
+print(f"Modified {target_file} to use os.path.join() and avoid potential file path issues.")

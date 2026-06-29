@@ -1,0 +1,22 @@
+# Import necessary modules from feralEcho: from app.core.self_edit_generated import main_function
+import re
+
+code = app.core.project_scanner.list_python_files('self_edit_generated.py')[0]
+code = app.core.parse_file(code)
+functions = [func for func in code.split('\n') if 'sandbox' in func.lower() or 'output' in func.lower()]
+
+prose_detected = False
+for func in functions:
+    if 'prose' in func.lower():
+        code = re.sub(r'^[^\w\W]*', '', code).strip()
+        prose_detected = True
+
+if prose_detected:
+    print("Prose detected and removed.")
+
+validate_code(code)
+
+code += "\nif prose_detected: print(\"Prose detected and removed.\")"
+
+app.core.self_edit_manager.save_code(code, 'self_edit_generated.py')
+app.core.memory_write_validator.check_schema('self_edit_generated.py')

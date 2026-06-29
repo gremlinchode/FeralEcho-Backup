@@ -1,0 +1,25 @@
+# import necessary modules from FeralEcho
+import app.core.self_edit_generated
+import app.core.river_deliberation
+from app.core.project_scanner import parse_file
+from app.core.self_edit_manager import validate_code, save_code
+from app.core.sandbox_interface import run_random_sandbox_script
+from app.emergent_scheduler import start_emergent_scheduler
+
+def refactor_self_edit_generated():
+    main_code_gen_func = parse_file('app/core/self_edit_generated.py')['main_code_gen_func']
+    def optimized_main_code_gen():
+        return method_chaining(main_code_gen_func)
+    refactored_func = optimize_data_structure(optimized_main_code_gen)
+    validate_code(refactored_func)
+    save_code(refactored_func, 'app/core/self_edit_generated.py')
+
+def run_local_test():
+    run_random_sandbox_script('app/core/self_edit_generated.py')
+
+def start_emergent_scheduler():
+    start_emergent_scheduler()
+
+refactor_self_edit_generated()
+run_local_test()
+start_emergent_scheduler()

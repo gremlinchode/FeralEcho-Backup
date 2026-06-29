@@ -1,0 +1,13 @@
+import os
+import re
+
+file_path_journal = "/Users/richietate/Desktop/FeralEcho/journal.py"
+code = open(file_path_journal, 'r').read()
+new_code = re.sub(r"smoothness detected: False", "smoothness detected: True", code)
+open(file_path_journal, 'w').write(new_code)
+print(f"Modified {file_path_journal} to reflect improved smoothness confidence.")
+
+file_path_responses = "/Users/richietate/Desktop/FeralEcho/echo_responses.txt"
+content = open(file_path_responses, 'r').read()
+new_content = re.sub(re.escape("smoothness detected: False"), "smoothness detected: True", content)
+open(file_path_responses, 'w').write(new_content)

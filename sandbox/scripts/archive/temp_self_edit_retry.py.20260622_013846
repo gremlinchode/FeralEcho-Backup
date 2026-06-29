@@ -1,0 +1,18 @@
+import os
+
+file_path = os.path.join('/Users/richietate/Desktop/FeralEcho/', 'reflections.py')
+
+if not os.path.exists(file_path):
+    print(f"FileNotFoundError: No such file or directory: {file_path}")
+else:
+    with open(file_path, 'r') as file:
+        file_content = file.read()
+
+    modified_file_content = file_content.replace('What would the strongest counterargument to this be?', 'A potential counterargument could be that')
+
+    with open(file_path, 'w') as file:
+        file.write(modified_file_content)
+
+    print(f"Modified '{file_path}' by replacing original response with a new one.")
+    if not smoothness_detected():
+        print("Warning: This modification may affect the overall performance or behavior of the AI system.")

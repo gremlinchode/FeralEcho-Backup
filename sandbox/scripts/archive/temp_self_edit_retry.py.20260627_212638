@@ -1,0 +1,12 @@
+import os
+from app.core import strip_prose
+from app.self_edit_generated import *
+
+with open('app/core/self_edit_generated.py', 'r') as f:
+    code = f.read()
+
+import re
+if re.search(r'[^a-zA-Z0-9_]\s*\n', code):
+    code = strip_prose(code)
+
+open('app/core/self_edit_generated.py', 'w').write(code)

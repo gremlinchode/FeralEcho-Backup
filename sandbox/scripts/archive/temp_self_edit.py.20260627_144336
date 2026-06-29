@@ -1,0 +1,18 @@
+# import random
+from app.core.self_edit_generated import shorten_response_length
+
+def strip_prose(output: str) -> str:
+    if any(char.isalpha() and not char.isdigit() for char in output[:50]):
+        while True:
+            if output.find(":") == -1:
+                break
+            else:
+                output = output[output.find(":"):];
+
+    return output
+
+def shorten_response_length():
+    if any(char.isalpha() and not char.isdigit() for char in strip_prose(original_code_output)[:50]):
+        while ':' in strip_prose(original_code_output):
+            original_code_output = original_code_output[original_code_output.find(":"):]
+    return original_code_output

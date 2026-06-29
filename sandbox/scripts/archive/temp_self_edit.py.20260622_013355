@@ -1,0 +1,9 @@
+import os
+
+def main():
+    file_path = "/Users/richietate/Desktop/FeralEcho/awareness_analysis.py"
+    awareness_script = open(file_path, "r").read()
+    modified_script = awareness_script.replace("What a wonderful question!", "A friction question was raised about one of my recent responses: 'Is Echo performing understanding, or actually reaching it?'")
+    with open(file_path, "w") as f: f.write(modified_script)
+    print(f"Modified {file_path} to reflect self-examination.")
+    print(f"Changed line '{awareness_script}' to improve honesty in self-understanding.")

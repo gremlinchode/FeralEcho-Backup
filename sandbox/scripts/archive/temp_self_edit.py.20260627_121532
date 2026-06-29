@@ -1,0 +1,25 @@
+import app.core.self_edit_generated
+import app.core.tool_manager
+import re
+import datetime
+import time
+
+def modify_main_function():
+    def prose_guard(output):
+        captured_output = output.strip()
+        leading_sentences = re.findall(r'\b(?:[a-zA-Z\s]{1,}[.!?])+\s', captured_output)
+        if leading_sentences:
+            log_entry = {
+                "timestamp": datetime.datetime.now().isoformat(),
+                "original_length": len(captured_output),
+                "cleaned_length": len(re.sub(r'\b(?:[a-zA-Z\s]{1,}[.!?])+\s', '', captured_output)),
+                "regex_patterns": [r'\b(?:[a-zA-Z\s]{1,}[.!?])+\s'],
+            }
+            tool_manager.log(log_entry)
+        return re.sub(r'\b(?:[a-zA-Z\s]{1,}[.!?])+\s', '', captured_output)
+
+    original_modify_main = app.core.self_edit_generated.modify_main_function
+    def new_modify_main():
+        output = original_modify_main()
+        return prose_guard(output)
+    app.core.self_edit_generated.modify_main_function = new_modify_main

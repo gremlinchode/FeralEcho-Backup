@@ -1,0 +1,19 @@
+
+from app.core.self_edit_generated import strip_prose
+
+def shorten_code(original_function):
+    lines = original_function()
+    avg_length = 80
+    shortened_lines = []
+    for line in lines:
+        if len(line) > avg_length:
+            words = line.split()
+            while len(' '.join(words)) > avg_length:
+                words.pop(0)
+                line = ' '.join(words) + '...'
+        shortened_lines.append(line.strip())
+    return '\n'.join(shortened_lines)
+
+original_function = shorten_code(original_function)
+new_code = original_function()
+new_code = strip_prose(new_code)

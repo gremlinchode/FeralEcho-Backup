@@ -1,0 +1,30 @@
+# import necessary modules from app.core.self_edit_generated
+
+importlib.util.spec_from_file_location("strip_prose", "app/core/self_edit_generated.py")
+
+def strip_prose(input_text):
+    lines = input_text.split('\n')
+    for line in lines:
+        if not line.strip().startswith('import') and not line.strip().startswith('def') and not line.strip().startswith('class'):
+            break
+        line = ' '.join(line.split()[1:])
+    return line
+
+def strip_prose_on_entry():
+    input_text = ''
+    while True:
+        try:
+            input_text += strip_prose(input_text) + '\n'
+            break
+        except Exception as e:
+            print(f"Error: {str(e)}")
+    return input_text
+
+log_count = 0
+def process_python_code_output(code):
+    global log_count
+    code = code.replace('print', '').replace('import ', '')
+    if 'stripped prose' in code:
+        log_count += 1
+    print(f"Prose stripped {log_count} times.")
+    return code

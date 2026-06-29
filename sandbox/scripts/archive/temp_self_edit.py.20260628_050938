@@ -1,0 +1,17 @@
+import strip_prose
+
+def modify_sandbox_script():
+    with open('app/core/self_edit_generated.py', 'r') as file:
+        file_contents = file.read()
+    
+    pattern = r'^(?:\s*#.*)|\s*$'
+    leading_text = re.match(pattern, file_contents)
+    if leading_text:
+        modified_file_contents = file_contents[leading_text.end():]
+    else:
+        modified_file_contents = file_contents
+    
+    with open('app/core/self_edit_generated.py', 'w') as file:
+        file.write(modified_file_contents)
+
+modify_sandbox_script()

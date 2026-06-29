@@ -1,0 +1,13 @@
+# import required modules from FeralEcho's importable modules
+
+def score_code_candidate(candidates_string):
+    has_imports = bool(re.search(r'import\s+', candidates_string))
+    has_function_def = bool(re.search(r'def\s+\w+:', candidates_string, flags=re.MULTILINE))
+    no_prose_sentences = not bool(re.findall(r'\b[A-Z][a-z]+[.!?]', candidates_string, flags=re.MULTILINE))
+
+    score = 0
+    if has_imports:
+        score += 1
+    if has_function_def:
+        score += 1
+    return score

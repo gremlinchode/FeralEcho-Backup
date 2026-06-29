@@ -1,0 +1,12 @@
+import ValidationResult
+import re
+
+def strip_prose():
+    PROCESSED_CODE = re.sub(r'^[^#].+', '', self_edit_generated.modified_main_function)
+    return PROCESSED_CODE + '\n' + self_edit_generated.modified_main_function
+
+def modified_main_function():
+    modified_main_function(revised_main_function())
+    print(ValidationResult('Output generated correctly'))
+
+modified_main_function(revised_main_function())

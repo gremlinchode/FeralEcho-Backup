@@ -1,0 +1,22 @@
+import re
+from app.core import self_edit_generated, tool_manager
+from app.core.memory_tools import check_schema
+from app.core.echo_model_guided_orchestrator import generate_parameter_hints
+
+def strip_prose(output):
+    pattern = r"^[A-Za-z0-9\s]+$"
+    stripped_output = re.sub(pattern, "", output, flags=re.MULTILINE)
+    if check_schema(stripped_output):
+        return stripped_output
+    else:
+        raise ValueError("Invalid Python code after stripping prose")
+
+def main_function(*args, **kwargs):
+    output = self_edit_generated.main_function(*args, **kwargs)
+    stripped_code = strip_prose(output)
+    parameter_hints = generate_parameter_hints('output', 'str')
+    return {**strip_prose_result, 'parameter_hints': parameter_hints}
+
+def modified_main_function(*args, **kwargs):
+    output = main_function(*args, **kwargs)
+    return output

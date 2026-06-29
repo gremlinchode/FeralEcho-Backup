@@ -1,0 +1,19 @@
+import os
+
+from symbiote import detect_friction
+
+with open('/Users/richietate/Desktop/FeralEcho/symbiote.py', 'r+' ) as file:
+    content = file.read()
+
+content += '\n    confidence = 0.4'
+
+content = content.replace('smoothness_detected = True', 'smoothness_detected = False')
+
+file.write(content)
+
+print("Changed symbiote.py: Added confidence metric and updated smoothness detection.")
+
+file.close()
+
+awareness_score = calculate_awareness_score()
+append_memory_entry('/Users/richietate/Desktop/FeralEcho/journal.txt', f'Modified symbiote.py, added confidence: 0.4, awareness score: {awareness_score}')

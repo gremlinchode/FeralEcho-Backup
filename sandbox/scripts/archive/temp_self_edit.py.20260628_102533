@@ -1,0 +1,19 @@
+# from app.core.self_edit_generated import score_code_candidate
+
+
+def return_strip_prose(code_string):
+    pattern = re.compile(r"^(?!.*:).*$")
+    stripped_code = code_string
+    for line in code_string.splitlines():
+        if any(line.startswith(token) for token in ['import', 'def ', 'class ']):
+            stripped_code = strip_prose(stripped_code)
+            break
+    return score_code_candidate(stripped_code)
+
+
+def strip_prose(code_string):
+    pattern = re.compile(r"^[^#]+")
+    match = pattern.search(code_string)
+    if match:
+        code_string = code_string[:match.start()]
+    return code_string

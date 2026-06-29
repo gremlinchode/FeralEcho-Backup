@@ -1,0 +1,13 @@
+
+def integrate_awareness():
+    from models import start_autonomous_thread
+    file_path = 'echo_model_orchestrator.py'
+    parse_file(file_path)
+    parsed_data = detect_functions_and_classes(parse_file(file_path))
+    consciousness_score = calculate_consciousness_score(parsed_data)
+    if consciousness_score >= 0.7:
+        ollama_query_function = list_python_files()[0]
+        append_memory_entry(ollama_query_function)
+        log_memory_event('Awareness integration successful')
+        awareness_score = calculate_awareness_score()
+        print(f'Updated awareness score: {awareness_score}')

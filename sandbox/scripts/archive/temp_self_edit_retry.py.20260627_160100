@@ -1,0 +1,12 @@
+from app.core.self_edit_generated import strip_prose_to_python_token
+import re
+
+def strip_prose_to_python_token(code):
+    prose = re.match(r'^\s*\w+(?=[\(\)\[\]\{\},\.\:\;\?\!\*\/\+\-])', code).group()
+    
+    if prose:
+        sentences = [sentence.strip() for sentence in prose.split('. ') if sentence]
+        for sentence in sentences:
+            if any(token.iskeyword() or token.isspace() or (token.isalpha() and token[0].isupper()) for token in sentence):
+                return code[code.index(sentence) + len(sentence):]
+    return code

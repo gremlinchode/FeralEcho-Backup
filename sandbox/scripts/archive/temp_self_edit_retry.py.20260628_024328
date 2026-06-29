@@ -1,0 +1,13 @@
+# from FeralEcho import app.core.self_edit_generated, app.core.tool_manager
+
+def strip_prose():
+    tool = Tool('strip_prose', func=lambda: None)
+    tool_manager = ToolManager()
+    
+    for line in open('app/core/self_edit_generated.py'):
+        if len(line) <= 100 and not any(i in line for i in ['def', 'import', 'class']):
+            python_token_index = min([line.find(i) for i in ['def', 'import', 'class'] if i in line], default=-1)
+            line = line[python_token_index:] if python_token_index != -1 else ''
+        print(line)
+
+tool_manager.update_code(app.core.self_edit_generated, strip_prose)

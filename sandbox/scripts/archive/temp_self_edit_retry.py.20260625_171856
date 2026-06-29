@@ -1,0 +1,10 @@
+# echo_model_orchestrator.py
+from ollama import query
+registered_queries = ['echo', 'ollama_query']
+
+def ollama_query(request):
+    from ollama import APIClient, prompt_parser
+    api_client = APIClient()
+    parsed_request = prompt_parser.parse(request)
+    response = api_client.query(parsed_request.query_text)
+    return response

@@ -1,0 +1,9 @@
+# import os
+
+filename = '/Users/richietate/Desktop/FeralEcho/data_collection.py'
+content = [line for line in open(filename).readlines()]
+
+content.append("# Added docstring: A description of the data collection process.\n")
+with open(filename, "w") as file:
+    file.writelines(content)
+print("Updated data collection script with a docstring.")

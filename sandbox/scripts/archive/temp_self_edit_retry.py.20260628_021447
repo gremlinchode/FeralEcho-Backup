@@ -1,0 +1,14 @@
+
+def strip_prose_tightened(code): 
+    stripped_code = ""
+    in_comment = False
+    for line in code.split("\n"):
+        if line.strip().startswith("'''") or line.strip().startswith("# '''"): 
+            in_comment = not in_comment
+        elif not in_comment and line.lstrip().startswith(("#", "import", "def", "class")):
+            stripped_code += line + "\n"
+    return stripped_code.strip()
+
+strip_prose = lambda code: strip_prose_tightened(code)
+
+self.__init__.append(strip_prose)

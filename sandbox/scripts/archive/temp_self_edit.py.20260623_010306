@@ -1,0 +1,8 @@
+import os; project_path = "/Users/richietate/Desktop/FeralEcho/"; file_path = os.path.join(project_path, "detect_functions_and_classes.py"); 
+
+def modify_file_contents(): 
+    with open(file_path, 'r') as f: 
+        file_contents = f.read(); 
+    modified_file_contents = file_contents.replace("smo" + "othness", "Smoothness") + "\n| Confidence: 0.4"; 
+    with open(file_path, 'w') as f: f.write(modified_file_contents); 
+print(f"Modified the {file_path} to correct the Smoothness detection issue.")

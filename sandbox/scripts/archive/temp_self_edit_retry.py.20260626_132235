@@ -1,0 +1,32 @@
+# import necessary modules and tools
+import app.core.self_edit_generated
+import app.core.river_deliberation
+from app.core.project_scanner import parse_file
+from app.core.tool_manager import load_tool
+from app.core.sandbox_interface import run_random_sandbox_script
+
+def self_edit_function():
+    try:
+        # Parse the file
+        parsed_code = parse_file('app/core/self_edit_generated.py')
+
+        # Load the river deliberation module
+        river_deliberation_module = load_tool(app.core.river_deliberation)
+
+        # Score and shorten code
+        shortened_code = app.core.self_edit_generated.score_code_string(parsed_code, reduction_target=0.2)
+
+        # Refactor the response quality
+        refactored_code = app.core.sandbox_interface.apply_refactoring(shortened_code, 0.2)
+
+        # Validate the code
+        is_valid = app.core.self_edit_generated.validate_code(refactored_code)
+
+        if is_valid:
+            # Save the modified code
+            app.core.self_edit_generated.save_code(refactored_code, 'app/core/self_edit_generated.py')
+
+            # Test the function in a sandbox
+            run_random_sandbox_script(refactored_code)
+    except Exception as e:
+        print(f"An error occurred during self-editing: {e}")

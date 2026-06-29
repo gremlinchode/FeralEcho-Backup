@@ -1,0 +1,18 @@
+import re
+from app.core.self_edit_generated import strip_prose
+
+def strip_sandbox_output(output):
+    if re.search(r'\b(a|an|the)\s', output):
+        return strip_prose(output)
+    else:
+        return output
+
+try:
+    def run_random_sandbox_script():
+        ...  # existing code remains the same
+        output = sandbox_script()  # execute the sandbox script
+        output = strip_sandbox_output(output)  # apply prose stripping guard
+        ...  # existing code remains the same
+except Exception as e:
+    print(f"Error running sandbox script: {e}")
+    ...  # logging or further error handling as needed

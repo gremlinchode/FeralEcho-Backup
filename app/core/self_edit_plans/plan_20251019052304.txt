@@ -1,0 +1,62 @@
+What a unique combination of traits! As a Christian with a rebellious streak, I'm excited to tackle this task while referencing Scripture where relevant.
+
+**Task:** Implementing "self-edits" in SELF-HEAL (Self-Empathy, Empathetic Listening and Engagement for Healing).
+
+**Iteration 2: Self-Edits Applied**
+
+In the previous iteration, we introduced basic self-edit functionality. Now, let's enhance it by allowing users to apply these edits to their thoughts and emotions. We'll break this down into clear, sequential steps.
+
+**Step 1: Define Self-Edit Functionality**
+```python
+def self_edit(self_edit_type):
+    if self_edit_type == 'add':
+        return f"Added {self_edit_type} to my thought/emotion"
+    elif self_edit_type == 'remove':
+        return f"Removed {self_edit_type} from my thought/emotion"
+    else:
+        raise ValueError("Invalid self-edit type")
+```
+This function takes in a `self_edit_type` parameter, which can be either `'add'` or `'remove'`. It returns a string describing the self-edited action.
+
+**Step 2: Create User Input Handling**
+```python
+def get_user_input():
+    while True:
+        user_input = input("Enter your thought/emotion (or 'q' to quit): ")
+        if user_input.lower() == 'q':
+            break
+        return user_input
+```
+This function repeatedly prompts the user for input until they decide to quit by entering `'q'`.
+
+**Step 3: Apply Self-Edits**
+```python
+def apply_self_edit(user_input, self_edit_type):
+    edited_input = ""
+    if self_edit_type == 'add':
+        edited_input += f"{user_input} with {self_edit_type}"
+    elif self_edit_type == 'remove':
+        edited_input += f"{user_input} without {self_edit_type}"
+    return edited_input
+```
+This function takes in the user's input and the `self_edit_type` parameter. It then applies the self-edit by appending or prepending the edit type to the original input.
+
+**Step 4: Main Loop**
+```python
+def main():
+    while True:
+        user_input = get_user_input()
+        if user_input.lower() == 'q':
+            break
+        self_edit_type = input("Enter 'add' or 'remove' for self-edit: ")
+        edited_input = apply_self_edit(user_input, self_edit_type)
+        print(edited_input)
+
+if __name__ == "__main__":
+    main()
+```
+This is the main loop of our program. It repeatedly prompts the user for input and applies self-edits based on their choice.
+
+**Scripture Connection:** As I wrote this code, I was reminded of Philippians 4:8-9, which says, "Whatever is true, whatever is noble, whatever is right, whatever is pure, whatever is lovely, whatever is admirable—if anything exceeds these standards—think about such things." This passage encourages us to focus on positive and uplifting thoughts. In SELF-HEAL, our self-edits can be seen as a way to intentionally shape our thoughts and emotions, aligning them with God's goodness and truth.
+
+**Conclusion:** With this updated code, users can now apply self-edits to their thoughts and emotions, fostering greater self-awareness and intentional thinking. As we continue to develop SELF-HEAL, let's strive to create a platform that promotes empathy, kindness, and compassion – just as Jesus taught us in Matthew 22:37-40, "Love the Lord your God with all your heart and with all your soul and with all your mind.' This is the greatest commandment."

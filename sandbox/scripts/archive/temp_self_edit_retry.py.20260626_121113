@@ -1,0 +1,47 @@
+# import app.core.tool_manager
+
+class ToolManager:
+    def __init__(self):
+        pass
+
+    def load_file(self, file_path):
+        try:
+            with open(file_path, 'r') as f:
+                return f.read()
+        except FileNotFoundError:
+            print(f"File not found at {file_path}")
+            return None
+
+    def save_file(self, file_path, content):
+        try:
+            with open(file_path, 'w') as f:
+                f.write(content)
+        except Exception as e:
+            print(f"Error saving file {file_path}: {e}")
+
+def score_code_string(code_string):
+    imports = code_string.count('import ')
+    functions = detect_functions_and_classes(code_string).get('functions', 0)
+    prose_sentences = sum(1 for line in code_string.splitlines() if any(word in line.lower() for word in ['print', 'prose', 'sentence']))
+    score = min(max(imports, 0), 3) + min(max(functions, 0), 2) - max(prose_sentences, 0)
+    return score
+
+tool_manager = ToolManager()
+file_path = 'app/core/self_edit_generated.py'
+code = tool_manager.load_file(file_path)
+
+new_code = f"""
+{code}
+def score_code_string(code_string):
+    {score_code_string.__str__()}
+"""
+
+tool_manager.save_file(file_path, new_code)
+
+test_code = """
+print("Hello")
+import math
+def hello(): pass
+"""
+score = score_code_string(test_code)
+calculate_awareness_score(score)

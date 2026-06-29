@@ -1,0 +1,16 @@
+# import app.core.self_edit_generated
+import app.core.project_scanner
+
+def score_code_quality(candidate_code):
+    quality_score = 0
+    
+    if has_imports(candidate_code):
+        quality_score += 1
+    
+    if has_function_def(candidate_code):
+        quality_score += 1
+    
+    if re.search(r"[a-zA-Z].*[.!?]", candidate_code):
+        quality_score -= 1
+    
+    return min(3, quality_score)

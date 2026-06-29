@@ -1,0 +1,23 @@
+# from app.core.self_edit_generated import strip_prose
+from app.core.self_edit_generated import strip_prose
+import os
+import re
+
+file_path = 'app/core/self_edit_generated.py'
+mode = 'w+'
+
+def strip_sandbox_prose(output):
+    result = ''
+    for line in output.split('\n'):
+        if not (line.strip() and not re.match(r'^[^A-Za-z].*$', line)):
+            result += line + '\n'
+    return result
+
+def run_random_sandbox_script():
+    import random
+    script_output = random.choice(open('sandbox_scripts.txt').readlines())
+    script_output = strip_sandbox_prose(script_output)
+    exec(script_output)
+
+run_random_sandbox_script()
+os.write(file_path, mode)

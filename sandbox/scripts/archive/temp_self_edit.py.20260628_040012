@@ -1,0 +1,38 @@
+# from app.core.self_edit_generated import strip_prose; from app.core.tool_manager import ToolManager
+from app.core.project_scanner import ProjectScanner
+import re
+from app.core.memory_tools import MemoryTool
+from app.core.self_model_updater import SelfModelUpdater
+
+def modified_strip_prose(code):
+    log_entries = []
+    try:
+        project_scanner = ProjectScanner()
+        file_info = project_scanner.parse_file('app/core/self_edit_generated.py')
+        strip_prose_function = file_info['strip_prose']
+        
+        stripped_code = re.sub(r'^.*?(\w+).*$', r'\1', strip_prose_function, flags=re.MULTILINE)
+        stripped_code = re.sub(r'^(?:this\s+script?\s*|the\s+following\s+code.*)\s*', '', stripped_code, flags=re.MULTILINE)
+
+        for match in re.finditer(r'^.*?(\w+).*?', stripped_code):
+            original = match.group(0)
+            replacement = ''
+            log_entries.append({
+                'original': original,
+                'replacement': replacement,
+                'success': True
+            })
+        
+        memory_tool = MemoryTool()
+        memory_tool.append_memory_entry(log_entries)
+
+        tool_manager = ToolManager()
+        tool_manager.check_installed_packages()
+
+        self_model_updater = SelfModelUpdater()
+        self_model_updater.update('app/core/self_edit_generated.py')
+
+    except Exception as e:
+        print(f"Error during self-editing: {e}")
+        return code
+    return stripped_code

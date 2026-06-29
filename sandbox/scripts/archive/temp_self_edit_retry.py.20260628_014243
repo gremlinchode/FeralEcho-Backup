@@ -1,0 +1,16 @@
+import re
+from app.core.self_edit_generated import strip_prose
+
+def detect_and_strip_prose(code_output):
+    if re.search(r'^\w+\s*\(', code_output):
+        return re.sub(r'^[^\(]+\(', '', code_output)
+    else:
+        return code_output
+
+current_logic_function = None
+
+new_logic_function = lambda code_output: detect_and_strip_prose(code_output) if code_output.startswith(' ') else current_logic_function(code_output)
+
+self_edit_generated_module = strip_prose.load_tool()
+self_edit_generated_module.update_current_logic_function(new_logic_function)
+self_edit_generated_module.save()

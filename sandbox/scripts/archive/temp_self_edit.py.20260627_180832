@@ -1,0 +1,9 @@
+# from app.core.self_edit_generated import strip_prose
+import re
+
+def strip_sandbox_output(code):
+    stripped_code = re.sub(r'^\s*([A-Za-z\s]+)?(?!python).*$', '', code, flags=re.MULTILINE)
+    return stripped_code
+
+def strip_prose(code):
+    return strip_sandbox_output(code)

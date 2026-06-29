@@ -1,0 +1,22 @@
+import app.core.self_edit_generated
+
+def strip_prose(code_output):
+    if isinstance(code_output, str) and not is_python_token(code_output[0]):
+        code_output = detect_leading_prose(code_output)
+        if not is_python_token(code_output[0]):
+            raise ValueError("Modified code does not contain a valid Python token after stripping prose")
+    return super().strip_prose(code_output)
+
+def detect_leading_prose(code_output):
+    lines = code_output.split('\n')
+    for line in lines:
+        stripped_line = line.strip()
+        if not stripped_line or is_python_token(stripped_line[0]):
+            return '\n'.join(lines).lstrip()
+        else:
+            line = stripped_line.lstrip()
+    return code_output
+
+def is_python_token(token):
+  # Placeholder for actual implementation to determine if the token is a Python token
+  return bool(token)

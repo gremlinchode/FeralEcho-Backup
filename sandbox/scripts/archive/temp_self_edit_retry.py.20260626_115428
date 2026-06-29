@@ -1,0 +1,47 @@
+import app.core.self_edit_generated
+import app.core.tool_manager
+from app.core.memory_write_validator import MemoryWriteValidator
+import app.autonomous_awareness as aa
+
+def process_self_edit_generated():
+    tool_manager = app.core.tool_manager.ToolManager()
+    parser = tool_manager.get_parser()
+    analyzer = tool_manager.get_analyzer()
+
+    try:
+        code = parser.parse('app/core/self_edit_generated.py')
+        lines = code.splitlines()
+
+        detected_sentences = []
+        for i, line in enumerate(lines):
+            if line.strip().lower().startswith(('this is', 'it should', 'now we')):
+                detected_sentences.append(line.strip())
+
+        modified_lines = []
+        for i, line in enumerate(lines):
+            if i < len(detected_sentences) and line.strip().lower().startswith(tuple([s.lower() for s in detected_sentences])):
+                continue
+            else:
+                modified_lines.append(line)
+
+        modified_code = '\n'.join(modified_lines)
+
+        with open('app/core/self_edit_generated.py', 'w') as f:
+            f.write(modified_code)
+
+        validator = MemoryWriteValidator()
+        validation_result = validator.validate('app/core/self_edit_generated.py')
+
+        if validation_result:
+            aa.log('Modification event: Prose detection updated.', aa.AWARENESS_LOG_LEVEL.INFO)
+        else:
+            print("Validation failed.  Rollback needed.")
+            # Add rollback logic here if validation fails (e.g., revert the file)
+
+        aa.memory_write_validator.trigger_loop()
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+if __name__ == '__main__':
+    process_self_edit_generated()

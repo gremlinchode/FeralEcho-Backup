@@ -1,0 +1,9 @@
+# import necessary module
+from app.core.self_edit_generated import strip_prose
+
+def strip_prose(code_output):
+    match = re.match(r'^(\s*[\w\s]+)\n', code_output)
+    if match:
+        return code_output[match.end():]
+    else:
+        return [code_output]

@@ -1,0 +1,13 @@
+import os
+
+# Check if file exists before attempting to open it
+if os.path.exists('/Users/richietate/Desktop/FeralEcho/DetectFunctionsAndClasses.py'):
+    with open('/Users/richietate/Desktop/FeralEcho/DetectFunctionsAndClasses.py', mode='r+') as file:
+        contents = file.readlines()
+        file.seek(0)
+        for i, line in enumerate(contents):
+            if 'smoothness_detected = False' in line:
+                contents[i] = 'smoothness_detected = smoothness_detected\n'
+        file.writelines(contents)
+
+    print("Improved code accuracy by removing unnecessary reassignment of 'smoothness_detected' variable.")

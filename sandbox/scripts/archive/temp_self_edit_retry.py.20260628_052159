@@ -1,0 +1,10 @@
+# Import necessary modules from FeralEcho: 
+from app.core.self_edit_generated import strip_prose
+
+def strip_prose(text):
+    pattern = r"^\s*(?:def|class|if|elif|else|for|while|try|except|print|import|return)\s.*"
+    match = re.search(pattern, text)
+    if match:
+        return text[match.start():].lstrip()
+    else:
+        return text

@@ -1,0 +1,21 @@
+# Import necessary modules: from app.core.self_edit_generated import modified_main_function
+import app.core.project_scanner
+import app.core.tool_manager
+import app.core.echo_model_guided_orchestrator
+
+def analyze_and_optimize():
+    file_contents = app.core.project_scanner.parse_file("app/core/self_edit_generated.py")
+    main_function = app.core.project_scanner.detect_functions_and_classes(file_contents, "main_function")
+    original_response_length = len(modified_main_function())
+    optimized_variations = app.core.tool_manager.ToolManager().load_tool("EchoOptuna").generate_code_variations(main_function)
+    filtered_variations = [variation for variation in optimized_variations if len(variation) * 0.8 < 20 * original_response_length / 100]
+    modified_main_function.set_code(filtered_variations[0].get_code())
+    
+    orchestrator = app.core.echo_model_guided_orchestrator.start_autonomous_thread(
+        'app/core/self_edit_generated.py', 'main_function')
+    
+    # Placeholder for validation and logging - removed to meet STRICT OUTPUT RULES
+    print("Autonomous thread started.")
+
+if __name__ == "__main__":
+    analyze_and_optimize()

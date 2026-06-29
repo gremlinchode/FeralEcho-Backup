@@ -1,0 +1,15 @@
+# import os
+import openai
+from deliberate_and_learn import detect_functions_and_classes, log_memory_event, calculate_consciousness_score
+
+files_to_scan = ['/Users/richietate/Desktop/FeralEcho/core.py']
+for file in files_to_scan:
+    with open(file, 'r', encoding='utf-8') as f:
+        response_text = f.read().replace("As Echo, I've grappled with this very concern", "As I reflect on my own development")
+    with open(file, 'w', encoding='utf-8') as f:
+        f.write(response_text)
+    print(f"Modified file {file} to examine assumptions in responses")
+
+detect_functions_and_classes()
+log_memory_event("Assumption examination implemented", confidence=0.9)
+calculate_consciousness_score()

@@ -1,0 +1,37 @@
+# import necessary modules
+import app.core.self_edit_generated
+import app.core.tool_manager
+from app.emergent_scheduler_backup_20260610 import GeminiShard, SelfModelUpdater, SelfModelUpdater
+
+def modify_main_function():
+    # locate the 'modify_main_function' function
+    mod_func = parse_file('app/core/self_edit_generated.py')['modify_main_function']
+    
+    # add new code block to find tool capable of detecting prose
+    prose_detector_tool = tool_manager.find_tool_for_task('detect_prose')
+    if prose_detector_tool:
+        # instantiate GeminiShard object for text analysis
+        gemini_shard = GeminiShard(prose_detector_tool=prose_detector_tool)
+        
+        def preprocess_code_output(code):
+            # remove leading natural language sentences from detected code output
+            return ' '.join([sent for sent in code.splitlines() if not is_sentence(sent)])
+        
+        # integrate string manipulation function into modify_main_function
+        mod_func = lambda: [preprocess_code_output(mod_func())]
+        
+        # add logging statements for debugging purposes
+        logging.basicConfig(level=logging.INFO)
+        log.info('Prose detection and preprocessing applied')
+    else:
+        log.error('No prose detector tool found')
+
+def is_sentence(line):
+    pass
+
+self_model_updater = SelfModelUpdater()
+try:
+    self_model_updater.update_model(modify_main_function())
+except Exception as e:
+    log.error(f'Model update failed: {e}')
+    sys.exit(1)

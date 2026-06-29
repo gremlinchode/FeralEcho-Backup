@@ -1,0 +1,5 @@
+# from app.core.self_edit_generated import strip_prose
+original_function = __import__('app.core/self_edit_generated').self_edit_generated
+modified_function = lambda: strip_prose(original_function())
+def strip_prose_detector(function): return modified_function
+self_edit_generated = modified_function

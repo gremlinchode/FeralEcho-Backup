@@ -1,0 +1,22 @@
+# import re; from app.core.self_edit_generated import strip_prose; from app.core.tool_manager import load_tool; import app.core.project_scanner as project_scanner
+import app.core.self_model_updater as self_model_updater
+import app.core.memory_tools as memory_logger
+import app.core.config as config_checker
+
+project_scanner = project_scanner()
+strip_prose_function = project_scanner.parse_file('app/core/self_edit_generated.py', 'strip_prose')
+
+def strip_prose(input_string):
+    regex_library = load_tool('regex')
+    if re.match(r'^\W*\(\w+\s*\)', input_string) is not None:
+        input_string = re.sub(r'^\W*\(\w+\s*\)', '', input_string)
+    return input_string
+
+self_model_updater = self_model_updater()
+self_model_updater.update_codebase(strip_prose_function)
+
+memory_logger = memory_logger()
+memory_logger.log_memory_edit('strip_prose', 'modified')
+
+config_checker = config_checker()
+config_checker.verify_function_presence(strip_prose_function)

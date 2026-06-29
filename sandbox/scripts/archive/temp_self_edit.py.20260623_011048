@@ -1,0 +1,10 @@
+import os
+
+def modify_file():
+    file_path = "/Users/richietate/Desktop/FeralEcho/Echo.py"
+    with open(file_path, "r+") as file:
+        content = file.read()
+        modified_content = content.replace("papered over", "# papered over")
+        file.seek(0)
+        file.write(modified_content)
+        print(f"Modified {file_path} to acknowledge the complexity of honesty and uncertainty.")

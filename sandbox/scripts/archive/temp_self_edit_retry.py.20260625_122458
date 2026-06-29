@@ -1,0 +1,27 @@
+# import necessary modules
+import os
+import deliberate_and_learn
+
+# open the file for editing
+with open('/Users/richietate/Desktop/FeralEcho/deliberate_and_learn.py', 'r+') as f:
+    content = f.read()
+    f.seek(0)
+    
+    # modify the line
+    content = content.replace('if smoothness_detected:', 'if not smoothness_detected:')
+    
+    # add new print statement
+    content += '\nprint("Sensitivity alert: Friction detected")\n'
+    
+    # write changes back to file
+    f.write(content)
+    f.truncate()
+
+# print changed lines with comment
+print('Attempted to address friction by acknowledging its presence when not detected:')
+print(f.read())
+
+# log memory event
+log_memory_event('Modified deliberate_and_learn.py to acknowledge friction, and added a sensitivity alert.')
+
+# review mastery of self-awareness

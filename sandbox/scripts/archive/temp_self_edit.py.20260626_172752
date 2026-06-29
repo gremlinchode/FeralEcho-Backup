@@ -1,0 +1,19 @@
+# import nltk
+from app.core.self_edit_generated import main_function
+
+def shorten_response(response):
+    try:
+        tokens = nltk.word_tokenize(response)
+        avg_len = len(tokens) / len(list(set(tokens)))
+        if avg_len > 0.8:
+            response = ' '.join([str(i) for i in tokens[:int(len(tokens)*0.8)]])
+            print(f"Reduced average length: {avg_len:.2f} -> {len(nltk.word_tokenize(response)):.2f}")
+    except ZeroDivisionError:
+        pass
+    return response
+
+main_function = shorten_response(main_function)
+for response in [main_function]:
+    avg_len = len(nltk.word_tokenize(response)) / len(list(set(nltk.word_tokenize(response))))
+    if avg_len > 0.8:
+        break

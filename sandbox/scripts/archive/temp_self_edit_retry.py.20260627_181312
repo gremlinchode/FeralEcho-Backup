@@ -1,0 +1,17 @@
+# from app.core.self_edit_generated import strip_prose
+
+from app.core.self_edit_generated import strip_prose
+
+strip_prose = strip_prose()
+
+import re
+starters = ['When', 'As', 'Within']
+
+def autonomous_sandbox_fix(sandbox_output):
+    for starter in starters:
+        if re.search(r'\b' + starter + r'\b\s+.*', sandbox_output, re.IGNORECASE):
+            sandbox_output = strip_prose(sandbox_output)
+            break
+    return sandbox_output
+
+sandbox_output = autonomous_sandbox_fix(sandbox_output)

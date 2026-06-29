@@ -1,0 +1,43 @@
+# from app.core.self_edit_generated import modify_main_function
+
+modify_main_function = open('modify_main_function').read()
+
+import re
+
+code_blocks = re.split(r'(?s)(\w+\(\)|\w+ \(|\w+\))', modify_main_function)
+
+for block in code_blocks:
+    if 'prose' in block.lower():
+        leading_sentence = re.search(r'^[^(){};]*[.!?]', block).group()
+        modified_block = block.replace(leading_sentence, '')
+        modify_main_function = modify_main_function.replace(block, modified_block)
+    else:
+        pass
+
+import re
+
+def update_modify_main_function():
+    original_code = modify_main_function
+    updated_blocks = []
+    for block in code_blocks:
+        if "prose detected" in block.lower():
+            try:
+                first_python_index = next((i for i, char in enumerate(block) if char.isspace() or char.isalpha()), None)
+                if first_python_index is not None:
+                    updated_block = block[first_python_index:]
+                else:
+                    updated_block = ""
+            except StopIteration:
+                updated_block = ""
+
+            updated_blocks.append(updated_block)
+        else:
+            updated_blocks.append(block)
+
+    modified_code = ''.join(updated_blocks)
+    
+    return modified_code
+
+modified_main_function = update_modify_main_function()
+
+print(modified_main_function)

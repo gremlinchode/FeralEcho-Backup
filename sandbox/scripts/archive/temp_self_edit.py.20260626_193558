@@ -1,0 +1,12 @@
+# from app.core.self_edit_generated import main_function
+import app.core.load_project_map
+
+def updated_main_function():
+    def inner_func(*args, **kwargs):
+        return main_function(*args, **kwargs).strip().split('\n')[1:-2]
+    return inner_func
+
+app.core.self_edit_generated.main_function = updated_main_function
+
+with open('app/core/self_edit_generated.py', 'w') as f:
+    f.write(str(updated_main_function))

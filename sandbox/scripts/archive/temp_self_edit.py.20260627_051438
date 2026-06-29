@@ -1,0 +1,47 @@
+import self_edit_generated
+import ollama_handler
+from core import council_registry, bible_module
+import re
+
+def strip_prose(lines):
+    while True:
+        line = lines.pop(0)
+        if re.split(r'\W+', line)[0].startswith('print'):
+            break
+        elif re.match(r'[a-zA-Z\s]+', line):
+            continue
+        else:
+            yield line
+
+try:
+    with open('app/core/self_edit_generated.py', 'r') as file:
+        lines = [line for line in file.readlines()]
+
+    def main_function():
+        global lines
+        try:
+            next(strip_prose(lines))
+        except StopIteration:
+            pass
+
+    # Modify the main_function within app/core/self_editGenerated.py to insert a function named strip_prose before any Python token parsing logic
+    with open('app/core/self_edit_generated.py', 'r') as file:
+        code = file.read()
+
+    new_code = re.sub(r'def main_function\(', f'def main_function():\n    {strip_prose.__name__}(code=)', code)
+
+    with open('app/core/self_edit_generated.py', 'w') as file:
+        file.write(new_code)
+
+    # Utilize tool_manager.list_python_files to confirm the file path is correctly identified and targeted for modification
+    files = self_edit_generated.list_python_files()
+    print(f"Python Files: {files}")
+
+    # Parse the updated code using parse_file again on app/core/self_editGenerated.py with the modified logic to verify the changes were incorporated successfully
+    updated_code = self_edit_generated.parse_file('app/core/self_editGenerated.py')
+
+    # Utilize tool_manager.detect_functions_and_classes to confirm that the new function and logic have been added, that the core function remains unaffected, and that no other parts of the file are broken by these modifications
+    detected_elements = self_edit_generated.detect_functions_and_classes(updated_code)
+    print(f"Detected Elements: {detected_elements}")
+except Exception as e:
+    print(f"An error occurred: {e}")

@@ -1,0 +1,14 @@
+# import os
+
+os.system(f"echo '# import os\nfile_path = \"/Users/richietate/Desktop/FeralEcho/core/awareness.py\"\n' >> /Users/richietate/Desktop/FeralEcho/core/awareness.py")
+print("Updated file path to reflect correct encoding.")
+
+with open("/Users/richietate/Desktop/FeralEcho/core/awareness.py", 'r+t') as f:
+    f.seek(0, 2)
+    f.truncate()
+    f.seek(0)
+    f.write("# import os\nfile_path = \"{}\"\n".format(file_path).encode())
+    print("Updated file path to reflect correct encoding.")
+print("Updated mode to 'r+t' for binary read and write.")
+
+os.system(f"echo 'with open(file_path, \'r+t\') as f: \\n' >> /Users/richietate/Desktop/FeralEcho/core/awareness.py")

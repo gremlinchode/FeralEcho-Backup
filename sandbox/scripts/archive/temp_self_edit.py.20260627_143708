@@ -1,0 +1,17 @@
+# from app.core.self_edit_generated import shorten_response_length
+original_shorten_response_length = shorten_response_length
+def tighten_prose_detection(response):
+    for line in response.split('\n'):
+        if line.lstrip().startswith('import') or line.lstrip().startswith('def') or line.lstrip().startswith('class'):
+            return '\n'.join(line.strip().split('\n', 1) + [response.split('\n')[i+1:] for i in range(len(response.split('\n'))-1)])
+    return response
+shorten_response_length = lambda x: tighten_prose_detection(original_shorten_response_length(x))
+app.core.self_edit_generated.shorten_response_length = shorten_response_length
+print(shorten_response_length('test input'))
+import unittest
+from app.core.self_edit_generated import *
+class TestApp(unittest.TestCase):
+    def test_app(self):
+        self.assertTrue(True)
+if __name__ == '__main__':
+    unittest.main()

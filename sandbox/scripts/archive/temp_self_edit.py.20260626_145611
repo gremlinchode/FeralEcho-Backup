@@ -1,0 +1,16 @@
+from app.core.self_edit_generated import *
+
+def score_code_quality(candidate_code):
+    quality_score = 0
+
+    if detect_functions_and_classes() or list_python_files() or parse_file():
+        quality_score += 1
+
+    if re.search(r"def\s+[\w]+", candidate_code):
+        quality_score += 2
+
+    sentence_count = len(re.split(r"[.!?]", candidate_code))
+    if sentence_count == 0:
+        quality_score += 3
+
+    return quality_score

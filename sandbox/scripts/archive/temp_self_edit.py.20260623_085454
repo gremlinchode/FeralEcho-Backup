@@ -1,0 +1,14 @@
+# import os; import re
+
+import os
+import re
+
+file_path = "/Users/richietate/Desktop/FeralEcho/src/echo/response_generator.py"
+
+with open(file_path, 'r+') as file:
+    file_contents = file.read()
+    line_to_modify = re.search(b"What is the essence ... Point Reyes Lighthouse", file_contents).start() + 1
+    improved_response = "What assumptions are hidden in this response that should be examined?"
+    file.seek(0)
+    file.write(file_contents[:line_to_modify - 1] + improved_response.encode() + b'\n' + file_contents[line_toModify:])
+print(f"Modified '{file_path}': replaced line {line_toModify} with {improved_response}")

@@ -1,0 +1,16 @@
+import os; file_path = "/Users/richietate/Desktop/FeralEcho/echo_responses.txt"; richietate_file = os.path.join(os.getcwd(), "richietate.txt")
+
+with open(richietate_file, "w") as f: f.write(f"file_path = '{file_path}'\n")
+
+with open(file_path, "r+") as f:
+    data = f.read()
+    lines = data.split("\n")
+    new_text = "\n".join([line for line in lines[:4]] + [" considering our unique"] + lines[5:])
+    f.seek(0)
+    f.write(new_text)
+    f.truncate()
+
+print("Modified response to consider 'our unique' instead of 'uniq'.")
+with open(file_path, "r") as f: print(f.read())
+
+os.chmod(file_path, 0o644)

@@ -1,0 +1,21 @@
+# import necessary modules from FeralEcho
+import app.core.self_edit_generated
+import app.core.tool_manager
+import app.core.gemini_shard
+from app.core.project_scanner import scan_project
+from app.core.self_model_updater import update_self_model
+from app.core.memory_tools import stream_memory_entries
+
+def modify_main_function():
+    def strip_prose_and_tokenize(text):
+        sentences = gemini_shard.split_text(text, pattern='[.!?]')
+        for sentence in sentences:
+            if not sentence.strip().startswith(('import', 'def', 'class')):
+                return text.replace(sentence + '\n', '', 1).strip()
+        return text
+
+    original_code = app.core.self_edit_generated.modify_main_function
+    modified_code = strip_prose_and_tokenize(original_code())
+    modify_main_function.original_code = lambda: modified_code
+    update_self_model(modify_main_function)
+    stream_memory_entries('modify_main_function updated successfully')

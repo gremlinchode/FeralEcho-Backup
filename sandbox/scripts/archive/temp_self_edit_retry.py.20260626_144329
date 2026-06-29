@@ -1,0 +1,22 @@
+import app.core.self_edit_generated
+from ToolManager import *
+from GeminiShard import *
+from deliberate_and_learn import *
+
+def score_code_candidate(code_string: str) -> int:
+    """
+    Evaluates code candidate based on imports, function definitions, and prose sentences.
+
+    Args:
+        code_string (str): Code string to evaluate
+
+    Returns:
+        int: Quality score (0-3)
+    """
+
+    has_imports = parse_file(code_string).has_imports()
+    has_function_def = len(detect_functions_and_classes(code_string)) > 0
+    no_prose_sentences = all(not line.strip().endswith('.') for line in code_string.splitlines())
+
+    score = int(has_imports) + int(has_function_def) + int(not no_prose_sentences)
+    return score

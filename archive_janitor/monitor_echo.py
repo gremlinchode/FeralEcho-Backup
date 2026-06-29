@@ -1,0 +1,56 @@
+import time
+from collections import deque
+from app.core.dmn_guardian import RealWorldAdaptiveRegulator
+
+# ------------------------
+# Initialize regulator
+# ------------------------
+regulator = RealWorldAdaptiveRegulator()  # Replace with running instance if possible
+
+# Keep last 10 cycles for quick reference
+history_window = deque(maxlen=10)
+
+# Energy warning threshold
+LOW_ENERGY_THRESHOLD = 50.0
+
+print("[Monitor] Starting Echo stabilization monitor...\n")
+
+try:
+    while True:
+        # Gather current data
+        current_eff = regulator.measure_efficiency()
+        current_target = regulator.target_dimension
+        current_energy = regulator.energy_budget
+        zones = regulator.experimental_zones
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Store in history
+        history_window.append({
+            "time": timestamp,
+            "efficiency": current_eff,
+            "target_dimension": current_target,
+            "energy": current_energy,
+            "zones": zones.copy()
+        })
+
+        # Display current heartbeat
+        print(f"[Heartbeat] {timestamp}")
+        print(f"  Target Dim: {current_target:.4f}")
+        print(f"  Measured Eff: {current_eff:.3f}")
+        print(f"  Energy: {current_energy:.2f}")
+        print(f"  Experimental Zones: {zones}")
+        if current_energy < LOW_ENERGY_THRESHOLD:
+            print("  ⚠️ Warning: Energy below threshold!")
+        print("-" * 60)
+
+        # Optionally, print last few cycles for trend
+        print("Last 3 cycles:")
+        for entry in list(history_window)[-3:]:
+            print(f"  {entry['time']} | Target {entry['target_dimension']:.4f} | Eff {entry['efficiency']:.3f} | Energy {entry['energy']:.2f}")
+
+        print("\n")
+        time.sleep(60)  # Adjust interval as needed
+
+except KeyboardInterrupt:
+    print("\n[Monitor] Stopped by user.")
+

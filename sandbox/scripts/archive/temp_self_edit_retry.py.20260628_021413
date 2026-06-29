@@ -1,0 +1,10 @@
+import strip_prose
+
+def modify_sandbox_script(file_path):
+    with open(file_path, 'r') as f:
+        content = f.read()
+    
+    if re.search(r'^[a-zA-Z .]+', content.splitlines()[0]):
+        clean_content = strip_prose.strip_prose(content)
+        with open(file_path, 'w') as f:
+            f.write(clean_content)

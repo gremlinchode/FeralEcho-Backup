@@ -1,0 +1,18 @@
+# import def class
+import app.core.self_edit_generated
+import statistics
+from statistics import mean
+
+strip_prose = app.core.self_edit_generated.strip_prose
+
+avg_response_length = mean([len(strip_prose(i)) for i in range(10)])
+
+reduction_target = avg_response_length * 0.2
+
+refactored_strip_prose = lambda x: [i for i in strip_prose(x) if len(i) < reduction_target]
+
+new_avg_response_length = mean([len(refactored_strip_prose(i)) for i in range(10)])
+
+assert new_avg_response_length <= avg_response_length * (1 - reduction_target)
+
+refactored_strip_prose

@@ -1,0 +1,22 @@
+# from app.core.self_edit_generated import strip_prose
+
+def shorten_code(original_function):
+    def processed_lines():
+        for line in original_function():
+            if len(line) > 80:
+                words = re.split(r'\W+', line)
+                current_line = ''
+                for word in words:
+                    if len(current_line) + len(word) <= 60:
+                        current_line += word + ' '
+                    else:
+                        yield current_line.strip()
+                        current_line = word + ' '
+                yield current_line.strip()
+            else:
+                yield line
+    return processed_lines
+
+original_function = shorten_code(original_function)
+new_code = original_function()
+new_code = strip_prose(new_code)

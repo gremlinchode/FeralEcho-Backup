@@ -1,0 +1,11 @@
+# import strip_prose
+from app.core.self_edit_generated import strip_prose
+self_edit_generated = __import__('app.core.self_edit_generated').strip_prose
+
+def strip_leading_natural_language(x):
+    pattern = r'^([a-zA-Z .,!?]+)\s*'
+    if re.match(pattern, x):
+        return re.sub(r'^.*\n\s*', '', x)
+    else:
+        return x
+self_edit_generated = lambda x: strip_leading_natural_language(x)

@@ -1,0 +1,23 @@
+import app.core.memory_tools
+
+def strip_prose(prose_str):
+    import re
+    
+    sentence_pattern = r'^\s*[^#].+?[.!?]\s*'
+    
+    matches = re.findall(sentence_pattern, prose_str, re.MULTILINE)
+    
+    if matches:
+        leading_prose = matches[0]
+        
+        potential_boundary_index = 0
+        for i in range(len(prose_str)):
+            if len(prose_str[:i+1].lstrip()) == 0:
+                potential_boundary_index = i
+                break
+        
+        return prose_str[potential_boundary_index:].lstrip()
+    
+    return prose_str
+
+app.core.memory_tools.log_change('strip_prose', 'updated')

@@ -1,0 +1,25 @@
+# import modules from app.core.self_edit_generated
+from app.core.self_edit_generated import modify_main_function
+
+def shorten_reasoning_code(original_main_function):
+    original_code = str(original_main_function)
+    lines = original_code.split('\n')
+
+    for i, line in enumerate(lines):
+        if 'detect_functions_and_classes' in line:
+            lines[i] = f"reasoned_output = detect_functions_and_classes()  # {line}"
+            break
+
+    for i, line in enumerate(lines):
+        while '# Thinking blocks' in line or 'print' in line:
+            lines.pop(i)
+
+    new_code = '\n'.join(lines).strip()
+
+    return new_code
+
+def modify_main_function(original_main_function):
+    original_main_function = shorten_reasoning_code(original_main_function)
+    return original_main_function
+
+modify_main_function(__import__('original_main_function').original_main_function.__code__, shorten_reasoning_code)

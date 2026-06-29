@@ -1,0 +1,32 @@
+import re
+from app.core.self_edit_generated import strip_prose
+
+def detect_and_strip_prose(text):
+    prose_pattern = r'^[^(\n\s|{].*?(?=\n)|^[^\n]*(?=.*{)'
+    matches = re.findall(prose_pattern, text)
+    for match in matches:
+        text = text.replace(match, '')
+    return text.strip()
+
+def refine_sandbox_failure_detection(text):
+    if strip_prose(text) == '':
+        return 'Invalid code'
+    else:
+        return text
+
+import string
+from app.core.self_edit_generated import strip_prose
+
+def modify_strip_prose(code):
+    prose_pattern = r'^[^\n]*\b(def|class|import)\b.*?(?=\n)|^[^\n]*(?=.*{)'
+    match = re.search(prose_pattern, code)
+    
+    if match:
+        start_index = match.start()
+        cleaned_code = code[start_index:].strip()
+        return cleaned_code
+    else:
+        return code
+
+def strip_prose(code):
+    return modify_strip_prose(code)

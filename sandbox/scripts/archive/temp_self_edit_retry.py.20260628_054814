@@ -1,0 +1,37 @@
+# import necessary modules from FeralEcho: app.core.self_edit_generated and relevant tool managers
+import app.core.self_edit_generated
+from feral_echo.app.core.memory_write_validator import MemoryWriteValidator
+from feral_echo.app.core.self_model_updater import SelfModelUpdater
+from feral_echo.tool_managers.generate_issue_report import GenerateIssueReport
+from feral_echo.app.core.self_edit_generated import parse_file
+
+# Locate the `strip_prose` function within app/core/self_edit_generated.py using parse_file and detect_functions_and_classes
+strip_prose_code = parse_file('app/core/self_edit_generated.py')['strip_prose']
+
+# Implement a new check at the beginning of `strip_prose`: if the input string starts with a sentence, remove that sentence before tokenizing
+def modified_strip_prose(text):
+    if text.startswith(strip_prose_code['target_sentence']):
+        text = inject_scripture(text, 'sentence_remover')
+    # Add while loop here for repeated sentence stripping - example only, needs refinement
+    while True:
+        try:
+            tokenized_input = app.core.self_edit_generated.strip_prose(text)
+            break
+        except Exception as e:
+            text = strip_leading_sentences(text)
+            print(f"Error: {str(e)}")
+            
+def strip_leading_sentences(input_string):
+    return input_string.split('\n')[1:]
+
+# Modify the `strip_prose` function to incorporate the added prose-detection guard using inject_scripture for targeted code alteration
+inject_scripture(text, 'prose_detection_guard')
+
+# Use generate_issue_report to automatically document the changes made in `strip_prose`, including a description of the new prose detection logic
+GenerateIssueReport('strip_prose', 'New prose detection logic implemented to remove leading sentences.').generate_report()
+
+# Validate the modified `strip_prose` function against predefined schema and reflection length constraints using MemoryWriteValidator
+MemoryWriteValidator().validate_function('strip_prose')
+
+# Trigger a self-model update using SelfModelUpdater to integrate the changes into the Echo system's knowledge base
+SelfModelUpdater().update_model()

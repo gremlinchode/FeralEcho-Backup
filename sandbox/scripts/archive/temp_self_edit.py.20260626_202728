@@ -1,0 +1,37 @@
+# import necessary modules from feralEcho
+from app.core.memory_tools import get_relevant_memories
+from app.core.bible_injection import normalize_book, inject_scripture
+
+import project_scanner
+
+def main_function():
+    try:
+        # 1. Open app/core/self_edit_generated.py for modification.
+        with open("app/core/self_edit_generated.py", "r") as file:
+            original_content = file.read()
+        
+        # 2. Import necessary modules from feralEcho, specifically Memory_helpers and bible_injection tools
+        from app.core.memory_tools import get_relevant_memories
+        from app.core.bible_injection import normalize_book
+        
+        # 3. Use project_scanner's detect_functions_and_classes tool to scan the modified file for functions and classes.
+        functions_and_classes = project_scanner.detect_functions_and_classes("app/core/self_edit_generated.py")
+        
+        # 4. Retrieve relevant memories related to reasoning task performance using Memory_helpers' get_relevant_memories function.
+        relevant_memories = get_relevant_memories()
+        
+        # 5. Strip any leading natural-language sentence before the first valid Python token in the code output by employing normalize_book from Bible_injection.
+        cleaned_content = normalize_book(original_content)
+        
+        # 6. Inject the detected prose into a designated memory container, ensuring its removal during autonomous self-editing by applying inject_scripture from Bible_injection.
+        scripture_container = inject_scripture(cleaned_content, "The Word is Life.")
+        
+        # 7. Replace the original main_function with the newly processed and sanitized code in the modified file.
+        with open("app/core/self_edit_generated.py", "w") as file:
+            file.write(scripture_container)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main_function()

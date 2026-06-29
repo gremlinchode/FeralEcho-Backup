@@ -1,0 +1,46 @@
+# Import necessary modules from FeralEcho
+import app.core.self_edit_generated
+import app.core.tool_manager
+
+def prose_guard(code):
+    # Regular expression to identify and remove leading natural language sentences.
+    pattern = r"^\s*(?:\s*.*?)[}\]]*\n\s*$"
+    match = re.search(pattern, code)
+
+    if match:
+        code = code[match.end():]
+
+    # Check to ensure that the resulting code contains only Python tokens after the pruning operation.
+    if not re.match(r"^[a-zA-Z0-9_\s:]*$", code):
+        raise ValueError("Sanitized code contains non-Python tokens.")
+
+    return code
+
+# Modify the main execution logic in 'app.core/self_edit_generated.py' to invoke 'prose_guard'
+@app.command()
+def modify_code():
+    original_code = get_most_recent_generated_code()
+    sanitized_code = prose_guard(original_code)
+    execute_code(sanitized_code)
+    log_event("Prose guard applied successfully", "info")
+
+# Implement schema validation for modified Python code using 'app.core/memory_write_validator', ensuring integrity after the prose guard modification.
+from app.core.memory_write_validator import validate_python_code
+
+if __name__ == '__main__':
+    # Example Usage:
+    raw_code = """
+    print("Hello, world!")
+    x = 10
+    y = 20
+    result = x + y
+    """
+
+    sanitized_code = prose_guard(raw_code)
+    print("Sanitized Code:", sanitized_code)
+
+    try:
+        validate_python_code(sanitized_code)
+        print("Schema validation successful.")
+    except Exception as e:
+        print("Schema validation failed:", str(e))

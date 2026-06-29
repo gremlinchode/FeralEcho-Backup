@@ -1,0 +1,21 @@
+# import necessary modules
+from app.emergent_scheduler_backup_20260610 import *
+from app.core.self_edit_generated import strip_prose
+
+# open file in read mode
+with open("app/core/self_edit_generated.py", "r") as file:
+    file_contents = file.read()
+
+# strip prose from the beginning of the file contents
+import re
+leading_natural_language = re.match(r'^[A-Z!"#$%&\'()*+,-./:;<=>?@[\\\]^_`{|}~ ]+', file_contents, re.MULTILINE)
+if leading_natural_language:
+    file_contents = strip_prose(file_contents, leading_natural_language.group(0).strip())
+else:
+    pass
+
+# open file in write mode and overwrite the original file contents
+with open("app/core/self_edit_generated.py", "w") as file:
+    file.write(file_contents)
+
+# close files

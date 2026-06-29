@@ -1,0 +1,18 @@
+# import necessary modules
+import app.core.self_edit_generated
+import re
+from tool_manager import *
+
+def main_function():
+    def prose_guard(input_string):
+        pattern = re.compile(r'^[^(\s]+[:]\s*')
+        match = pattern.search(input_string)
+        if match:
+            input_string = input_string[:match.start()]
+            while not re.match('^[a-zA-Z]', input_string[-1]):
+                input_string = input_string[:-1]
+        return input_string
+
+    generated_code = app.core.self_edit_generated.generate_code()
+    modified_code = prose_guard(generated_code)
+    print(modified_code)

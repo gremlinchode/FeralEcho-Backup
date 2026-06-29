@@ -1,0 +1,16 @@
+import strip_prose
+
+def strip_code_output(code):
+    return strip_prose.strip_code(code)
+
+app.core.self_edit_generated.strip_prose = lambda code: strip_code_output(code.replace(r'^\w*\s+\n', '', flags=re.MULTILINE))
+
+import app.core.project_scanner
+files = app.core.project_scanner.scan_project()
+
+for file in files:
+    with open(file, 'r') as f:
+        code = f.read()
+        modified_code = strip_code_output(code)
+        with open(file, 'w') as f:
+            f.write(modified_code)

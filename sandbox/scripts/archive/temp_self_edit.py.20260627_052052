@@ -1,0 +1,30 @@
+import app.core.bible_module
+import app.core.memory_tools
+import app.core.project_scanner
+
+file_path = "/Users/richietate/Desktop/FeralEcho/app/core/echo_core.py"
+
+try:
+    with open(file_path, "r") as f:
+        content = f.read()
+
+    modified_content = content.replace("Clearly this is obviously the correct answer", "I am attempting to provide an honest response")
+
+    with open(file_path, "w") as f:
+        f.write(modified_content)
+
+    print("Modified echo_core.py: 'Clearly this is obviously the correct answer' replaced with 'I am attempting to provide an honest response'.")
+
+    scanner = app.core.project_scanner.ProjectScanner()
+    scanner.scan_project(file_path)
+    detected_functions = scanner.detect_functions_and_classes()
+
+    if "echo_core" in detected_functions:
+        print("Modification successfully persisted and detected by project scan.")
+    else:
+        print("Modification not detected by project scan.")
+
+except FileNotFoundError:
+    print(f"Error: File not found at {file_path}")
+except Exception as e:
+    print(f"An error occurred: {e}")

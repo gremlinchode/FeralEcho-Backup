@@ -1,0 +1,13 @@
+# refactor_code_generation
+
+def refactor_code_generation(self, original_function):
+    refactored_code = "refactored_function = original_function\n"
+    while True:
+        for line in refactored_code.splitlines():
+            if len(line) > 0 and not line.startswith("#"):
+                refactored_code_segment = line + "\n"
+                refactored_code = strip_sandbox_output(refactored_code_segment)
+                score = score_code_candidate(refactored_code, length_reduction_percentage=0.2)
+                if score <= PROSE_GUARD_THRESHOLD or len(refactored_code) < 30:
+                    break
+        return refactored_code

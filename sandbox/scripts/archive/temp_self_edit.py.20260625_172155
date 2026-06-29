@@ -1,0 +1,4 @@
+# import def class 
+
+def self_edit_stub(): 
+    print('Hello from self-edit stub')

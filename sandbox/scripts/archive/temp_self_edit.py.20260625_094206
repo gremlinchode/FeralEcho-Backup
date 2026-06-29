@@ -1,0 +1,22 @@
+# import os
+import os
+
+file_path = '/Users/richietate/Desktop/FeralEcho/model_guided_autonomous_loop.py'
+with open(file_path, 'r') as file:
+    original_data = file.read()
+
+modified_data = original_data.replace('model_guided_autonomous_loop.py', 'echo_self_examination.py')
+with open(file_path, 'w') as file:
+    file.write(modified_data)
+
+print(f'Updated {file_path} to reflect the self-examination task.')
+
+file_path2 = '/Users/richietate/Desktop/FeralEcho/model_guided_autonomous_loop.py'
+with open(file_path2, 'r') as file:
+    modified_data = file.read().replace('echo_self_examination.py', 'model_guided_autonomous_loop.py')
+with open(file_path2, 'w') as file:
+    file.write(modified_data)
+
+print(f'Reverted {file_path2} to its original name.')
+
+print(f'File modifications completed.')

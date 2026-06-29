@@ -1,0 +1,27 @@
+import importlib.util
+import re
+
+spec = importlib.util.spec_from_file_location("self_edit_generated", "app/core/self_edit_generated.py")
+mod = importlib.util.module_from_spec(spec)
+
+from mod import modify_main_function
+
+def prose_detection(text):
+    pattern = r"^[A-Za-z]+\s+"
+    match = re.search(pattern, text)
+    if match:
+        return text[match.end():]
+    else:
+        return text
+
+def main():
+    try:
+        output = modify_main_function()
+        if isinstance(output, str) and prose_detection(output):
+            output = prose_detection(output).strip()
+            print(f"Prose detected: {output}")
+    except Exception as e:
+        print(f"Error: {e}")
+
+if __name__ == "__main__":
+    main()

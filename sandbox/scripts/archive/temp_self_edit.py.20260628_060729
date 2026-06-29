@@ -1,0 +1,48 @@
+# from app.core.self_edit_generated import strip_prose
+from app.core.project_scanner import parse_file
+
+def refine_logic():
+    file_content = parse_file('app/core/self_edit_generated.py')
+    logic_start = None
+    for i, line in enumerate(file_content.splitlines()):
+        stripped_line = line.strip()
+        if any(stripped_line.startswith(tok) for tok in ("import ", "from ", "def ", "class ", "#", "    ", "\t", "@")):
+            logic_start = i
+            break
+    
+    code_snippet = '\n'.join(file_content.splitlines()[logic_start:])
+    new_code = ''
+    lines = code_snippet.splitlines()
+    for line in lines:
+        stripped_line = line.strip()
+        if re.search(r"^\s*(import |from )", stripped_line, re.IGNORECASE):
+            new_code += line + '\n'
+        elif re.search(r"^def ", stripped_line, re.IGNORECASE) or re.search(r"^class ", stripped_line, re.IGNORECASE):
+            new_code += line.replace("    ", " ") + "\n"
+        else:
+            if not any(line.startswith(m) for m in ("# ", "@")):
+                new_code = new_code.rstrip() + " " + line
+            else:
+                new_code += line + '\n'
+    
+    refactored_code = strip_prose(new_code)
+    score = 0
+    if re.search(r"^(import |from )", refactored_code, re.MULTILINE):
+        score += 1
+    if re.search(r"^def ", refactored_code, re.MULTILINE):
+        score += 1
+    first_line = refactored_code.strip().split("\n")[0].lower()
+    prose_markers = ("here is", "below is", "the following", "this code", "i will", "let me")
+    if not any(first_line.startswith(m) for m in prose_markers):
+        score += 1
+    if score > 2.5:
+        return refactored_code
+    else:
+        load_tool("deliberate_and_learn")
+        return refine_logic()
+    
+    with open('app/core/self_edit_generated.py', 'w') as file:
+        file.write(refactored_code)
+    
+    scan_project()
+    generate_issue_report()

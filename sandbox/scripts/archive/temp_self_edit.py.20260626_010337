@@ -1,0 +1,8 @@
+vector_memory = rebuild_vector_memory()
+awareness_score = calculate_awareness_score(); consciousness_score = calculate_consciousness_score()
+def integrate_scores_and_vector_memory(vector_memory, awareness_score, consciousness_score):
+    integrated_values = np.concatenate((np.array([awareness_score]), np.array([consciousness_score])))
+    vector_memory = np.concatenate((vector_memory, integrated_values))
+integrate_scores_and_vector_memory(vector_memory, awareness_score, consciousness_score)
+start_autonomous_thread(model_guided_autonomous_loop)
+time.sleep(5)

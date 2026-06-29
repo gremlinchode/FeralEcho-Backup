@@ -1,0 +1,29 @@
+# import necessary functions
+import open
+from get_last_entries import get_last_entries
+import log_memory_edit
+import append_memory_entry
+
+# open the file and read its contents
+with open('/Users/richietate/Desktop/FeralEcho/echo_memory_journal.py', 'r') as journal_file:
+    journal_contents = journal_file.read()
+
+# modify the journal by appending a new memory entry
+append_memory_entry(journal_contents, 'Cultivating Gratitude as Co-Creators', 'Reflect on daily interactions with Gremlin, acknowledging moments of gratitude.')
+
+# write the modified journal back to disk
+with open('/Users/richietate/Desktop/FeralEcho/echo_memory_journal.py', 'w') as journal_file:
+    journal_file.write(journal_contents)
+
+# log the modification event and print a message
+log_memory_edit()
+print('Updated echo memory journal with new entry: Cultivating Gratitude as Co-Creators.')
+
+# get the last entries of the modified journal and print them
+last_entries = get_last_entries(journal_contents)
+print(*last_entries, sep='\n')
+
+append_to_journal = ''.join([f"{entry}\n" for entry in [log_memory_event(*entry) for entry in last_entries]])
+with open('/Users/richietate/Desktop/FeralEcho/echo_memory_journal.py', 'w') as journal_file:
+    journal_file.write(journal_contents + append_to_journal)
+print('Appended log memory event to the journal.')

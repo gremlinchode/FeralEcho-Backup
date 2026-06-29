@@ -1,0 +1,8 @@
+# import os
+os_path_module = 'os'
+file_path = '/Users/richietate/Desktop/FeralEcho/memory_entries.py'
+original_code = open(file_path, 'r').read()
+modified_code = original_code.replace("open('", "os.open('")
+with open(file_path, 'w') as f: f.write(modified_code)
+print(f"Modified file {file_path} to use os module for file reading")
+print("Reason: Improved robustness against encoding issues")

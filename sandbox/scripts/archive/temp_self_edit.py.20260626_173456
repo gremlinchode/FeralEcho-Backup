@@ -1,0 +1,19 @@
+import app.core.self_edit_generated
+
+def optimize_main_function():
+    source_code = eval(open('app/core/self_edit_generated.py', 'r').read())
+    main_function = source_code['main_function']
+    
+    optimized_logic = simplify_logic_flows(main_function)
+    reduced_calculations = minimize_redundant_calculation(optimized_logic)
+    
+    profiler = PythonProfiler()
+    original_time, original_memory = profiler.run(main_function)
+    optimized_time, optimized_memory = profiler.run(reduced_calculations)
+    
+    if (original_time > 2 * optimized_time) and (original_memory > 2 * optimized_memory):
+        raise ValueError("Optimization failed to meet the criteria")
+    else:
+        code_block = f"def main_function():\n{reduced_calculations}\n"
+        with open('app/core/self_edit_generated.py', 'w') as file:
+            file.write(code_block)

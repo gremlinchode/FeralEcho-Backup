@@ -1,0 +1,20 @@
+# import app.core.self_edit_generated
+# import app.core.river_deliberation
+# import app.core.tool_manager
+# import app.core.gemini_shard
+# import app.core.modelfile_proposer
+# import app.core.project_scanner
+# import app.core.score_response_quality
+
+scanner = project_scanner.parse_file('app/core/self_edit_generated.py')
+main_function = scanner.find_function('main_function')
+
+lambda_code = lambda: gemini_shard.generate_code(main_function)(reduce(lambda x, y: x + y, [' ' for _ in range(int(len(str(main_function)) * 0.8))]))
+
+deliberate_and_learn = river_deliberation.deliberate_and_learn(lambda_code)
+tools = tool_manager.load_tools()
+tool_manager.execute_code(deliberate_and_learn, tools)
+
+output = gemini_shard.generate_code(main_function)
+quality_metrics = score_response_quality.validate_output(output)
+save_code('app/core/self_edit_generated.py', output)

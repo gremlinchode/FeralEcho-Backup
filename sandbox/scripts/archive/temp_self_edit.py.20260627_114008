@@ -1,0 +1,32 @@
+# Import necessary modules from FeralEcho: app.core.self_edit_generated and relevant tools like app.core.tool_manager for function access.
+import app.core.self_edit_generated
+from app.core.gemini_shard import query_ollama
+import app.core.bible_injection
+
+def modify_main_function():
+    # Import necessary modules
+    import app.core.gemini_shard as gemini_shard
+    from app.core.tool_manager import get_tool
+    import app.core.bible_injection as bible_injection
+
+    def prose_guard(output_string):
+        try:
+            lines = output_string.splitlines()
+            for i, line in enumerate(lines):
+                if line.startswith(" "):
+                    return line[len(line) - 1:]  # Extract from the last character to avoid errors if output is empty
+                elif line.strip():  # Check if line isn't just whitespace
+                    break
+            return output_string
+        except Exception as e:
+            print(f"Error in prose_guard: {e}")
+            return output_string
+
+    def modify_function_output(output):
+        if not output.startswith(" "):
+            return output
+        python_token = query_ollama(output)
+        return output[:python_token]
+
+    # Call prose_guard on the output of any code execution performed by gemini shard or tools within the system
+    modified_output = modify_function_output(app.core.self_edit_generated.modify_main_function())

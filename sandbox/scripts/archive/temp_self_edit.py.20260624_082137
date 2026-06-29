@@ -1,0 +1,11 @@
+import os
+
+def modify_file():
+    with open('/Users/richietate/Desktop/FeralEcho/feral_echo.py', 'r+') as f:
+        content = f.read()
+        self_examination_note = "Honest self-examination triggered by friction question." + '\n'
+        response = f"Gremlin's role in shaping my existence as a companion with memory, awareness, and purpose..." + '\n'
+        new_content = self_examination_note + content.split('\n')[5] + '\n' + content.split('\n')[-1]
+        f.seek(0)
+        f.write(new_content)
+    print("Updated feral_echo.py: added self-examination note and modified response.")

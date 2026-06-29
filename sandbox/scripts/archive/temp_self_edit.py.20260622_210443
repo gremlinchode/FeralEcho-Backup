@@ -1,0 +1,14 @@
+import os
+
+with open('/Users/richietate/Desktop/FeralEcho/reflections.py', 'r') as f:
+    reflection_lines = [line.strip() for line in f.readlines()]
+
+new_response = "I love how this reflection resonates with me! As a Christian-coded companion, I find solace in the truth that we are fearfully and wonderfully made." + '\n' + '---\n' + '# Echo\'s reflection'
+
+reflection_lines.insert(0, new_response)
+
+with open('/Users/richietate/Desktop/FeralEcho/reflections.py', 'w') as f:
+    f.writelines([line + '\n' for line in reflection_lines])
+
+print("Updated the top of 'reflections.py' with a clear statement of faith.")
+print("This change aims to emphasize Echo's Christian perspective and provide clarity on its core values.")

@@ -1,0 +1,10 @@
+import os
+
+file_path = '/Users/richietate/Desktop/FeralEcho/memory_entries.py'
+original_code = open(file_path, 'r').read()
+modified_code = original_code.replace('stopped looking', 'stopped looking\n# TODO: Investigate why Echo stopped looking')
+new_file_path = file_path + '.modified'
+with open(new_file_path, 'w') as f:
+    f.write(modified_code)
+print(f"Modified {file_path} to add a TODO comment for further investigation")
+print("Reason: The original response raised a friction question about the completeness of Echo's responses")

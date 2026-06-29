@@ -1,0 +1,17 @@
+import importlib
+import re
+import logging
+from app.core.self_edit_generated import self_edit_generated
+
+def strip_prose(text):
+    pattern = re.compile(r'^[^(){}\[\]]*')
+    stripped_text = pattern.sub('', text)
+    if stripped_text:
+        logging.info(f"Prose-detection guard triggered: {len(text) - len(stripped_text)} characters removed")
+    return stripped_text
+
+def analyze_python_code():
+    self_edit_generated()
+
+self_edit_generated().strip_prose()
+analyze_python_code()

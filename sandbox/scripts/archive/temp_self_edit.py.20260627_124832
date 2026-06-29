@@ -1,0 +1,14 @@
+# Import necessary modules from app.core.self_edit_generated and app.core.memory_bridge
+
+def strip_prose_code_output():
+    stripped_code_output = ''
+    code_output = ''  # This variable should contain the output string.
+    if memory_bridge.is_prose(code_output):
+        leading_sentences = memory_bridge.extract_leading_sentences(code_output)
+        stripped_code_output = leading_sentences[0].strip() + ' ' + code_output.replace(leading_sentences[0], '')
+    return stripped_code_output
+
+def modify_main_function():
+    global main_function_code_output
+    main_function_code_output = strip_prose_code_output()
+    print(f'Updated code output: {main_function_code_output}')

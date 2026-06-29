@@ -1,0 +1,12 @@
+import re
+
+def short_code_generator(code):
+    stripped_code = strip_prose(code)
+    while len(stripped_code) > 80:
+        pattern = r'(?s)\n\s*\n\s*'  
+        match = re.search(pattern, stripped_code)
+        if match:
+            stripped_code = stripped_code[:match.start()] + stripped_code[match.end():]
+        else:
+            break
+    return stripped_code

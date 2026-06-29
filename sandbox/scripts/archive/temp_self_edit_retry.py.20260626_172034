@@ -1,0 +1,37 @@
+from app.core.self_edit_generated import main_function
+from app.core.tool_manager import Tool
+
+parsed_functions = parse_file("app/core/self_edit_generated.py")
+
+main_function_def = next((func for func in parsed_functions if func.__name__ == "main_function"), None)
+
+def strip_leading_natural_language(code):
+    import re
+    python_keywords = r"^(import|def|class)\s*"
+    return re.sub(rf"^({python_keywords})\s*", lambda match: match.group(1), code, flags=re.MULTILINE)
+
+def test_code_in_sandbox():
+    # Add test cases here
+    pass
+
+def validate_code(code):
+    preprocessed_code = strip_leading_natural_language(code)
+    # Perform validation checks
+    pass
+
+# Unit tests for strip_leading_natural_language function
+import unittest
+
+class TestStripLeadingNaturalLanguage(unittest.TestCase):
+    def test_remove_prose(self):
+        code = "This is a comment\ndef main_function():\n    print('Hello, world!')"
+        expected = "def main_function():\n    print('Hello, world!')"
+        self.assertEqual(strip_leading_natural_language(code), expected)
+
+    def test_preserve_python_code(self):
+        code = "def main_function():\n    print('Hello, world!')"
+        expected = "def main_function():\n    print('Hello, world!')"
+        self.assertEqual(strip_leading_natural_language(code), expected)
+
+if __name__ == '__main__':
+    unittest.main()

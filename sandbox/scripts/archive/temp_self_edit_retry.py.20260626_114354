@@ -1,0 +1,32 @@
+# import necessary modules from `app.core.tool_manager` to access tool functionality and instantiate a `ToolManager` object
+from app.core.tool_manager import ToolManager
+
+# Load the 'reasoning' self-edit module using `self_edit_generated.get_river_brain()`
+river_brain = get_river_brain()
+
+def score_candidate_code(candidate_code):
+    result = 0
+    if detect_functions_and_classes(candidate_code) > 0:
+        result += 3
+    if parse_file(candidate_code) > 0:
+        for line in p.split('\n'):
+            if len(line.strip()) > 0 and not line.lstrip().startswith(('import', 'class', 'def')):
+                result += 1
+    return result
+
+# Update `app/core/self_edit_generated.py` to include the new `score_candidate_code` function
+with open('app/core/self_edit_generated.py', 'a') as file:
+    file.write("""
+def score_candidate_code(candidate_code):
+    result = 0
+    if detect_functions_and_classes(candidate_code) > 0:
+        result += 3
+    if parse_file(candidate_code) > 0:
+        for line in p.split('\n'):
+            if len(line.strip()) > 0 and not line.lstrip().startswith(('import', 'class', 'def')):
+                result += 1
+    return result
+""")
+
+# Run self-edit manager and update 'reasoning' task performance using the new scoring function
+river_brain.update_task_performance('reasoning', score_candidate_code)

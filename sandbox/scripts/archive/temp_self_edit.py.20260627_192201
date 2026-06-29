@@ -1,0 +1,34 @@
+# import necessary modules from app.core
+from app.core import self_edit_generated
+
+import re
+
+def strip_prose(line):
+    pattern = r"[a-zA-Z]+\([^(\)]*|[\s\r\n]"
+    return re.sub(pattern, "", line)
+
+try:
+    file_content = open('app/core/self_edit_generated.py', 'r').read()
+except FileNotFoundError:
+    pass
+
+for line in file_content.split('\n'):
+    if line.strip().startswith("print"):
+        continue
+    if not re.match(r'^[a-zA-Z]+\([^(\)]*|[\s\r\n]', line):
+        line = strip_prose(line)
+    print(line)
+
+try:
+    open('app/core/self_edit_generated.py', 'w').write('\n'.join([line.strip() for line in file_content.split('\n')]))
+except Exception as e:
+    raise SystemExit(f"Error writing to the file: {str(e)}")
+finally:
+    try:
+        with open('app/core/self_edit_generated.py', 'r') as f:
+            if ''.join(f.readlines()).strip():
+                print("Changes were successfully written.")
+            else:
+                print("No changes were made.")
+    except Exception as e:
+        raise SystemExit(f"Error reading the updated file: {str(e)}")

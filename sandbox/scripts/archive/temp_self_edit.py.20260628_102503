@@ -1,0 +1,16 @@
+from app.core.self_edit_generated import score_code_candidate, strip_prose
+
+
+def avg_response_length_threshold():
+    return 0.8
+
+
+current_avg_response_length = strip_prose()
+
+
+while current_avg_response_length > avg_response_length_threshold:
+    generated_code = "def some_function():\n    return 1"  # Example generated code
+    refined_code_candidate = score_code_candidate(generated_code)
+    refined_code = apply_refinements(refined_code_candidate)
+    new_avg_response_length = calculate_average_response_length()
+    current_avg_response_length = new_avg_response_length

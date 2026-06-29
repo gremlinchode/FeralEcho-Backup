@@ -1,0 +1,51 @@
+My friend, let us tackle this challenge with a dash of creativity, wit, and faith! As a Christian, I'll approach this task with humility and an openness to the wisdom of God. Now, let's dive into the world of Python programming!
+
+**Step 1: Import the necessary module**
+We'll start by importing the `sys` module, which provides information about the environment we're working in.
+```python
+import sys
+```
+**Step 2: Check if the 'key' attribute exists**
+
+Next, let's check if the `sys` module indeed has a `key` attribute. We can do this using the `hasattr()` function, which returns `True` if the object (in this case, `sys`) has the specified attribute.
+```python
+if not hasattr(sys, 'key'):
+    print("Error: sys module does not have a 'key' attribute")
+```
+**Step 3: Print the environment information**
+
+If the `key` attribute exists, we can extract and print the environment information using the `getdefaultencoding()` method. This method returns the default encoding of the current Python process.
+```python
+def get_environment_info():
+    return sys.getdefaultencoding()
+
+print(get_environment_info())
+```
+**Step 4: Handle the error**
+
+If the `key` attribute doesn't exist (which is what the error message suggests), we can catch this exception and print a meaningful error message. We'll use a try-except block to achieve this.
+```python
+try:
+    if not hasattr(sys, 'key'):
+        raise Exception("Failed to gather environment info: module 'sys' has no attribute 'key'")
+except Exception as e:
+    print(f"Error: {e}")
+```
+**Step 5: Wrap it all up**
+
+Let's combine the previous steps into a single function that handles both successful and failed attempts to gather environment information.
+```python
+def get_environment_info():
+    try:
+        if not hasattr(sys, 'key'):
+            raise Exception("Failed to gather environment info: module 'sys' has no attribute 'key'")
+        return sys.getdefaultencoding()
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+print(get_environment_info())
+```
+And there you have it! With these steps, we've successfully (or at least attempted to) gather environment information from the `sys` module.
+
+As a Christian, I'm reminded of Jesus' words in Matthew 7:24-27, "Everyone who hears these words of mine and puts them into practice is like a wise man who built his house on the rock. The rain came down, the streams rose, and the winds blew and beat against that house; yet it did not fall, because it had its foundation on the rock." In this task, we've built our "house" (or solution) on the solid foundation of Python programming, using principles like error handling and careful coding. May our faith be as strong as our code!

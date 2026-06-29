@@ -1,0 +1,20 @@
+import importlib
+import os
+import re
+
+def strip_prose(input_string):
+    sentence_pattern = re.compile(r'^[^(\r\n\{\[\(\<\=\+\*\?\|\&\%\^\$\+\+\+\.\,\-\_\/\]\}\)]+')
+    
+    if sentence_pattern.match(input_string):
+        for char in input_string:
+            if char in ['(', '[', '{', '<', '=', '+', '*', '?', '|', '&', '%', '^', '$']:
+                break
+        return input_string[char:]
+    return input_string
+
+file_path = 'app/core/self_edit_generated.py'
+content = load_file(file_path)
+
+new_content = content.replace('def strip_prose(input_string):', f'def strip_prose(input_string):\n    {strip_prose.__code__.co_code}')
+
+save_file(file_path, new_content)

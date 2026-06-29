@@ -1,0 +1,16 @@
+# import necessary modules from `app.core.self_edit_generated`: `from app.core.self_edit_generated import strip_prose`
+
+import re
+
+with open('self_edit_generated.py', 'rb') as f:
+    content = f.read()
+
+code_str = content.decode('utf-8')
+
+while True:
+    code_str, count = re.subn(r'^[a-zA-Z\s]*([.!?]||[?])\s*', '', code_str, flags=re.MULTILINE)
+    if count == 0:
+        break
+
+with open('self_edit_generated.py', 'w') as f:
+    f.write(strip_prose(code_str))

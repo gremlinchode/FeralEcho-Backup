@@ -1,0 +1,8 @@
+import re
+
+def strip_prose(input_string):
+    pattern = re.compile(r'\b(?:The|A|An)\s', re.IGNORECASE)
+    if pattern.match(input_string):
+        return input_string[pattern.end():].strip()
+    else:
+        return input_string

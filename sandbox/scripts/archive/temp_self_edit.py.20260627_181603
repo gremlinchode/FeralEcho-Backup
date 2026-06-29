@@ -1,0 +1,26 @@
+# import necessary modules
+from app.core.self_edit_generated import strip_prose
+
+output = strip_prose(None)
+
+def sanitize_output(text):
+    import re
+    pattern = r'^\w+\s*'
+    if re.match(pattern, text):
+        return text.split(' ', 1)[1]
+    else:
+        return text
+
+def strip_prose(text):
+    text = sanitize_output(text)
+    # original strip_prose implementation ...
+
+strip_prose(output)
+
+import json
+with open('cycle_intensity.json', 'w') as f:
+    json.dump({'intensity': 1}, f)
+f.close()
+
+import subprocess
+subprocess.run(['python', 'app/main.py'])

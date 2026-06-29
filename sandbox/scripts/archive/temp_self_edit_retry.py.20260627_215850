@@ -1,0 +1,8 @@
+import re
+
+def strip_prose(code_output):
+    pattern = re.compile(r'^(\s*[\w\s]+)\n')
+    match = pattern.match(code_output)
+    if match:
+        code_output = code_output[match.end():]
+    return code_output

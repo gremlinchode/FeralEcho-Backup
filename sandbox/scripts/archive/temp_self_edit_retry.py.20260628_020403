@@ -1,0 +1,9 @@
+import re
+
+def strip_sandbox_output(sandbox_output):
+    pattern = r'^\s*\w+.*'
+    match = re.match(pattern, sandbox_output)
+    if match:
+        return match.group().strip()
+    else:
+        return sandbox_output

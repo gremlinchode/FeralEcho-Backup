@@ -1,0 +1,13 @@
+import strip_prose
+
+def modified_function():
+    import re
+    def check_prose(code):
+        return bool(re.search(r'[a-zA-Z ]', code))
+    from app.core.self_edit_generated import original_function  # identify the function responsible for handling creative task performance
+    def revised_function(*args, **kwargs):
+        output = original_function(*args, **kwargs)
+        if check_prose(output):
+            output = strip_prose.strip_prose(output)
+        return output
+    revised_function

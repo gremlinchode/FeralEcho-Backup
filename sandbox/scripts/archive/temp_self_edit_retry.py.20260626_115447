@@ -1,0 +1,4 @@
+    # todo: implement refactored code-generation function
+
+# Start refactoring process
+app.core.project_scanner.scan_project('app/core/self_edit_generated.py', parsed_file)

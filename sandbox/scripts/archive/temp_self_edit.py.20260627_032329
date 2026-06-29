@@ -1,0 +1,27 @@
+from app.core.self_edit_generated import *; from app.core.tool_manager import ToolManager
+tool = ToolManager().get_tool('self_edit')
+
+def main_function():
+    code_output = "This is an imaginary story"
+    while True:
+        if not code_output.startswith('This is an imaginary story'):
+            break
+        code_output = code_output.split('.')[0]
+
+try:
+    modified_main_function()
+except:
+    print("Error occurred")
+
+ValidationResult.check_schema(modified_output)
+self_model_updater.update_knowledge_base(modified_output)
+
+tool.strip_prose()
+
+if code_output.startswith('This is an imaginary story'):
+    try:
+        main_function()
+    except:
+        print("Error occurred")
+else:
+    modified_main_function()

@@ -1,0 +1,24 @@
+import strip_prose
+
+def sanitize_output(input_string):
+    if re.match(r"^(?:\w\s+)*$", input_string) and not re.search(r"\(|\w+\(|\)|\?|!|\.|\,|\*|\+|=|\{\}", input_string):
+        return "Error: No valid Python code found."
+    elif strip_prose.is_prose(input_string):
+        start = 0
+        end = len(input_string)
+        for char in input_string:
+            if char.isspace():
+                continue
+            else:
+                if re.search(r"\(|\w+\(|\)|\?|!|\.|\,|\*|\+|=|\{\}", str(char)):
+                    end = input_string.index(char)
+                    break
+        return input_string[:end].strip()
+    else:
+        for char in input_string:
+            if char.isspace():
+                continue
+            elif re.search(r"\(|\w+\(|\)|\?|!|\.|\,|\*|\+|=|\{\}", str(char)):
+                start = input_string.index(char)
+                break
+        return input_string[start:].strip()

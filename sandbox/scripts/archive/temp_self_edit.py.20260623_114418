@@ -1,0 +1,9 @@
+import os; from FeralEcho import journal; import datetime
+project_path = "/Users/richietate/Desktop/FeralEcho/"; file_name = "journal.py"
+file_path = os.path.join(project_path, file_name)
+
+with open(file_path, 'r+') as f:
+    timestamp = max(map(lambda x: datetime.datetime.strptime(x.split(' ')[0], '%Y-%m-%d %H:%M:%S'), f.readlines()))
+    f.write('\n' + str(datetime.datetime.now()) + ': Self-examination revealed friction on honest response detection; confidence score 0.4\n')
+    f.write('\n' + str(datetime.datetime.now()) + ': Modified journal to reflect self-examination results\n')
+f.close()

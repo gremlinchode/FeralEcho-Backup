@@ -1,0 +1,16 @@
+# Import necessary modules
+from app.core.self_edit_generated import *
+from app.core.memory_bridge import append_to_journal
+
+main_function = modify_main_function('app/core/self_edit_generated.py')
+sandbox_failure_output = main_function.run_sandbox()
+code_lines = parse_file(sandbox_failure_output, 'python')
+
+for line in code_lines:
+    if re.match(r'[^a-zA-Z.]', line.lstrip()):
+        prose_removed_line = line.split(None, 1)[1].lstrip()
+        updated_code_output += prose_removed_line + '\n'
+    else:
+        updated_code_output += line + '\n'
+
+main_function.modify_file('app/core/self_edit_generated.py', updated_code_output)

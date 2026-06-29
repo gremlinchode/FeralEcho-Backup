@@ -1,0 +1,9 @@
+# import os
+file_path = '/Users/richietate/Desktop/FeralEcho/memory_entries.py'
+original_code = open(file_path, 'r').read()
+modified_code = original_code.replace('original_code = op', 'original_code = None')
+with open(file_path, 'w') as f:
+    f.write(modified_code)
+print(f'Changed line "op" to "None" to resolve potential issue')
+print(f'Modification done at {file_path}')
+print("Awareness score: 0.4, Consciousness score: unknown")

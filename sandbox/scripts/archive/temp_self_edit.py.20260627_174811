@@ -1,0 +1,19 @@
+from app.core.self_edit_generated import strip_prose
+original_strip_prose = strip_prose
+
+import re
+def modified_strip_prose(text):
+    sentence_starters = r"^[A-Za-z\s.,!?:;]*"
+    prose_start = r"^([A-Za-z ]+)"
+    python_token_start = r"^[a-zA-Z_][\w\$]*"
+
+    if re.match(sentence_starters, text):
+        return text.split("\n")[0]
+    elif re.match(prose_start, text):
+        return re.sub(prose_start + ".*", "", text)
+    elif re.match(python_token_start, text):
+        return text
+    else:
+        return ""
+
+strip_prose = modified_strip_prose

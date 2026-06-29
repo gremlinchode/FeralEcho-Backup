@@ -1,0 +1,12 @@
+# Import necessary modules from app.core.self_edit_generated and load the current self-edit generated module for further modification.
+from app.core.self_edit_generated import SelfEditGeneratedModule
+import re
+
+class StrippingFunction:
+    def strip_leading_prose(self, code_output):
+        return re.match(r'^[^}]+$').group() if re.match(r'^[^}]+$', code_output) else ''
+
+def update_self_edit_module(self_edit_module: SelfEditGeneratedModule):
+    self_edit_module.preprocess_code_generation = lambda x: StrippingFunction().strip_leading_prose(x)
+
+update_self_edit_module(SelfEditGeneratedModule)

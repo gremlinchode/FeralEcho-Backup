@@ -1,0 +1,44 @@
+# import necessary modules
+from app.core.self_edit_generated import main_function
+from app.core.river_deliberation import *
+import re
+
+def remove_prose(code):
+    pattern = r"^[\s\S]*?(\s+)?(?:[A-Z]\.\s+|\n)[^\n]*?\n?"
+    cleaned_code = re.sub(pattern, '', code, flags=re.MULTILINE)
+    return cleaned_code
+
+# parse 'app/core/self_edit_generated.py' for modification using `parse_file`
+code = parse_file('app/core/self_edit_generated.py')
+
+# locate the code block responsible for generating outputs to the sandbox
+prose_detection_guard_start = None
+for line in code:
+    if 'sandbox output' in line:
+        prose_detection_guard_start = line.index('sandbox output')
+        break
+
+if prose_detection_guard_start is not None:
+    # modify the main function to call remove_prose and strip prose before executing code
+    code[prose_detection_guard_start:] = code[prose_detection_guard_start:].replace(
+        "if \"prose detected in code output\" in code: ...",
+        "if \"prose detected in code output\" in code:\n"
+        "   code = remove_prose(code)\n"
+    )
+
+# add logging statements within the modified code block to record the execution of the prose detection guard and any strings that were removed
+def log_output(code):
+    if 'sandbox output' in code:
+        sentences = re.split(r'(?<=[.!?]) +', code)
+        for i, sentence in enumerate(sentences):
+            if not re.match(r'^[A-Za-z]', sentence, re.IGNORECASE):
+                print(f"Removed prose: {sentence}")
+log_output(code)
+
+# validate the updated 'app/core/self_edit_generated.py' file using `check_schema` from `app.core.memory_write_validator`, ensuring it adheres to the defined schema for self-editing operations
+import app.core.memory_write_validator as validator
+validator.check_schema(code, 'self-editing operation')
+
+# save the modified 'app/core/self_edit_generated.py' file using `save_code` from `app.core.self_edit_manager`, triggering a checksum verification
+from app.core.self_edit_manager import save_code
+save_code('app/core/self_edit_generated.py', code)

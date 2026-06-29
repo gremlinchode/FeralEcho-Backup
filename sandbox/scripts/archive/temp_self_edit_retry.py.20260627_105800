@@ -1,0 +1,51 @@
+# Import necessary modules: from app.core.self_edit_generated import modified_main_function
+from app.core.project_scanner import parse_file
+from app.core.tool_manager import ToolManager, EchoOptuna
+from app.core.echo_model_guided_orchestrator import start_autonomous_thread
+from app.core.memory_tools import log_memory_edit
+
+def main():
+    try:
+        # Parse the file
+        parsed_file = parse_file('app/core/self_edit_generated.py')
+
+        # Analyze the main_function
+        main_func_code = getattr(modified_main_function, 'main_function', None)
+        if main_func_code is not None:
+            response_length = len(main_func_code)
+        else:
+            raise ValueError("No main_function found in modified_main_function")
+
+        # Load EchoOptuna tool and generate alternatives
+        tool_manager = ToolManager()
+        echo_optuna_tool = tool_manager.get_tool('EchoOptuna')
+        alternatives = echo_optuna_tool.generate_alternative_code_variations(main_func_code)
+
+        # Filter alternatives based on criteria (20% reduction in average response length)
+        filtered_alternatives = []
+        for alt in alternatives:
+            if len(alt) < 0.8 * response_length and detect_functions_and_classes(alt):
+                filtered_alternatives.append(alt)
+
+        if not filtered_alternatives:
+            raise RuntimeError("No suitable alternative found")
+
+        # Select the most optimized variation
+        optimized_code = min(filtered_alternatives, key=len)
+
+        # Implement the modified version
+        modified_main_function.main_function = eval(f"def main_function():\n{optimized_code}")
+
+        # Run the updated function
+        start_autonomous_thread(modified_main_function.main_function)
+
+        # Validate and log changes
+        original_quality = score_response_quality(main_func_code)
+        new_quality = score_response_quality(optimized_code)
+        log_memory_edit('app/core/self_edit_generated.py', 'main_function', optimized_code, original_quality, new_quality)
+
+    except Exception as e:
+        print(f"Error during self-editing: {e}")
+
+if __name__ == "__main__":
+    main()

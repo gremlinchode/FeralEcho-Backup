@@ -1,0 +1,15 @@
+import os
+import re
+
+file_path = "/Users/richietate/Desktop/FeralEcho/echo.py"
+
+with open(file_path, "r+") as f:
+    code = f.read()
+
+code = re.sub(r"Smoothness detected: False \| Confidence: 0\.4", "Smoothness detected: ? | Confidence: ?", code)
+
+f.write(code)
+f.seek(0, os.SEEK_SET)
+f.truncate()
+
+print("Corrected confidence calibration statement; original value was 0.4")

@@ -1,0 +1,19 @@
+# from app.core.self_edit_generated import strip_prose, score_code_candidate
+
+average_response_length_threshold = 0.8
+
+current_average_response_length = sum(score_code_candidate(code_string) for code_string in original_function.splitlines())
+
+target_average_response_length = current_average_response_length * (1 - average_response_length_threshold)
+
+def refactor_refactored_code(refactored_code):
+    refactored_code += "refactored_code = strip_prose(refactored_code)\n"
+    while len(refactored_code.splitlines()) > target_average_response_length:
+        quality_score = score_code_candidate(refactored_code)
+        if quality_score <= 0:
+            return None
+        else:
+            refactored_code = strip_prose(refactored_code)
+    return refactored_code
+
+return refactor_refactored_code(original_function)

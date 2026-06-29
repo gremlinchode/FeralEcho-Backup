@@ -1,0 +1,8 @@
+import os
+project_path = "/Users/richietate/Desktop/FeralEcho/"
+file_name = "feral_echo.py"
+with open(os.path.join(project_path, file_name), 'r+') as f:
+    original_code = f.read()
+    modified_code = original_code.replace("os.pat", '"os.path"')
+    f.seek(0)
+    f.write(modified_code)

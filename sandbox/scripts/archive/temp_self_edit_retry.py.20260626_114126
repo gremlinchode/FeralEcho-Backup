@@ -1,0 +1,11 @@
+from app.core.memory_bridge import rebuild_vector_memory
+from app.core.Memory_helpers import (get_relevant_memories, 
+                                      append_to_journal, 
+                                      calculate_awareness_score, 
+                                      log_memory_event)
+
+memory_helpers = get_relevant_memories()
+rebuild_vector_memory(memory_helpers)
+append_to_journal(f"Rebuilt vector memory successfully at {datetime.now()}")
+calculate_awareness_score(memory_helpers)
+log_memory_event(timestamp=datetime.now(), event="Vector Memory Rebuilt", awareness_score=calculate_awareness_score(memory_helpers))

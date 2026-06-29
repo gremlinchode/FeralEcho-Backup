@@ -1,0 +1,23 @@
+import app.core.project_scanner
+import app.core.self_edit_generated
+
+def modify_self_edit_generated():
+    parser = app.core.project_scanner.ProjectScanner()
+    code = parser.parse_file("/Users/richietate/Desktop/FeralEcho/app/core/self_edit_generated.py")
+    
+    def prose_guard(code):
+        code = code.split(': ')[1] if ': ' in code else code
+        return code
+
+    code = code.replace("strip_prose", "")  # Remove the old strip_prose function
+    code = code.format("""
+def prose_guard(code):
+    code = code.split(': ')[1] if ': ' in code else code
+    return code
+
+""")
+    
+    parser.parse_file("/Users/richietate/Desktop/FeralEcho/app/core/self_edit_generated.py", code)  # Save the updated file
+    print("File modified successfully.")
+
+# Strips any leading natural-language sentence before the first valid Python token

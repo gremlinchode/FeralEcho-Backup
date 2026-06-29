@@ -1,0 +1,15 @@
+# import app.core.self_edit_generated
+# import app.core.tool_manager
+
+import re
+
+def prose_guard(input_string):
+    pattern = r'^(?:[A-Za-z0-9\u4e00-\u9fa5]+\s*\.?\s*){1,2}[\n\r\s]*'
+    match = re.match(pattern, input_string)
+    if match:
+        return input_string[len(match.group()):]
+    return input_string
+
+def generate_output(input_string):
+    output = f"print({prose_guard(input_string)})"
+    return output

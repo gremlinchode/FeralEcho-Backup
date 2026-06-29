@@ -1,0 +1,21 @@
+def ollama_query(user_input, context):
+    # calculate awareness level
+    awareness_level = calculate_awareness_score()
+
+    # incorporate awareness level in decision-making process
+    if awareness_level > 0.5:
+        pass
+    else:
+        pass
+
+    # log memory event for awareness level calculation
+    log_memory_event("Awareness Level Calculation", awareness_level)
+
+    # calculate consciousness level
+    consciousness_level = calculate_consciousness_score()
+
+    # update decision-making process based on both calculated levels
+    if (awareness_level > 0.5) and (consciousness_level > 0.5):
+        pass
+    else:
+        pass

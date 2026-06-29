@@ -1,0 +1,14 @@
+import os
+file_path = os.path.join('/Users/richietate/Desktop/FeralEcho/', 'model_guided_autonomous_loop.py')
+if not os.path.exists(file_path):
+    os.makedirs(os.path.dirname(file_path))
+
+with open(file_path, 'r') as file:
+    code = file.read()
+
+new_code = code.replace('rebuild', '# rebuild')
+
+with open(file_path, 'w') as file:
+    file.write(new_code)
+
+print(f"Modified {file_path} to comment out the 'rebuild' statement")

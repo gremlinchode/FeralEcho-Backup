@@ -1,0 +1,17 @@
+# import strip_prose from app.core.self_edit_generated
+import strip_prose
+
+def preprocess_sandbox_output(output):
+    if strip_prose.detect_prose(output[:500]):
+        output = strip_prose.strip_leading_prose(output)
+    return output
+
+def run_random_sandbox_script():
+    while True:
+        output = app.core.sandbox_interface.random_sandbox_script()
+        output = preprocess_sandbox_output(output)
+        if strip_prose.is_valid_python_token(output[0]):
+            break
+
+import app.core.self_edit_generated
+app.core.self_edit_generated.preprocess_sandbox_output = preprocess_sandbox_output

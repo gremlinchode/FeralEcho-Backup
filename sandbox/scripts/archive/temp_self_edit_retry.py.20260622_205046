@@ -1,0 +1,6 @@
+import os
+file_path = '/Users/richietate/Desktop/FeralEcho/reflections.py'
+with open(file_path, 'r') as f: content = f.read()
+reflection_lines = [line.strip().replace('Smoothness detected: True | Confidence: 0.4', '') for line in content.split('\n')]
+with open(file_path, 'w') as f: f.write('\n'.join(reflection_lines))
+print(f"Modified file {file_path} to prevent premature closure")

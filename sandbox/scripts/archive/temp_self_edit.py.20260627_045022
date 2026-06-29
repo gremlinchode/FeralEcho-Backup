@@ -1,0 +1,31 @@
+# import necessary modules
+import app.core.self_edit_generated
+from app.core.project_scanner import parse_file
+from app.core.tool_manager import detect_functions_and_classes, scan_project
+import re
+
+def main_function():
+    try:
+        file_path = 'app/core/self_edit_generated.py'
+        parsed_code = parse_file(file_path)
+        main_func = parsed_code['main_function']
+
+        prose_regex = r'^.*?(?=\n\s*[\w\s]+:)' 
+        def strip_prose(code):
+            return re.sub(prose_regex, '', code, flags=re.MULTILINE)
+
+        modified_code = strip_prose(main_func)
+
+        print(f"Prose detection applied to code: {modified_code}")
+
+        if re.search(prose_regex, modified_code):
+            print("Prose detected and stripped from the code.")
+
+        # Execute the modified code
+        exec(modified_code)  # This line is subject to security risks; consider alternatives
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    main_function()

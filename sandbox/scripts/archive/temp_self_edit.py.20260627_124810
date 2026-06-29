@@ -1,0 +1,22 @@
+# from app.core.self_edit_generated import modify_main_function
+nl_sentence_pattern = r"^(?:(?:[a-zA-Z\s.,!?\[\]]+\.?)|(?:[A-Za-z].*[.!?])*)"
+import re
+import app.core.self_edit_generated
+
+current_file_contents = open('app/core/self_edit_generated.py', 'r').read()
+lines = current_file_contents.split('\n')
+modified_lines = []
+
+for line in lines:
+    if re.match(nl_sentence_pattern, line):
+        stripped_line = line.strip()
+        if not (stripped_line.startswith('reasoning') or 
+                stripped_line.startswith('reasonings') or 
+                stripped_line.startswith('Reasoning') or 
+                stripped_line.startswith('Reasonings')):
+            modified_lines.append(stripped_line)
+    else:
+        modified_lines.append(line)
+
+modified_code = '\n'.join(modified_lines)
+open('app/core/self_edit_generated.py', 'w').write(modified_code)

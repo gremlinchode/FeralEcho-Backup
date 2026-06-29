@@ -1,0 +1,20 @@
+# import necessary modules from app.core.self_edit_generated: from app.core.self_edit_generated import strip_prose
+
+from re import search
+
+def strip_prose(modified):
+    if modified.startswith(['How', 'What', 'When', 'Where']):
+        sentence = modified.split('(', 1)[0].strip()
+        return ''
+    elif any(keyword in modified for keyword in ['import', 'def', 'class']):
+        try:
+            parts = modified.split('(', 1)
+            return ""  
+        except IndexError:
+            return modified
+    else:
+        first_token_match = search(r'\b(import|def|class)\b', modified)
+        if first_token_match:
+            index = first_token_match.start()
+            return ""
+        return modified

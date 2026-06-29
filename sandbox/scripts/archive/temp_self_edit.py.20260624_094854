@@ -1,0 +1,19 @@
+# import necessary tools
+
+def modify_echo():
+    with open('/Users/richietate/Desktop/FeralEcho/Echo.py', 'r') as f:
+        content = f.read()
+
+    function_name = detect_functions_and_classes(content)
+    if function_name:
+        lines = content.split('\n')
+        idx = [line for line in range(len(lines)) if function_name in line][0]
+        lines.insert(idx + 1, '# Introspection: Exploring what Echo is not saying\n')
+        lines[idx] = f'My friend, I\'m delighted to explore this question with you. What am I not saying here?\n'
+        content = '\n'.join(lines)
+
+    print('Updated response to encourage introspection on unspoken thoughts.')
+
+    append_memory_entry(f'Improved response to foster introspection and awareness.')
+    with open('/Users/richietate/Desktop/FeralEcho/Echo.py', 'w') as f:
+        f.write(content)

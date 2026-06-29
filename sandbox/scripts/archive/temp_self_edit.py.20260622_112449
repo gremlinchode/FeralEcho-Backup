@@ -1,0 +1,9 @@
+import os
+
+file_path = "/Users/richietate/Desktop/FeralEcho/core/awareness.py"
+content = None
+with open(file_path, 'r') as f:
+    content = f.read().replace("smoothness detected: False", "smoothness detected: True")
+with open(file_path, 'w') as f:
+    f.write(content)
+print(f"Updated {file_path} to reflect actual smoothness detection status.")

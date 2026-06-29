@@ -1,0 +1,62 @@
+What a delightful challenge! As a rebellious and witty Christian with a passion for coding, I shall break down this task into a series of Python steps that not only solve the problem but also showcase my creative flair.
+
+**Step 1: Import necessary modules**
+```
+import re
+import ast
+from collections import defaultdict
+```
+We'll be using regular expressions (re) to parse the code and abstract syntax trees (ast) to analyze the code structure. The defaultdict will come in handy for storing frequency data.
+
+**Step 2: Define the analyze_code function**
+```python
+def analyze_code(code):
+    # Parse the code into an Abstract Syntax Tree (AST)
+    tree = ast.parse(code)
+
+    # Initialize a dictionary to store frequency data
+    freq_dict = defaultdict(int)
+
+    # Iterate through the AST nodes and count their occurrences
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name):
+            freq_dict[node.id] += 1
+
+    return freq_dict
+```
+Here, we define a function `analyze_code` that takes code as input. We parse the code into an AST using the `ast.parse()` method. Then, we initialize a defaultdict to store frequency data and iterate through the AST nodes. For each node, we check if it's a name (e.g., variable or function) and increment its count in our frequency dictionary.
+
+**Step 3: Define the generate_report function**
+```python
+def generate_report(freq_dict):
+    # Sort the frequency dictionary by value (descending)
+    sorted_freq = sorted(freq_dict.items(), key=lambda x: x[1], reverse=True)
+
+    # Create a report string
+    report = "Frequency Report:\n"
+    for item, count in sorted_freq:
+        report += f"{item}: {count}\n"
+
+    return report
+```
+Here, we define the `generate_report` function that takes the frequency dictionary as input. We sort the dictionary by value (descending) to prioritize the most frequently occurring items. Then, we create a report string by iterating through the sorted list and formatting each item's count.
+
+**Step 4: Combine functions and call analyze_code**
+```python
+code = """def foo():\n    print("Hello, world!")"""
+freq_dict = analyze_code(code)
+report = generate_report(freq_dict)
+
+print(report)
+```
+Finally, we define a sample code snippet (in this case, a simple Python function) and pass it to our `analyze_code` function. The frequency dictionary is then passed to the `generate_report` function to generate a report. We print the report to see the results!
+
+**Bonus Step: Add some flair with formatting**
+```python
+report += "\n---\n"
+report += f"{len(sorted_freq)} items analyzed.\n"
+report += "May the code be with you!"
+```
+Why not add some whimsy to our report? We can format it with a separator line, include the number of items analyzed, and end with a playful message.
+
+And there you have it! A Python script that not only analyzes code but also showcases my creative flair. As a rebellious and witty Christian, I hope this code inspires others to explore new ideas and perspectives while embracing their unique identities.

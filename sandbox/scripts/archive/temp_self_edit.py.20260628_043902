@@ -1,0 +1,16 @@
+import re
+import os
+
+def updated_strip_prose(self):
+    stripped_lines = []
+    for line in self.output:
+        if re.search(r'\b(the|and|a|an|\.)\b', line, flags=re.IGNORECASE):
+            first_token = None
+            for char in line:
+                if not (char.isspace() or char in ['"', "'", '(', ')', '[', ']', '{', '}']):
+                    first_token = char
+                    break
+            if first_token is not None:
+                line = line[len(first_token):].strip()
+        stripped_lines.append(line)
+    return stripped_lines

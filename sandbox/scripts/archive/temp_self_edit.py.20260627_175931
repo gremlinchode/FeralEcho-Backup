@@ -1,0 +1,20 @@
+# import necessary modules from `app.core`
+from app.core.self_edit_generated import strip_prose
+import re
+
+def recursive_strip_prose(text, i=0):
+    if re.match(r'^\s*import|def|class|from|if|for|while|try|except|pass', text[i:i+5]):
+        return text[i:]
+    elif re.match(r'^\b[a-zA-Z_][a-zA-Z_0-9]*:', text[:i]):
+        return recursive_strip_prose(text, i)
+    else:
+        if isinstance(text, str) and re.match(r'^\s*\b(?!python).+\n', text):
+            return strip_prose(text[i:])
+        else:
+            return text
+
+def strip_prose(text):
+    if isinstance(text, str) and text.startswith(r'\b(a|an|the)\s'):
+        return text.split(' ', 1)[1]
+    else:
+        return text

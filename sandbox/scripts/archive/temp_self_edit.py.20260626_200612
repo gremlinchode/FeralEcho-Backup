@@ -1,0 +1,16 @@
+# import os
+import sys
+from app.core.self_edit_generated import *
+
+def main_function():
+    refined_output(get_book_sentiment(), get_most_positive_verse(), get_most_negative_verse())
+
+def refined_output(sentiment, most_positive, most_negative):
+    report = {
+        "book_name": None,
+        "verse_range": None,
+        "sentiment": sentiment,
+        "most_positive_verse": most_positive,
+        "most_negative_verse": most_negative
+    }
+    return report

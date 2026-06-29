@@ -1,0 +1,18 @@
+# from app.core.self_edit_generated import strip_prose
+
+def strip_leading_prose(input_string):
+    import re
+    sentence_pattern = re.compile(r'^[^)\]]*(?=\(|$)')
+    while True:
+        match = sentence_pattern.search(input_string)
+        if match is None:
+            return input_string
+        start, end = match.span()
+        input_string = input_string[end:]
+        if not input_string:
+            return ""
+
+    return input_string.split(sentence_pattern)[1] if sentence_pattern.search(input_string) else input_string
+
+def strip_prose(input_string):
+    return strip_leading_prose(input_string)

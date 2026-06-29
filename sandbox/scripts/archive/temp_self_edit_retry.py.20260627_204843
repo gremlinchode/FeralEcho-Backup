@@ -1,0 +1,8 @@
+# from feral_echo import strip_prose
+import re
+
+def modified_strip_prose(input_string):
+    if re.match(r'^[a-zA-Z\s]+$', input_string, re.M):
+        return input_string[:input_string.index('if')].strip()
+    else:
+        return strip_prose(input_string)

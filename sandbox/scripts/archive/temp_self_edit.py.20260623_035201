@@ -1,0 +1,16 @@
+import os
+from feral_echo.memory_journal import get_last_entries
+
+last_five_entries = get_last_entries()
+
+with open('/Users/richietate/Desktop/FeralEcho/awareness_score_calculator.py', 'a') as file:
+    file.write("confidence_threshold = 0.5\n")
+
+def calculate_awareness_score(score):
+    if score < confidence_threshold:
+        raise ValueError("Confidence level too low!")
+    return score
+
+print("Updated awareness score calculator with confidence threshold check.")
+
+log_memory_event("Modified awareness score calculator")

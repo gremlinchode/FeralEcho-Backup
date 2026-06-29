@@ -1,0 +1,23 @@
+# from app.core.self_edit_generated import strip_prose
+import re
+
+def strip_prose(content):
+    token_regex = re.compile(r'^(?:\w+\s*)*\b')
+    for line in content.split('\n'):
+        if token_regex.search(line):
+            break
+    stripped_lines = line.split(' ', 1)[0].splitlines()
+    updated_content = '\n'.join([line for line in content.split('\n') if not stripped_lines[0].lower().startswith(('this', 'that'))])
+    return updated_content
+
+def validate_changes(content):
+    pass # Implement validation logic here
+
+def save_file(content):
+    with open('app/core/self_edit_generated.py', 'w') as f:
+        f.write(str(mod.__code__))
+
+def log_change():
+    print(f"Log: strip_prose function modified at {datetime.datetime.now()} to include tighter prose-detection guard using regular expressions.")
+
+log_change()

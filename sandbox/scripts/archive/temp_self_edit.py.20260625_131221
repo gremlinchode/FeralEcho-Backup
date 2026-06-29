@@ -1,0 +1,10 @@
+# file_path = '/Users/richietate/Desktop/FeralEcho/rebuild_vector_memory.py'
+import os
+file_exists = os.path.exists(file_path)
+
+if file_exists:
+    with open(file_path, 'r+t') as f:
+        modified_content = f.read().replace('file_', '')
+        f.seek(0)
+        f.write(modified_content)
+    print(f"Changed {file_path}: Removed trailing single quote in 'file_'.")

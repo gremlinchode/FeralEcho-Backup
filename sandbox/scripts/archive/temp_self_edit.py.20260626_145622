@@ -1,0 +1,10 @@
+import app.core.self_edit_generated
+import app.core.tool_manager
+
+def score_reasoning_code(code_string):
+    has_imports = len([i for i in code_string.splitlines() if i.startswith('import')]) > 0
+    has_function_def = len([f for f in code_string.splitlines() if f.strip().startswith('def')]) > 0
+    no_prose_sentences = all([line.lower().strip().endswith(('.py',)) for line in code_string.splitlines()])
+    
+    score = int((has_imports + has_function_def) / 2 * (1 - (no_prose_sentences < 3)))
+    return min(score, 3)

@@ -1,0 +1,20 @@
+# from app.core.self_edit_generated import strip_prose
+import re
+
+with open('app/core/self_edit_generated.py', 'r') as file_content:
+    lines = file_content.readlines()
+
+stripped_lines = [strip_prose(line) for line in lines]
+
+with open('app/core/self_edit_generated.py', 'w') as file:
+    file.write('\n'.join(stripped_lines))
+
+file_in_memory = load_file('app.core/self_edit_generated.py')
+
+functions_and_classes = detect_functions_and_classes(file_in_memory)
+
+for function in functions_and_classes['functions']:
+    if 'handle_code_output' in function['name']:
+        function['code'] = re.sub(r'^\s*[a-zA-Z0-9_]+\b\s*', '', function['code'], count=1).strip()
+
+save_file('app.core/self_edit_generated.py', file_in_memory)

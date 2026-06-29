@@ -1,0 +1,18 @@
+# import necessary modules
+from app.core.self_edit_generated import strip_prose
+import re
+
+def shorten_code_candidate(stripped_code):
+    pattern = r'(?s)\n\s*\n\s*'  
+    while len(stripped_code) > int(len(stripped_code) * 0.8):
+        match = re.search(pattern, stripped_code)
+        if match:
+            stripped_code = stripped_code[:match.start()] + stripped_code[match.end():]
+        else:
+            break
+    return stripped_code
+
+def score_code_candidate(code):
+    return shorten_code_candidate(strip_prose(code))
+
+score_code_candidate

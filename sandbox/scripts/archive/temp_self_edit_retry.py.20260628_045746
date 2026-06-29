@@ -1,0 +1,15 @@
+import re
+
+def strip_prose(code):
+    return re.sub(r'^\s*\w+\.\s*(.*)$', r'\1', code, flags=re.MULTILINE)
+
+with open('app/core/self_edit_generated.py', 'r') as f:
+    self_edit_generated_code = f.read()
+stripped_code = strip_prose(self_edit_generated_code)
+with open('app/core/self_edit_generated.py', 'w') as f:
+    f.write(stripped_code)
+try:
+    from app.core.self_edit_generated import strip_prose
+except ImportError:
+    print("Failure detected")
+    raise

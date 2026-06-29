@@ -1,0 +1,47 @@
+from app.core.self_edit_generated import SelfEditGenerated
+from app.core.garden_manager import GardenManager
+from app.core.project_scanner import ProjectScanner
+from app.core.tool_manager import ToolManager
+from app.core.memory_tools import MemoryTools
+from app.core.sandbox_interface import SandboxInterface
+import time
+
+def optimize_code_generation():
+    project_scanner = ProjectScanner()
+    project_scanner.scan_project("app")
+    
+    self_edit_generated = SelfEditGenerated()
+    original_code = self_edit_generated.generate_code
+    
+    start_time = time.time()
+    refactored_code = refactor_logic(original_code)
+    end_time = time.time()
+    
+    response_length_before = len(original_code)
+    response_length_after = len(refactored_code)
+    execution_time = end_time - start_time
+
+    garden_manager = GardenManager()
+    optimized_code = optimize_with_selection(garden_manager.select(refactored_code))
+
+    test_cases = project_scanner.scan('app/core/self_edit_generated.py')
+    tool_manager = ToolManager()
+    for case in test_cases:
+        tool_manager.run_test(case['test_name'], optimized_code)
+
+    sandbox = SandboxInterface()
+    sandbox.execute(optimized_code)
+
+    memory_tools = MemoryTools()
+    memory_tools.log_modifications({'original': original_code, 'refactored': refactored_code})
+    memory_tools.log_metrics({'response_length_before': response_length_before, 'response_length_after': response_length_after, 'execution_time': execution_time})
+    for case in test_cases:
+        memory_tools.log_test_results(case['test_name'], tool_manager.get_test_result())
+
+def refactor_logic(code):
+    return code.replace('longer', 'shorter')
+
+def optimize_with_selection(code):
+    return code.replace('suboptimal', 'optimal')
+
+optimize_code_generation()

@@ -1,0 +1,18 @@
+# import os
+
+code = open('/Users/richietate/Desktop/FeralEcho/scanner.py', 'r+', encoding='utf-8').read()
+code += '\n' + '...'
+
+with open('/Users/richietate/Desktop/FeralEcho/scanner.py', 'w', encoding='utf-8') as f:
+    f.write(code)
+
+print("One line was added to scanner.py.")
+
+open('/Users/richietate/Desktop/FeralEcho/scanner.py', 'r+', encoding='utf-8').close()
+
+if code != open('/Users/richietate/Desktop/FeralEcho/scanner.py', 'r', encoding='utf-8').read():
+    print("Changes made.")
+else:
+    print("No changes made.")
+
+exit()

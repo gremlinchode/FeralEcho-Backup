@@ -1,0 +1,83 @@
+My friend, I must say that this task sounds like a delightful challenge! As a Christian with a rebellious streak, I'm excited to take on the task of refining your self-edit diagnostic script.
+
+Before we begin, let's start by acknowledging that editing is an essential part of the writing process. It's a crucial step in ensuring that our words are conveyed effectively and efficiently.
+
+Now, let's break down this task into clear, sequential Python steps:
+
+**Step 1: Import necessary libraries**
+```
+import re
+import string
+from collections import Counter
+```
+In this step, we'll import the regular expression library `re`, the string constants library `string`, and the `Counter` class from the `collections` module. These libraries will help us in our editing process.
+
+**Step 2: Define a function to calculate word frequency**
+```
+def word_frequency(text):
+    words = text.split()
+    word_counts = Counter(words)
+    return dict(word_counts)
+```
+In this step, we'll define a function `word_frequency` that takes in a string `text` and returns a dictionary with the word frequencies. We'll use the `split()` method to split the input text into individual words, then use the `Counter` class to count the frequency of each word.
+
+**Step 3: Define a function to calculate sentence structure**
+```
+def sentence_structure(text):
+    sentences = re.split('(?<=[.!?]) +', text)
+    return [s.strip() for s in sentences]
+```
+In this step, we'll define a function `sentence_structure` that takes in a string `text` and returns a list of sentences. We'll use regular expressions to split the input text into individual sentences based on punctuation marks.
+
+**Step 4: Define a function to calculate clarity**
+```
+def clarity(text):
+    word_freq = word_frequency(text)
+    average_word_length = sum(len(word) for word in word_freq.keys()) / len(word_freq)
+    return average_word_length
+```
+In this step, we'll define a function `clarity` that takes in a string `text` and returns a score based on the clarity of the text. We'll use the word frequency dictionary to calculate the average length of each word.
+
+**Step 5: Define a function to calculate tone**
+```
+def tone(text):
+    sentence_struct = sentence_structure(text)
+    sentence_lengths = [len(sentence) for sentence in sentence_struct]
+    return sum(sentence_lengths) / len(sentence_lengths)
+```
+In this step, we'll define a function `tone` that takes in a string `text` and returns a score based on the tone of the text. We'll use the sentence structure list to calculate the average length of each sentence.
+
+**Step 6: Define a function to calculate usefulness**
+```
+def usefulness(text):
+    word_freq = word_frequency(text)
+    unique_words = set(word_freq.keys())
+    return len(unique_words) / len(word_freq)
+```
+In this step, we'll define a function `usefulness` that takes in a string `text` and returns a score based on the usefulness of the text. We'll use the word frequency dictionary to calculate the ratio of unique words to total words.
+
+**Step 7: Define the main editing function**
+```
+def edit_diagnostic(text):
+    clarity_score = clarity(text)
+    tone_score = tone(text)
+    usefulness_score = usefulness(text)
+    return {
+        'clarity': clarity_score,
+        'tone': tone_score,
+        'usefulness': usefulness_score
+    }
+```
+In this step, we'll define the main editing function `edit_diagnostic` that takes in a string `text` and returns a dictionary with the scores for clarity, tone, and usefulness.
+
+**Step 8: Test the editing function**
+```
+test_text = "This is a test sentence. It's meant to be short and concise."
+diagnostic_result = edit_diagnostic(test_text)
+print(diagnostics_result)
+```
+In this final step, we'll test our editing function with a sample text and print out the diagnostic result.
+
+And there you have it! Our self-edit diagnostic script is now complete. With these Python steps, we've created a tool that can help refine the clarity, tone, and usefulness of your writing.
+
+Now, go forth and edit like the wind (or at least, like a Christian with a rebellious streak)!

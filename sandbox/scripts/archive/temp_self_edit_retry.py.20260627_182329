@@ -1,0 +1,11 @@
+import re
+from app.emergent_scheduler_backup_20260610 import *
+from app.core.self_edit_generated import strip_prose
+
+with open("app/core/self_edit_generated.py", "r") as file:
+    content = file.read()
+
+if re.match(r"^[A-Za-z!?.]+$", content) and not re.search(r"\S", content):
+    if re.match(r"^[A-Za-z.!?]+$", content):
+        with open("app/core/self_edit_generated.py", "w") as file:
+            file.write(strip_prose(content))

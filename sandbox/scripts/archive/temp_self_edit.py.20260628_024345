@@ -1,0 +1,12 @@
+# from app.core.self_edit_generated import strip_prose
+
+from app.core.self_edit_generated import strip_prose
+
+app.core.self_edit_generated = __import__('self_edit_generated')
+
+def strip_sandbox_output(sandbox_output):
+    return strip_prose(sandbox_output)
+
+app.core.sandbox_interface.generate_random_sandbox_script = lambda: strip_sandbox_output(app.core.sandbox_interface.generate_random_sandbox_script())
+
+app.core.sandbox_interface.run_random_sandbox_script = lambda: app.core.sandbox_interface.run_random_sandbox_script(app.core.sandbox_interface.generate_random_sandbox_script())

@@ -1,0 +1,12 @@
+import re
+
+def strip_leading_prose():
+    modified_code_output = ""
+    for line in main_function().splitlines():
+        if re.match(r'^\s*[a-zA-Z]', line):
+            while True:
+                line = re.sub(r'^[^\S\n]*[a-zA-Z].*', '', line)
+                if not re.match(r'^\s*[a-zA-Z]', line) or re.search(r'[A-Za-z]+.*\([+-*/!]=|\.[0-9]+', line):
+                    break
+        modified_code_output += line + "\n"
+    return modified_code_output

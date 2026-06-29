@@ -1,0 +1,4 @@
+refactored_code, new_average_response_length = refactor_code(function_name)
+
+print(f"Original average length: {average_response_length}")
+print(f"New average length after refactoring: {new_average_response_length}")

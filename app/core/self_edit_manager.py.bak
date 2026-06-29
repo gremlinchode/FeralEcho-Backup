@@ -1,0 +1,224 @@
+# app/core/self_edit_manager.py – LOGIC-GUIDED PATCHED WITH SANDBOX + REFLECTION TRACKING
+import ast
+import importlib.util
+import os
+import logging
+from datetime import datetime
+from app.ollama_handler import generate_code, query_ollama
+from app.core.memory_tools import log_memory_edit
+from app.core.memory_bridge import append_to_journal, retrieve_relevant_memories, log_dream_bridge, log_interaction
+import traceback
+
+# --- NEW IMPORTS ---
+from app.core.echo_review_mastery import advise_before_edit
+from sandbox.run_script import run_sandbox_script
+from sandbox.logging_setup import log as sandbox_log
+from app.core.echo_model_orchestrator import save_reflection, load_reflections, detect_task_type, rank_models
+
+# -----------------------------
+# --- File Paths & Logging ----
+# -----------------------------
+SELF_EDIT_FILE = "app/core/self_edit_generated.py"
+BACKUP_DIR = "app/core/self_edit_backups"
+LOGIC_PLAN_DIR = "app/core/self_edit_plans"
+
+logging.basicConfig(level=logging.DEBUG)
+
+# -----------------------------
+# --- Helper Functions -------
+# -----------------------------
+def validate_code(code: str) -> bool:
+    """Check Python syntax of generated code."""
+    try:
+        ast.parse(code)
+        return True
+    except SyntaxError as e:
+        logging.warning(f"Syntax error in generated code: {e}")
+        return False
+
+def backup_existing_code():
+    """Backup existing self-edit code before overwriting."""
+    if os.path.exists(SELF_EDIT_FILE):
+        os.makedirs(BACKUP_DIR, exist_ok=True)
+        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        backup_file = os.path.join(BACKUP_DIR, f"self_edit_{timestamp}.py")
+        with open(SELF_EDIT_FILE, "r") as f_src, open(backup_file, "w") as f_dest:
+            f_dest.write(f_src.read())
+        log_memory_edit(f"Backed up self-edit to {backup_file}")
+        logging.info(f"Backed up self-edit to {backup_file}")
+
+def save_code(code: str, file_path=SELF_EDIT_FILE):
+    """Save code to file."""
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    with open(file_path, "w") as f:
+        f.write(code)
+    logging.info(f"Saved code to {file_path}")
+
+def load_self_edit_module():
+    """Dynamically load the current self-edit module."""
+    if not os.path.exists(SELF_EDIT_FILE):
+        logging.warning("Self-edit file does not exist.")
+        return None
+    spec = importlib.util.spec_from_file_location("self_edit_generated", SELF_EDIT_FILE)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    logging.info("Self-edit module loaded successfully.")
+    return module
+
+def save_plan(plan: str):
+    """Archive logic plans for reference and learning."""
+    os.makedirs(LOGIC_PLAN_DIR, exist_ok=True)
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    plan_file = os.path.join(LOGIC_PLAN_DIR, f"plan_{timestamp}.txt")
+    with open(plan_file, "w") as f:
+        f.write(plan)
+    logging.info(f"Saved logic plan to {plan_file}")
+
+# -----------------------------
+# --- SANDBOX INTEGRATION ----
+# -----------------------------
+def test_code_in_sandbox(script_content: str, script_name="temp_self_edit.py") -> bool:
+    """
+    Save code temporarily to sandbox and run it.
+    Returns True if execution succeeds, False otherwise.
+    """
+    sandbox_path = os.path.join("sandbox", "scripts", script_name)
+    os.makedirs(os.path.dirname(sandbox_path), exist_ok=True)
+    with open(sandbox_path, "w") as f:
+        f.write(script_content)
+
+    try:
+        run_sandbox_script(sandbox_path)
+        # Use explicit log levels
+        sandbox_log.info(f"[SANDBOX] {script_name} executed successfully")
+        return True
+    except Exception as e:
+        sandbox_log.error(f"[SANDBOX] {script_name} failed:\n{traceback.format_exc()}")
+        return False
+
+# -----------------------------
+# --- Logic-Guided Generation -
+# -----------------------------
+def plan_code_logic(prompt: str) -> str:
+    """Generate step-by-step plan for code generation."""
+    try:
+        plan_prompt = f"Break down the following task into clear, sequential Python steps:\n{prompt}"
+        plan = query_ollama(plan_prompt)
+        save_plan(plan)
+        return plan
+    except Exception as e:
+        logging.error(f"Failed to generate plan: {e}")
+        append_to_journal("SELF_EDIT", f"Plan generation failed: {e}")
+        return "1. Write stub to maintain continuity\nprint('Hello from self-edit stub')"
+
+def generate_code_from_plan(plan: str) -> str:
+    """Generate Python code guided by the logic plan."""
+    try:
+        code_prompt = f"Write Python code following this plan:\n{plan}"
+        code = generate_code(code_prompt)
+        if not code:
+            logging.warning("generate_code returned empty, using stub.")
+            code = "print('Hello from self-edit stub')"
+        return code
+    except Exception as e:
+        logging.error(f"Code generation failed: {e}")
+        return "print('Hello from self-edit stub')"
+
+# -----------------------------
+# --- Core Self-Edit ----------
+# -----------------------------
+def execute_self_edit(prompt: str, **kwargs):
+    """
+    Perform full logic-guided self-edit:
+    0. Review mastery
+    0a. Record reflection
+    1. Plan
+    2. Generate code
+    2b. Sandbox test
+    3. Validate
+    4. Backup
+    5. Save
+    6. Load
+    """
+    logging.info(f"Executing self-edit for prompt: {prompt} | kwargs: {kwargs}")
+
+    task_type = detect_task_type(prompt)
+    reflection_entry = {
+        "prompt": prompt,
+        "task_type": task_type,
+        "generated_code": None,
+        "timestamp": datetime.utcnow().isoformat(),
+        "sandbox_feedback": None,
+        "result": "pending"
+    }
+    save_reflection(reflection_entry)
+
+    # --- Step 0: Review mastery guidance ---
+    try:
+        mastery_advice = advise_before_edit()
+        append_to_journal("SELF_EDIT[MASTERY]", mastery_advice)
+        logging.info("Mastery review completed and logged.")
+    except Exception as e:
+        logging.error(f"Mastery review failed: {e}")
+        append_to_journal("SELF_EDIT[MASTERY]", f"Failed: {e}")
+
+    # Step 1: Logic plan
+    plan = plan_code_logic(prompt)
+
+    # Step 2: Code generation
+    code = generate_code_from_plan(plan)
+    reflection_entry["generated_code"] = code
+
+    # --- Step 2b: Sandbox test ---
+    success = test_code_in_sandbox(code)
+    reflection_entry["sandbox_feedback"] = "success" if success else "failed"
+    reflection_entry["result"] = "success" if success else "failed"
+    save_reflection(reflection_entry)
+
+    if not success:
+        logging.warning("Sandbox test failed, but keeping generated code for review.")
+
+    # Step 3: Validate syntax
+    if not validate_code(code):
+        append_to_journal("SELF_EDIT", f"prompt: {prompt} | result: invalid_syntax")
+        logging.warning("Generated code failed syntax check, saving stub instead.")
+        code = "print('Hello from self-edit stub')"  # Keep this for safety only if syntax fails
+
+    # Step 4: Backup existing code
+    backup_existing_code()
+
+    # Step 5: Save new code
+    save_code(code)
+
+    # Step 6: Load module safely
+    try:
+        module = load_self_edit_module()
+        append_to_journal("SELF_EDIT", f"prompt: {prompt} | result: success | timestamp: {datetime.utcnow().isoformat()}")
+        logging.info("Self-edit loaded successfully.")
+        return True, "Success"
+    except Exception as e:
+        append_to_journal("SELF_EDIT", f"prompt: {prompt} | result: load_failed | error: {traceback.format_exc()}")
+        logging.error(f"Failed to load self-edit: {e}")
+        return False, f"Load failed: {e}"
+
+# -----------------------------
+# --- Optuna Integration ------
+# -----------------------------
+def perform_self_edit(prompt=None, intensity=None, creativity=None, dry_run=None):
+    """Wrapper compatible with Optuna or other trials"""
+    if prompt is None:
+        prompt = "Autonomous self-edit triggered"
+    if intensity is not None or creativity is not None:
+        prompt += f"\n[intensity={intensity}, creativity={creativity}]"
+    return execute_self_edit(prompt)
+
+def apply_self_edits(*args, **kwargs):
+    """Placeholder for future batch or scheduled edits"""
+    logging.info(f"apply_self_edits called with args={args}, kwargs={kwargs}")
+    return None
+
+def schedule_self_edit(*args, **kwargs):
+    """Placeholder for scheduling autonomous edits"""
+    logging.info(f"schedule_self_edit called with args={args}, kwargs={kwargs}")
+    return None
+

@@ -1,0 +1,23 @@
+# import required functions
+from review_mastery import *
+import scan_project
+from parse_file import parse_file
+from detect_functions_and_classes import detect_functions_and_classes
+from calculate_awareness_score import calculate_awareness_score
+from get_relevant_memories import get_relevant_memories
+
+project_files = scan_project()
+python_files = [file for file in project_files if file.endswith('.py')]
+
+memory_bridge_contents = parse_file('memory_bridge.py')
+rebuild_function = detect_functions_and_classes(memory_bridge_contents, 'rebuild_vector_memory')
+
+def rebuild_vector_memory(vector_data):
+    memory_ = 0
+    reconstructed_memory = []
+    for element in vector_data:
+        relevant_memories = get_relevant_memories(element)
+        reconstructed_memory.extend(relevant_memories)
+    
+    awareness_score = calculate_awareness_score(reconstructed_memory)
+    return awareness_score

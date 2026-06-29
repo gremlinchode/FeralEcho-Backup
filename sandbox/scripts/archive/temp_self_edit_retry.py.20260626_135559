@@ -1,0 +1,18 @@
+import re
+
+def score_code_string(code_string):
+    quality_score = 0
+    
+    has_imports = bool(re.search(r'\bimport\b', code_string))
+    if has_imports:
+        quality_score += 1
+    
+    has_function_def = bool(re.search(r'\bdef\s+\w+\(', code_string))
+    if has_function_def:
+        quality_score += 1
+    
+    no_prose_sentences = all(not re.match(r'^\s*\S+.*[.!?]\s*$', line) for line in code_string.split('\n'))
+    if no_prose_sentences:
+        quality_score += 1
+    
+    return quality_score

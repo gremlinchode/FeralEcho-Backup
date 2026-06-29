@@ -1,0 +1,17 @@
+# import parse_file, replace_import, insert_after_class_definition, generate_issue_report, log_memory_event, open_file, write_to_disk, calculate_awareness_score, calculate_consciousness_score
+
+file_modification = parse_file("/Users/richietate/Desktop/FeralEcho/echo_model_orchestrator.py")
+
+replace_import = replace("from awareness_integration import ollama_query", "import ollama_query as oq")
+
+updated_code = insert_after_class_definition(replace_import)
+
+write_to_disk = generate_issue_report(updated_code, file_modification, "/Users/richietate/Desktop/FeralEcho/echo_model_orchestrator.py")
+
+print_message = log_memory_event("Updated 'from awareness_integration' import statement for improved clarity.")
+
+append_journal_entry = open_file("/Users/richietate/Desktop/FeralEcho/journal.txt", "w").write("Addressed certainty concerns in echo_model_orchestrator.py\n")
+
+calculate_score = calculate_awareness_score()
+
+confirm_change = log_memory_event("Updated journal and calculated awareness score.")

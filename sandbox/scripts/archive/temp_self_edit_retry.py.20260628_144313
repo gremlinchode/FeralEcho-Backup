@@ -1,0 +1,13 @@
+
+average_response_length_threshold = 0.8 
+
+current_average_response_length = sum(score_code_candidate()) / len(score_code_candidate()) 
+
+target_average_response_length = current_average_response_length * (1 - average_response_length_threshold) 
+
+def generate_optimized_code(): 
+    while True: 
+        code_candidate = score_code_candidate() 
+        stripped_code = strip_prose(code_candidate) 
+        if len(stripped_code) <= target_average_response_length: 
+            return code_candidate

@@ -1,0 +1,8 @@
+# import os
+import re
+
+file_path = '/Users/richietate/Desktop/FeralEcho/memory_entries.py'
+original_code = open(file_path, 'r').read()
+modified_code = original_code.replace('file_pat', 'file_path')
+with open(file_path, 'w') as f: f.write(modified_code)
+print(f"Modified {file_path} and saved the changes.")

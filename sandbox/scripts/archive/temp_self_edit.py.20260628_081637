@@ -1,0 +1,11 @@
+import re
+
+
+def strip_prose_before_code(text: str) -> str:
+    pattern = r'^\s*[^\n]*[.!?]\s*'
+    match = re.search(pattern, text)
+    if match:
+        return text[:match.start()].rstrip() + '  '
+    else:
+        return text
+    assert len(strip_prose_before_code(text)) > 0

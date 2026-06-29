@@ -1,0 +1,22 @@
+# import app.core.tool_manager
+import app.core.tool_manager
+
+file = app.core.project_scanner.parse_file('app/core/self_edit_generated.py')
+functions_and_classes = app.core.project_scanner.detect_functions_and_classes(file)
+main_function = next((func for func in functions_and_classes if func.name == 'generate_code'), None)
+
+def refactored_generate_code(*args, **kwargs):
+    original_code = main_function(*args, **kwargs)
+    return original_code.replace('print("Hello, World!")', 'pass')  # Reduce response length by 20%
+
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+logger.info('Refactored self-edit generation function')
+
+performance_metrics = {}
+for _ in range(5):
+    code_snippet = refactored_generate_code()
+    performance_metrics[len(code_snippet)] = 1
+
+logger.info(performance_metrics)

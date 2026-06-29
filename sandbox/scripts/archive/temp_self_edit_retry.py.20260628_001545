@@ -1,0 +1,9 @@
+# from app.core.self_edit_generated import strip_prose
+from app.core.self_edit_generated import strip_prose
+strip_prose_func = strip_prose
+
+def refactor_strip_prose(input_string):
+    simplified_string = input_string.strip()
+    return ' '.join(simplified_string.split())
+
+strip_prose = refactor_strip_prose

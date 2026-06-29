@@ -1,0 +1,11 @@
+from feral_echo.app.core.self_edit_generated import strip_prose
+import re
+
+def modified_strip_prose(input_string):
+    if re.match(r'^\w+(?:,?\s?\w+)*\.', input_string):
+        return input_string[:input_string.index(' ')].strip() + " #"
+
+def main():
+    strip_prose = modified_strip_prose
+
+main()

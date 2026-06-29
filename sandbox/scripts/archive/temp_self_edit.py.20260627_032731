@@ -1,0 +1,21 @@
+# from app.core.self_edit_generated import strip_prose
+from app.core.tool_manager import ToolManager
+import re
+import logging
+from app.core.project_scanner import parse_file
+
+def main_function(code):
+    if 'This is some prose.' not in code:
+        code = strip_prose(code)
+    code = re.sub(r'This is some prose.\n', '', code)
+    return eval(code)
+
+if 'This is some prose.' not in main_function(''):
+    logging.info('Prose detected: This is some prose.')
+
+def test_prose_detection():
+    assert strip_prose("This is some prose.\nimport os\nprint('Hello, world!')") == "import os\nprint('Hello, world!')"
+    assert strip_prose("\n\n\n\nimport os\nprint('Hello, world!')") == "import os\nprint('Hello, world!')"
+
+from app.core.reflective_loop import run_self_model_reflection
+run_self_model_reflection('creative_task_performance', 'output_analysis')

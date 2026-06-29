@@ -1,0 +1,19 @@
+import Tool
+from app.core.tool_manager import Tool
+tool = Tool()
+
+code = parse_file('app/core/self_edit_generated.py')
+
+def strip_leading_prose(input_string):
+    import re
+    return re.sub(r'(?m)^.*?(?=\n)([^=].*)', '', input_string)
+
+def modified_main_function():
+    result = main_function()
+    return strip_leading_prose(result)
+
+code['main_function'] = modified_main_function
+
+tool.replace_file_code('app/core/self_edit_generated.py', code)
+
+run_random_sandbox_script(tool)

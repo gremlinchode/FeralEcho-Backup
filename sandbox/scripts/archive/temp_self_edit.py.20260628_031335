@@ -1,0 +1,18 @@
+import app.core.project_scanner
+from app.core.self_edit_generated import strip_prose
+
+def prose_guard(code):
+    if ': ' in code:
+        code = code.split(': ')[1]
+    return code
+
+code = parse_file('app/core/self_edit_generated.py')
+functions = detect_functions_and_classes(code)
+prose_related_funcs = [f for f in functions if 'prose' in f.__name__ or 'output' in f.__name__]
+
+if prose_related_funcs:
+    for func in prose_related_funcs:
+        code = code.replace(f'{func}(.*):', f"prose_guard('\\1'):")
+
+code += '# Strips any leading natural-language sentence before the first valid Python token'
+parse_file('app/core/self_edit_generated.py', save=True)

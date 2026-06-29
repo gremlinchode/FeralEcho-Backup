@@ -1,0 +1,7 @@
+import os
+file_path = '/Users/richietate/Desktop/FeralEcho/rebuild_vector_memory.py'
+if not os.path.exists(file_path): raise FileNotFoundError(f"File '{file_path}' does not exist.")
+with open(file_path, 'r') as f: code = f.read()
+updated_code = code.replace('# from memory_bridge import calculate_vector_memory\n', 'from feralecho.memory_bridge import calculate_vector_memory\n')
+with open(file_path, 'w') as f: f.write(updated_code)
+print(f"Updated {file_path} to include the correct function call")

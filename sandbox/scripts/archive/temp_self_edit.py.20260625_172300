@@ -1,0 +1,7 @@
+import logging; import os
+file_path = os.path.join('/Users/richietate/Desktop/FeralEcho/', 'awareness_integration.py')
+with open(file_path, 'r') as file:
+    content = file.read()
+content = "import logging\nlogging.basicConfig(filename='awareness.log', level=logging.INFO)\n" + content
+with open(file_path, 'w') as file: file.write(content)
+print(f"Modified {file_path} to include logging configuration.")

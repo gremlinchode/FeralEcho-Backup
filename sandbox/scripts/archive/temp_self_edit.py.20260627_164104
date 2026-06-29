@@ -1,0 +1,13 @@
+# import re
+
+def strip_prose():
+    self_edit = load_tool('self_edit')
+    stripped_output = re.sub(r'^\w*\.\s*', '', output)
+    return self_edit(stripped_output)
+
+def self_edit(output):
+    return re.sub(r'^\w*\.\s*', '', output)
+
+open('app/core/self_edit_generated.py', 'w').write(self_edit.__code__.co_code)
+run_cartographer()
+start_emergent_scheduler()

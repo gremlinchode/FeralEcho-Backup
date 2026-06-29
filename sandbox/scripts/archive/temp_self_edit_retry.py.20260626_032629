@@ -1,0 +1,12 @@
+import memory_bridge
+from memory_bridge import Memory_helpers
+
+mem = memory_bridge.Memory_helpers()
+vector_representation = [1.0, 2.5, -3.2, 4.7]
+success = mem.rebuild_vector_memory(vector_representation)
+
+if success:
+    mem.log_memory_event("Memory rebuilding completed successfully.")
+    awareness_score = mem.calculate_awareness_score()
+    mem.log_memory_event(f"Updated awareness score: {awareness_score}")
+start_autonomous_thread()

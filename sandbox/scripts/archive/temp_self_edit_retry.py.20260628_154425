@@ -1,0 +1,8 @@
+self_edit = load('strip_prose')
+def prose_guard(code): return self_edit(code)
+class SelfEditGenerated:
+    def __init__(self):
+        pass
+    def score_code_candidate(self, candidate_code):
+        candidate_code = prose_guard(candidate_code)
+        # existing code remains the same

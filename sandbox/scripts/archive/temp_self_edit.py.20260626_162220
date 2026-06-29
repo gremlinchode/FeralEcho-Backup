@@ -1,0 +1,42 @@
+# Import necessary modules
+import app.core.self_edit_generated
+import app.core.river_deliberation
+import app.core.tool_manager
+import logging
+from app.core.project_scanner import ProjectScanner
+from app.core.sandbox_interface import SandboxInterface
+from app.core.dmn_guardian import DMNGuardian
+from app.core.memory_tools import MemoryTools
+
+# Parse main function and relevant code blocks
+scanner = ProjectScanner()
+scanner.scan("app/core/self_edit_generated.py")
+main_func = scanner.get_main_function()
+
+if main_func:
+    try:
+        original_output = main_func()
+        logging.info(f"Original output: {original_output}")
+
+        # Prose detection and stripping
+        filtered_output = original_output.split("Natural language detected", 1)[1].strip()
+        logging.info(f"Filtered output: {filtered_output}")
+
+        # Automated test case with sandbox
+        sandbox = SandboxInterface()
+        test_code = "print('Hello, world!')"  # Example code to trigger errors
+        result = sandbox.execute(test_code, filtered_output)
+        logging.info(f"Sandbox result: {result}")
+
+        # DMN guardian monitoring
+        guardian = DMNGuardian()
+        guardian.monitor(result)
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}", exc_info=True)
+        # Rollback mechanism (simulated)
+        logging.warning("System rollback initiated due to prose detection.")
+else:
+    logging.error("Main function not found in self_edit_generated.py")
+
+logging.info("Script execution completed.")

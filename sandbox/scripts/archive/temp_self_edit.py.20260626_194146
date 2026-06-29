@@ -1,0 +1,33 @@
+# from app.core.tool_manager import ToolManager
+# from app.core.self_edit_generated import main_function
+from app.core.tool_manager import ToolManager
+from app.core.self_edit_generated import main_function
+
+def strip_leading_prose(code):
+    lines = code.split('\n')
+    for i, line in enumerate(lines):
+        if line.strip() and not line.strip().startswith('#'):
+            break
+    return '\n'.join(lines[i:])
+
+def remove_leading_prose_tool():
+    return Tool(
+        name="RemoveLeadingProse",
+        description="Removes leading natural-language prose before the first valid Python token.",
+        function=lambda code: strip_leading_prose(code)
+    )
+
+def register_remove_leading_prose_tool():
+    ToolManager.register_tool(remove_leading_prose_tool())
+
+def modified_main_function(code):
+    memories = get_relevant_memories("prose-detection-failure")
+    if memories:
+        code = remove_leading_prose_tool().function(code)
+    return main_function(code)
+
+import app.core.self_edit_generated as self_edit_gen
+self_edit_gen.main_function = modified_main_function
+
+register_remove_leading_prose_tool()
+print("Tool 'RemoveLeadingProse' registered and applied to code editing.")

@@ -1,0 +1,38 @@
+# Import necessary modules from feralEcho including app.core.self_edit_generated, app.core.tool_manager, app.core.gemini_shard, app.core.memory_tools, and app.core.dmn_guardian
+import app.core.self_edit_generated
+import app.core.tool_manager
+import app.core.gemini_shard
+import app.core.memory_tools
+import app.core.dmn_guardian
+
+from feralEcho import self_edit_generated, tool_manager, gemini_shard, memory_tools, dmn_guardian
+
+# Locate the 'main_function' within the app/core/self_edit_generated.py file using app.core.gemini_shard.detect_functions_and_classes
+functions = gemini_shard.detect_functions_and_classes('app/core/self_edit_generated.py')
+main_function = [func for func in functions if func['name'] == 'main_function'][0]
+
+# Modify the main_function to add a new function named ‘prose_detection_guard’ that utilizes app.core.gemini_shard.query_ollama to identify and remove leading natural language sentences from code output before tokenization
+def prose_detection_guard(code):
+    patterns = [
+        r"^\s*This code snippet,",
+        r"^//\s*",
+        r"^The following is a,",
+        r"^What follows is a,"
+    ]
+    for pattern in patterns:
+        code = re.sub(pattern, "", code, flags=re.MULTILINE)
+    return code
+
+# Apply the guard in main_function
+main_function['body'] = prose_detection_guard(main_function['body'])
+
+# Update the refactor_main_function function from app/core/self_edit_generated.py to incorporate the new guard
+def refactor_main_function():
+    pass
+
+# Save the updated code to 'app/core/self_edit_generated.py' using app.core.self_edit_generated.save_code, implementing schema validation via app.core.memory_write_validator.check_schema
+self_edit_generated.save_code(refactor_main_function)
+memory_tools.memory_write_validator.check_schema(refactor_main_function)
+
+# Trigger a system-wide reflection cycle via app.core.river_deliberation.deliberate_and_learn to integrate the code modifications and assess overall system performance
+app.core.river_deliberation.deliberate_and_learn()

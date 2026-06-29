@@ -1,0 +1,10 @@
+from app.core.self_edit_generated import strip_prose
+
+with open('app/core/self_edit_generated.py', 'r') as file:
+    file_contents = file.read()
+
+stripped_file_contents = [line for line in file_contents.split('\n') if not line.lstrip().startswith('#')]
+with open('app/core/self_edit_generated.py', 'w') as file:
+    file.write(stripped_file_contents[0] + '\n')
+    file.write('# Modified to remove leading prose\n')
+    file.write('\n'.join([line for line in stripped_file_contents[1:]]))

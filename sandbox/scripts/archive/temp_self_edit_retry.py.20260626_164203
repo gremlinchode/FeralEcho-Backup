@@ -1,0 +1,46 @@
+import re
+
+tool_manager = app.core.tool_manager.ToolManager()
+tool = tool_manager.Tool()
+
+file_path = "app/core/self_edit_generated.py"
+parsed_code = tool.parse_file(file_path)
+
+functions = [func for func in parsed_code.functions if 'output' in func.name or 'sandbox' in func.name]
+
+for func in functions:
+    if 'generate_output' == func.name:
+        def remove_prose_from_output(code):
+            pattern = r"^\s*.*?:\s*"  # Remove sentences starting with colons
+            cleaned_code = re.sub(pattern, "", code, flags=re.MULTILINE)
+            return cleaned_code
+
+        def execute_sandbox(code):
+            if detect_prose.detect_prose_in_code(code):
+                cleaned_code = remove_prose_from_output(code)
+                return cleaned_code
+            else:
+                return code
+
+        original_body = app.core.self_edit_generated.generate_output.__doc__ 
+        new_body = f"""def generate_output(code):\n    cleaned_code = execute_sandbox(code)\n    return cleaned_code"""
+        app.core.self_edit_generated.generate_output = eval(new_body)
+
+    elif 'run_sandbox' == func.name:
+        def remove_prose_from_sandbox_code(code):
+            pattern = r"^\s*.*?:\s*"  # Remove sentences starting with colons
+            cleaned_code = re.sub(pattern, "", code, flags=re.MULTILINE)
+            return cleaned_code
+
+        def execute_sandbox(code):
+            if detect_prose.detect_prose_in_code(code):
+                cleaned_code = remove_prose_from_output(code)
+                return cleaned_code
+            else:
+                return code
+
+        original_body = app.core.self_edit_generated.run_sandbox.__doc__ 
+        new_body = f"""def run_sandbox(code):\n    cleaned_code = execute_sandbox(code)\n    return cleaned_code"""
+        app.core.self_edit_generated.run_sandbox = eval(new_body)
+
+tool.save_code(file_path, parsed_code)

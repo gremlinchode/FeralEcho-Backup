@@ -1,0 +1,45 @@
+import sys
+from app.core.self_edit_generated import main_function
+import nltk
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.corpus import stopwords
+
+def shorten_response(response):
+    stop_words = set(stopwords.words('english'))
+
+    sentences = sent_tokenize(response)
+    shortened_sentences = []
+
+    for sentence in sentences:
+        words = word_tokenize(sentence)
+        filtered_words = [word for word in words if not word.lower() in stop_words]
+        shortened_sentence = ' '.join(filtered_words)
+
+        threshold = 0.8
+        if len(shortened_sentence) / len(sentence) < threshold:
+            shortened_sentences.append(shortened_sentence)
+        else:
+            shortened_sentences.append(sentence)
+
+    return ' '.join(shortened_sentences)
+
+main_function = shorten_response(main_function)
+
+shortened_responses = []
+threshold = 0.8
+
+for response in [main_function]:
+    sentences = sent_tokenize(response)
+    shortened_sentences = []
+
+    for sentence in sentences:
+        words = word_tokenize(sentence)
+        filtered_words = [word for word in words if not word.lower() in stop_words]
+        shortened_sentence = ' '.join(filtered_words)
+
+        if len(shortened_sentence) / len(sentence) < threshold:
+            shortened_sentences.append(shortened_sentence)
+        else:
+            shortened_sentences.append(sentence)
+
+    shortened_responses.append(' '.join(shortened_sentences))

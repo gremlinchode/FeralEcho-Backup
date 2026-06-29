@@ -1,0 +1,26 @@
+# import necessary modules
+from echo_model_orchestrator import ollama_query
+
+# detect data types and parameters of ollama_query function
+import typeguard
+@typeguard.typechecked()
+def ollama_query_aware(*args, **kwargs):
+    # define the logic for awareness integration
+    pass
+
+# create a new Python file named awareness_integration.py
+import inspect, sys
+sys.path.insert(0, "/path/to/echo_model_orchestrator")  # Adjust path as needed
+from echo_model_orchestrator import ollama_query_loc
+
+# define new function ollama_query_aware using model_guided_autonomous_loop tool
+import model_guided_autonomous_loop
+def ollama_query_aware():
+    from model_guided_autonomous_loop import start_autonomous_thread
+    start_autonomous_thread()
+
+# modify original ollama_query function to call the new ollama_query_aware function
+ollama_query = ollama_query_aware
+
+# scan the modified code for any potential issues or conflicts
+import scan_project

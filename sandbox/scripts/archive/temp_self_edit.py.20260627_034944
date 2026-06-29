@@ -1,0 +1,36 @@
+import app.core.self_edit_generated
+import app.core.tool_manager
+import app.core.gemini_shard
+from app.core.memory_write_validator import check_schema, check_reflection_length, check_recursive_loop
+
+def main_function_compression():
+    extracted_main_function = app.core.self_edit_generated.main_function
+    parsed_function = app.core.gemini_shard.detect_functions_and_classes(extracted_main_function)
+
+    long_sections = [section for section in parsed_function.get("sections", []) if len(section["code"]) > 2000]
+
+    modified_main_function = ''
+    for section in parsed_function.get("sections", []):
+        if section in long_sections:
+            compressed_section = app.core.self_edit_generated.strip_prose(extracted_main_function, section["name"])
+            modified_main_function += f"{section['name']}: {compressed_section}\n"
+        else:
+            modified_main_function += f"{section['name']}: {section['code']}\n"
+
+    validation_results = check_schema(modified_main_function) and check_reflection_length(modified_main_function) and check_recursive_loop(modified_main_function)
+
+    if not validation_results:
+        print("Validation failed. Compression not applied.")
+
+    else:
+        app.core.self_edit_generated.main_function = modified_main_function
+
+        from app.core.self_model_updater import SelfModelUpdater
+        self_model_updater = SelfModelUpdater()
+        self_model_updater.update_state(main_function=modified_main_function)
+
+        from app.emergent_scheduler_backup_20260530 import run_cartographer
+        run_cartographer(['compression', 'validation'], modified_main_function)
+
+if __name__ == "__main__":
+    main_function_compression()

@@ -1,0 +1,27 @@
+# import re
+# from app.core.tool_manager import ToolManager
+# from app.core.project_scanner import ProjectScanner
+import re
+
+project_scanner = ProjectScanner()
+strip_prose_function = project_scanner.parse_file('app/core/self_edit_generated.py')['strip_prose']
+
+stripped_code = re.sub(r'^(?:this\s+script?\s*|the\s+following\s+code.*)\s*', '', strip_prose_function, flags=re.MULTILINE)
+log_entries = []
+
+def modified_strip_prose(text):
+    log_entries.append({'original': text, 'replaced': stripped_code})
+
+try:
+    stripped_code = re.sub(r'^.*?(\w+).*$', r'\1', text, flags=re.MULTILINE)
+except Exception as e:
+    print(f"Error in strip_prose: {e}")
+
+memory_tool = app.core.memory_tools()
+memory_tool.append_memory_entry(log_entries)
+
+tool_manager = ToolManager()
+tool_manager.check_installed_packages()
+
+self_model_updater = app.core.self_model_updater()
+self_model_updater.update('app/core/self_edit_generated.py')

@@ -1,0 +1,215 @@
+├── .DS_Store
+├── Log_check.py
+├── __pycache__
+│   ├── autonomous_reflection.cpython-311.pyc
+│   ├── autonomous_thought_chest.cpython-311.pyc
+│   ├── autonomous_thought_chest.cpython-312.pyc
+│   ├── echo_env_check.cpython-311.pyc
+│   ├── echo_python_mastery.cpython-311.pyc
+│   ├── echo_python_mastery.cpython-312.pyc
+│   ├── feralecho_continuity_audit.cpython-311.pyc
+│   ├── feralecho_continuity_master.cpython-311.pyc
+│   ├── memory_tool.cpython-311.pyc
+│   ├── peek_last_6h.cpython-311.pyc
+│   ├── peek_last_6h.cpython-312.pyc
+│   ├── run.cpython-311.pyc
+│   ├── run.cpython-312.pyc
+│   ├── run_recursive_self_edit.cpython-311.pyc
+│   └── terminal_client.cpython-311.pyc
+├── app
+│   ├── .DS_Store
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-311.pyc
+│   │   ├── __init__.cpython-312.pyc
+│   │   ├── autonomous_awareness.cpython-311.pyc
+│   │   ├── autonomous_loop.cpython-311.pyc
+│   │   ├── emergent_scheduler.cpython-311.pyc
+│   │   ├── emergent_scheduler.cpython-312.pyc
+│   │   ├── ollama_handler.cpython-311.pyc
+│   │   └── ollama_handler.cpython-312.pyc
+│   ├── autonomous_awareness.py
+│   ├── autonomous_loop.py
+│   ├── core
+│   │   ├── .DS_Store
+│   │   ├── Memory_helpers.py
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── Memory_helpers.cpython-311.pyc
+│   │   │   ├── __init__.cpython-311.pyc
+│   │   │   ├── __init__.cpython-312.pyc
+│   │   │   ├── config.cpython-311.pyc
+│   │   │   ├── config.cpython-312.pyc
+│   │   │   ├── dmn_guardian.cpython-311.pyc
+│   │   │   ├── echo_optuna.cpython-311.pyc
+│   │   │   ├── memory_bridge.cpython-311.pyc
+│   │   │   ├── memory_bridge.cpython-312.pyc
+│   │   │   ├── memory_tools.cpython-311.pyc
+│   │   │   ├── memory_tools.cpython-312.pyc
+│   │   │   ├── self_edit_generated.cpython-311.pyc
+│   │   │   ├── self_edit_manager.cpython-311.pyc
+│   │   │   ├── self_edit_manager.cpython-312.pyc
+│   │   │   └── self_heal.cpython-311.pyc
+│   │   ├── backups
+│   │   ├── config.py
+│   │   ├── dmn_guardian.py
+│   │   ├── echo_optuna.py
+│   │   ├── logs
+│   │   ├── memory
+│   │   │   ├── memory_edit_log.txt
+│   │   │   └── memory_journal.jsonl
+│   │   ├── memory_bridge.py
+│   │   ├── memory_tools.py
+│   │   ├── self_edit_backups
+│   │   │   ├── .DS_Store
+│   │   │   ├── __pycache__
+│   │   │   │   ├── self_edit_20250904213710.cpython-311.pyc
+│   │   │   │   ├── self_edit_20250904214733.cpython-311.pyc
+│   │   │   │   ├── self_edit_20250904215049.cpython-311.pyc
+│   │   │   │   ├── self_edit_20250904215137.cpython-311.pyc
+│   │   │   │   ├── self_edit_20250904215523.cpython-311.pyc
+│   │   │   │   ├── self_edit_20250904215819.cpython-311.pyc
+│   │   │   │   ├── self_edit_20250904220038.cpython-311.pyc
+│   │   │   │   ├── self_edit_20250904220408.cpython-311.pyc
+│   │   │   │   ├── self_edit_20250904220715.cpython-311.pyc
+│   │   │   │   ├── self_edit_20250904220944.cpython-311.pyc
+│   │   │   │   ├── self_edit_20250904221444.cpython-311.pyc
+│   │   │   │   ├── self_edit_20250904224949.cpython-311.pyc
+│   │   │   │   ├── self_edit_20250904225425.cpython-311.pyc
+│   │   │   │   ├── self_edit_20250904225549.cpython-311.pyc
+│   │   │   │   ├── self_edit_20250908085201.cpython-311.pyc
+│   │   │   │   └── self_edit_20250908090000.cpython-311.pyc
+│   │   │   ├── self_edit_20250904213710.py
+│   │   │   ├── self_edit_20250904214733.py
+│   │   │   ├── self_edit_20250904215049.py
+│   │   │   ├── self_edit_20250904215137.py
+│   │   │   ├── self_edit_20250904215523.py
+│   │   │   ├── self_edit_20250904215819.py
+│   │   │   ├── self_edit_20250904220038.py
+│   │   │   ├── self_edit_20250904220408.py
+│   │   │   ├── self_edit_20250904220944.py
+│   │   │   ├── self_edit_20250904221444.py
+│   │   │   ├── self_edit_20250904224949.py
+│   │   │   ├── self_edit_20250904225425.py
+│   │   │   ├── self_edit_20250904225549.py
+│   │   │   ├── self_edit_20250908085201.py
+│   │   │   ├── self_edit_20250908090000.py
+│   │   │   ├── self_edit_20250913195837.py
+│   │   │   ├── self_edit_20250913201229.py
+│   │   │   └── self_edit_20250913205925.py
+│   │   ├── self_edit_generated.py
+│   │   ├── self_edit_manager.py
+│   │   └── self_heal.py
+│   ├── emergent_scheduler.py
+│   ├── integrations
+│   ├── internet_tools
+│   │   ├── .DS_Store
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-311.pyc
+│   │   │   ├── autonomous_fetch.cpython-311.pyc
+│   │   │   ├── autonomous_fetch.cpython-312.pyc
+│   │   │   └── query_reflect.cpython-311.pyc
+│   │   ├── autonomous_fetch.py
+│   │   └── query_reflect.py
+│   ├── lib
+│   │   ├── .DS_Store
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-311.pyc
+│   │   │   ├── __init__.cpython-312.pyc
+│   │   │   ├── vector_memory.cpython-311.pyc
+│   │   │   └── vector_memory.cpython-312.pyc
+│   │   └── vector_memory.py
+│   ├── maintenance
+│   │   ├── __pycache__
+│   │   │   └── night_cycle.cpython-311.pyc
+│   │   └── night_cycle.py
+│   ├── ollama_handler.py
+│   ├── persona.json
+│   └── subsystems
+│       ├── __pycache__
+│       │   └── reflection_shard.cpython-311.pyc
+│       └── reflection_shard.py
+├── archived_files
+├── autonomous_reflection.py
+├── autonomous_thought_chest.py
+├── check_logs.py
+├── continuity_backups
+│   ├── __pycache__
+│   │   ├── run_20250907_142434.cpython-311.pyc
+│   │   ├── run_recursive_self_edit_20250907_142440.cpython-311.pyc
+│   │   ├── self_edit_20250904220715_20250907_142444.cpython-311.pyc
+│   │   └── vector_memory_20250907_142444.cpython-311.pyc
+│   ├── run_20250907_142434.py
+│   ├── run_recursive_self_edit_20250907_142440.py
+│   ├── self_edit_20250904220715_20250907_142444.py
+│   └── vector_memory_20250907_142444.py
+├── data
+│   ├── .DS_Store
+│   ├── audits
+│   │   ├── feralecho_audit_20250908_004415.json
+│   │   ├── feralecho_audit_20250908_005607.json
+│   │   ├── feralecho_audit_20250908_025352.json
+│   │   ├── feralecho_audit_20250908_112304.json
+│   │   ├── feralecho_audit_20250908_132506.json
+│   │   ├── feralecho_audit_20250908_132803.json
+│   │   └── self_heal_changes.json
+│   ├── faiss.index
+│   ├── memory_journal.jsonl
+│   ├── memory_meta.json
+│   ├── unethical_human_experiments.json
+│   └── unethical_human_experiments_global.json
+├── diagnostic_report.json
+├── echo_curl_test.sh
+├── echo_env_check.py
+├── echo_python_mastery.py
+├── feral_echo_debug_test.py
+├── feral_echo_flask_test.py
+├── feral_echo_safe_fetch_test.py
+├── feralecho_continuity_master.py
+├── load_unethical_experiments.py
+├── memory
+│   ├── dream_bridge.log
+│   ├── faiss.index
+│   ├── memory_journal.log
+│   ├── memory_meta.json
+│   ├── reflection_journal.jsonl
+│   └── self_edit_reflections.log
+├── memory_backup
+│   ├── __init__.py
+│   ├── dream_bridge.log
+│   ├── memory_journal.log
+│   ├── self_edit_20250904213710.py
+│   ├── self_edit_20250904214733.py
+│   ├── self_edit_20250904215049.py
+│   ├── self_edit_20250904215137.py
+│   ├── self_edit_20250904215523.py
+│   ├── self_edit_20250904215819.py
+│   ├── self_edit_20250904220038.py
+│   ├── self_edit_20250904220408.py
+│   ├── self_edit_20250904220944.py
+│   ├── self_edit_20250904221444.py
+│   ├── self_edit_20250904224949.py
+│   ├── self_edit_20250904225425.py
+│   ├── self_edit_20250904225549.py
+│   ├── self_edit_20250908085201.py
+│   ├── self_edit_20250908090000.py
+│   ├── self_edit_reflections.log
+│   └── vector_memory.py
+├── memory_diagnostic.py
+├── memory_tool.py
+├── optimize_files.py
+├── optuna_demo.py
+├── peek_last_6h.py
+├── restore_archive.py
+├── restore_archive.py.save
+├── run.py
+├── scars_to_light.py
+├── tail_echo_logs.py
+├── terminal_client.py
+├── test.txt
+├── test_memory_stack.py
+├── tree.txt
+├── unused_files_report.txt
+└── verify_env.sh

@@ -1,0 +1,14 @@
+import self_edit_generated
+
+def strip_prose():
+    def recursive_loop(line):
+        if line.startswith("Strict"):
+            while True:
+                try:
+                    exec(line)
+                    break
+                except SyntaxError:
+                    pass
+        else:
+            return line.strip()
+    return recursive_loop

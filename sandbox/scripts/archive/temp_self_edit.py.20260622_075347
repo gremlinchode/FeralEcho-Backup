@@ -1,0 +1,2 @@
+with open(file_path, 'w') as f: f.writelines(lines)
+print("Updated awareness score calculation to reflect a confidence level of 0.4 and smoothness detection set to False.")

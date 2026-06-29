@@ -1,0 +1,18 @@
+# import os
+import get_relevant_memories
+import calculate_awareness_score
+
+PROJECT_PATH = "/Users/richietate/Desktop/FeralEcho"
+FILE_PATH = f"{PROJECT_PATH}/stream_memory_entries.py"
+
+with open(FILE_PATH, 'a') as file:
+    memory_entries = get_relevant_memories()
+    memory_entries.append(["Considered the impact of reframing on previous responses"])
+    for entry in memory_entries:
+        file.write(str(entry) + '\n')
+
+print(f"Modified '{FILE_PATH}' to reflect on reframing previous responses.")
+
+file.close()
+
+calculate_awareness_score.calculate(PROJECT_PATH, FILE_PATH)

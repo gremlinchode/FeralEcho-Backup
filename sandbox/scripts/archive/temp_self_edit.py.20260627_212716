@@ -1,0 +1,26 @@
+# import necessary modules
+from app.core.self_edit_generated import SelfEditGeneratedModule
+
+# define a stripping function to remove leading prose from code output
+def strip_prose(code_output):
+    import re
+    stripped = re.match(r'[^#a-zA-Z ]*([a-zA-Z ]*)', code_output).group(1)
+    return stripped
+
+# modify the existing self-edit generated module by inserting the stripping function
+SelfEditGeneratedModule.strip_prose_function = strip_prose
+
+# update the self-edit generated module's save mechanism to reflect changes
+def save_module(self):
+    super().save()
+    with open('self_edit_generated_module.pkl', 'wb') as f:
+        pickle.dump({'strip_prose_function': self.strip_prose_function}, f)
+
+SelfEditGeneratedModule.save = save_module
+
+# update the existing self-edit generated module's preprocessing step
+SelfEditGeneratedModule.preprocess_functions.insert(0, strip_prose)
+
+# save the modified self-edit generated module back to disk
+import os
+os.system('python app/core/self_edit_generated.py save')

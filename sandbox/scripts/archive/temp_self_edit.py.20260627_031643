@@ -1,0 +1,9 @@
+from app.core.self_edit_generated import main_function
+def refactored_main_function():
+    original_response = main_function()
+    lines = original_response.split("\n")
+    average_line_length = sum(len(line) for line in lines) / len(lines)
+    reduced_lines = int(average_line_length * 0.8 * len(lines))
+    adjusted_response = "\n".join(lines[:reduced_lines])
+    return adjusted_response
+def main_function(): return refactored_main_function()

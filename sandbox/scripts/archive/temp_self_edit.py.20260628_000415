@@ -1,0 +1,17 @@
+# import strip_prose from app.core.self_edit_generated
+import app.core.self_edit_generated.strip_prose
+
+def strip_sandbox_output(code):
+    if re.match(r'^\s*(#.*)?$', code, re.M) is not None:
+        return strip_prose(code)
+    else:
+        return code
+
+import os
+from app.core.sandbox_interface import run_random_sandbox_script
+
+def new_run_random_sandbox_script():
+    output = strip_sandbox_output(run_random_sandbox_script())
+    return output
+
+run_random_sandbox_script = new_run_random_sandbox_script

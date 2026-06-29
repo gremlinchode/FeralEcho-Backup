@@ -1,0 +1,26 @@
+# import necessary modules from FeralEcho
+
+import app.core.self_edit_generated
+import app.core.tool_manager
+
+tool = app.core.tool_manager.Tool()
+parsed_code = tool.parse('app/core/self_edit_generated.py')
+
+def strip_leading_prose(code):
+    leading_lines = 0
+    for line in code.split('\n'):
+        if not line.lstrip().startswith(('#', '"""', "'")):
+            break
+        leading_lines += 1
+    return '\n'.join([line] + code.split('\n')[leading_lines:])
+
+modified_code = strip_leading_prose(parsed_code)
+
+with open('app/core/self_edit_generated.py', 'w') as f:
+    f.write(modified_code)
+
+import app.core.memory_write_validator
+app.core.memory_write_validator.validate(modified_code)
+
+import app.autonomous_awareness
+app.autonomous_awareness.trigger_awareness_loop()

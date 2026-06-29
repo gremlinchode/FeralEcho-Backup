@@ -1,0 +1,5 @@
+file.seek(0)
+file.write(''.join(data))
+file.truncate()
+
+print("Modified Echo.py to include documentation for `get_relevant_memories` function and updated `run_random_sandbox_script` with docstring.")

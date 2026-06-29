@@ -1,0 +1,28 @@
+# import necessary modules
+from app.emergent_scheduler import detect_functions_and_classes
+import re
+
+# open file for modification
+with open('app/core/self_edit_generated.py', 'r+') as f:
+    # read entire file into memory
+    file_contents = f.read()
+
+    # modify the strip_prose function
+    def modified_strip_prose(line):
+        regex_pattern = r'^\s*\w+\s*:\s*(?:[\w\s]+|)//.*$'  # regular expression for natural language sentence detection
+        if re.match(regex_pattern, line):
+            for char in line:
+                if char.isalpha():
+                    return line.split(char)[1].strip()
+        return line
+
+    def code_block_guard(line):
+        return not (re.match(r'^\s*```python', line) or re.match(r'^\s*```', line))
+
+    # replace original strip_prose function with modified implementation
+    file_contents = '\n'.join([line if code_block_guard(line) else modified_strip_prose(line) for line in file_contents.split('\n')])
+
+    # save the modified file
+    f.seek(0)
+    f.write(file_contents)
+    f.truncate()

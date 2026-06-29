@@ -1,0 +1,29 @@
+# import necessary modules from FeralEcho
+import re
+from FeralEcho.app.core import self_edit_generated, tool_manager
+
+# access the main_function function within app/core/self_edit_generated.py
+main_function = tool_manager.ToolManager().get_function('main_function')
+
+# identify and isolate the code section responsible for generating prose output during sandbox execution
+code_section = [line.strip() for line in main_function.split('\n') if line.strip().startswith('#')][0]
+
+# implement a regular expression pattern to detect leading natural language sentences at the beginning of the extracted code string
+sentence_pattern = re.compile(r'^\s*".*"')
+
+# modify the code to apply the sentence stripping, replacing identified sentences from the start of the code string before any further processing
+code_section = sentence_pattern.sub('', code_section).strip()
+
+# add a check within the main_function to confirm that after applying the sentence stripping, the remaining code still represents valid Python syntax (e.g., using a linter or parser)
+try:
+    compile(code_section, '<string>', 'exec')
+except Exception as e:
+    print(f"Error during syntax check: {e}")
+    return code_section  # Return unedited string
+
+# replace the original prose output with the modified, sanitized Python code string
+modified_main_function = '\n'.join([line for line in main_function.split('\n') if not sentence_pattern.match(line)])
+
+# update the modified_main_function by returning the processed result from the previous steps; save this updated function back to app/core/self_edit_generated.py
+def modified_main_function(*args, **kwargs):
+    return modified_main_function  # Modified main function

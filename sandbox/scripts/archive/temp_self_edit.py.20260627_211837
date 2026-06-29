@@ -1,0 +1,26 @@
+# import necessary modules
+from app.emergent_scheduler_backup_20260610 import *
+from app.core.self_edit_generated import *
+
+# load strip_prose function
+strip_prose = self_edit_generated.strip_prose
+
+def detect_prose_in_code(code):
+    lines = code.split('\n')
+    for line in lines:
+        if not line.lstrip().startswith((' ', '\t')):
+            return False
+        if not (line[0].isupper() or line[0] in ['.', ',', '!', '?']):
+            return False
+        return True
+
+def modified_sandbox_script(code):
+    if detect_prose_in_code(code):
+        code = strip_prose(code)
+    return code
+
+def run_random_sandbox_script():
+    import app.core.sandbox_interface
+    app.core.sandbox_interface.run_random_sandbox_script(modified_sandbox_script)
+
+reload(self_edit_generated)

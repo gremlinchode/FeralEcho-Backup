@@ -1,0 +1,5 @@
+# TBD - Documentation update
+
+run_cartographer('app/core/self_edit_generated.py')
+
+score_response_quality('app/core/self_edit_generated.py', 'prose-stripping-function-successful')

@@ -1,0 +1,13 @@
+# from memory_bridge import calculate_vector_memory
+
+def rebuild_vector_memory(new_data):
+    updated_vectors = []
+    
+    for awareness in new_data['awareness_score']:
+        vector_memory = calculate_vector_memory(awareness, new_data)
+        updated_vectors.append(vector_memory)
+        
+    return updated_vectors
+
+updated_vectors = rebuild_vector_memory(get_relevant_memories())
+append_memory_entry(updated_vectors)

@@ -1,0 +1,21 @@
+import app.core.self_edit_generated
+import app.core.tool_manager
+import re
+
+def process_self_edit_generated():
+    try:
+        tool = ToolManager().get_tool('Tool')
+        content = tool.get_file_content('app/core/self_edit_generated.py')
+
+        def strip_natural_language_code(content):
+            pattern = r'^[^=]*\n\s*([a-zA-Z].*)$'
+            for match in re.finditer(pattern, content):
+                code_section = match.group(1).strip()
+                if code_section:
+                    return f'{code_section}\n{content[match.end():]}'
+
+        modified_content = strip_natural_language_code(content)
+        tool.update_file_content('app/core/self_edit_generated.py', modified_content)
+
+    except Exception as e:
+        print(f"An error occurred: {e}")

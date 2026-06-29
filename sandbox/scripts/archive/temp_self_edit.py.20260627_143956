@@ -1,0 +1,20 @@
+# import necessary module and define function
+
+import re
+from app.core.self_edit_generated import shorten_response_length
+
+def modify_shorten_response_length():
+    def strip_leading_prose(response):
+        prose_detection_guard = re.compile(r"^(Please |The response must contain ONLY )")
+        return prose_detection_guard.sub("", response)
+
+    def shortened_response_length(response):
+        try:
+            response = strip_leading_prose(response)
+            original_response = shorten_response_length(response)
+            return original_response
+        except Exception as e:
+            print(f"Error: {e}")
+            return None
+
+    return shortened_response_length

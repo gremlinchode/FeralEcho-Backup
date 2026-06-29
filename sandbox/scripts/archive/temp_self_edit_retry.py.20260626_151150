@@ -1,0 +1,13 @@
+# import app.core.self_edit_generated; from app.core.river_deliberation import river_deliberation
+import re
+file_contents = open('app/core/self_edit_generated.py', 'r').read()
+lines = file_contents.splitlines()
+
+for line in lines:
+    if re.match(r'\b(Hello|How|What)\b.*python\b', line):
+        python_token_index = line.find('(')
+        modified_line = line[python_token_index:]
+        file_contents = file_contents.replace(line, modified_line)
+
+modified_file_contents = file_contents
+open('app/core/self_edit_generated.py', 'w').write(modified_file_contents)

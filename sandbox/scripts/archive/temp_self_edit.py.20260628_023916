@@ -1,0 +1,23 @@
+import app.core.self_edit_generated
+import app.core.tool_manager
+import app.autonomous_awareness
+import app.ollama_handler
+
+def strip_prose(line):
+    for sentence in line.split('.'):
+        if len(sentence) <= 100 and not sentence.strip().startswith('import') and not sentence.strip().startswith('def') and not sentence.strip().startswith('class'):
+            line = line.split(sentence)[1].strip()
+            break
+    return line
+
+tool = app.core.tool_manager.Tool()
+tool.process_edit = lambda x: strip_prose(x) + "\n"
+
+from app.autonomous_awareness import analyze_python_code
+analyze_python_code(tool.process_edit)
+
+from app.core.project_scanner import scan_project
+scan_project('app/core/self_edit_generated.py')
+
+from app.ollama_handler import generate_code
+generate_code(tool.process_edit)

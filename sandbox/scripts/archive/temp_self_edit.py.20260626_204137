@@ -1,0 +1,16 @@
+# from app.core.self_edit_generated import main_function, modified_main_function
+import re
+from self_edit_generated import *
+
+def strip_leading_natural_language(code):
+    if re.search(r'\b(a|an|the|is|are|am|be)\b', code, re.MULTILINE):
+        return re.sub(r'\b(a|an|the|is|are|am|be)\b', '', code, 1, re.MULTILINE)
+    else:
+        return code
+
+def modified_main_function(*args, **kwargs):
+    result = main_function(*args, **kwargs)
+    return strip_leading_natural_language(result)
+
+import self_edit_generated
+self_edit_generated.modified_main_function = modified_main_function

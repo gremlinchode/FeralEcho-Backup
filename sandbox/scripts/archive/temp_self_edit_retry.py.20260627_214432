@@ -1,0 +1,22 @@
+# import necessary modules
+import re
+from app.core.self_edit_generated import strip_prose
+import os
+
+# open and read the contents of app/core/self_edit_generated.py
+with open('app/core/self_edit_generated.py', 'r') as file:
+    content = file.read()
+
+# use regular expressions to search for lines containing natural language prose at the start, followed by a Python token
+pattern = r'^.*?(?=\bdef\b|\bclass\b|\bimport\b)'
+new_content = re.sub(pattern, '', content, flags=re.DOTALL)
+
+# write the modified code back into app/core/self_edit_generated.py
+with open('app/core/self_edit_generated.py', 'w') as file:
+    file.write(new_content)
+
+# import and verify the modified module
+from app.core.self_edit_generated import strip_prose
+
+# verify the modified module
+print(strip_prose("This is a test. def example(): return 42"))

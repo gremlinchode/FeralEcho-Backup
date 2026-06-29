@@ -1,0 +1,9 @@
+# from FeralEcho import app
+from app.core.self_edit_generated import main_function
+import app.core
+import load_project_map
+
+def updated_main_function():
+    return lambda *args, **kwargs: '\n'.join(main_function(*args, **kwargs).strip().split('\n')[1:-2])
+
+app.core.self_edit_generated.main_function = updated_main_function

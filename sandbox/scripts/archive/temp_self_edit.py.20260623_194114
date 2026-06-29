@@ -1,0 +1,11 @@
+import os
+
+def implement_plan():
+    file_path = 'response_generator.py'
+    open_file = open(file_path, 'r')
+    text_data = [line.strip() for line in open_file.readlines()]
+    new_text = '\n'.join(text_data)
+    with open(file_path, 'w') as file:
+        file.write(new_text)
+    print(f"Modified {file_path} to remove trailing whitespace.")
+    os.chdir('/Users/richietate/Desktop/FeralEcho/')

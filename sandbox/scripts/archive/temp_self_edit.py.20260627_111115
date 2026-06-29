@@ -1,0 +1,21 @@
+# import necessary modules from app, including self_edit_generated and relevant tool classes like GeminiShard, ToolManager, and CouncilRegistry
+
+from app.self_edit_generated import SelfModelUpdater
+from app.tools.gemini_shard import GeminiShard
+from app.tools.tool_manager import ToolManager
+from app.council_registry import CouncilRegistry
+import re
+
+class SanitizeOutput:
+    def __init__(self):
+        pass
+
+    def sanitize(self, output_str):
+        return re.sub(r'^.*?:\s+', '', output_str)
+
+def main():
+    updater = SelfModelUpdater()
+    updater.set_target_file('app/core/self_edit_generated.py')
+    updater.update()
+
+main()

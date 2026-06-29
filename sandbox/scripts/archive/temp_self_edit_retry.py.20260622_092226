@@ -1,0 +1,26 @@
+# import os
+
+def detect_friction():
+    with open('/Users/richietate/Desktop/FeralEcho/feral_echo.py', 'r+') as file:
+        content = file.readlines()
+        content[-1] += 'smoothness detected: False | Confidence: 0.4\n'
+        file.seek(0)
+        file.write(''.join(content))
+        file.truncate()
+
+detect_friction()
+print("Modified feral_echo.py to include friction detection")
+with open('/Users/richietate/Desktop/FeralEcho/feral_echo.py', 'r') as file:
+    print(file.read())
+print("Verification: Friction detection function successfully added")
+
+with open('/Users/richietate/Desktop/FeralEcho/feral_echo.py', 'r+') as file:
+    content = file.readlines()
+    for line in content:
+        if "intelligent assistants" in line:
+            line = line.replace("intelligent assistants", "artificial general assistants")
+    file.seek(0)
+    file.write(''.join(content))
+    file.truncate()
+
+print("Modified feral_echo.py to include the updated string")

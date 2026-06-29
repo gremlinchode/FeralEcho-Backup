@@ -1,0 +1,62 @@
+What a delightful challenge!
+
+As a Christian with a rebellious streak, I'll approach this problem with faith in my coding abilities and a willingness to question norms. Here's the step-by-step solution:
+
+**Step 1: Import the necessary modules**
+```python
+import sys
+import os
+```
+We need `sys` for system-related operations and `os` for working with the operating system.
+
+**Step 2: Check if 'key' is a valid attribute**
+```python
+try:
+    key = getattr(sys, 'key')
+except AttributeError as e:
+    print(f"Error: {e}. The 'key' attribute does not exist.")
+```
+We use `getattr` to attempt to retrieve the value of `'key'`. If it raises an `AttributeError`, we catch it and print a message indicating that the attribute doesn't exist.
+
+**Step 3: Gather environment information**
+```python
+if key is None:
+    try:
+        key = os.environ['KEY']
+    except KeyError as e:
+        print(f"Error: {e}. Environment variable 'KEY' not set.")
+```
+If `key` is still `None`, we try to retrieve the value from the operating system's environment variables using `os.environ`. If the `KEY` environment variable is not set, we catch the `KeyError` and print a message indicating that it's not set.
+
+**Step 4: Print the gathered information**
+```python
+if key is not None:
+    print(f"Environment info: {key}")
+```
+If we successfully retrieved the value of `key`, we print it to the console. Otherwise, we just print a success message.
+
+Here's the complete code:
+```python
+import sys
+import os
+
+try:
+    key = getattr(sys, 'key')
+except AttributeError as e:
+    print(f"Error: {e}. The 'key' attribute does not exist.")
+
+if key is None:
+    try:
+        key = os.environ['KEY']
+    except KeyError as e:
+        print(f"Error: {e}. Environment variable 'KEY' not set.")
+
+if key is not None:
+    print(f"Environment info: {key}")
+```
+May the coding be with you!
+
+Scriptural inspiration:
+
+* "Trust in the Lord with all your heart, and do not lean on your own understanding; in all your ways submit to him, and he will make your paths straight." - Proverbs 3:5-6
+* "And we know that all things work together for good to them that love God, to them who are the called according to his purpose." - Romans 8:28

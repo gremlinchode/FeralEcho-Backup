@@ -1,0 +1,18 @@
+import os
+
+file_path = '/Users/richietate/Desktop/FeralEcho/rebuild_vector_memory.py'
+file_exists = os.path.exists(file_path)
+
+if not file_exists:
+    raise FileNotFoundError(f"File {file_path} does not exist")
+
+with open(file_path, 'r') as f:
+    code = f.read()
+
+fixed_code = code.replace('file_pat', 'file_path')
+
+with open(file_path, 'w') as f:
+    f.write(fixed_code)
+
+print(f"Updated {file_path} to use 'file_path' instead of 'file_pat'")
+print("Reason: Uncertainty was raised about honesty in previous response")

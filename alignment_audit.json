@@ -1,0 +1,14 @@
+[
+  {
+    "timestamp": 1763153644.5206752,
+    "proposal": {
+      "description": "Initial test: toggle avoid_harm",
+      "changes": {
+        "avoid_harm": true
+      },
+      "impact_estimate": 0.1,
+      "timestamp": 1763153642.517112
+    },
+    "outcome": "Approved"
+  }
+]

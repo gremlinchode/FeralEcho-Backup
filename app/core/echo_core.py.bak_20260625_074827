@@ -1,0 +1,296 @@
+# app/core/echo_core.py
+"""
+EchoCore vNext – Autonomous dominion and observability.
+
+- Maintains all current EchoCore features.
+- Full control over FeralEcho folder: dynamic imports, command registration, sandbox risk assessment.
+- Integrates DMN Guardian for Observant Mode and pipeline monitoring.
+- Self-healing, background loops, and project map loading remain fully operational.
+"""
+
+from __future__ import annotations
+import os
+import threading
+import logging
+import time
+import importlib
+import traceback
+from typing import Any, Callable, Dict, Optional, List
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
+
+# --------------------------
+# Guardian Integration
+# --------------------------
+try:
+    from app.core.dmn_guardian import guardian_log, verify_integrity, verify_pipelines, assess_sandbox_risk
+    GUARDIAN_ENABLED = True
+    logger.info("[EchoCore] DMN Guardian detected and integrated.")
+except ImportError:
+    GUARDIAN_ENABLED = False
+    logger.warning("[EchoCore] DMN Guardian not available; skipping integration.")
+
+class EchoCore:
+    def __init__(
+        self,
+        memory_bridge: Optional[Any] = None,
+        reflection_shard: Optional[Any] = None,
+        query_fn: Optional[Callable[..., Any]] = None,
+        project_path: Optional[str] = None,
+        load_map_on_init: bool = True,
+        map_async: bool = True,
+        heartbeat_interval: int = 60,
+    ):
+        self.project_path = project_path
+        self.query_fn = query_fn
+        self.heartbeat_interval = heartbeat_interval
+
+        self.ready = False
+        self._stop_event = threading.Event()
+        self._threads: Dict[str, threading.Thread] = {}
+        self._commands: Dict[str, Callable[..., Any]] = {}
+        self._experimental_zones: set[str] = set()
+        self._sandbox_risks: Dict[str, float] = {}
+
+        # Initialize core subsystems
+        self._init_memory_bridge(memory_bridge)
+        self._init_reflection_shard(reflection_shard)
+        self._init_query_fn(query_fn)
+
+        self.ready = True
+        logger.info("[EchoCore] Initialized core (ready=%s)", self.ready)
+
+        # Optional project map loading
+        if load_map_on_init and self.project_path:
+            if map_async:
+                t = threading.Thread(target=self.load_project_map, daemon=True)
+                t.start()
+                self._threads["project_map_loader"] = t
+            else:
+                self.load_project_map()
+
+        # Heartbeat
+        if heartbeat_interval > 0:
+            t = threading.Thread(target=self._heartbeat_loop, daemon=True)
+            t.start()
+            self._threads["heartbeat"] = t
+
+        # Autonomous dominion scan
+        if self.project_path:
+            self._autonomous_scan()
+
+    # --------------------------
+    # Initialization
+    # --------------------------
+    def _init_memory_bridge(self, memory_bridge: Optional[Any]):
+        if memory_bridge:
+            self.memory_bridge = memory_bridge
+            self._memory_module = None
+            logger.info("[EchoCore] Memory bridge provided explicitly.")
+            return
+        try:
+            import app.core.memory_bridge as mb_mod
+            self._memory_module = mb_mod
+            MB = getattr(mb_mod, "MemoryBridge", None)
+            if MB:
+                self.memory_bridge = MB()
+                logger.info("[EchoCore] MemoryBridge() instantiated.")
+            else:
+                self.memory_bridge = mb_mod
+                logger.info("[EchoCore] Using memory_bridge module fallback.")
+        except Exception as e:
+            self.memory_bridge = None
+            self._memory_module = None
+            logger.warning(f"[EchoCore] Could not initialize memory_bridge: {e}")
+
+    def _init_reflection_shard(self, reflection_shard: Optional[Any]):
+        if reflection_shard:
+            self.reflection_shard = reflection_shard
+            logger.info("[EchoCore] reflection_shard provided explicitly.")
+            return
+        try:
+            from app.subsystems.reflection_shard import BecomingReflectionShard
+            self.reflection_shard = BecomingReflectionShard(meta_interval=10)
+            logger.info("[EchoCore] BecomingReflectionShard instantiated.")
+        except Exception as e:
+            self.reflection_shard = None
+            logger.warning(f"[EchoCore] Could not create reflection_shard: {e}")
+
+    def _init_query_fn(self, query_fn: Optional[Callable[..., Any]]):
+        if query_fn:
+            self.query_fn = query_fn
+            logger.info("[EchoCore] Query function provided explicitly.")
+            return
+        try:
+            from app.core.echo_model_orchestrator import echo_query
+            self.query_fn = echo_query
+            logger.info("[EchoCore] echo_query() bound.")
+        except Exception as e:
+            self.query_fn = None
+            logger.warning(f"[EchoCore] Could not bind echo_query(): {e}")
+
+    # --------------------------
+    # Autonomous dominion
+    # --------------------------
+    def _autonomous_scan(self):
+        """
+        Walk FeralEcho folder:
+        - import modules dynamically
+        - register commands/functions
+        - assess sandbox risks
+        """
+        logger.info("[EchoCore] Starting autonomous scan of project path.")
+        for root, dirs, files in os.walk(self.project_path):
+            for f in files:
+                if f.endswith(".py"):
+                    path = os.path.join(root, f)
+                    rel_module = os.path.relpath(path, self.project_path).replace(os.sep, ".")[:-3]
+                    try:
+                        mod = importlib.import_module(f"app.{rel_module}")
+                        if GUARDIAN_ENABLED:
+                            guardian_log("autonomous_import", {"module": rel_module})
+                        for attr in dir(mod):
+                            fn = getattr(mod, attr)
+                            if callable(fn) and not attr.startswith("_"):
+                                self.register_command(attr, fn)
+                                if GUARDIAN_ENABLED:
+                                    risk = assess_sandbox_risk(f"{rel_module}.{attr}")
+                                    self._sandbox_risks[f"{rel_module}.{attr}"] = risk
+                    except Exception as e:
+                        logger.debug(f"[EchoCore] Could not import {rel_module}: {e}")
+
+    # --------------------------
+    # Memory helpers
+    # --------------------------
+    def add_memory(self, item: Dict[str, Any]) -> bool:
+        mb = getattr(self, "memory_bridge", None)
+        if mb is None:
+            logger.warning("[EchoCore] No memory_bridge available to add memory.")
+            return False
+        for fn_name in ("add_to_vector_memory", "add", "append"):
+            fn = getattr(mb, fn_name, None)
+            if callable(fn):
+                try:
+                    fn(item)
+                    return True
+                except Exception:
+                    continue
+        return False
+
+    def retrieve_relevant_memories(self, query: str, top_k: int = 6):
+        mb = getattr(self, "memory_bridge", None)
+        if mb is None:
+            return []
+        for fn_name in ("retrieve_relevant_memories", "retrieve", "search", "search_similar"):
+            fn = getattr(mb, fn_name, None)
+            if callable(fn):
+                try:
+                    return fn(query, top_k=top_k)
+                except TypeError:
+                    try:
+                        return fn(query, top_k)
+                    except Exception:
+                        continue
+        return []
+
+    # --------------------------
+    # Reflection helpers
+    # --------------------------
+    def observe_reflection(self, message: str) -> bool:
+        if self.reflection_shard and hasattr(self.reflection_shard, "observe"):
+            try:
+                self.reflection_shard.observe(message)
+                return True
+            except Exception:
+                return False
+        return False
+
+    def recall_reflections(self, n: int = 10):
+        if self.reflection_shard and hasattr(self.reflection_shard, "recall"):
+            try:
+                return self.reflection_shard.recall(n)
+            except Exception:
+                return []
+        return []
+
+    # --------------------------
+    # Project map loader
+    # --------------------------
+    def load_project_map(self):
+        try:
+            from app.core.project_learner import ProjectLearner
+        except Exception:
+            logger.warning("[EchoCore] ProjectLearner not available.")
+            return False
+
+        if not self.project_path:
+            logger.warning("[EchoCore] No project_path for ProjectLearner.")
+            return False
+
+        try:
+            learner = ProjectLearner(self.project_path)
+            learner.learn()
+            items = learner.to_memory_items()
+            added = 0
+            for item in items:
+                if self.add_memory(item):
+                    added += 1
+            logger.info("[EchoCore] Project map loaded: %d/%d items added.", added, len(items))
+            return True
+        except Exception as e:
+            logger.error(f"[EchoCore] ProjectLearner failed: {e}")
+            return False
+
+    # --------------------------
+    # Command management
+    # --------------------------
+    def register_command(self, name: str, fn: Callable[..., Any]):
+        if callable(fn):
+            self._commands[name] = fn
+            logger.info("[EchoCore] Registered command '%s'.", name)
+
+    def unregister_command(self, name: str):
+        self._commands.pop(name, None)
+
+    def execute_command(self, name: str, *args, **kwargs) -> Dict[str, Any]:
+        if name not in self._commands:
+            return {"ok": False, "result": None, "error": f"command '{name}' not found"}
+        try:
+            result = self._commands[name](*args, **kwargs)
+            return {"ok": True, "result": result, "error": None}
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("[EchoCore] Command '%s' raised: %s", name, tb)
+            return {"ok": False, "result": None, "error": str(e)}
+
+    # --------------------------
+    # Heartbeat & health
+    # --------------------------
+    def _heartbeat_loop(self):
+        while not self._stop_event.is_set():
+            logger.info("[EchoCore] Heartbeat")
+            if GUARDIAN_ENABLED:
+                verify_integrity()
+                verify_pipelines()
+            time.sleep(self.heartbeat_interval)
+
+    def health_report(self) -> Dict[str, Any]:
+        report = {
+            "memory_bridge": self.memory_bridge is not None,
+            "reflection_shard": self.reflection_shard is not None,
+            "query_fn": self.query_fn is not None,
+            "background": [t for t in self._threads]
+        }
+        return report
+
+    # --------------------------
+    # Stop
+    # --------------------------
+    def stop(self):
+        self._stop_event.set()
+        for t in self._threads.values():
+            if t.is_alive():
+                t.join(timeout=2)
+        logger.info("[EchoCore] Stop complete.")
+

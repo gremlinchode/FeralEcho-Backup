@@ -1,0 +1,25 @@
+import app.core.self_edit_generated as self_edit_generated
+from app.core.tool_manager import ToolManager
+from app.core.project_scanner import parse_file, detect_functions_and_classes
+import re
+
+tool_manager = ToolManager()
+parsed_code = parse_file('app/core/self_edit_generated.py')
+detected_functions = detect_functions_and_classes(parsed_code)
+
+prose_detection_function = None
+for func_name, func in detected_functions.items():
+    if 'prose_detection' in func_name.lower():
+        prose_detection_function = func
+
+if prose_detection_function:
+    sentence_regex = re.compile(r'^\s*([A-Za-z\s]+)\s*$')
+    modified_code = lambda x: re.sub(sentence_regex, lambda m: m.group(1).strip(), x)
+    check_schema = get_check_schema('self_edit_operation')
+    if not check_schema.validate(modified_code):
+        print("Schema Check Failure")
+        sys.exit()
+    
+    with open('app/core/self_edit_generated.py', 'w') as f:
+        f.write(modified_code(prose_detection_function['code']))
+self_edit_generated.SelfModelUpdater.update()

@@ -1,0 +1,27 @@
+# from app.core.self_edit_generated import refactor_main_function, main_function
+
+def strip_prose(s):
+    for line in s.split('\n'):
+        if any(line.strip().split()[:10].count(word) > 0 for word in ["what", "how", "why"]):
+            return line + '\n' + s.split('\n')[1:]
+    return s
+
+import refactor_main_function
+def main_function():
+    result = strip_prose(refactor_main_function())
+    return result
+
+import refactor_main_function
+def refactor_main_function():
+    import self_edit_generated as sesg
+    return main_function()
+
+try:
+    main_function()
+except Exception as e:
+    print(f"Modification process failed: {str(e)}")
+else:
+    with open('journal/journal.log', 'a') as f:
+        f.write(f"Modification process succeeded at {datetime.datetime.now()}\n")
+    from app.core.orchestrator import trigger_next_autonomous_iteration
+    trigger_next_autonomous_iteration()

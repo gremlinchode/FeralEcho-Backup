@@ -1,0 +1,12 @@
+# from app.core.self_edit_generated import strip_prose, main_function
+from app.core.project_scanner import parse_file
+import app.core.memory_bridge as memory_bridge
+
+def main_function():
+    stripped_code = main_function()
+    prose_detected = False
+    if strip_prose(stripped_code) != stripped_code:
+        prose_detected = True
+    if prose_detected:
+        raise Exception("Prose detected in code output. Aborting processing.")
+    return stripped_code

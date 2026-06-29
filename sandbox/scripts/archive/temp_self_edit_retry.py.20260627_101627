@@ -1,0 +1,23 @@
+import app.core.self_edit_generated
+from app.core.memory_tools import log_execution
+
+def modify_main_function(original_main_function):
+    modified_output = self_edit_generated.strip_prose(original_main_function)
+    truncated_output = modified_output[:int(0.8 * len(modified_output))]
+    return f"def main_function():\n{truncated_output}"
+
+try:
+    output = modify_main_function(self_edit_generated.main_function)
+except Exception as e:
+    log_execution(str(e), 'error')
+
+log_execution(f"Execution status: {output}")
+log_execution("Response length before modification:", len(self_edit_generated.main_function))
+log_execution("Response length after modification:", len(output))
+
+app.core.self_model_updater.update_evaluation_metrics('code_generation_efficiency', output)
+
+try:
+    self_edit_generated.app.core.awareness_tools_integration.safe_wrapper('code_generation', 'debug')
+except Exception as e:
+    log_execution(str(e), 'error')

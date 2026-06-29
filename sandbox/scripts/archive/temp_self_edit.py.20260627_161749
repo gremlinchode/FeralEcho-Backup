@@ -1,0 +1,24 @@
+# import strip_prose from app.core.self_edit_generated
+from app.core.self_edit_generated import strip_prose
+
+# open target file self_edit_generated.py for modification
+with open('app/core/self_edit_generated.py', 'r') as f:
+    code = f.read()
+
+# define new function fix_sandbox_failure that takes a string input and returns the modified string
+def fix_sandbox_failure(input_str):
+    import re
+    prose_detected = re.match(r'^\w+[^a-zA-Z]', input_str)
+    
+    if prose_detected:
+        stripped_str = input_str.split(prose_detected.group())[1]
+        return stripped_str.strip()
+    else:
+        return input_str
+
+# replace original strip_prose function with new fix_sandbox_failure function in self_edit_generated.py
+code = code.replace('strip_prose', 'fix_sandbox_failure')
+
+# save and close the modified file
+with open('app/core/self_edit_generated.py', 'w') as f:
+    f.write(code)

@@ -1,0 +1,16 @@
+# import os
+# from app.core.self_edit_generated import shorten_response_length
+
+def strip_prose(text):
+    try:
+        sentences = text.split('. ')
+        if sentences[0].strip().isalpha():
+            return ' '.join(sentences[1:])
+        else:
+            return text
+    except IndexError:
+        return text
+
+shorten_response_length = lambda x: strip_prose(x)(10)
+
+# No need to import app.core.self_edit_generated here, as we've already modified the original function.

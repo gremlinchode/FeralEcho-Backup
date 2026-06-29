@@ -1,0 +1,11 @@
+import re
+from app.core.self_edit_generated import strip_prose
+
+def strip_prose(text):
+    while True:
+        if isinstance(text, str) and text.startswith(r'\b(a|an|the)\s'):
+            return text.split(' ', 1)[1]
+        elif re.match(r'^\s*\b(?!python).+\n', text):
+            return strip_prose(core.recursive_strip_prose(text))
+        else:
+            return text

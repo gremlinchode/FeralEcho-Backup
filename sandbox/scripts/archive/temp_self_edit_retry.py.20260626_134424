@@ -1,0 +1,35 @@
+# import app.core.self_edit_generated as se_gen
+from app.core.river_deliberation import deliberate_and_learn
+from app.core.tool_manager import ToolManager
+from app.core.gemini_shard import GeminiShard
+from app.core.memory_tools import MemoryTools
+from app.core.echo_model_guided_orchestrator import EchoModelGuidedOrchestrator
+
+se_gen_file_path = "app/core/self_edit_generated.py"
+parsed_code = parse_file(se_gen_file_path)
+detected_functions, detected_classes = detect_functions_and_classes(parsed_code)
+
+main_func_code = None
+for func in detected_functions:
+    if "main_function" in func.name:
+        main_func_code = func.code
+        break
+
+avg_response_length = MemoryTools.get_average_response_length()
+
+optimized_code = EchoModelGuidedOrchestrator.generate_optimized_code(main_func_code, avg_response_length)
+
+is_validated = deliberate_and_learn(optimized_code)
+if is_validated:
+    current_length = len(main_func_code)
+    new_length = len(optimized_code)
+    reduction_percentage = ((current_length - new_length) / current_length) * 100
+
+    if reduction_percentage >= 20:
+        MemoryTools.log_modifications(se_gen_file_path, main_func_code, optimized_code)
+
+        se_gen.update_main_function(optimized_code)
+    else:
+        raise Exception("Optimization failed to reduce response length by at least 20%")
+else:
+    raise Exception("Generated code validation failed")

@@ -1,0 +1,14 @@
+import app.core.tool_manager
+import app.core.memory_tools
+import re
+
+def score_reasoning_code(code_string):
+    quality_score = 0
+    if detect_imports(code_string):
+        quality_score += 1
+    if detect_functions_and_classes(code_string):
+        quality_score += 1
+    sentences = re.findall(r'\b(Hello|Hi|Goodbye)\b', code_string)
+    for sentence in sentences:
+        quality_score -= 0.5
+    return int(min(max(0, quality_score), 3))

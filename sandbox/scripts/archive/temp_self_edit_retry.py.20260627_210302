@@ -1,0 +1,20 @@
+# import importlib
+import app.core.self_edit_generated
+
+self_edit_generated = __import__('app.core.self_edit_generated')
+
+code = open('app/core/self_edit_generated.py', 'r').read()
+
+def strip_prose(code):
+    lines = code.split('\n')
+    for i, line in enumerate(lines):
+        if not line.lstrip().startswith(('def', 'class', '#')):
+            lines.insert(0, line)
+            break
+    return '\n'.join(lines)
+
+code = strip_prose(code)
+open('app/core/self_edit_generated.py', 'w').write(code)
+
+self_edit_generated.__file__ = 'app/core/self_edit_generated.py'
+self_edit_generated.__code__ = code

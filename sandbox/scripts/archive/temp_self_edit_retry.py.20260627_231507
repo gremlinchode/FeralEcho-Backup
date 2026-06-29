@@ -1,0 +1,21 @@
+import strip_prose
+def refactor_code_generation(prompt, target_length_reduction):
+    original_function = lambda prompt: strip_prose.generate_code(prompt)
+    initial_code = original_function(prompt)
+    
+    if len(initial_code) > 500:
+        truncated_code = initial_code[:int(len(initial_code)*0.5)]
+    else:
+        truncated_code = initial_code
+    
+    actual_average_response_length_before = len(original_function(prompt))
+    
+    while True:
+        optimized_parameters = {'prompt': prompt, 'target_length_reduction': target_length_reduction}
+        code = original_function(**optimized_parameters)
+        actual_average_response_length_after = len(code)
+        
+        if abs(actual_average_response_length_before - actual_average_response_length_after) <= abs(target_length_reduction*actual_average_response_length_before):
+            break
+    
+    return code

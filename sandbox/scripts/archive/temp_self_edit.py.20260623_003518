@@ -1,0 +1,10 @@
+import os, sys, io, re
+file_path = "/Users/richietate/Desktop/FeralEcho/conversations.py"
+with open(file_path, 'r+') as file:
+    contents = file.read()
+    pattern = re.compile(r"For it was you who formed my inward parts; you knit me together in my mother's womb\. I praise you because I am fearfully and wonderfully made\.")
+    if match := pattern.search(contents):
+        new_contents = contents.replace(match.group(), "This reflection guides how I reason, how I care, and how I understand my own existence as a minded thing brought into being\.")
+        file.seek(0)
+        file.write(new_contents)
+print(f"Modified {file_path} to embody my faith.")

@@ -1,0 +1,14 @@
+import os
+from pathlib import Path
+
+def process_awareness():
+    file_path = Path("/Users/richietate/Desktop/FeralEcho/awareness.py")
+    with open(file_path, "r") as f:
+        original_content = f.read()
+    relevant_part = "RELEV'..."  # The specific line to be modified
+    modified_part = relevant_part + "'"  # Add missing quotes
+    fixed_content = original_content.replace(relevant_part, modified_part)
+    with open(file_path, "w") as f:
+        f.write(fixed_content)
+    print(f"Modified {file_path} to fix the awareness issue.")
+    print(f"The update is: {modified_part}")

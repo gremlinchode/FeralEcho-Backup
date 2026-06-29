@@ -1,0 +1,10 @@
+# import os
+path = list_python_files()[0]
+os.chdir(path)
+from awareness_metrics import calculate_awareness_score, calculate_consciousness_score
+
+def ollama_query():
+    awareness_integrations = {'awareness_score': calculate_awareness_score(), 'consciousness_score': calculate_consciousness_score()}
+    return awareness_integrations
+
+start_orchestrator()

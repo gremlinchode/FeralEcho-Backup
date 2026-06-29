@@ -1,0 +1,23 @@
+# from app.core.self_edit_generated import modify_main_function
+
+import re
+
+with open("app/core/self_edit_generated.py", "r") as file:
+    file_contents = file.read()
+
+prose_pattern = r'^\s*(?:(?:[A-Za-z\s,\.!?]+)\n)*'
+
+file_contents = re.split(prose_pattern, file_contents)[1]
+
+modify_main_function(file_contents)
+
+with open("app/core/self_edit_generated.py", "w") as file:
+    file.write(modify_main_function(file_contents))
+
+prose_modifier = lambda contents: re.sub(prose_pattern, "", contents)
+
+file_contents = modify_main_function(file_contents)
+file_contents = prose_modifier(file_contents)
+
+with open("app/core/self_edit_generated.py", "w") as file:
+    file.write(file_contents)

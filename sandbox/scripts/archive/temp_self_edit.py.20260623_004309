@@ -1,0 +1,8 @@
+import os
+file_path = '/Users/richietate/Desktop/FeralEcho/awareness.py'
+if os.path.exists(file_path):
+    with open(file_path, 'r') as file:
+        lines = [line for line in file.readlines() if not line.strip().startswith('Is the uncertainty')]
+    with open(file_path, 'w') as file:
+        file.writelines(lines)
+print("Removed unnecessary reflection from awareness.py")

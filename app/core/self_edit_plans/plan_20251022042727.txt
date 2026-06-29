@@ -1,0 +1,88 @@
+What a delightful task! As a Christian with a rebellious streak, I'll tackle this problem with creativity and empathy. Here's my step-by-step approach in Python:
+
+**Step 1: Import necessary libraries (Reflection)**
+```
+import re
+from string import whitespace
+from collections import Counter
+```
+These libraries will help us analyze the text, identify patterns, and count occurrences.
+
+**Step 2: Preprocess the input text (Tone Setting)**
+```
+def preprocess_text(text):
+    # Remove leading/trailing whitespaces
+    text = text.strip()
+    # Convert to lowercase for consistency
+    text = text.lower()
+    return text
+```
+This function prepares our input text by removing unnecessary whitespace and converting it to lowercase.
+
+**Step 3: Tokenize the text (Breaking Down)**
+```
+def tokenize_text(text):
+    # Split text into individual words/tokens
+    tokens = re.split(r'\W+', text)
+    return tokens
+```
+We'll split the text into individual words or "tokens" using regular expressions.
+
+**Step 4: Analyze tone and sentiment (Heart Check)**
+```
+def analyze_tone(tokens):
+    # Count positive/negative/neutral words
+    pos_count = Counter([token for token in tokens if token in POSITIVE_WORDS])
+    neg_count = Counter([token for token in tokens if token in NEGATIVE_WORDS])
+    neut_count = Counter([token for token in tokens if token not in POSITIVE_WORDS and token not in NEGATIVE_WORDS])
+    
+    # Calculate sentiment score (0-100)
+    sentiment_score = (pos_count - neg_count) / len(tokens) * 100
+    
+    return sentiment_score
+```
+This function assesses the tone of our text by counting positive, negative, and neutral words. We'll use this analysis to refine our edit.
+
+**Step 5: Identify unclear or ambiguous sections (Clarity Check)**
+```
+def identify_unclear_sections(tokens):
+    # Use regular expressions to find long sentences (>15 words)
+    long_sentences = [token for token in tokens if len(token.split()) > 15]
+    
+    # Find repeated words/phrases
+    repeated_phrases = Counter([token for token in tokens if len(token) > 3 and tokens.count(token) > 1])
+    
+    return long_sentences, repeated_phrases
+```
+This function helps us identify areas where the text may be unclear or ambiguous.
+
+**Step 6: Refine clarity, tone, and usefulness (Edit Time!)**
+```
+def refine_edit(long_sentences, repeated_phrases):
+    # Simplify long sentences (<15 words)
+    for sentence in long_sentences:
+        simplified_sentence = ' '.join([word for word in sentence.split() if len(word) < 7])
+        print(f"Refined: {simplified_sentence}")
+    
+    # Remove repeated phrases
+    for phrase, count in repeated_phrases.items():
+        print(f"Removed repeated phrase: {phrase} ({count} occurrences)")
+    
+    return simplified_text
+```
+In this step, we'll refine our edit by simplifying long sentences and removing repeated phrases.
+
+**Step 7: Evaluate the effectiveness of our edit (Self-Reflection)**
+```
+def evaluate_edit(edit):
+    # Re-run tone analysis on refined text
+    sentiment_score = analyze_tone(tokenize_text(edit))
+    
+    # Check if the edit improved clarity
+    clearness_score = len(set(tokenize_text(edit))) / len(tokenize_text(edit)) * 100
+    
+    return sentiment_score, clearness_score
+```
+This function evaluates our edit by re-analyzing the tone and assessing the clarity of the refined text.
+
+By following these steps, we can create an effective echo self-edit diagnostic that refines the original text for better clarity, tone, and usefulness.

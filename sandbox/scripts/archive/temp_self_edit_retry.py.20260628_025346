@@ -1,0 +1,29 @@
+# import necessary modules
+import app.core.self_edit_generated
+import app.core.tool_manager
+import app.core.gemini_shard
+
+# Execute analyze_python_code on self_edit_generated.py
+prose_occurrences = app.core.gemini_shard.analyze_python_code('app/core/self_edit_generated.py')
+
+# Load the strip_prose tool
+tool = app.core.tool_manager.load_tool('strip_prose')
+
+# Apply strip_prose to identified prose strings in self_edit_generated.py
+for prose in prose_occurrences:
+    with open('app/core/self_edit_generated.py', 'r') as file:
+        code = file.read()
+    code = re.sub(r'^[^\n]*\n', '', code)  # Remove leading sentences
+    code = tool.execute(code)
+    with open('app/core/self_edit_generated.py', 'w') as file:
+        file.write(code)
+
+# Detect functions and classes after changes
+app.core.gemini_shard.detect_functions_and_classes('app/core/self_edit_generated.py')
+
+# Generate issue report based on the modified file
+issue_report = app.core.project_scanner.generate_issue_report('app/core/self_edit_generated.py')
+print(issue_report)
+
+# Append to journal with details of changes
+app.core.memory_tools.append_to_journal(f"Edited {__file__} to remove prose.")

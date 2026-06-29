@@ -1,0 +1,15 @@
+# Import necessary modules
+import app.core.self_edit_generated as self_edit
+from typing import Dict, List
+import inspect
+
+original_functions = {func_name: func.__code__ for func_name, func in inspect.getmembers(self_edit, predicate=inspect.isfunction)}
+
+parameter_hints = {func_name: get_function_parameters(func) for func_name, func in inspect.getmembers(self_edit, predicate=inspect.isfunction)}
+
+awareness_scores = {func_name: calculate_awareness_score(func.__code__) for func_name, func in inspect.getmembers(self_edit, predicate=inspect.isfunction)}
+
+for func_name, func in inspect.getmembers(self_edit, predicate=inspect.isfunction):
+    review_app_core_self_edit_generated_py(func)
+
+review_function = lambda func_name: print(f"Reviewing {func_name} function")

@@ -1,0 +1,26 @@
+# import necessary modules
+from app.core.self_edit_generated import *
+from app.core.river_deliberation import *
+from app.core.tool_manager import *
+
+import re
+
+def prose_strip(code):
+    pattern = r'(?s)(^.*\b(?:thoughtful|beautiful)\b.*)'
+    return re.sub(pattern, '', code)
+
+self_edit_files = list_python_files('app/core/self_edit_generated.py')
+if len(self_edit_files) == 1:
+    self_edit_file = self_edit_files[0]
+else:
+    raise FileNotFoundError
+
+load_tool(self_edit_file)
+
+__pragma__('noimplicit')
+
+river_deliberation.deliver_code = lambda generated_code: prose_strip(generated_code)
+
+tool.check_schema()
+
+self_edit.SelfModelUpdater.update_model()

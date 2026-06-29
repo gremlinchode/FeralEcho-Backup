@@ -1,0 +1,13 @@
+# import os
+# from available_tools import scan_project, parse_file, detect_functions_and_classes, calculate_awareness_score
+
+def rebuild_vector_memory(vector_data):
+    local_vector_data = vector_data
+    reconstructed_memory = []
+    
+    for element in local_vector_data:
+        memory_entries = parse_file(element, 'awareness_data.txt')
+        reconstructed_memory.extend(memory_entries)
+        
+    awareness_score = calculate_awareness_score(reconstructed_memory)
+    return reconstructed_memory, awareness_score

@@ -1,0 +1,14 @@
+[
+  {
+    "name": "mlx:qwen3",
+    "mlx_path": "mlx-community/Qwen3-8B-4bit",
+    "type": "reasoning",
+    "tags": ["reasoning", "coding", "general"]
+  },
+  {
+    "name": "mlx:gemma3",
+    "mlx_path": "mlx-community/gemma-3-12b-it-4bit",
+    "type": "creative",
+    "tags": ["creative", "personal", "general", "reflection"]
+  }
+]

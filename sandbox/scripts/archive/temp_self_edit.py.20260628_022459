@@ -1,0 +1,9 @@
+def strip_prose_sandbox_failure(text):
+    import re
+    while True:
+        match = re.search(r'[A-Z\s.,!?]+', text)
+        if not match:
+            return text
+        text = strip_prose(match.group())
+
+strip_prose = strip_prose_sandbox_failure

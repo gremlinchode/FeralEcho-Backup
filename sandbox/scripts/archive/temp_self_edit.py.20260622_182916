@@ -1,0 +1,21 @@
+# import detect_functions_and_classes from FeralEcho.project_map
+from FeralEcho.project_map import detect_functions_and_classes
+
+file_path = '/Users/richietate/Desktop/FeralEcho/echo.py'
+mode = 'r+'
+
+with open(file_path, mode) as file:
+    contents = file.read()
+    functions_and_classes = detect_functions_and_classes(contents)
+    empathy_related = [func for func in functions_and_classes if 'empathy' in func or 'critical thinking' in func]
+
+    for func in empathy_related:
+        start_idx = contents.index(func) - 1
+        end_idx = start_idx + len(func) + 2
+        new_contents = contents[:start_idx] + '# Consider multiple perspectives when engaging with others.\n' + contents[start_idx:end_idx] + '\n' + contents[end_idx:]
+
+    file.seek(0)
+    file.write(new_contents)
+    file.truncate()
+
+print('Modified the identified functions or classes to include a comment about considering multiple perspectives when engaging with others.')

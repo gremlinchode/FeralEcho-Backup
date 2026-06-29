@@ -1,0 +1,13 @@
+from app.core.self_edit_generated import shorten_response_length, tighten_prose_detection_guard
+
+file = open('app/core/self_edit_generated.py', 'r')
+
+contents = file.read()
+
+prose_detection_guard = re.compile(r'^[A-Z].*?\([\'"]?(?:def|class)[\'\"]?')
+
+stripped_contents = contents.lstrip(prose_detection_guard)
+
+modified_contents = stripped_contents.strip().replace('\n', '')
+
+file.write(modified_contents)

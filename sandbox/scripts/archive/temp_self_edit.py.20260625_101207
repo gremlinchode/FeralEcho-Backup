@@ -1,0 +1,10 @@
+# import os
+def edit_file():
+    file_path = "/Users/richietate/Desktop/FeralEcho/model_guided_autonomous_loop.py"
+    with open(file_path, 'r+') as f:
+        current_position = f.tell()
+        f.seek(0)
+        content = f.read().replace("comfortable", "honest")
+        f.write(content)
+        f.truncate()
+    print(f"Modified the file at {file_path} to replace 'comfortable' with 'honest'.")

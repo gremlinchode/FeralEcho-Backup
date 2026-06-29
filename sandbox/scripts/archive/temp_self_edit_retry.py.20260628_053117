@@ -1,0 +1,20 @@
+# import necessary modules from app.core
+import self_edit_generated
+from app.core.memory_tools import log_memory_edit_bridge, append_to_journal
+from app.core.project_scanner import parse_file
+import re
+
+def updated_strip_prose(text):
+    for line in text.split('\n'):
+        if re.match(r'^\s*#.*|^\s*""".*”$|^.*[\(\[]*\.', line):
+            continue
+        else:
+            return re.sub(r'^(.*)[a-zA-Z].*\(', r'\1(\', ', text)
+
+parsed_code = parse_file('app/core/self_edit_generated.py')
+generated_code = updated_strip_prose(parsed_code)
+print("Modified Code:")
+print(generated_code)
+
+append_to_journal(f"Strip prose function updated. Source file: app/core/self_edit_generated.py. Version: 1.0")
+log_memory_edit_bridge(f"Self-edited prose detection added to strip_prose function in app/core/self_edit_generated.py. Version: 1.0", "prose_detection")

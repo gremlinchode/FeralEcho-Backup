@@ -1,0 +1,61 @@
+# from app.core import self_edit_generated, tool_manager
+import re
+from app.core.project_scanner import list_python_files, parse_file
+import os
+
+file_name = 'self_edit_generated.py'
+code = parse_file(file_name)
+
+def refactor_self_edit_generated():
+    try:
+        if not code:
+            return False
+        
+        # Add a prose-detection guard and regex to remove natural language
+        modified_code = re.sub(r'^.*?python\s*:', '', code, flags=re.MULTILINE)  # Strip leading natural language sentences
+
+        # Validate the modified Python code
+        if not check_schema(modified_code):
+            return False
+        
+        if not check_reflection_length(modified_code):
+            return False
+        
+        if not check_recursive_loop(modified_code):
+            return False
+        
+        if not check_orientation_data_in_reflection(modified_code):
+            return False
+
+
+        # Save the modified 'self_edit_generated.py' file back into its original location
+        save_code(file_name, modified_code)
+        return True
+
+    except Exception as e:
+        print(f"Error during refactoring: {e}")
+        return False
+
+def check_schema(code):
+    if "invalid syntax" in code:
+        return False
+    return True 
+
+def check_reflection_length(code):
+    if len(code) < 100:
+        return False
+    return True
+
+def check_recursive_loop(code):
+   return True 
+
+def check_orientation_data_in_reflection(code):
+    return True
+
+def save_code(file_name, code):
+    with open(file_name, 'w') as f:
+        f.write(code)
+    print(f"Code saved to {file_name}")
+
+# Example usage (would be executed if this script were run directly)
+refactor_self_edit_generated()

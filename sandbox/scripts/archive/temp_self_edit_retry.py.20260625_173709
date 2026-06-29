@@ -1,0 +1,13 @@
+# import os; import re
+import os; import re
+
+file_path = "/Users/richietate/Desktop/FeralEcho/def_class.py"
+
+with open(file_path, "r+", encoding="utf-8") as file:
+    file_content = file.read()
+    
+    file_content = re.sub(r"import def class", r"from importlib.util import module_from_spec; importlib.import_module('def_class')", file_content)
+    
+    file.seek(0); file.write(file_content); file.truncate()
+
+print(f"Modified {file_path} to remove invalid import statement.")

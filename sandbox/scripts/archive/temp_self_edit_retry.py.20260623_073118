@@ -1,0 +1,11 @@
+import os
+file_path = '/Users/richietate/Desktop/FeralEcho/scan_project.py'
+try:
+    with open(file_path, 'r+', encoding='utf-8') as file:
+        file.write('# New response acknowledgment: Is this response too certain? What is being left unacknowledged?\n')
+    print(f"Modified {file_path} to include acknowledgement.")
+    file.seek(0)
+    with open(file_path, 'w', encoding='utf-8') as file:
+        pass
+except FileNotFoundError:
+    print("File not found. Please verify the path.")

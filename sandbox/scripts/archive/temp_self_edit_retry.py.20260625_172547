@@ -1,0 +1,8 @@
+import os
+
+with open('/Users/richietate/Desktop/FeralEcho/HelloFromSelfEditStub.py', 'r+') as f:
+    f.seek(0)
+    f.truncate()
+    new_content = f.read().replace('# class HelloFromSelfEditStub:\n    ', '') + "\n    " + ' ' * 4 + "print('Hello from self-edit stub')\n"
+    f.write(new_content)
+    print("Modified \"HelloFromSelfEditStub.py\" to correct comment and add indentation.")

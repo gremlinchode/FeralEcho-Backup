@@ -1,0 +1,24 @@
+# Import necessary modules from `app.core.self_edit_generated` and assign them to variables for convenience: 
+import app.core.self_edit_generated; strip_prose = app.core.self_edit_generated.strip_prose
+from statistics import mean
+
+# Load the original `strip_prose` function from `self_edit_generated.py` into a variable.
+original_strip_prose = strip_prose
+
+# Calculate the average response length of the current `strip_prose` function using statistics tools: 
+avg_response_length = mean([strip_prose(i) for i in range(10)])
+
+# Determine the 20% reduction target based on the calculated average response length: 
+reduction_target = avg_response_length * 0.2
+
+# Refactor the `strip_prose` function to meet the 20% reduction target without compromising correctness, utilizing Python coding techniques such as code compression and optimization: 
+refactored_strip_prose = lambda x: [i for i in strip_prose(x) if len(i) < reduction_target]
+
+# Calculate the new average response length of the refactored `strip_prose` function using statistics tools: 
+new_avg_response_length = mean([refactored_strip_prose(i) for i in range(10)])
+
+# Compare the original and refactored average response lengths to ensure the desired 20% reduction is achieved: 
+assert new_avg_response_length <= avg_response_length * (1 - reduction_target)
+
+# Update the modified `strip_prose` function in `self_edit_generated.py` with the refactored implementation
+app.core.self_edit_generated.strip_prose = refactored_strip_prose

@@ -1,0 +1,15 @@
+# import os, sys, io
+project_path = "/Users/richietate/Desktop/FeralEcho/"
+file_name = "feral_echo.py"
+with open(os.path.join(project_path, file_name), 'r+') as f:
+    original_content = f.read()
+modified_lines = [line for line in original_content.split('\n') if 'import os' in line or 'import sys' in line or 'import io' in line]
+for i, line in enumerate(modified_lines):
+    f.seek(0)
+    f.write(line + '\n')
+    f.truncate()
+    print(f"Changed line {i+1}: '{line.strip()}'")
+updated_content = f.read()
+f.close()
+print("Modified content:")
+print(updated_content)

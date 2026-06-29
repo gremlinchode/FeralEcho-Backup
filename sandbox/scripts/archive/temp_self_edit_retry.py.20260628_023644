@@ -1,0 +1,20 @@
+# import necessary modules
+import re
+
+from app.core.self_edit_generated import strip_prose
+
+def strip_prose(code_output):
+    """Strip natural language sentences from code output."""
+    if re.search(r"^[a-zA-Z\s]+:?", code_output) is not None:
+        matched_text = re.search(r"^[a-zA-Z\s]+:?", code_output).group()
+        code_output = code_output[matched_text.length():]
+    return code_output
+
+def generate_issue_report():
+    from app.core.project_scanner import generate_issue_report
+    issue_report = generate_issue_report("app/core/project_scanner")
+    return issue_report
+
+import os
+from app.echo_model_guided_orchestrator import run_self_model_reflection
+run_self_model_reflection()

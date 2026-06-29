@@ -1,0 +1,30 @@
+import app.core.self_edit_generated as self_edit
+from app.gemini_shard import GeminiShard
+from app.core.tool_manager import update_file
+
+gemini = GeminiShard()
+
+def detect_and_strip_prose(code):
+    prose_sentences = gemini.analyze_code_prose(code)
+    stripped_code = ''
+    for sentence in prose_sentences:
+        if sentence.startswith(code.split('\n')[0]):
+            code = code.replace(sentence, '')
+        else:
+            stripped_code += sentence + '\n'
+    return code
+
+self_edit.strip_prose = detect_and_strip_prose
+
+prose_detected = False
+
+def self_edit_wrapper(code):
+    global prose_detected
+    if prose_detected:
+        code = detect_and_strip_prose(code)
+    # further processing logic...
+    return code
+
+update_file('app.core.self_edit_generated.py', 'strip_prose', self_edit_wrapper)
+
+self_edit.parse_code = lambda x: self_edit_wrapper(self_edit.parse_code(x))

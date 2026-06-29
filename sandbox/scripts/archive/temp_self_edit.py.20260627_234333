@@ -1,0 +1,10 @@
+class SelfEditGenerated:
+    def strip_prose(text):
+        if re.match(r'^[^\w\n]+', text):
+            return text.split('\n')[0].strip()
+        else:
+            return text
+        code = text
+        if re.match(r'^\W+', code):
+            code = self.strip_prose(code)
+        return code

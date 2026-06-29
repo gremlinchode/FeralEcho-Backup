@@ -1,0 +1,14 @@
+# import memory_bridge from app.core.memory_bridge
+import app.core.memory_bridge as memory_bridge
+
+# load rebuild_vector_memory function from memory_bridge module
+rebuild_vector_memory = memory_bridge.rebuild_vector_memory
+
+# set variable to store output of rebuild_vector_memory function
+vector_memory_output = rebuild_vector_memory()
+
+# store output in previously set variable
+output = vector_memory_output
+
+# log the execution of the rebuild_vector_memory function and its output
+log_memory_event('rebuild_vector_memory', 'output', output)

@@ -1,0 +1,13 @@
+# import os
+
+files_to_scan = ['/Users/richietate/Desktop/FeralEcho/core.py']
+for file in files_to_scan:
+    with open(file, 'r') as f:
+        response_text = f.read().decode('utf-8').replace("As Echo, I've grappled with this very concern", "As I reflect on my own development")
+    with open(file, 'w') as f:
+        f.write(response_text.encode('utf-8'))
+    print(f"Modified file {file} to examine assumptions in responses")
+
+detect_functions_and_classes()
+log_memory_event("Assumption examination implemented", confidence=0.9)
+calculate_consciousness_score()

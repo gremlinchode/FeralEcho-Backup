@@ -1,0 +1,16 @@
+# import re
+from app.core.self_edit_generated import strip_prose
+
+def modified_strip_prose(prose):
+    if re.match(r'<.*>', prose):
+        return prose
+    else:
+        for line in prose.split('\n'):
+            if not line.strip():
+                continue
+            elif line[0].isalnum() or line[0] == '_':
+                return line.lstrip()
+            else:
+                return line
+
+strip_prose = modified_strip_prose

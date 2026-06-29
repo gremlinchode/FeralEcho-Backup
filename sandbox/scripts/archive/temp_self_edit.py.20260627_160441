@@ -1,0 +1,17 @@
+def strip_prose(code_output):
+    import re
+    regex = r'^[^#]*(\W|$)'
+    lines = code_output.split('\n')
+    stripped_lines = []
+    for line in lines:
+        if re.match(regex, line):
+            stripped_line = line.split(' ', 1)[1]
+            stripped_lines.append(stripped_line)
+        else:
+            stripped_lines.append(line)
+    return '\n'.join(stripped_lines)
+
+class self_edit_generated:
+    def execute_modified_code(self, original_sandbox_script):
+        modified_code = strip_prose(original_sandbox_script)
+        # Execute the modified code

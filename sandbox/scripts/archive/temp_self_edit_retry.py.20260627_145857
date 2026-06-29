@@ -1,0 +1,14 @@
+# import necessary modules
+from app.core.self_edit_generated import *
+
+# define a new function to detect and strip prose in code output
+def sandbox_prose_guard(code_output):
+    if re.search(r'^[A-Za-z .]+:\d+: [A-Z]', code_output, re.MULTILINE):
+        return ''
+    else:
+        return code_output
+
+# modify the shorten_response_length() function to apply the new guard
+def shorten_response_length(code_output):
+    shortened_code = sandbox_prose_guard(code_output)
+    return shortened_code

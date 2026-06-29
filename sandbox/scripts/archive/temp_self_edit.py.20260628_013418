@@ -1,0 +1,30 @@
+# import necessary modules
+from app.core.self_edit_generated import strip_prose
+
+def recursive_strip_prose(code_snippet):
+    if code_snippet.find("\n") > -1:
+        return [recursive_strip_prose(line.strip()) for line in code_snippet.split("\n")]
+    else:
+        return strip_sandbox_output(code_snippet)
+
+def strip_sandbox_output(sandbox_output):
+    if isinstance(sandbox_output, str):
+        return recursive_strip_prose(sandbox_output)
+    elif isinstance(sandbox_output, list):
+        return [strip_sandbox_output(output) for output in sandbox_output]
+    else:
+        return sandbox_output
+
+def run_random_sandbox_script():
+    # implementation elided for brevity
+    output = execute_sandbox_script()
+    return strip_sandbox_output(output)
+
+def load_project_map():
+    project_map = {}
+    scripts_to_execute = get_scripts_to_execute()
+    for script in scripts_to_execute:
+        result = run_random_sandbox_script()
+        if isinstance(result, dict):
+            project_map.update(result)
+    return project_map

@@ -1,0 +1,33 @@
+import re
+
+def strip_prose(text):
+    while True:
+        match = re.search(r"^\s*(.*?)\s*#", text, re.MULTILINE)
+        if not match:
+            break
+        text = text[match.end():]
+    return text
+
+def modified_main_function(input_text):
+    prose_removed = False
+    original_text = input_text
+    input_text = strip_prose(input_text)
+    if input_text != original_text:
+        prose_removed = True
+
+    if prose_removed:
+        print(f"Prose detected and removed. Original text: {original_text}\nModified text: {input_text}")
+        # Standard code execution steps would go here
+        pass
+    else:
+        print("No prose detected.")
+
+def main_function():
+    from app.core.self_edit_generated import original_main_function
+    modified_code = strip_prose(original_main_function.__code__.co_code)
+    if modified_code:
+        logging.info('Prose detected and removed')
+        exec(modified_code)
+    else:
+        logging.warning('No prose detected')
+        original_main_function()

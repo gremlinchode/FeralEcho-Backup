@@ -1,0 +1,14 @@
+# import necessary modules from app.core.self_edit_generated
+import strip_prose, main_function, modified_main_function
+
+def refactor_main():
+    original_main_temp = original_main()
+    if len(str(original_main_temp)) > 150:
+        return modified_main_function()
+    else:
+        return main_function()
+
+modified_main_function = refactor_main
+
+# comment to document the change and aim for reducing response length by 20%
+# This refactoring aims to reduce response length by 20% while preserving correctness

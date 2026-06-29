@@ -1,0 +1,22 @@
+# import necessary modules: from app.core.self_edit_generated import refactor_main_function, main_function
+
+def strip_prose(input_string):
+    for line in input_string.split('\n'):
+        if line.lstrip().startswith('if ') or line.lstrip().startswith('class ') or line.lstrip().startswith('def '):
+            return line
+    return ''
+
+def main_function():
+    result = refactor_main_function()
+    return strip_prose(result)
+
+refactor_main_function()
+
+try:
+    print("Test cycle initiated...")
+    print("Output from modified main_function:", main_function())
+    with open('journal.txt', 'a') as f:
+        f.write('Successfully modified self_edit_generated.py\n')
+    start_orchestrator()
+except Exception as e:
+    print(f"An error occurred during modification: {e}")

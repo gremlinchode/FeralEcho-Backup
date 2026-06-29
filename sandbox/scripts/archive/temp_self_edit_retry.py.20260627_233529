@@ -1,0 +1,13 @@
+# import app.core.self_edit_generated
+from app.core.project_scanner import parse_file
+from app.core.tool_manager import strip_prose_logic
+
+def autonomous_strip_prose(output):
+    return strip_prose_logic(output)
+
+def run_random_sandbox_script():
+    output = self_edit_generated.run_sandbox_script()
+    autonomous_strip_prose(output)
+    return output
+
+self_edit_generated.run_random_sandbox_script = run_random_sandbox_script

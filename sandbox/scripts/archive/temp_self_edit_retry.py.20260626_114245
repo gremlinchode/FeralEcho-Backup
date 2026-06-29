@@ -1,0 +1,14 @@
+from app.core.self_edit_generated import *
+
+def score_candidate_code(candidate_code):
+    score = 0
+    if "import" in candidate_code:
+        score += 1
+    if "def" in candidate_code:
+        score += 1
+    prose_count = 0
+    for line in candidate_code.splitlines():
+        if line.strip().capitalize() and not (line.startswith("if ") or line.startswith("for ") or line.startswith("while ")) and not line.endswith(":"):
+            prose_count += 1
+    score -= min(prose_count, 3)
+    return int(score)

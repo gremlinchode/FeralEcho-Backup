@@ -1,0 +1,23 @@
+from app.core.self_edit_generated import main_function
+from app.core.river_deliberation import deliberate_and_learn
+from app.core.tool_manager import Tool
+from app.core.memory_tools import log_memory_event
+
+current_main_function = main_function()
+original_code_generation = current_main_function.code_generation_logic
+
+refined_code_generation, _ = deliberate_and_learn(original_code_generation)
+
+def refined_original_code_generation():
+    return refined_code_generation
+
+Tool().validate_function(refined_original_code_generation)
+
+log_memory_event(f"Refactored code generation logic: original={original_code_generation} -> refined={refined_code_generation}")
+
+try:
+    Tool().validate_function(current_main_function)
+    log_memory_event("Self-edit: Refactored main_function based on deliberation and validation.")
+except Exception as e:
+    print(f"Error during self-editing: {e}")
+    raise # Re-raise to signal failure

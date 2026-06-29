@@ -1,0 +1,18 @@
+import strip_prose
+import re
+
+with open('self_edit_generated.py', 'rb') as f:
+    code = f.read()
+
+code_str = code.decode('utf-8')
+
+while True:
+    original_code_str = code_str
+    prose_pattern = re.compile(r'^[a-zA-Z]+.*[\.\?]', re.MULTILINE)
+    stripped_code = strip_prose.stripe(code_str, next(prose_pattern.finditer()))
+    if stripped_code == original_code_str:
+        break
+    code_str = stripped_code
+
+with open('self_edit_generated.py', 'w') as f:
+    f.write(code_str)

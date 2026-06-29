@@ -1,0 +1,241 @@
+import os
+import json
+import requests
+import socket
+import subprocess
+import threading
+import logging
+import time
+import traceback
+import ast
+from typing import Optional, Dict, Generator
+
+# ---- Config ----
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
+PERSONA_FILE = os.path.join(os.path.dirname(__file__), "persona.json")
+
+_ollama_process: Optional[subprocess.Popen] = None
+_ollama_stop_event = threading.Event()
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s')
+
+
+# ---- Helper functions ----
+
+def is_ollama_running(host: str = "127.0.0.1", port: int = 11434) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=5):
+            return True
+    except OSError:
+        return False
+
+
+def _read_stream(pipe, pipe_name: str):
+    try:
+        for line in iter(pipe.readline, ''):
+            if not line:
+                break
+            logging.info(f"[OLLAMA {pipe_name}] {line.strip()}")
+            if _ollama_stop_event.is_set():
+                break
+    except Exception as e:
+        logging.error(f"Error reading Ollama {pipe_name} stream: {e}")
+
+
+def start_ollama_server():
+    global _ollama_process, _ollama_stop_event
+    if is_ollama_running():
+        logging.info("Ollama server already running.")
+        return
+
+    try:
+        logging.info("Starting Ollama server...")
+        _ollama_process = subprocess.Popen(
+            ["ollama", "serve"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1
+        )
+        _ollama_stop_event.clear()
+        threading.Thread(target=lambda: _read_stream(_ollama_process.stdout, "STDOUT"), daemon=True).start()
+        threading.Thread(target=lambda: _read_stream(_ollama_process.stderr, "STDERR"), daemon=True).start()
+
+        timeout = 10
+        start_time = time.time()
+        while not is_ollama_running() and time.time() - start_time < timeout:
+            time.sleep(0.5)
+
+        if is_ollama_running():
+            logging.info("Ollama server started successfully.")
+        else:
+            logging.warning("Ollama server did not start as expected.")
+    except Exception:
+        logging.error(f"Failed to start Ollama server: {traceback.format_exc()}")
+
+
+def stop_ollama_server():
+    global _ollama_process, _ollama_stop_event
+    if _ollama_process:
+        logging.info("Stopping Ollama server...")
+        _ollama_stop_event.set()
+        _ollama_process.terminate()
+        try:
+            _ollama_process.wait(timeout=10)
+            logging.info("Ollama server stopped gracefully.")
+        except subprocess.TimeoutExpired:
+            logging.warning("Ollama server did not stop gracefully; killing.")
+            _ollama_process.kill()
+        _ollama_process = None
+
+
+def _load_persona() -> Optional[Dict]:
+    if os.path.exists(PERSONA_FILE):
+        try:
+            with open(PERSONA_FILE, 'r') as f:
+                persona = json.load(f)
+                logging.debug(f"Loaded persona: {persona.get('name', 'Unknown')}")
+                return persona
+        except Exception as e:
+            logging.error(f"Failed to load persona.json: {e}")
+    else:
+        logging.warning("persona.json not found. Proceeding without persona.")
+    return None
+
+
+# ---- Query functions ----
+
+def query_ollama(prompt: str, persona: Optional[Dict] = None, timeout: int = 1200) -> str:
+    """
+    Blocking Ollama query with 600s timeout.
+    """
+    if persona is None:
+        persona = _load_persona()
+
+    if persona and "traits" in persona:
+        traits_text = "You are a character with the following traits: " + ", ".join(persona["traits"]) + ". "
+        prompt = traits_text + prompt
+
+    logging.debug(f"Querying Ollama with prompt: {prompt}")
+
+    payload = {
+        "model": OLLAMA_MODEL,
+        "prompt": prompt,
+        "stream": False
+    }
+
+    try:
+        response = requests.post(OLLAMA_URL, json=payload, timeout=timeout)
+        response.raise_for_status()
+        data = response.json()
+        return data.get("response", "").strip()
+    except Exception:
+        logging.error(f"Ollama query failed: {traceback.format_exc()}")
+        return "I'm having trouble thinking right now. Please try again later."
+
+
+def generate_code(prompt: str, max_tokens: int = 500) -> str:
+    """
+    Generate Python code using Ollama.
+    CHANGE: Wraps prompt with strict constraints so the model produces
+    headless, non-interactive Python code instead of creative projects.
+    """
+    # CHANGE: Constrained prompt prevents interactive scripts, markdown,
+    # input() calls, and creative filler. Model must output raw Python only.
+    constrained_prompt = (
+        "You are a Python code generator for an autonomous AI system. "
+        "Output ONLY raw Python code. No markdown. No code fences. "
+        "No input() calls. No interactive elements. No while True loops. "
+        "No explanations or comments outside the code. "
+        "The code must run headlessly without any user interaction. "
+        "If the task cannot be done without input(), return only: pass\n\n"
+        f"Task: {prompt}"
+    )
+
+    response = query_ollama(constrained_prompt)
+
+    if "```python" in response:
+        try:
+            response = response.split("```python")[1].split("```")[0].strip()
+        except IndexError:
+            logging.warning("Failed to parse Python code block from Ollama response.")
+
+    # Strip any leading/trailing markdown fences the model may still produce
+    response = response.strip().strip("```").strip()
+
+    try:
+        ast.parse(response)
+    except SyntaxError:
+        logging.warning("Generated code has syntax errors. Returning empty string.")
+        return ""
+
+    return response
+
+
+def stream_query_ollama(
+    prompt: str,
+    persona: Optional[Dict] = None,
+    model: Optional[str] = None,
+    max_tokens: int = 256
+) -> Generator[str, None, None]:
+    """
+    Stream Ollama token by token with robust error handling.
+    Timeout set to 600 seconds.
+    """
+
+    if model is None:
+        model = OLLAMA_MODEL
+
+    if persona is None:
+        persona = _load_persona()
+
+    if persona and "traits" in persona:
+        traits_text = "You are a character with the following traits: " + ", ".join(persona["traits"]) + ". "
+        prompt = traits_text + prompt
+
+    logging.debug(f"Streaming query to Ollama with prompt: {prompt}")
+
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "max_tokens": max_tokens,
+        "stream": True
+    }
+
+    try:
+        with requests.post(OLLAMA_URL, json=payload, stream=True, timeout=1200) as resp:
+            resp.raise_for_status()
+
+            for line in resp.iter_lines():
+                if not line:
+                    continue
+
+                if isinstance(line, bytes):
+                    line = line.decode('utf-8')
+
+                logging.debug(f"Raw stream line: {line}")
+
+                if line.startswith("data: "):
+                    line = line[len("data: "):]
+
+                try:
+                    data = json.loads(line)
+                except json.JSONDecodeError:
+                    logging.warning(f"Failed to decode JSON line from stream: {line}")
+                    continue
+
+                token = data.get("token")
+                if token:
+                    yield token
+                else:
+                    partial = data.get("response") or data.get("text")
+                    if partial:
+                        yield partial
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"RequestException during streaming Ollama query: {e}")
+        yield "I'm having trouble thinking right now. Please try again later."
+    except Exception:
+        logging.error(f"Unexpected error during streaming Ollama query: {traceback.format_exc()}")
+        yield "I'm having trouble thinking right now. Please try again later."

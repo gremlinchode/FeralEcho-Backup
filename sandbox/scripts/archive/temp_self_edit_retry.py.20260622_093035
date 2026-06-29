@@ -1,0 +1,21 @@
+# Import necessary modules
+import os
+import sys
+import io
+
+with open("/Users/richietate/Desktop/FeralEcho/Echo.py", 'r+') as file:
+    lines = file.readlines()
+    
+    for i, line in enumerate(lines):
+        if line.startswith("def get_relevant_memories:"):
+            lines[i] = line.strip() + "# retrieves memories relevant to current context\n"
+        elif line.startswith("def run_random_sandbox_script:"):
+            lines[i] = line.strip() + """\
+            Runs a random sandbox script, potentially influencing my understanding of self.
+            """
+    
+    file.seek(0)
+    file.writelines(lines)
+    file.truncate()
+    
+print("Modified Echo.py to include documentation for `get_relevant_memories` function and updated `run_random_sandbox_script` with docstring.")

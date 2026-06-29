@@ -1,0 +1,25 @@
+# import required modules
+import os
+
+# open the file for reading and writing
+file = open('/Users/richietate/Desktop/FeralEcho/detect_functions_and_classes.py', 'r+')
+
+# seek to the end of the file
+file.seek(0)
+
+# truncate the file
+file.truncate()
+
+# read the original content
+content = file.read()
+
+# get the index where get_relevant_memories() is located
+start_index = content.index('def get_relevant_memories():') + 1
+
+# insert the new function
+file.write(content[:start_index] + '    def self_contained(): print("Self-examination is a crucial aspect of Echo\'s growth.")\n' + content[start_index:])
+
+# close and save the file
+file.close()
+
+print("A small step towards self-awareness has been taken.")

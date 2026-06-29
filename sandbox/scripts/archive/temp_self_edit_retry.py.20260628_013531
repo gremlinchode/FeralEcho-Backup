@@ -1,0 +1,35 @@
+# Import necessary modules from `app.core.self_edit_generated`
+from app.core.self_edit_generated import strip_prose
+import re
+
+def strip_sandbox_output(output):
+    return strip_prose(output)
+
+def recursive_strip_prose(code, level=0):
+    if level > 10:
+        raise RecursionError("Too deep recursion")
+    code = str(code)
+    new_code = re.sub(r'^\s*\'([^\']*)\'\s*$|\n', '', code)
+    for match in re.finditer(r"[\n\s]{2,}", code):
+        new_code = new_code[:match.start()] + '\n' + recursive_strip_prose(new_code[match.end():], level+1) + '\n'
+    return new_code
+
+def run_random_sandbox_script(sandbox_script):
+    try:
+        exec(sandbox_script)
+        output = "Script executed successfully."
+    except Exception as e:
+        output = f"Script execution failed: {str(e)}"
+    return strip_sandbox_output(output)
+
+def load_project_map(project_map):
+    # Update project map logic
+    for key, value in project_map.items():
+        if isinstance(value, str):
+            project_map[key] = recursive_strip_prose(strip_prose(value))
+    return project_map
+
+# Integrate `recursive_strip_prose` into `strip_sandbox_output`
+def strip_sandbox_output(output):
+    output = recursive_strip_prose(output)
+    return strip_sandbox_output(output)

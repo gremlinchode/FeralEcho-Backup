@@ -1,0 +1,9 @@
+# import os; file_path = "/Users/richietate/Desktop/FeralEcho/utils.py"; if not os.path.exists(file_path): raise FileNotFoundError(file_path); 
+import re
+code = ""
+with open("/Users/richietate/Desktop/FeralEcho/utils.py", 'r') as file:
+    code = file.read()
+code = re.sub(r'\n', '\n    ', code, 0, re.MULTILINE) 
+with open("/Users/richietate/Desktop/FeralEcho/utils.py", 'w') as file:
+    file.write(code)
+print(f"Modified /Users/richietate/Desktop/FeralEcho/utils.py to add indentation")

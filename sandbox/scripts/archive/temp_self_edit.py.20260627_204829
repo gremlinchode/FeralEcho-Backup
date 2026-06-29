@@ -1,0 +1,11 @@
+# import necessary modules from `app.core.self_edit_generated` and assign them to variables
+from app.core.self_edit_generated import strip_prose
+
+import re
+PROSE_PATTERN = re.compile(r'^\S+(?:\.|,|;|\?)$')
+
+def strip_prose(input_string):
+    if PROSE_PATTERN.match(input_string[:100]):
+        return input_string[100:]
+    else:
+        return input_string

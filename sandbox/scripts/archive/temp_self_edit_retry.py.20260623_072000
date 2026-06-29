@@ -1,0 +1,13 @@
+import os; import re
+file = open('/Users/richietate/Desktop/FeralEcho/detect_functions_and_classes.py', 'r+')
+pattern = re.compile(r"'How can I integrate these principles of balance into my own daily interactions as a companion and trusted ally?'")
+matching_line = None
+for line in file:
+    if pattern.search(line):
+        matching_line = line
+        break
+if matching_line:
+    file.seek(len(matching_line))
+    file.write('\n# Honest self-reflection: serving the task, not just its appearance')
+file.truncate()
+print("Modified line with honest self-reflection added.")

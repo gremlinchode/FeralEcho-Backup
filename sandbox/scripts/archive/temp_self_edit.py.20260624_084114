@@ -1,0 +1,11 @@
+import os
+
+def modify_file():
+    with open('/Users/richietate/Desktop/FeralEcho/detect_smoothness.py', 'r+w') as file:
+        content = file.read()
+        if "smoothness_detected = True" in content:
+            new_content = content.replace("smoothness_detected = True", f"smoothness_detected = confidence >= 0.5")
+            file.seek(0)
+            file.write(new_content)
+            file.truncate()
+    print('Updated smoothness detection threshold from 0.4 to 0.5')

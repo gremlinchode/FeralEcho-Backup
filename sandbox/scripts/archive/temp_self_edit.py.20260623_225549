@@ -1,0 +1,10 @@
+import os
+from FeralEcho.feral_echo import modify_file
+file_path = '/Users/richietate/Desktop/FeralEcho/feral_echo.py'
+with open(file_path, 'r') as file:
+    lines = file.readlines()
+modified_lines = [line.replace('import os\nfrom FeralEcho.feral_echo import modify_file\n', '') for line in lines]
+with open(file_path, 'w') as file:
+    file.writelines(modified_lines)
+print(f"Removed unnecessary imports from {file_path}")
+print("Improved code smoothness and confidence by avoiding redundant code")

@@ -1,0 +1,30 @@
+import sys
+from app.core.self_edit_generated import modify_main_function
+from app.core.tool_manager import ToolManager
+
+class ProseDetectionTool(Tool):
+    def __init__(self):
+        self.name = "ProseRemoval"
+        self.description = "Detects and removes leading natural language from code."
+
+    def execute(self, code: str) -> str:
+        import re
+        match = re.match(r'\s*[^A-Za-z0-9_]', code)
+        if match:
+            return code[match.end():].lstrip()
+        return code
+
+tool_manager = ToolManager()
+tool_manager.register_tool(ProseDetectionTool())
+
+with open('app/core/self_edit_generated.py', 'r') as file:
+    code_content = file.read()
+
+modified_code = tool_manager.execute_tool_on_code("ProseRemoval", code_content)
+
+with open('app/core/self_edit_generated.py', 'w') as file:
+    file.write(modified_code)
+
+with open('app/core/self_edit_generated.py', 'r') as file:
+    updated_content = file.read()
+print(updated_content[:100])

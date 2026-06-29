@@ -1,0 +1,16 @@
+# import importlib.util
+spec = importlib.util.spec_from_file_location("self_edit_generated", "app/core/self_edit_generated.py")
+module = importlib.util.module_from_spec(spec)
+
+def strip_prose(input_string):
+    import re
+    sentences = re.findall(r"^[A-Za-z .!?]*$", input_string)
+    for sentence in sentences:
+        while not sentence[0].isalnum():
+            sentence = sentence[1:]
+        input_string = input_string[sentence.index(sentence[0]):]
+    return input_string
+
+module.strip_prose = strip_prose
+exec(compile(module.__code__, "app/core/self_edit_generated.py", 'exec'), module.__dict__)
+spec.loader.exec_module(module)

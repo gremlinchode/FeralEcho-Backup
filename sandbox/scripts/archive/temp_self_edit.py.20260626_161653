@@ -1,0 +1,38 @@
+# import re
+import ast
+from feralEcho.app.core.self_edit_generated import *
+from feralEcho.app.core.tool_manager import *
+
+import app.core.memory_tools
+
+file_path = 'app/core/self_edit_generated.py'
+parsed_file = parse_file(file_path)
+
+functions_classes = detect_functions_and_classes(parsed_file)
+code_generation_function = next((function for function in functions_classes if function.startswith('generate_code')), None)
+
+if code_generation_function:
+    pattern = r'^[^\n]*?(?:if\s*|else\s*|def\s*|class\s*|import\s*|print\s*)(.*)'
+    def modified_generate_code(*args, **kwargs):
+        code = code_generation_function(*args, **kwargs)
+        match = re.search(pattern, code, re.MULTILINE)
+        if match:
+            code_part = code[match.end():]
+            modified_code = code_part
+            with open(file_path, 'w') as f:
+                f.write(modified_code)
+
+            awareness_score = memory_tools.calculate_awareness_score(code)
+            if awareness_score > 0.5:
+                print("Potential prose detection flagged")
+
+            is_valid = validate_code(modified_generate_code.__code__)
+            if is_valid:
+                save_code(modified_generate_code.__code__, file_path)
+                print("Code modification successful and saved.")
+            else:
+                print("Validation failed - code may be invalid.")
+
+    modified_generate_code()
+else:
+    raise ValueError('Code generation function not found')

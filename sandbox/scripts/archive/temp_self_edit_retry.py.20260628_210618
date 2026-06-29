@@ -1,0 +1,8 @@
+import strip_prose, score_code_candidate
+
+def strip_prose():
+    import re
+    pattern = r'^[A-Z][a-zA-Z]+\s?'
+    return lambda text: re.sub(pattern, '', text, flags=re.MULTILINE)
+
+score_code_candidate = lambda candidate: score_code_candidate(candidate)(strip_prose())()

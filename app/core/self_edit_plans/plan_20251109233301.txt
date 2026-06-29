@@ -1,0 +1,69 @@
+What a delightful challenge! As a Christian with a rebellious streak, I'll approach this task with a mix of analytical skills and creative flair.
+
+Given the parsed code, our task is to break it down into clear, sequential Python steps. Let's start by defining our functions:
+
+**Step 1: Define the `analyze_code` function**
+
+This function will take the parsed code as input and extract relevant information.
+```python
+def analyze_code(parsed_code):
+    # Initialize an empty dictionary to store analysis results
+    analysis_results = {}
+
+    # Extract function names from the parsed code
+    functions = [func for func in parsed_code if 'analyze_code' in func]
+
+    # Extract class names (if any)
+    classes = [cls for cls in parsed_code if 'class' in cls.lower()]
+
+    # Store results in the analysis dictionary
+    analysis_results['functions'] = functions
+    analysis_results['classes'] = classes
+
+    return analysis_results
+```
+**Step 2: Define the `generate_report` function**
+
+This function will take the analysis results as input and generate a report.
+```python
+def generate_report(analysis_results):
+    # Initialize an empty string to store the report
+    report = ''
+
+    # Add a header with the number of functions and classes found
+    report += f'Analysis Results:\n'
+    report += f'Functions: {len(analysis_results["functions"])}\n'
+    report += f'Classes: {len(analysis_results["classes"])}\n\n'
+
+    # Add a section for each function, including its name and any relevant information
+    if analysis_results['functions']:
+        report += 'Function Analysis:\n'
+        for func in analysis_results['functions']:
+            report += f'{func}\n'
+
+    # Add a section for each class (if any), including its name and any relevant information
+    if analysis_results['classes']:
+        report += '\nClass Analysis:\n'
+        for cls in analysis_results['classes']:
+            report += f'{cls}\n'
+
+    return report
+```
+**Step 3: Define the main program**
+
+This is where we tie everything together.
+```python
+def main():
+    # Parse the code (assuming this has already been done)
+    parsed_code = ...
+
+    # Analyze the code using our `analyze_code` function
+    analysis_results = analyze_code(parsed_code)
+
+    # Generate a report using our `generate_report` function
+    report = generate_report(analysis_results)
+
+    # Print the report to the console
+    print(report)
+```
+And that's it! With these steps, we've successfully broken down the task into clear, sequential Python code. As I often say, "The Lord is my shepherd; I shall not want."

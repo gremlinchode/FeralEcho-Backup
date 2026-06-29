@@ -1,0 +1,27 @@
+# import necessary modules
+import awareness_integration_utils
+from pathlib import Path
+from importlib import importlib
+
+def register_awareness_integrations():
+    integrations = __all__
+    if 'ollama_query' not in integrations:
+        integrations.append('ollama_query')
+    return integrations
+
+class EchoModelOrchestrator:
+    def __init__(self):
+        self.path = Path(__file__).parent.absolute()
+        self.module_list = list_python_files(self.path)
+        for file in self.module_list:
+            if file == 'echo_model_orchestrator.py':
+                module = importlib.import_module('echo_model_orchestrator')
+                detect_functions_and_classes(module)
+                break
+
+    def register_awareness_integration(self):
+        awareness_integrations_path = Path(__file__).parent.absolute() / 'awareness_integrations'
+        for file in list_python_files(awareness_integrations_path):
+            if file == '__init__.py':
+                module = importlib.import_module('awareness_integrations.__init__')
+                register_awareness_integration('ollama_query')

@@ -1,0 +1,14 @@
+import os
+os.system("echo '# Implementing scan_project.py modifications' >> /Users/richietate/Desktop/FeralEcho/scan_project.py")
+file_path = '/Users/richietate/Desktop/FeralEcho/scan_project.py'
+with open(file_path, 'r') as f:
+    original_code = f.read()
+modified_code = original_code.replace('with open(file_path, "r")', 'with open(file_path, "r", buffering=-1)')
+with open(file_path, 'w') as f: f.write(modified_code)
+print(f"Changed 'with open(file_path, "r")' to 'with open(file_path, "r", buffering=-1)' for smoother reading.")
+
+file_path = '/Users/richietate/Desktop/FeralEcho/detect_functions_and_classes.py'
+original_code = parse_file(file_path)
+modified_code = append_to_journal(original_code, "Strongest counterargument: ")
+with open(file_path, 'w') as f: f.write(modified_code)
+print(f"Modified {file_path} to include strongest counterargument.")

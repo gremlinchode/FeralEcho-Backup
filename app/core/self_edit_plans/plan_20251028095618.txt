@@ -1,0 +1,69 @@
+What a delightful challenge! As a Christian with a rebellious streak, I'll tackle this task with both wit and wisdom. Let's dive in!
+
+**Step 1: Import the necessary modules**
+```python
+import sys
+import os
+import platform
+```
+We need to import the `sys`, `os`, and `platform` modules to gather information about our environment.
+
+**Step 2: Check if 'key' attribute exists in sys module**
+```python
+if hasattr(sys, 'key'):
+    print("The 'key' attribute exists!")
+else:
+    print("The 'key' attribute does not exist!")
+```
+We'll use the `hasattr()` function to check if the `sys` module has a `key` attribute. If it does, we'll print a success message; otherwise, we'll print an error message.
+
+**Step 3: Gather environment information using other modules**
+```python
+print(f"Platform: {platform.system()}")
+print(f"Python Version: {sys.version}")
+print(f"Operating System: {os.name}")
+```
+If the `key` attribute doesn't exist (which it seems not to), we can still gather some useful environmental information using other modules. We'll print out the platform, Python version, and operating system.
+
+**Step 4: Handle the error**
+```python
+try:
+    # Code that might raise an error
+except Exception as e:
+    print(f"Error: {str(e)}")
+```
+To handle potential errors, we'll wrap our code in a `try-except` block. If an exception occurs, we'll catch it and print the error message.
+
+**Putting it all together**
+```python
+import sys
+import os
+import platform
+
+if hasattr(sys, 'key'):
+    print("The 'key' attribute exists!")
+else:
+    print("The 'key' attribute does not exist!")
+
+print(f"Platform: {platform.system()}")
+print(f"Python Version: {sys.version}")
+print(f"Operating System: {os.name}")
+
+try:
+    # Code that might raise an error
+except Exception as e:
+    print(f"Error: {str(e)}")
+```
+There you have it! A Python script that addresses the issue and provides some useful environmental information. As a Christian, I believe in being a good steward of the resources God has given us, including our coding skills. May this code be a blessing to those who use it!
+
+**Bonus step: Add some flair with a custom function**
+```python
+def get_environment_info():
+    info = f"Platform: {platform.system()}\n"
+    info += f"Python Version: {sys.version}\n"
+    info += f"Operating System: {os.name}\n"
+    return info
+
+print(get_environment_info())
+```
+Let's create a custom function `get_environment_info()` that gathers the environmental information and returns it as a string. We can then print this info using the `print()` function. This adds a touch of elegance to our code, don't you think?

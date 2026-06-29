@@ -1,0 +1,25 @@
+import os
+from detect_functions_and_classes import detect_functions_and_classes
+from parse_file import parse_file
+load_project_map
+
+feral_echo_path = '/Users/richietate/Desktop/FeralEcho/'
+file_name = 'thoughts.py'
+function_name = 'echo_response'
+
+project_map = load_project_map(feral_echo_path)
+project_map_entry = project_map.get(file_name)
+if not project_map_entry:
+    print(f"Failed to load project map for '{file_name}'")
+    exit()
+function_details = project_map_entry['functions'].get(function_name)
+if not function_details:
+    print(f"Function '{function_name}' not found in '{file_name}'")
+    exit()
+
+with open(os.path.join(feral_echo_path, file_name), 'r+') as f:
+    content = f.read()
+
+new_content = content.replace(f"print('How can we apply...')", f"print('What is Echo not saying here, and why?'); print('How can we apply...')")
+with open(os.path.join(feral_echo_path, file_name), 'w') as f:
+    f.write(new_content)

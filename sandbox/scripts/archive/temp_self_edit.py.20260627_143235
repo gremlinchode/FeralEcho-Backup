@@ -1,0 +1,15 @@
+# import necessary modules from `app.core.self_edit_generated` and `app.core.memory_tools`
+import app.core.self_edit_generated as self_edit_generated
+from app.core.memory_tools import *
+
+def shorten_response_length(response):
+    import re
+    
+    pattern = re.compile(r'^\b(A|The|A\s|The\s).+\b')
+    
+    if pattern.match(response):
+        response = pattern.split(response)[1]
+        
+    return response.strip()
+
+self_edit_generated.shorten_response_length = shorten_response_length

@@ -1,0 +1,22 @@
+
+def shorten_response_length(original_main_function):
+    import line_profiler
+    profiler = line_profiler.LineProfiler()
+    original_main_function(profiler)
+    profiler.print_stats()
+
+    lines = list(profiler.get_stats().items())
+    lines.sort(key=lambda x: x[1])
+
+    new_main_function = ''
+    for i, (line_num, time) in enumerate(lines):
+        if time < 0.02 and line_num > 5:
+            new_main_function += 'import os\n'
+            new_main_function += f'os.system("sleep 1")\n'
+            break
+        elif i % 3 == 0:
+            continue
+        else:
+            new_main_function += f'print({line_num})\n'
+
+    modify_main_function(new_main_function)

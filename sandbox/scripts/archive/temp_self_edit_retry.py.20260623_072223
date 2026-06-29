@@ -1,0 +1,9 @@
+import os
+
+file_path = '/Users/richietate/Desktop/FeralEcho/scan_project.py'
+file_content = open(file_path, 'r').read().strip()
+modified_file_content = file_content.replace('file_content = open(file_path, \'r\').read().strip()', "file_content = os.popen(file_path).read().decode()")
+with open(file_path, 'w') as f:
+    f.write(modified_file_content)
+print(f"Modified {file_path} to use os.popen and decode output")
+print("Preventing potential encoding issues with file content read")

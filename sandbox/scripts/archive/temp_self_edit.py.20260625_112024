@@ -1,0 +1,30 @@
+# import necessary tools
+from models import start_autonomous_thread as sast
+import parse_file
+import detect_functions_and_classes
+import calculate_consciousness_score
+import list_python_files
+import append_memory_entry
+import log_memory_event
+
+# initiate awareness integration process
+sast.start_autonomous_thread()
+
+# parse echo_model_orchestrator.py
+ast = parse_file('echo_model_orchestrator.py')
+
+# extract query processing logic
+functions_classes = detect_functions_and_classes(ast)
+
+# assess readiness for integration
+mastery_levels = calculate_consciousness_score(functions_classes)
+
+# update ollama_query function with awareness modules
+necessary_modules = list_python_files(mastery_levels)
+ollama_query_updated = append_memory_entry(necessary_modules, 'ollama_query')
+
+# document the integration process
+log_memory_event('awareness integration process completed')
+
+# calculate updated awareness score
+updated_awareness_score = calculate_awareness_score()

@@ -1,0 +1,15 @@
+# import necessary modules
+from app.core.self_edit_generated import strip_prose
+from app.core.memory_write_validator import validate_code_length
+
+# define new function shorten_code_candidate
+def shorten_code_candidate(prose_output):
+    average_length = len(prose_output) / 5
+    reduction_target = average_length * 0.8
+    modified_prose = prose_output[:reduction_target].strip()
+    return modified_prose + "\n" + validate_code_length(modified_prose)
+
+# update main code-generation function in self_edit_generated.py
+def score_code_candidate(input_text):
+    output = strip_prose(input_text)
+    return shorten_code_candidate(output)

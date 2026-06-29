@@ -1,0 +1,32 @@
+# import necessary modules from FeralEcho, including app.core.self_edit_generated and app.core.tool_manager
+import app.core.self_edit_generated
+import app.core.tool_manager
+import re
+
+def modify_self_edit_generated():
+    # Initialize tool manager
+    tool_manager = app.core.tool_manager.ToolManager()
+
+    # Read content from self_edit_generated.py
+    with open("app/core/self_edit_generated.py", "r") as f:
+        content = f.read()
+
+    # Detect natural language sentences at the beginning of Python code snippets
+    pattern = r"^\s*(\d+\.\s*[A-Z]\s*\w+):?\s*(.*)$"  # Matches lines starting with a number, capital letter and potentially a colon
+    matches = re.findall(pattern, content, re.MULTILINE)
+
+    # Modify the code by stripping natural language sentences
+    for match in matches:
+        if match[1]:
+            new_content = content.split(match[1], 1)[1] + content.split(match[1], 1)[0]
+            content = new_content
+
+    # Write the modified content back to self_edit_generated.py
+    with open("app/core/self_edit_generated.py", "w") as f:
+        f.write(content)
+
+    # Log the changes made (Placeholder - Implement actual logging in memory_tools)
+    print("Modified self_edit_generated.py successfully.")
+
+if __name__ == "__main__":
+    modify_self_edit_generated()

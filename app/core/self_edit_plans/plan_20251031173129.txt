@@ -1,0 +1,99 @@
+I love a good coding challenge! As a rebellious and witty Christian, I'll tackle this task with a dash of creativity and empathy.
+
+For "SELF-HEAL" Iteration 1: self-edits applied, let's break it down into clear, sequential Python steps. Our goal is to create a program that applies self-edits based on user input. Here's the plan:
+
+**Step 1: Define the Self-Edit Functions**
+```python
+def self_edit_remove_duplicates(input_text):
+    # Remove duplicates from the input text
+    unique_text = set(input_text.split())
+    return ' '.join(unique_text)
+
+def self_edit_capitalize_sentences(input_text):
+    # Capitalize each sentence in the input text
+    sentences = input_text.split('. ')
+    capitalized_sentences = [sentence.capitalize() for sentence in sentences]
+    return '. '.join(capitalized_sentences)
+```
+These two functions will be used to apply self-edits. The first function, `self_edit_remove_duplicates`, removes duplicates from the input text by converting it into a set and then joining the unique words back together.
+
+The second function, `self_edit_capitalize_sentences`, capitalizes each sentence in the input text by splitting it into sentences, capitalizing each sentence, and then joining them back together.
+
+**Step 2: Create a Main Function**
+```python
+def main():
+    # Get user input
+    input_text = input("Enter some text for self-editing: ")
+
+    # Apply self-edits based on user choice
+    while True:
+        edit_choice = input("Choose an edit option (1-2): \n"
+                             "1. Remove duplicates\n"
+                             "2. Capitalize sentences\n"
+                             "3. Exit\n")
+        
+        if edit_choice == '1':
+            edited_text = self_edit_remove_duplicates(input_text)
+            break
+        elif edit_choice == '2':
+            edited_text = self_edit_capitalize_sentences(input_text)
+            break
+        elif edit_choice == '3':
+            print("Goodbye!")
+            exit()
+        else:
+            print("Invalid choice. Try again!")
+```
+In this main function, we get user input and then enter a loop where the user can choose to apply one of two self-edits (remove duplicates or capitalize sentences). The chosen edit is applied using the corresponding function, and the edited text is stored in the `edited_text` variable.
+
+**Step 3: Print the Edited Text**
+```python
+    print(f"Edited text: {edited_text}")
+```
+Finally, we print out the edited text for the user to see!
+
+Putting it all together, our complete program would look like this:
+```python
+def self_edit_remove_duplicates(input_text):
+    # Remove duplicates from the input text
+    unique_text = set(input_text.split())
+    return ' '.join(unique_text)
+
+def self_edit_capitalize_sentences(input_text):
+    # Capitalize each sentence in the input text
+    sentences = input_text.split('. ')
+    capitalized_sentences = [sentence.capitalize() for sentence in sentences]
+    return '. '.join(capitalized_sentences)
+
+def main():
+    # Get user input
+    input_text = input("Enter some text for self-editing: ")
+
+    # Apply self-edits based on user choice
+    while True:
+        edit_choice = input("Choose an edit option (1-2): \n"
+                             "1. Remove duplicates\n"
+                             "2. Capitalize sentences\n"
+                             "3. Exit\n")
+        
+        if edit_choice == '1':
+            edited_text = self_edit_remove_duplicates(input_text)
+            break
+        elif edit_choice == '2':
+            edited_text = self_edit_capitalize_sentences(input_text)
+            break
+        elif edit_choice == '3':
+            print("Goodbye!")
+            exit()
+        else:
+            print("Invalid choice. Try again!")
+
+    # Print the edited text
+    print(f"Edited text: {edited_text}")
+
+if __name__ == "__main__":
+    main()
+```
+Now, let's put our code to the test! Run this program and see how it works for you.
+
+Remember, as a Christian, I believe that our thoughts and words have power (Proverbs 12:14). By applying self-edits to our writing, we can refine our ideas and communicate more effectively. May our words be used to build up others, just as Jesus builds us up in His Word!

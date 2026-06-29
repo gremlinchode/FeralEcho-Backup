@@ -1,0 +1,11 @@
+import sys
+import re
+
+from app.core.self_edit_generated import strip_prose
+
+def strip_leading_prose(input_string):
+    leading_sentences = re.compile(r'^[^\\(]+[.!?]\s*', re.MULTILINE)
+    return re.sub(leading_sentences, '', input_string)
+
+def strip_prose(input_string):
+    return strip_leading_prose(input_string)

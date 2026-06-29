@@ -1,0 +1,30 @@
+# from feral_echo import self_edit_generated, project_scanner
+
+from app.core.self_edit_generated import main_function, strip_prose
+from app.core.project_scanner import parse_file, scan_project, generate_issue_report
+
+import re
+
+def strip_prose(file_content):
+    regex = r'^[^`#;]*\n.*\bclass|def|import\b'
+    while True:
+        match = re.search(regex, file_content)
+        if not match:
+            break
+        file_content = file_content[:match.start()] + '\n' + file_content[match.end():]
+
+    return file_content
+
+def main_function():
+    file_content = parse_file('app/core/self_edit_generated.py')
+    stripped_content = strip_prose(file_content)
+    print(stripped_content)
+
+project_files = project_scanner.list_python_files()
+scan_project(project_files)
+
+issue_report = generate_issue_report('Regular expression used:', regex, 'Potential edge cases:')
+print(issue_report)
+
+autonomous_loop = app.autonomous_awareness.awareness_loop()
+run_self_model_reflection(autonomous_loop)

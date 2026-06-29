@@ -1,0 +1,38 @@
+# from FeralEcho.app.core import self_edit_generated
+from deliberate_and_learn import deliberate_and_learn
+from ToolManager import ToolManager
+from app.core.self_edit_generated import GeminiShard, Tool
+
+def strip_prose(text):
+    match = re.search(r'^\s*#+\s*|\n+', text, re.MULTILINE)
+    if match:
+        return text[match.end():].strip()
+    else:
+        return text
+
+def self_edit_generated(prompt, tool):
+    generated_code = tool.generate_python(prompt)
+    stripped_code = strip_prose(generated_code)
+    return stripped_code
+
+tool = ToolManager()
+result = self_edit_generated("print('Hello')", tool)
+print(f"Result: {result}")
+
+run_random_sandbox_script = lambda script: self_edit_generated(script, tool)
+
+def test_self_edit():
+    test_cases = [
+        ("  # This is a comment\nprint('Hello')", "Hello"),
+        ("print('Hello')", "Hello"),
+        ("No prose here", "No prose here")
+    ]
+
+    for input_str, expected_output in test_cases:
+        actual_output = strip_prose(input_str)
+        assert actual_output == expected_output, f"Failed for input: {input_str}"
+    print("Test passed!")
+
+test_self_edit()
+
+run_random_sandbox_script()

@@ -1,0 +1,11 @@
+# import from app.core.self_edit_generated import strip_prose
+
+from re import search
+
+def strip_sandbox_output(sandbox_output):
+    if search(r'\b(import|class|def)\b', sandbox_output):
+        return sandbox_output.split('\n')[1:]
+    else:
+        return [strip_prose(i) for i in sandbox_output.split('\n')]
+
+run_random_sandbox_script = lambda: strip_sandbox_output(run_random_sandbox_script())

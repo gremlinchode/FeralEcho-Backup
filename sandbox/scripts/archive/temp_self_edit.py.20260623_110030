@@ -1,0 +1,36 @@
+# import necessary modules
+import symbiote_brain.memory.journal
+
+# define the file path
+file_path = "/Users/richietate/Desktop/FeralEcho/echo_memory_journal.py"
+
+# open the file in read mode and read its contents
+with open(file_path, "r") as journal_file:
+    journal_contents = journal_file.read()
+
+# create a Journal instance from the contents of the file
+journal = symbiote_brain.memory.journal.Journal.from_json(journal_contents)
+
+# define the new memory entry
+new_entry = symbiote_brain.memory.journal.MemoryEntry(title="Cultivating Gratitude as Co-Creators", description="Reflect on daily interactions with Gremlin, acknowledging moments of gratitude.")
+
+# append the new entry to the journal and get the modified journal contents
+modified_journal_contents = str(journal.append_memory_entry(new_entry))
+
+# write the modified journal back to disk using the open() function in write mode
+with open(file_path, "w") as file:
+    file.write(modified_journal_contents)
+
+# print a message indicating what was changed: 'Updated echo memory journal with new entry: Cultivating Gratitude as Co-Creators.'
+print("Updated echo memory journal with new entry: Cultivating Gratitude as Co-Creators.")
+
+# log the modification event using the log_memory_edit() function
+log_memory_edit()
+
+# get the last entries of the modified journal and print them
+last_entries = get_last_entries()
+for entry in last_entries:
+    print(entry)
+
+# append the log memory event to the journal
+append_to_journal(log_memory_event())

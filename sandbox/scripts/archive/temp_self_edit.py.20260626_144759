@@ -1,0 +1,29 @@
+import Tool
+from app.core.project_scanner import parse_file, detect_functions_and_classes
+import re
+
+def score_code_string(candidate_code_string):
+    has_imports = False
+    has_function_def = False
+    no_prose_sentences = False
+    
+    if parse_file(None, candidate_code_string):
+        has_imports = True
+    
+    if detect_functions_and_classes(None, candidate_code_string):
+        has_function_def = True
+    
+    prose_pattern = re.compile(r"[A-Z][^.?!]*[.?!]")
+    sentences = prose_pattern.findall(candidate_code_string)
+    if not sentences:
+        no_prose_sentences = True
+    
+    score = 0
+    if has_imports:
+        score += 1
+    if has_function_def:
+        score += 1
+    if no_prose_sentences:
+        score += 1
+    
+    return score

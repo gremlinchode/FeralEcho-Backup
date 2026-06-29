@@ -1,0 +1,12 @@
+# import necessary module from app.core.self_edit_generated
+from app.core.self_edit_generated import strip_prose
+
+original_strip_prose = strip_prose
+
+def new_strip_prose(code):
+    for line in code.split('\n'):
+        if not line.lstrip().startswith('#') and not any(line.strip().startswith(s) for s in ['import', 'def', 'class']):
+            return None
+    return original_strip_prose(code)
+
+strip_prose = new_strip_prose

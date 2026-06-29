@@ -1,0 +1,18 @@
+import ollama_handler
+from tool_manager import ToolManager
+
+def main():
+    if ollama_handler.is_ollama_running():
+        prompt = "Write Python code to integrate 'ollama_query' logic into the Echo system's available tools"
+        response = ollama_handler.query_ollama(prompt)
+        generated_code = ollama_handler.generate_code(response)
+        
+        parsed_code = generate_parameter_hints(model_guided_autonomous_loop)(generated_code)
+        new_tool = {'name': 'ollama_query', 'code': parsed_code}
+        
+        tm = ToolManager()
+        tm.register_tool(new_tool)
+        tm.update_config('ollama_query')
+        
+        log_memory_entry({'event': 'tool_registered', 'tool': new_tool['name']})
+        calculate_awareness_score()

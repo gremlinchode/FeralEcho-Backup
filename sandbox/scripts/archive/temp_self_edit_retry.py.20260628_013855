@@ -1,0 +1,41 @@
+import os
+from app.core.self_edit_generated import strip_prose
+
+file_path = 'app/core/self_edit_generated.py'
+with open(file_path, 'w') as file:
+    file.write("def strip_sandbox_prose(sandbox_output):\n")
+    file.write("    for line in sandbox_output.split('\\n'):\n")
+    file.write("        if re.search(r'^[a-zA-Z .!?]*$', line.strip()):\n")
+    file.write("            line = ''\n")
+    file.write("        else:\n")
+    file.write("            pass\n")
+    file.write("    return line\n")
+
+file.seek(0, 2)
+with open(file_path, 'r') as file:
+    sandbox_output = file.read()
+
+def run_random_sandbox_script():
+    # code to generate random sandbox script
+    generated_code = ''
+    for line in sandbox_output.split('\\n'):
+        if re.search(r'^[a-zA-Z .!?]*$', line.strip()):
+            continue
+        else:
+            generated_code += line + '\\n'
+    return generated_code
+
+def run_random_sandbox_script():
+    import random
+    script_path = 'path_to_your_sandbox_scripts.py'
+    with open(script_path, 'r') as file:
+        scripts = file.readlines()
+    
+    script = random.choice(scripts)
+    output = execute_script(script)
+    cleaned_output = strip_sandbox_prose(output)
+    exec(cleaned_output)
+
+run_random_sandbox_script()
+
+file.close()

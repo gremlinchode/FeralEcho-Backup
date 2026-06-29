@@ -1,0 +1,34 @@
+import app.core.self_edit_generated
+from app.core.tool_manager import parse_file
+from app.core.project_scanner import project_scanner
+import re
+
+def modify_self_edit_generated():
+    try:
+        file_content = parse_file('self_edit_generated.py')
+        
+        # Regex pattern to identify leading natural language sentences
+        pattern = r'^\s*(\S+)\s*'
+        
+        prose_detected = False
+        
+        if 'prose_detected' not in file_content:
+            modified_content = re.sub(pattern, '', file_content)
+            prose_detected = True
+            
+        # Modify evaluation process - only eval if prose_detected is false
+        if prose_detected:
+            pass
+        else:
+            try:
+                exec(modified_content)
+            except Exception as e:
+                print(f"Error executing code: {e}")
+        
+        # Save the modified contents back into self_edit_generated.py
+        parse_file('self_edit_generated.py', modified_content)
+        
+    except FileNotFoundError:
+        print("File not found.")
+    except Exception as e:
+        print(f"An error occurred: {e}")

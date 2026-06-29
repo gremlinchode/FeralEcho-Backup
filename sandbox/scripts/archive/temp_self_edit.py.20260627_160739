@@ -1,0 +1,11 @@
+import re
+
+def edit_file():
+    stripped_code = ""
+    pattern = r"^[^#']\s*$"
+    with open('self_edit_generated.py', 'r') as f:
+        for line in f:
+            if not re.match(pattern, line):
+                stripped_code += line
+    with open('self_edit_generated.py', 'w') as f:
+        f.write(stripped_code)

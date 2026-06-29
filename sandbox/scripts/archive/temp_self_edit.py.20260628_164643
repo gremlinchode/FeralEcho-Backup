@@ -1,0 +1,17 @@
+# from app.core.self_edit_generated import strip_prose, score_code_candidate
+
+def refactored_main_code_generation_function():
+    original_code = main_code_generation_function()
+    refactored_code = ''.join(line for line in original_code.split('\n') if not re.search(r'\b[A-Z][a-z]+[.!?]', line))
+    return refactored_code
+
+def score_refactored_code(refactored_code):
+    return score_code_candidate(refactored_code)
+
+original_score = score_code_candidate(main_code_generation_function())
+refactored_score = score_refactored_code(refactored_main_code_generation_function())
+
+if refactored_score >= original_score:
+    main_code_generation_function = refactored_main_code_generation_function
+else:
+    pass

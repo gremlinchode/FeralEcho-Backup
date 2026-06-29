@@ -1,0 +1,33 @@
+from app.core.self_edit_generated import strip_prose
+import app.core.tool_manager
+
+def tightened_prose_detection(code):
+    sentences = code.split('.')
+    cleaned_code = ""
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if not sentence:
+            continue
+        if sentence.startswith("def ") or sentence.startswith("class "):
+            cleaned_code += sentence[4:] + "."
+        else:
+            cleaned_code += sentence + "."
+    cleaned_code = cleaned_code.strip()
+    valid_token = ["def", "class"]
+    if cleaned_code and cleaned_code[0] in valid_token:
+        return cleaned_code[4:] + "."
+    else:
+        return ""
+
+try:
+    strip_prose_func = getattr(self_edit_generated, 'strip_prose', None)
+    if strip_prose_func:
+        original_output = strip_prose_func("print('hello world')")
+        print(f"Original output: {original_output}")
+        issue_report = generate_issue_report(description="Successfully stripped prose from self_edit_generated.strip_prose function.")
+        print(issue_report)
+    else:
+        print("strip_prose function not found in self_edit_generated module.")
+
+except Exception as e:
+    print(f"An error occurred: {e}")

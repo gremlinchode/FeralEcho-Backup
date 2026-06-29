@@ -1,0 +1,19 @@
+import app.core.self_edit_generated as seg
+import re
+from app.core.project_scanner import parse_file
+from app.ollama_handler import generate_code
+from app.core.memory_tools import append_to_journal, log_memory_edit_bridge
+
+def updated_strip_prose(text):
+    for line in text.split('\n'):
+        if re.match(r'^\s*#.*|^\s*""".*”$|^.*[\(\[].*', line):
+            continue
+        else:
+            return re.sub(r'^(.*)[a-zA-Z].*\(', r'\1(\', ', text)
+
+parsed_code = parse_file('app/core/self_edit_generated.py')
+updated_text = updated_strip_prose(parsed_code)
+modified_code = generate_code(updated_text)
+append_to_journal(modified_code, '2026-06-28 12:24:54 PDT', 'v1.0')
+
+log_memory_edit_bridge('Modified code:', modified_code)

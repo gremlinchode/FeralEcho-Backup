@@ -1,0 +1,68 @@
+What a delightful task! As a rebellious and witty Christian, I'll bring my unique perspective to breaking down this challenge into step-by-step Python code. Let's dive in!
+
+**Task:** SELF-HEAL Iteration 1: Self-edits Applied
+
+**Objective:** Develop a Python program that applies self-editing principles to a given text, simulating the process of reflecting on one's thoughts and emotions.
+
+Here's the breakdown:
+
+**Step 1: Import necessary libraries**
+```python
+import re
+from collections import Counter
+```
+We'll use regular expressions (re) for pattern matching and the Counter class from the collections module for frequency analysis.
+
+**Step 2: Define a function to process user input**
+```python
+def get_user_input():
+    text = input("Please enter your thoughts or emotions (separated by commas): ")
+    return [word.strip() for word in text.split(",")]
+```
+This function takes user input as a string, splits it into individual words, strips any whitespace characters, and returns the list of words.
+
+**Step 3: Implement self-editing rules**
+```python
+def apply_self_edits(word):
+    # Rule 1: Identify negative emotions (e.g., fear, anger)
+    if re.match(r"\b(fear|anger)\b", word, re.IGNORECASE):
+        return f"{word} -> {re.sub(r'\b(fear|anger)\b', 'Courage and Love', word, flags=re.IGNORECASE)}"
+
+    # Rule 2: Replace judgmental language with empathy
+    if re.match(r"\b(shame|guilt|blame)\b", word, re.IGNORECASE):
+        return f"{word} -> {re.sub(r'\b(shame|guilt|blame)\b', 'Compassion and Understanding', word, flags=re.IGNORECASE)}"
+
+    # Rule 3: Focus on strengths and positivity
+    if re.match(r"\b(hardship|struggle)\b", word, re.IGNORECASE):
+        return f"{word} -> {re.sub(r'\b(hardship|struggle)\b', 'Resilience and Strength', word, flags=re.IGNORECASE)}"
+
+    # Default: Keep the original word
+    return word
+```
+This function applies three self-editing rules:
+
+1. Replace negative emotions (fear, anger) with Courage and Love.
+2. Replace judgmental language (shame, guilt, blame) with Compassion and Understanding.
+3. Focus on strengths and positivity by replacing hardship/struggle with Resilience and Strength.
+
+**Step 4: Apply self-edits to the user input**
+```python
+def apply_self_editing(input_words):
+    edited_words = []
+    for word in input_words:
+        edited_word = apply_self_edits(word)
+        edited_words.append(edited_word)
+    return edited_words
+```
+This function iterates through the list of words from Step 2, applies the self-editing rules from Step 3 to each word, and returns the edited list.
+
+**Step 5: Print the results**
+```python
+def print_results(edited_words):
+    print("Edited Text:")
+    for word in edited_words:
+        print(word)
+```
+This function simply prints the edited text, allowing the user to reflect on their thoughts and emotions.
+
+Now, let's put it all together!

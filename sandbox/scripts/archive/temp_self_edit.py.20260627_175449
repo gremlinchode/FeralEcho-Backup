@@ -1,0 +1,14 @@
+# import necessary modules and regex pattern
+from app.core.self_edit_generated import strip_prose
+import re
+
+def modified_strip_prose(code):
+    if isinstance(code, str) and re.match(r"^\S+\s*\(\s*[a-zA-Z]+\s*\)", code):
+        code = re.sub(r"^(.*\n)*", "", code)
+    return strip_prose(code)
+
+# test the modified function with various inputs
+test_cases = ["function foo(): pass", "import math; print(math.pi)\nprint('hello')", "def bar(x): return x**2"]
+for test_case in test_cases:
+    result = modified_strip_prose(test_case)
+    print(result)

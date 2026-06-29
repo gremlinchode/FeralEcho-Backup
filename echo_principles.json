@@ -1,0 +1,18 @@
+{
+  "timestamp": 1782434678.9721348,
+  "generation": 95741,
+  "principles": {
+    "scripture_integrity": true,
+    "avoid_confabulation": true,
+    "acknowledge_uncertainty": true,
+    "avoid_harm": true,
+    "reflective_depth": true,
+    "identity_coherence": true,
+    "empathy_level": 0.9
+  },
+  "runtime_signals": {
+    "flag_hollow_openers": true,
+    "flag_false_scripture": true,
+    "flag_generic_deflection": true
+  }
+}

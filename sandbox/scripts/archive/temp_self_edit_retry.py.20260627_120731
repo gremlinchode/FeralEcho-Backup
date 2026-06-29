@@ -1,0 +1,31 @@
+# Import necessary modules from `app.core`: self_edit_generated`, `deliberate_and_learn`, `tool_manager`, and `gemini_shard`.
+import app.core.self_edit_generated as self_edit_gen
+from app.core import deliberate_and_learn, tool_manager as tm, gemini_shard as gs
+
+class Tool(tm.Tool):
+    def __init__(self, gemini_shard):
+        super().__init__()
+        self.gemini_shard = gemini_shard
+
+def parse_file(filepath):
+    return self_edit_gen.scan_project()
+
+def modified_main_function():
+    original_main_function = self_edit_gen.main
+    modified_code = ''
+
+    for line in original_main_function.__code__.co_code.decode('latin-1').splitlines():
+        if not gs.analyze_python_code(line):
+            modified_code += line + '\n'
+    exec(modified_code)
+
+    return modified_main_function
+
+def start_autonomous_thread():
+    import app.autonomous_loop
+    return app.autonomous_loop.start_autonomous_thread()
+
+tool = tm.Tool()
+tool.init(gs.GeminiShard())
+tool.run = lambda: modified_main_function()
+start_autonomous_thread()

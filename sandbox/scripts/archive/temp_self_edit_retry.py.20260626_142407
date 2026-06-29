@@ -1,0 +1,19 @@
+import app.core.self_edit_generated
+from app.core.tool_manager import Tool
+
+tool = Tool()
+parsed_file = tool.parse_file('app/core/self_edit_generated.py')
+functions_and_classes = tool.detect_functions_and_classes(parsed_file)
+
+for func, classes in functions_and_classes.items():
+    if 'main_function' in func:
+        main_func = func
+        break
+
+import re
+
+def prose_detection_guard(code):
+    pattern = r'^.*\n'
+    return re.sub(pattern, '', code, flags=re.MULTILINE)
+
+tool.save_code('app/core/self_edit_generated.py', prose_detection_guard(main_func))

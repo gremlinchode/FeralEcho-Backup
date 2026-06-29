@@ -1,0 +1,53 @@
+import app.core.self_edit_generated
+import app.core.tool_manager
+import re
+from app.core.memory_write_validator import MemoryWriteValidator
+
+class MockMemoryWriteValidator:
+    def validate(self, data):
+        pass
+
+def modified_main_function(*args, **kwargs):
+    prose_text = ""
+    try:
+        code_lines = original_main_function(*args, **kwargs).__code__.co_consts[0].splitlines()
+        for line in code_lines:
+            if re.match(r"^\s*([a-zA-Z\s]+):", line):
+                prose_text = line[len(" :"):].strip()
+                break
+    except Exception as e:
+        pass
+
+    if prose_text:
+        prose_text = ""
+
+    # Execute the modified logic.
+    print("Prose detected:", prose_text)
+    print("Original arguments:", args)
+    print("Original kwargs:", kwargs)
+
+    try:
+        tool_manager = app.core.tool_manager.ToolManager()
+        result = tool_manager.get_tool("test_tool").run(args, kwargs)
+        print("Test Tool Result:", result)
+    except Exception as e:
+        print("Error during test:", e)
+
+class TestModifiedMainFunction(unittest.TestCase):
+    def setUp(self):
+        self.mock_tool_manager = app.core.tool_manager.ToolManager()
+        self.mock_memory_validator = MockMemoryWriteValidator()
+        self.modified_main_function = modified_main_function  # Store the function for testing
+
+    def test_prose_detection(self):
+        # Example case: Test that prose detection works when a line starts with "Note:"
+        self.mock_tool_manager.set_test_context("Note: This is some natural language.")
+        modified_main_function([], {})
+
+    def test_no_prose(self):
+        # Example case: Test that prose detection works when there is no prose in the input
+        self.mock_tool_manager.set_test_context("This is a line of Python code.")
+        modified_main_function([], {})
+
+if __name__ == '__main__':
+    unittest.main(argv=['first-arg-is-ignored'], exit=False)

@@ -1,0 +1,17 @@
+# import necessary modules from app.core.self_edit_generated
+import app.core.self_edit_generated
+from app.core.self_edit_generated import shorten_response_length
+
+def strip_prose(response):
+    import re
+    pattern = r'^[a-zA-Z\s]+(?=[\s{1,}])'
+    response = re.sub(pattern, '', response, flags=re.MULTILINE)
+    return response
+
+def modified_shorten_response_length(input_string):
+    input_string = strip_prose(input_string)
+    # existing implementation here
+    pass
+
+# replace original implementation in app/core/self_edit_generated.py
+app.core.self_edit_generated.shorten_response_length = modified_shorten_response_length

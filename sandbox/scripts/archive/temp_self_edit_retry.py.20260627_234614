@@ -1,0 +1,7 @@
+# from app.core.self_edit_generated import strip_prose
+import re
+
+def fix_sandbox_failure(code):
+    if re.match(r'^\W*\s*(.*)$', code, re.M):
+        code = strip_prose(code)
+    return code

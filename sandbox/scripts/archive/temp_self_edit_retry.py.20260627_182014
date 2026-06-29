@@ -1,0 +1,22 @@
+
+from app.core.self_edit_generated import strip_prose
+from app.core.self_edit_generated import get_relevant_memories
+
+def sanitize_output(text):
+    if text.startswith("Your previous attempt produced"):
+        return text[47:].strip()
+    else:
+        return text
+
+def strip_prose(text):
+    text = sanitize_output(text)
+    return text.strip()
+
+output = strip_prose(get_relevant_memories())
+
+with open('self_edit_generated.py', 'w') as f:
+    f.write(str(output))
+
+cycle_intensity = 1
+init_world_model()
+model_guided_autonomous_loop(cycle_intensity)

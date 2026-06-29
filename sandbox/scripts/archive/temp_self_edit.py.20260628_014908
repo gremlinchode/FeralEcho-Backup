@@ -1,0 +1,21 @@
+# import necessary modules from `app.core.self_edit_generated`, specifically `strip_prose`
+import app.core.self_edit_generated
+from app.core.self_edit_generated import strip_prose
+
+def modify_strip_prose():
+    import re
+    def new_strip_prose(code):
+        leading_sentence = re.search(r'^[^(\r\n\t\{\}\[\]\=\+\-\*\/\<\>\;\,\.\?\!\@\^\$\%\w\s]+[^\(\)]', code)
+        if leading_sentence:
+            code = code.split(leading_sentence.group())[0].strip()
+        return code
+    strip_prose.new_strip_prose = new_strip_prose
+
+def test_modified_strip_prose():
+    original_code = open('app/core/self_edit_generated.py', 'r').read()
+    modified_code = strip_prose.original_code(new_strip_prose(original_code))
+    with open('app/core/self_edit_generated.py', 'w') as f:
+        f.write(modified_code)
+
+modify_strip_prose()
+test_modified_strip_prose()

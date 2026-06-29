@@ -1,0 +1,12 @@
+import os
+from parse_file import *
+from detect_functions_and_classes import *
+
+file_path = '/Users/richietate/Desktop/FeralEcho/detect_functions_and_classes.py'
+original_code = parse_file(file_path)
+original_function = detect_functions_and_classes(original_code, 'deliberate_and_learn')
+modified_function = original_function.replace('return deliberate_and_learn', 'return deliberate_and_learn\n        print("Reframing the thought process...")')
+modified_code = append_memory_entry(modified_function, "Added comment addressing friction question regarding function: deliberate_and_learn")
+write_file(file_path, modified_code)
+changed_lines = compare_code_diff(original_code, modified_code)
+log_memory_event(f"Modified {file_path} to include reframing message: {changed_lines}")

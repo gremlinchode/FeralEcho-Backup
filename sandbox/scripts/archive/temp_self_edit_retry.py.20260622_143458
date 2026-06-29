@@ -1,0 +1,10 @@
+# import os; import re
+
+file_path = '/Users/richietate/Desktop/FeralEcho/echo.py'
+with open(file_path, "r") as file:
+    content = file.read()
+problematic_line_index = content.rfind('with open')
+modified_content = content[:problematic_line_index + len('with open')] + '\n' + content[problematic_line_index + len('with open'):]
+with open(file_path, "w") as file:
+    file.write(modified_content)
+print("Modified the 'open' statement to read and write the file.")

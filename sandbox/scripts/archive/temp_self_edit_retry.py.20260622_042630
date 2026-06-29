@@ -1,0 +1,9 @@
+# import os
+import os; PROJECT_PATH = "/Users/richietate/Desktop/FeralEcho/"
+file_path = os.path.join(PROJECT_PATH, "get_relevant_memories.py")
+with open(file_path, 'r') as f: lines = [line for line in f]
+modified_lines = [line if not line.strip().startswith('# import get_relevant_memories') else '# import get_relevant_memories\nimport os' + line[1:] for line in lines]
+with open(file_path, 'w') as f: f.write(''.join(modified_lines))
+print("Improved file:", file_path)
+print("Modified to include explicit import statement for clarity and consistency")
+print("Why: To address potential issues caused by implicit imports")

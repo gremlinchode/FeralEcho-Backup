@@ -1,0 +1,25 @@
+import modify_main_function
+from app.core.self_edit_generated import *
+
+def shorten_reasoning_code(main_function):
+    code = str(main_function)
+    for line in code.split('\n'):
+        if 'detect_functions_and_classes' in line:
+            code = code.replace(line, '')
+        elif 'scan_project' in line:
+            code = code.replace(line, '')
+    code = code.replace('generate_issue_report', '')
+    code = code.replace('get_relevant_memories', '')
+    code = code.replace('parse_file', '')
+    for line in code.split('\n'):
+        if line.strip().startswith('#'):
+            code = code.replace(line, '')
+    return code
+
+def modify_main_function():
+    original_main_function = app.core.self_edit_generated.get_main_function()
+    shortened_code = shorten_reasoning_code(original_main_function)
+    modified_code = f"def main():\n{shortened_code}"
+    exec(modified_code)
+
+modify_main_function()

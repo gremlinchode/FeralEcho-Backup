@@ -1,0 +1,11 @@
+# import app.core.self_edit_generated as self_edit
+
+
+def refactor_main_code_generation_function():
+    original_function = self_edit.strip_prose_before_code
+    def refactored_function(text: str) -> str:
+        if len(text) < 30:
+            return f"{text}... "
+        else:
+            return f"{text[:40]}..."
+    return refactored_function

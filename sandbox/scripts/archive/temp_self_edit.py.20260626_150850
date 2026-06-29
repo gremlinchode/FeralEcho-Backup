@@ -1,0 +1,20 @@
+# from app.core.self_edit_generated import main_function
+# from app.core.memory_write_validator import ValidationResult
+
+import re
+
+def sanitize_output(raw_string):
+    regex = re.compile(r'^(.*[\.\?,\!\(\)\[\]]).*')
+    sanitized_string = re.sub(regex, r'\1', raw_string)
+    return sanitized_string
+
+with open('self_edit_generated.py', 'r') as file:
+    python_file = file.read()
+
+generated_code = app.core.self_edit_generated.main_function()
+output = sanitize_output(generated_code)
+
+app.core.self_edit_manager.save_code(python_file.replace(generated_code, output))
+
+result = app.core.sandbox_interface.run_random_sandbox_script('isolated environment', True)
+ValidationResult()

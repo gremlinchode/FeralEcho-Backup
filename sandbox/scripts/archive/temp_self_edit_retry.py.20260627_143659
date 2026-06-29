@@ -1,0 +1,14 @@
+import re
+
+def shorten_response_length(text):
+    if re.search(r'\b(About|This|Here|Note)\b', text, re.IGNORECASE):
+        text = text.split('\n')[0].split('.')[0] + '.'
+    _text = text
+    match = re.search(r'^\s*(.*?)[\w\s]+', _text)
+    if match:
+        _text = _text[len(match.group(1)):]
+    while re.search(r'^\s*[^\n]+', _text):
+        match = re.search(r'^\s*[^\n]+', _text)
+        _text = _text[len(match.group(0)):].lstrip()
+    assert not re.search(r'\b(prose|natural language)\b', _text), "Output contains prose"
+    return _text

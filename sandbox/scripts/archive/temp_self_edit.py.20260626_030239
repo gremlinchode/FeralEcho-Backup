@@ -1,0 +1,7 @@
+# import required modules
+from app.core.memory_bridge import memory_bridge
+app.core.tool_manager.load_tool('memory_bridge.rebuild_vector_memory')
+if 'rebuild_vector_memory' in app.core.awareness_tools_integration.discover_installed_packages():
+    app.echo_model_guided_orchestrator.start_autonomous_thread(function=memory_bridge.rebuild_vector_memory)
+rebuild_result = memory_bridge.rebuild_vector_memory()
+app.core.memory_tools.log_memory_event('rebuild_vector_memory', parameters=None, result=rebuild_result)

@@ -1,0 +1,32 @@
+# import necessary modules
+import app.core.tool_manager
+from app.core.project_scanner import *
+from functools import lru_cache
+
+# load the file
+file = parse_file('app/core/self_edit_generated.py')
+
+# detect functions and classes
+functions_classes = detect_functions_and_classes(file)
+
+# find the main code-generation function
+main_function = next((func for func in functions_classes if func.name == 'generate_code'), None)
+
+# refactor the main function
+@lru_cache(maxsize=None)
+def refactored_generate_code(*args, **kwargs):
+    original_code = main_function(*args, **kwargs)
+    refactored_code = original_code[:int(len(original_code) * 0.8)] + '\n...' + original_code[-1]
+    return refactored_code
+
+# implement logging mechanism
+logging.basicConfig(filename='refactored_generate_code.log', level=logging.INFO)
+
+# initialize performance metrics dictionary
+performance_metrics = {'code_lengths': [], 'task_times': []}
+
+# call the new self-edit generation function multiple times
+for _ in range(5):
+    code = refactored_generate_code()
+    performance_metrics['code_lengths'].append(len(code))
+    logging.info(f'Generated code with {len(code)} characters')

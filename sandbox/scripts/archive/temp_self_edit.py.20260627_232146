@@ -1,0 +1,12 @@
+import app.core.self_edit_generated
+from app.core.tool_manager import strip_prose_logic
+
+def autonomous_strip_prose(sandbox_output):
+    return strip_prose_logic(sandbox_output)
+
+def run_random_sandbox_script():
+    self_edit_generated = parse_file('self_edit_generated.py')
+    output = run_sandbox_script(self_edit_generated)
+    return autonomous_strip_prose(output)
+
+run_random_sandbox_script()

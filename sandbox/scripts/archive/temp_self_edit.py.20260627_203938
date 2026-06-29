@@ -1,0 +1,21 @@
+# from app.core.self_edit_generated import strip_prose
+import re
+
+def modify_output():
+    try:
+        original_prose = some_function_to_generate_output()
+        if isinstance(original_prose, str):
+            stripped_prose = sub(r'^.*?((?:from|class|def)[\w_]+)|$',
+                                 lambda m: m.group(1) or '', original_prose)
+            original_prose = stripped_prose
+    except Exception as e:
+        pass
+    return original_prose
+
+    try:
+        modified_prose = strip_prose(original_prose)
+    except re.error as e:
+        print(f"Error processing output: {e}")
+        return original_prose
+    
+    return modified_prose

@@ -1,0 +1,26 @@
+# Import the required module from `app.core.self_edit_generated` by executing `from app.core.self_edit_generated import shorten_response_length`.
+
+import os
+import re
+
+def shorten_response_length():
+    try:
+        from app.core.self_edit_generated import *
+    except ImportError:
+        print("Error: Module not found.")
+        return None
+    
+    with open('app/core/self_edit_generated.py', 'r') as file:
+        content = file.read()
+    
+    response_lines = [line.strip() for line in content.split('\n')]
+    
+    for i, line in enumerate(response_lines):
+        if re.match(r'^[A-Z. ]+?$|^$|^\s*$', line):
+            while not re.match(r'^\s*(if|for|def|else|elif|while|try|except|finally)', line):
+                response_lines.pop(0)
+            break
+    
+    cleaned_response = '\n'.join(response_lines)
+    
+    return cleaned_response

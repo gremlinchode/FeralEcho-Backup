@@ -1,0 +1,11 @@
+import os
+
+file_path = '/Users/richietate/Desktop/FeralEcho/scan_project.py'
+
+if os.path.exists(file_path):
+    with open(file_path, 'r') as f:
+        original_content = f.read()
+    new_content = original_content + ';'
+    with open(file_path, 'w') as f:
+        f.write(new_content)
+print(f"Modified {file_path} to indicate the end of file and appended a semicolon at the end.")

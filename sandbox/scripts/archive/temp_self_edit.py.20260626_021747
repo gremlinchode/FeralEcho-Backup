@@ -1,0 +1,19 @@
+import memory_write_validator
+import awareness_tools_integration
+from echo import rebuild_vector_memory
+from toolkits.vector_memory import embed_text
+from tools.logger import log_interaction
+
+memory_write_validator.set_valid_memory_write(True)
+
+relevant_memories = get_relevant_memories()
+
+journal_entry = append_to_journal("Starting awareness integration process")
+
+load_tool("rebuild_vector_memory", "awareness_tools_integration.rebuild_vector_memory", memory_write_validator)
+
+discover_and_register_tools()
+
+embed_text(memory_bridge.py)
+
+log_interaction(journal_entry, "Rebuild vector memory registration complete")

@@ -1,0 +1,43 @@
+import app.core.self_edit_generated
+import app.core.project_scanner
+import app.core.river_deliberation
+import app.core.tool_manager
+import logging
+import re
+from app.core.sandbox_interface import SandboxInterface
+from app.core.dmn_guardian import DMNGuardian
+from app.core.memory_tools import MemoryTools
+
+def main_function():
+    try:
+        original_output = app.core.self_edit_generated.generate_code()
+        print("Original Output:", original_output)
+
+        # Regex to detect and remove leading natural language sentences
+        pattern = r"^[A-Za-z0-9\s]+:"
+        filtered_output = re.sub(pattern, "", original_output, flags=re.MULTILINE)
+
+        print("Filtered Output:", filtered_output)
+
+        # Logging the prose detection and stripping process
+        logging.info("Prose detection and stripping successful.")
+
+        test_cases = [
+            'test_case1',
+            'test_case2',
+            # Add more test cases here
+        ]
+
+        for test_case in test_cases:
+            SandboxInterface().execute_code(filtered_output, test_case)
+
+        DMNGuardian().monitor_execution()
+
+        MemoryTools().journal(f'Executed {len(test_cases)} test cases')
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+
+
+if __name__ == "__main__":
+    main_function()

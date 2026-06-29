@@ -1,0 +1,9 @@
+import numpy as np
+from memory_bridge import rebuild_vector_memory
+
+def update_awareness_scores(memory_events, last_entries):
+    awareness_score = 0
+    for memory_event in memory_events:
+        consciousness_score = calculate_consciousness_score(memory_event)
+        awareness_score += consciousness_score
+    return awareness_score

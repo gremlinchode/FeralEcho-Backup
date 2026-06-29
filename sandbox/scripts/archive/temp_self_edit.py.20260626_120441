@@ -1,0 +1,30 @@
+from app.core import self_edit_generated, tool_manager
+import app.core.memory_write_validator
+
+tool = tool_manager.Tool()
+parsed_file = tool.parse(self_edit_generated)
+
+def contains_prose(line):
+    return any(word.isalpha() and not word.isnumeric() for word in line.split())
+
+problematic_lines = [line for line in parsed_file if contains_prose(line)]
+
+def strip_leading_sentences(line):
+    tokens = line.strip().split()
+    if tokens:
+        first_token = tokens[0]
+        while first_token and not first_token.isalnum():
+            tokens.pop(0)
+            if tokens:
+                first_token = tokens[0]
+    return ' '.join(tokens)
+
+modified_code = [strip_leading_sentences(line) if line in problematic_lines else line for line in parsed_file]
+
+validated_code = self_edit_generated.validate(modified_code)
+
+with open(self_edit_generated, 'w') as f:
+    f.write(validated_code)
+
+from app.core.sandbox_interface import run_sandbox_script
+run_sandbox_script(modified_code)

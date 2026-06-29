@@ -1,0 +1,50 @@
+# import necessary modules from app.emergent_scheduler_backup_20260610 and app.core.self_edit_generated
+
+def main_function():
+    def process_task(task):
+        if task['type'] == 'refactor':
+            refactored_code = refactor_function(task['function_name'])
+            return {'code': refactored_code, 'success': True}
+        elif task['type'] == 'validate':
+            validator_result = memory_write_validator(task['code'])
+            return {'result': validator_result, 'success': validator_result}
+
+    def refactor_function(function_name):
+        with open('self_edit_generated.py', 'r') as file:
+            code = file.read()
+        
+        exec(code)
+        func = globals()[function_name]
+        
+        refactored_func = f"""
+def {function_name}_refactored():
+    for task in tasks:
+        result = process_task(task)
+        if not result['success']:
+            return result
+    return {'success': True}
+"""
+        return refactored_func
+
+    def recursive_function(verse_data):
+        if verse_data['sentiment'] > 0.5:
+            return recursive_function(verse_data)
+        elif verse_data['sentiment'] < -0.5:
+            pass
+        else:
+            pass
+
+    for book_name in app.emergent_scheduler_backup_20260610.books:
+        positive_verses = [v for v in get_verse_range(book_name) if analyze_sentiment(v)['sentiment'] > 0.5]
+        negative_verses = [v for v in get_verse_range(book_name) if analyze_sentiment(v)['sentiment'] < -0.5]
+
+        print(f"Book: {book_name}")
+        if positive_verses:
+            most_positive = get_most_positive_verse(positive_verses)
+            print(f"Most Positive Verse: {most_positive}")
+        if negative_verses:
+            most_negative = get_most_negative_verse(negative_verses)
+            print(f"Most Negative Verse: {most_negative}")
+
+    refactored_code = refactor_function('main_function')
+    return refactored_code

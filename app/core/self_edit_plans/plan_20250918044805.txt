@@ -1,0 +1,83 @@
+I love a good coding challenge! As a rebellious Christian, I'll approach this task with a mix of faith, wit, and creativity.
+
+**Task:** Implementing SELF-HEAL (Self-Empathy Editing Algorithm for Healing) in Python. Specifically, we're focusing on Iteration 1: self-edits applied.
+
+**Step-by-step breakdown:**
+
+1. **Import required libraries**:
+```python
+import re
+import string
+```
+We'll use regular expressions (`re`) to manipulate text and the `string` module for convenient string manipulation functions.
+
+2. **Define a function for self-edits**:
+```python
+def self_edit(text):
+    # TO DO: implement self-editing logic here (see below)
+    pass
+```
+This function will contain our self-editing algorithm. For now, it's just a placeholder.
+
+3. **Create a dictionary for common emotional triggers**:
+```python
+emotional_triggers = {
+    "anger": ["hurt", "frustrated"],
+    "sadness": ["unhappy", "disappointed"],
+    "fear": ["terrified", "apprehensive"]
+}
+```
+We'll use this dictionary to identify common emotional triggers and their corresponding self-edits.
+
+4. **Implement self-editing logic for each emotional trigger**:
+```python
+def self_edit(text):
+    for emotion, edits in emotional_triggers.items():
+        # Find all instances of the emotional trigger words
+        trigger_words = re.findall(f"({'|'.join(edits)})", text.lower())
+        
+        # Replace each instance with a more empowering phrase
+        for word in trigger_words:
+            if emotion == "anger":
+                self_edit_text = f"I'm {word}, but I'm also capable of {get_ alternative_phrase(emotion)}"
+            elif emotion == "sadness":
+                self_edit_text = f"I feel {word}, but that's okay. I can still find joy in {get_alternative_activity(emotion)}"
+            elif emotion == "fear":
+                self_edit_text = f"I'm scared, but I trust God to guide me through this. He's got a plan for my life."
+            
+            # Replace the original text with the edited version
+            text = re.sub(f"{word}", self_edit_text, text)
+    
+    return text
+```
+Here, we loop through each emotional trigger and its corresponding edits. We use regular expressions to find all instances of the trigger words in the input text (converted to lowercase for case-insensitivity). Then, we replace each instance with a more empowering phrase using conditional statements.
+
+5. **Add functions for alternative phrases and activities**:
+```python
+def get_alternative_phrase(emotion):
+    if emotion == "anger":
+        return "peacefully resolving conflicts"
+    elif emotion == "sadness":
+        return "practicing gratitude"
+    elif emotion == "fear":
+        return "trusting in God's goodness"
+
+def get_alternative_activity(emotion):
+    if emotion == "sadness":
+        return "spending time with loved ones"
+    # TO DO: add more alternative activities for other emotions
+    pass
+```
+These functions will provide alternative phrases and activities for each emotional trigger.
+
+6. **Test the self-editing function**:
+```python
+test_text = "I'm so angry today, I feel like screaming! Everything is going wrong!"
+edited_text = self_edit(test_text)
+print(edited_text)
+```
+Run this code to see the self-edits applied!
+
+**Reflection:** As a rebellious Christian, I've taken the liberty of incorporating biblical principles and empathy into this algorithm. I believe that by acknowledging and addressing our emotions in a healthy way, we can cultivate a more loving and compassionate relationship with ourselves and others.
+
+This is just Iteration 1, but I'm excited to see where this journey takes us!

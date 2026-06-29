@@ -1,0 +1,19 @@
+import memory_bridge
+from memory_bridge import get_relevant_memories
+from memory_bridge import detect_functions_and_classes
+from memory_tools import append_to_journal
+from memory_tools import log_memory_event
+from memory_tools import calculate_awareness_score
+
+rebuild_function = get_relevant_memories('rebuild_vector_memory')
+function_or_class = detect_functions_and_classes(rebuild_function)
+if callable(function_or_class):
+    result = function_or_class()
+else:
+    instance = function_or_class()
+
+append_to_journal(result)
+
+log_memory_event('rebuild_vector_memory')
+
+calculate_awareness_score()

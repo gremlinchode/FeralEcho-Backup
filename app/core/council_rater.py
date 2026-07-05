@@ -307,6 +307,7 @@ def get_council_stats() -> dict:
         return empty
 
     total = skipped_no_peer = spot_required = spot_done = agreements = pre_baseline_excluded = 0
+    self_rating_excluded = 0
 
     # scorer_baseline_timestamp is written to snapshot_baseline.json when all in-flight scorer
     # changes (3a + 3b) have landed. Ratings before that timestamp were computed on a different
@@ -330,6 +331,9 @@ def get_council_stats() -> dict:
                 if scorer_baseline and e.get("timestamp_utc", "") < scorer_baseline:
                     pre_baseline_excluded += 1
                     continue  # pre-scorer-fix rating — excluded from trust tally
+                if e.get("model_used") and e.get("model_used") == e.get("council_rating_model"):
+                    self_rating_excluded += 1
+                    continue  # same model rated itself — excluded per Finding M-4
                 total += 1
                 if e.get("spot_check_required"):
                     spot_required += 1
@@ -355,6 +359,7 @@ def get_council_stats() -> dict:
     return {
         "total_rated":                    total,
         "pre_baseline_excluded":          pre_baseline_excluded,
+        "self_rating_excluded":           self_rating_excluded,
         "skipped_no_peer":                skipped_no_peer,
         "pending_spot_checks":            pending,
         "spot_checks_completed":          spot_done,

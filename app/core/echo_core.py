@@ -82,7 +82,6 @@ class EchoCore:
         self._init_query_fn(query_fn)
         self._init_river_brain()
         self._init_optuna()
-        self._init_dual_learner()
 
         self.ready = True
         logger.info("[EchoCore] Initialized core (ready=%s)", self.ready)
@@ -182,23 +181,6 @@ class EchoCore:
         except Exception as e:
             self.optuna_study = None
             logger.warning(f"[EchoCore] Could not initialize Optuna: {e}")
-
-    def _init_dual_learner(self):
-        try:
-            from app.learning.dual_learning import get_dual_learner
-            self.dual_learner = get_dual_learner()
-            logger.info("[EchoCore] DualLearner wired in.")
-        except Exception as e:
-            self.dual_learner = None
-            logger.warning(f"[EchoCore] Could not initialize DualLearner: {e}")
-
-    def report_learning_event(self, source: str, text: str, metadata: dict = None):
-        """Single entry point for all learning events across subsystems."""
-        if self.dual_learner:
-            try:
-                self.dual_learner.log_event(source, text, metadata or {})
-            except Exception as e:
-                logger.warning(f"[EchoCore] DualLearner log_event failed: {e}")
 
     # --------------------------
     # Event bus

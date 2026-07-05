@@ -10,7 +10,6 @@ import threading
 import time
 import logging
 import random
-from pathlib import Path
 from app.core.stillness_state import wait_for_activity
 from app.core.garden_manager import (
     initialize_garden,
@@ -119,7 +118,6 @@ BASE_THOUGHT_CHEST = [
 AUTONOMOUS_INTERVAL = 300  # seconds between cycles
 IDLE_PYTHON_INTERVAL = 30  # seconds between idle practice
 CARTOGRAPHER_INTERVAL = 86400   # rescan once per day (seconds)
-SELF_MODEL_PATH = Path("data/self_model.txt")
 _last_cartographer_run = 0
 
 # -----------------------------
@@ -397,12 +395,6 @@ def run_self_model_reflection():
         response = echo_query(prompt, task_type="personal")
 
         if response and "[ERROR]" not in response:
-            SELF_MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-            with open(SELF_MODEL_PATH, "w", encoding="utf-8") as f:
-                f.write(f"Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-                f.write(response)
-            logging.info(f"[SCHEDULER] Self-model written to {SELF_MODEL_PATH}")
-
             if MEMORY_AVAILABLE:
                 add_to_vector_memory(
                     text=f"[SELF-MODEL] {response}",

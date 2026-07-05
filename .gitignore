@@ -73,3 +73,11 @@ feral_echo_environment.yml
 *.save
 .echo_project_learner/
 richietate.txt
+
+# === DISPOSABLE TEST/PENTEST ARTIFACTS ===
+# Hourly self-edit sandbox snapshots and F1/F2 adversarial pentest one-offs.
+# See audits/2026-07-03/AUDIT_REPORT.md Finding I-1: gitignore rather than
+# commit once the audit that generated them is complete.
+sandbox/experiments/exp_*.py
+sandbox/scripts/archive/
+staging/_*.py

@@ -54,6 +54,51 @@ These preferences are extracted from demonstrated corrections and confirmations 
 
 ---
 
+## Interacting with FeralEcho (Practical Reference)
+
+This is the quick operational on-ramp. CLAUDE.md has the full technical detail (architecture, safety pipeline, monitoring commands) — this section is what a session needs before touching the running system, plus what this project's sessions have learned the hard way.
+
+### Starting and restarting
+
+- Ollama must already be running (`ollama serve`, or confirm via `curl -m 3 localhost:11434/api/tags`) before `run.py` starts.
+- Standard start:
+  ```bash
+  source ~/miniforge3/etc/profile.d/conda.sh
+  conda activate feral_echo
+  python run.py
+  ```
+- Server binds `0.0.0.0:5000` — Tailscale is the security boundary, not app-level auth.
+- **The process does not hot-reload. A code change is not live until the server is killed and restarted.** Always kill the existing process first:
+  ```bash
+  kill $(lsof -ti :5000) && python run.py
+  ```
+  Starting a new process while port 5000 is still held causes the new one to die silently inside `start_background_threads()` with no visible error.
+- Startup is slow and CPU-heavy (embedding warmup, a full code-scan into VectorMemory) — port 5000 may not bind for 30–90+ seconds while the process is clearly alive and busy (high CPU%, growing log). Don't kill it early mistaking this for a hang; check `ps aux | grep "python run.py"` and log growth before concluding it's stuck.
+- Confirm a clean start two ways: `memory/echo_sentinel.json` should read `"stage": "serving"`, and the startup log should show `[GENESIS] echo_principles.json hash verified OK` (startup hash check added 2026-07-05 — see CLAUDE.md Finding C-2/25).
+- Before reporting any fix as "done," check whether the server is actually running the code that contains the fix, not code from before the session's edits. A commit on disk is not a fix in effect until the process serving requests has been restarted.
+
+### Talking to Echo
+
+- `python terminal_client.py` — interactive conversation, the primary way to exercise real behavior (not just endpoints).
+- Type a bare digit 1–5 at the next `You:` prompt to rate the last response — this is the highest-trust human signal in the whole system (see council/River trust-gate discussion elsewhere in this doc and in CLAUDE.md).
+
+### Checking system health (admin endpoints — all GET unless noted, all read-only except `/admin/restore`)
+
+- `curl localhost:5000/admin/council-stats` — peer-rating trust-gate progress toward `council_baseline_trusted_since` (`self_rating_excluded` field added 2026-07-05, Finding M-4/27)
+- `curl localhost:5000/admin/self-edit-outcomes` — before/after quality_score, council_rating, and human-rating windows around each self-edit (added 2026-07-05, Finding 8/28 — log-only, does not gate anything)
+- `curl localhost:5000/admin/autonomy-status` — last-check status (throttled/stillness/ok) for the three autonomy loops, shared gate added 2026-07-05 (Finding 29)
+- `curl -X POST localhost:5000/admin/restore -d '{"snapshot_id": "..."}'` — restores five files (self_edit_generated.py, river_brain.pkl, echo_principles.json + hash, Modelfile). Human-confirmed only, per the hard rules above — never call this without Gremlin explicitly asking for that specific snapshot.
+- See CLAUDE.md's "Monitoring" section for log-tailing one-liners and deeper diagnostics (SELF_EDIT.log, interaction_log quality stream, FAISS vector counts, sentinel/crash state).
+
+### Things this project's sessions have learned the hard way
+
+- Git commits in this repo use an auto-configured identity (`richietate@Richards-MacBook-Air.local`) — no global `user.name`/`user.email` is set. Don't silently "fix" this by running `git config` — flag it, let Gremlin decide.
+- As of 2026-07-05, the three autonomy loops (`emergent_scheduler.emergent_loop`, `autonomous_loop.autonomous_loop`, `run.py`'s `self_edit_loop`) share one throttle/stillness gate (`app/core/autonomy_coordinator.py`, `should_run_cycle()`). If touching any of the three, use the shared gate — don't reintroduce a fourth independent throttle check.
+- The working tree can accumulate a large amount of real, safety-relevant uncommitted work across many sessions (382 changed paths were found accumulated across ~3 weeks in one instance). Check `git status` and `git log` early in a session rather than assuming recent CLAUDE.md narration reflects what's actually committed.
+- Sandbox/pentest scaffolding (F1/F2 adversarial test scripts, hourly self-edit snapshots) is gitignored, not deleted — see the `.gitignore` "DISPOSABLE TEST/PENTEST ARTIFACTS" section. Don't `git add -A` in this repo; stage files explicitly.
+
+---
+
 ## The Core Operating Principle
 
 Stated plainly for any future session to start from:

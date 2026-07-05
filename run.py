@@ -791,6 +791,28 @@ def start_background_threads():
 
     _write_sentinel("threads_starting")
 
+    # Genesis hash verification — alert-only, does not block startup. CLAUDE.md
+    # previously claimed this check existed; it didn't (audit C-2, 2026-07-03).
+    try:
+        import hashlib
+        _principles_path = Path(__file__).parent / "echo_principles.json"
+        _hash_path = Path(__file__).parent / "memory" / "genesis" / "genesis_hash.txt"
+        if _principles_path.exists() and _hash_path.exists():
+            _live_hash = hashlib.sha256(_principles_path.read_bytes()).hexdigest()
+            _stored_hash = _hash_path.read_text().strip()
+            if _live_hash != _stored_hash:
+                logger.error(
+                    "[GENESIS] echo_principles.json hash mismatch! stored=%s live=%s "
+                    "— principles file may have been modified outside the sanctioned path.",
+                    _stored_hash[:12], _live_hash[:12],
+                )
+            else:
+                logger.info("[GENESIS] echo_principles.json hash verified OK.")
+        else:
+            logger.warning("[GENESIS] Hash verification skipped — principles file or hash file missing.")
+    except Exception as _ghe:
+        logger.warning(f"[GENESIS] Hash verification failed: {_ghe}")
+
     global dual_learner
     from app.learning.dual_learning import get_dual_learner
     dual_learner = get_dual_learner()

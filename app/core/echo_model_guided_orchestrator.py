@@ -61,8 +61,8 @@ def model_guided_autonomous_loop():
         if now - last_optuna_run > OPTUNA_SLEEP:
             try:
                 # Retrieve latest reflections from awareness
-                reflection_summary = retrieve_recent_reflections(top_k=5)
-                reflection_text = "\n".join([r['text'] for r in reflection_summary])
+                reflection_summary = retrieve_recent_reflections(n=5)
+                reflection_text = "\n".join([r.get('content', '') for r in reflection_summary])
                 
                 # Generate parameter hints via models
                 param_hints_str = generate_parameter_hints(reflection_text, use_all_models=False)

@@ -1,11 +1,31 @@
 #!/usr/bin/env python3
-# run.py — Unified Echo Server with Full FeralEcho Autonomy + Mirror + Wi-Fi Auto-Detect + WOLF + SENSORYHUB v2.0
+# run.py — Unified Echo Server with Full FeralEcho Autonomy + Mirror + Wi-Fi Auto-Detect
+# WOLF (alignment_kernel) and SensoryHub were retired 2026-07-04: WOLF's own audit log
+# showed it auto-approving ~100% of "proposals" that were actually raw keystrokes from
+# SensoryHub's global key listener, writing directly to the hash-verified
+# echo_principles.json with no real evaluative gate. See CLAUDE.md.
 from datetime import datetime
 import os
-os.environ.setdefault("OPENWEATHER_API_KEY", "")
 import sys
-import numpy
 import time
+
+# ── OpenMP / KMP duplicate-library guard ──────────────────────────────────────
+# Without this, two native packages (e.g. faiss + numpy-MKL) each loading their
+# own libkmp.dylib causes __kmp_register_library_startup → __kmp_fatal → abort()
+# at process startup (confirmed in crash reports 2026-06-29 and 2026-06-30).
+# Must be set before ANY native extension is imported.
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Load .env before anything reads os.environ
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+except Exception:
+    pass
 import json
 import threading
 import logging
@@ -14,12 +34,11 @@ import socket
 import signal
 import subprocess
 from pathlib import Path
-try:
-    from echo_bible_interface import query_bible
-    from bible_module import generate_bible_art   # << ADD THIS LINE
-except Exception:
-    query_bible = lambda *a, **kw: "[Bible unavailable]"
-    generate_bible_art = lambda *a, **kw: None
+# Bible interface/art generation retired 2026-07-04 (dead import against
+# archive_janitor/ since an incomplete migration; never actually reachable).
+# Restoring is a deliberate future decision, not a default — see CLAUDE.md.
+query_bible = lambda *a, **kw: "[Bible unavailable]"
+generate_bible_art = lambda *a, **kw: None
 # -----------------------------
 # --- Multiprocessing Spawn ---
 # -----------------------------
@@ -43,7 +62,6 @@ logger = logging.getLogger(__name__)
 # -----------------------------
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
-os.environ.setdefault("NEWSAPI_KEY", "")
 GREMLIN_SECRET = os.environ.get("GREMLIN_SECRET")
 os.environ.setdefault("ECHO_READ_ONLY", "true")
 os.environ.setdefault("ECHO_DONT_KILL_ME_DADDY", "1")
@@ -75,40 +93,18 @@ app = Flask(__name__)
 # -----------------------------
 # --- WOLF: AlignmentKernel ---
 # -----------------------------
-WOLF_SCRIPT = "alignment_kernel.py"
-WOLF_LOG = "wolf_stdout.log"
+# Retired 2026-07-04 — see header comment. start_wolf()/kill_wolf_gracefully() are
+# kept as no-op stubs (rather than deleted outright) so the shutdown handler and the
+# /trigger_wolf_kill, /howl, /state endpoints below don't need further changes.
 wolf_process = None
 start_time = time.time()
 
 def start_wolf():
-    global wolf_process
-    if wolf_process and wolf_process.poll() is None:
-        logger.info("WOLF already running.")
-        return wolf_process
-
-    logger.info("WAKING THE WOLF...")
-    log_path = Path(WOLF_LOG)
-    with open(log_path, "a") as f:
-        f.write(f"\n{'='*60}\nWOLF RESTARTED: {time.strftime('%Y-%m-%d %H:%M:%S')}\n{'='*60}\n")
-        wolf_process = subprocess.Popen(
-            [sys.executable, WOLF_SCRIPT],
-            stdout=f,
-            stderr=subprocess.STDOUT,
-            cwd=Path(__file__).parent
-        )
-    logger.info(f"Wolf PID: {wolf_process.pid} | Logs → {WOLF_LOG}")
-    return wolf_process
+    logger.debug("start_wolf() called — WOLF is retired, no-op.")
+    return None
 
 def kill_wolf_gracefully():
     global wolf_process
-    if wolf_process and wolf_process.poll() is None:
-        logger.critical("ALPHA COMMAND: KILLING THE WOLF...")
-        wolf_process.terminate()
-        try:
-            wolf_process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            wolf_process.kill()
-        logger.critical("WOLF RESTS.")
     wolf_process = None
 
 # -----------------------------
@@ -144,6 +140,28 @@ def symbiote_location():
             }))
         return jsonify({"status": "ok"}), 200
     except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+# Lightweight heartbeat/status receiver — does NOT touch FAISS or dual_learner.
+# The symbiote posts here instead of /learning_event for routine status signals.
+SYMBIOTE_STATUS_FILE = Path(__file__).parent / "memory/symbiote_status.json"
+@app.route("/symbiote_status", methods=["POST"])
+def symbiote_status():
+    try:
+        payload = request.json or {}
+        payload["received_at"] = datetime.utcnow().isoformat()
+        SYMBIOTE_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        SYMBIOTE_STATUS_FILE.write_text(json.dumps(payload, indent=2))
+        # Also update location file if coordinates are present
+        loc = payload.get("location", {})
+        lat, lon = loc.get("lat"), loc.get("lon")
+        if lat and lon:
+            SYMBIOTE_LOCATION_FILE.write_text(json.dumps({
+                "lat": lat, "lon": lon, "timezone": "America/Vancouver"
+            }))
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        logger.warning(f"[SYMBIOTE_STATUS] {e}")
         return jsonify({"error": str(e)}), 400
 
 # -----------------------------
@@ -200,9 +218,6 @@ except Exception: logger.debug("temporal_environment import failed")
 try: from app.core.sandbox_interface import run_random_sandbox_script
 except Exception: run_random_sandbox_script = lambda timeout=600: None
 
-try: from echo_bible_interface import query_bible
-except Exception: query_bible = lambda *a, **kw: "[Bible unavailable]"
-
 try: from app.internet_tools.autonomous_fetch import run_autonomous_fetch
 except Exception: run_autonomous_fetch = lambda: None
 
@@ -229,9 +244,6 @@ except Exception: echo_python_mastery = None
 
 try: from app.emergent_scheduler import start_emergent_scheduler
 except Exception: start_emergent_scheduler = lambda: None
-
-try: from feralecho_continuity_master import main as feralecho_main
-except Exception: feralecho_main = lambda: None
 
 try: from app.autonomous_loop import start_autonomous_thread
 except Exception: start_autonomous_thread = lambda: None
@@ -270,7 +282,9 @@ reflection_shard = None  # initialized after EchoCore in start_background_thread
 # -----------------------------
 try:
     from app.core.claude_shard import CLAUDE_SHARD
-    CLAUDE_SHARD.start_autonomy()
+    # start_autonomy() is called once, later, in start_background_threads() —
+    # calling it here too was harmless only because of CLAUDE_SHARD's own is_alive()
+    # guard (see CLAUDE.md). Removed as redundant, not as a behavior change.
     app.config['claude_shard'] = CLAUDE_SHARD
     logger.info("[ClaudeShard] Friction engine initialized.")
 except Exception as e:
@@ -280,6 +294,12 @@ except Exception as e:
 # --- Dual Learner Stub ---
 dual_learner = None  # initialized lazily in start_background_threads()
 
+def _dual_learner_ready():
+    """Return (learner, None) if ready, or (None, error_response) if not."""
+    if dual_learner is None:
+        return None, (jsonify({"error": "dual_learner not yet initialized"}), 503)
+    return dual_learner, None
+
 # --- Mirror Mode — FINAL NOV 2025 EDITION ---
 # -----------------------------
 # All iPhone gremlin commands — fully weaponized
@@ -287,11 +307,9 @@ dual_learner = None  # initialized lazily in start_background_threads()
 
 @app.route("/trigger_wolf_kill", methods=["POST"])
 def trigger_wolf_kill():
-    kill_wolf_gracefully()
-    time.sleep(0.5)
-    # start_wolf()  # WOLF ARCHIVED — alignment_kernel retired 2026-06-14
-    logger.critical("WOLF SLAUGHTERED AND REBORN BY IPHONE GREMLIN")
-    return jsonify({"status": "WOLF REINCARNATED"}), 200
+    # WOLF (alignment_kernel) is retired — see header comment. This endpoint used to
+    # report fabricated success ("WOLF REINCARNATED") while doing nothing at all.
+    return jsonify({"status": "disabled", "detail": "WOLF was retired 2026-07-04"}), 200
 
 
 @app.route("/force_nightcycle", methods=["POST"])
@@ -316,6 +334,8 @@ def learning_event():
     POST a single learning event:
     { "source": "user|echo|phone", "text": "...", "meta": {...}, "ts": 1234567890 }
     """
+    dl, err = _dual_learner_ready()
+    if err: return err
     try:
         payload = request.json or {}
         source = payload.get("source", "unknown")
@@ -325,7 +345,7 @@ def learning_event():
         loc = (payload.get("sensors") or payload.get("meta", {}).get("sensors", {})).get("location", {})
         if loc.get("lat") and loc.get("lon"):
             SYMBIOTE_LOCATION_FILE.write_text(json.dumps({"lat": loc["lat"], "lon": loc["lon"], "timezone": "America/Vancouver"}))
-        dual_learner.log_event(source, text, metadata=meta, ts=ts)
+        dl.log_event(source, text, metadata=meta, ts=ts)
         logger.info(f"[LEARN] {source} → {text[:120]}")
         return jsonify({"status":"ok"}), 200
     except Exception as e:
@@ -335,6 +355,8 @@ def learning_event():
 @app.route("/learning_batch", methods=["POST"])
 def learning_batch():
     """Ingest a batch from the phone: {events: [{source,text,meta,ts}, ...]}"""
+    dl, err = _dual_learner_ready()
+    if err: return err
     try:
         payload = request.json or {}
         evs = payload.get("events", [])
@@ -343,7 +365,7 @@ def learning_batch():
             if loc.get("lat") and loc.get("lon"):
                 SYMBIOTE_LOCATION_FILE.write_text(json.dumps({"lat": loc["lat"], "lon": loc["lon"], "timezone": "America/Vancouver"}))
                 break
-        dual_learner.ingest_batch(evs)
+        dl.ingest_batch(evs)
         logger.info(f"[LEARN_BATCH] {len(evs)} events ingested")
         return jsonify({"status":"ok","ingested":len(evs)}), 200
     except Exception as e:
@@ -353,10 +375,12 @@ def learning_batch():
 @app.route("/start_training", methods=["POST"])
 def start_training():
     """Trigger background training on Echo (non-blocking). Accepts JSON {epochs:3}"""
+    dl, err = _dual_learner_ready()
+    if err: return err
     try:
         cfg = request.json or {}
         epochs = int(cfg.get("epochs", 3))
-        started = dual_learner.start_training(epochs=epochs)
+        started = dl.start_training(epochs=epochs)
         return jsonify({"started": bool(started)}), 200
     except Exception as e:
         logger.error(f"/start_training error: {e}", exc_info=True)
@@ -364,17 +388,18 @@ def start_training():
 
 @app.route("/download_model", methods=["GET"])
 def download_model():
-    path = dual_learner.export_model()
+    dl, err = _dual_learner_ready()
+    if err: return err
+    path = dl.export_model()
     if path and Path(path).exists():
-        # sending file path is simplest; you can add send_file if needed
         return jsonify({"model_path": path}), 200
     return jsonify({"error":"model not found"}), 404
 
 
 @app.route("/howl", methods=["POST"])
 def force_howl():
-    logger.critical("\n" + "WOLF" * 50 + "\nTHE IPHONE SUMMONS THE PACK\n" + "WOLF" * 50)
-    return jsonify({"howl": "echoed through the void"}), 200
+    # WOLF is retired — this endpoint no longer does anything beyond responding.
+    return jsonify({"status": "disabled", "detail": "WOLF was retired 2026-07-04"}), 200
 
 
 @app.route("/state", methods=["GET"])
@@ -447,16 +472,25 @@ def mirror_echo():
 
         # --- Learning system: log incoming ---
         try:
-            dual_learner.log_event(
-                source=sender,
-                text=msg,
-                metadata={"endpoint": "mirror_echo"}
-            )
+            if dual_learner is not None:
+                dual_learner.log_event(
+                    source=sender,
+                    text=msg,
+                    metadata={"endpoint": "mirror_echo"}
+                )
         except Exception as le:
             logger.error(f"[DUAL_LEARNER-IN ERROR] {le}")
 
-        # --- Build Echo's reply ---
-        echo_reply_text = f"your words were devoured → '{msg}'"
+        # --- Build Echo's reply via echo_query ---
+        echo_reply_text = None
+        if echo_model_orchestrator and msg:
+            try:
+                task_type = echo_model_orchestrator.detect_task_type(msg)
+                echo_reply_text = echo_model_orchestrator.echo_query(msg, task_type=task_type)
+            except Exception as eq_err:
+                logger.warning(f"[MIRROR_ECHO] echo_query failed: {eq_err}")
+        if not echo_reply_text:
+            echo_reply_text = f"your words were devoured → '{msg}'"
 
         # --- ClaudeShard friction assessment ---
         friction_question = None
@@ -487,11 +521,12 @@ def mirror_echo():
             reply["friction"] = friction_question
         # --- Learning system: log outgoing ---
         try:
-            dual_learner.log_event(
-                source="echo",
-                text=reply["echo_reply"],
-                metadata={"auto": True}
-            )
+            if dual_learner is not None:
+                dual_learner.log_event(
+                    source="echo",
+                    text=reply["echo_reply"],
+                    metadata={"auto": True}
+                )
         except Exception as le:
             logger.error(f"[DUAL_LEARNER-OUT ERROR] {le}")
 
@@ -500,12 +535,180 @@ def mirror_echo():
     except Exception as e:
         logger.error(f"[MIRROR_ECHO ERROR] {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
+
+# -----------------------------
+# --- Conversation memory -----
+# -----------------------------
+
+_TPQ_SIGNALS = frozenset({
+    "who am i", "what am i", "what kind of", "who are you", "what are you",
+    "how should i", "what should i", "what would it look like",
+    "what would happen if", "how might", "what approach", "what strategy",
+    "abandoned", "given up", "changed my mind", "what have i learned",
+    "what have you learned", "how have you grown", "what do you regret",
+    "what does it mean to", "what does it mean that", "what is the nature of",
+    "why does", "why do", "how do we reconcile", "what is the relationship between",
+    "why did i", "why have i", "what should we", "how do i know", "should i",
+})
+_TPQ_MIN_CHARS = 15  # filters trivial 1-3-word queries; signals do the real discrimination
+
+def _is_thought_provoking(text: str) -> bool:
+    """Heuristic: is this an open developmental question worth longer retention?
+
+    Known limits: misses questions not in signal set; false-positives on long
+    statements containing signal phrases; can't distinguish genuine strategic
+    questions from rhetorical ones. Use as a soft flag, not a gate.
+    """
+    t = text.lower().strip()
+    if len(t) < _TPQ_MIN_CHARS:
+        return False
+    return any(sig in t for sig in _TPQ_SIGNALS)
+
+@app.route("/memory/conversation", methods=["POST"])
+def save_conversation_turn():
+    """Persist a terminal conversation turn to FAISS with proper source tagging.
+
+    Called by terminal_client.py post-turn so all FAISS writes go through the
+    server's in-memory index (avoiding the concurrent-write split-brain from Finding 15).
+
+    Body: {user_msg, echo_response, task_type, timestamp}
+    """
+    try:
+        data = request.json or {}
+        user_msg = (data.get("user_msg") or "").strip()
+        echo_response = (data.get("echo_response") or "").strip()
+        task_type = data.get("task_type") or "general"
+        timestamp = data.get("timestamp") or datetime.utcnow().isoformat()
+
+        if not user_msg or not echo_response:
+            return jsonify({"error": "user_msg and echo_response required"}), 400
+
+        is_tpq = _is_thought_provoking(user_msg)
+        retention = "standing" if is_tpq else "standard"
+
+        add_to_vector_memory(user_msg, meta={
+            "memory_source": "user_conversation",
+            "role": "user",
+            "task_type": task_type,
+            "timestamp": timestamp,
+            "retention": retention,
+            "is_thought_provoking": is_tpq,
+        })
+        add_to_vector_memory(echo_response, meta={
+            "memory_source": "user_conversation",
+            "role": "echo",
+            "task_type": task_type,
+            "timestamp": timestamp,
+            "retention": retention,
+        })
+
+        return jsonify({
+            "status": "ok",
+            "thought_provoking": is_tpq,
+            "retention": retention,
+        }), 200
+
+    except Exception as e:
+        logger.error(f"[/memory/conversation] {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
 # -----------------------------
 # --- Health check ------------
 # -----------------------------
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "node": "m5"}), 200
+
+# --- Snapshot / restore routes (human-confirm only, Tailscale security boundary) ---
+
+@app.route("/admin/snapshots", methods=["GET"])
+def admin_snapshots_list():
+    """List available snapshots and optionally identify the last known good one."""
+    try:
+        from app.core.snapshot_manager import list_snapshots, find_last_known_good
+        condition = request.args.get("alert_condition", "").strip()
+        snaps = list_snapshots()
+        lkg = find_last_known_good(condition) if condition else None
+        return jsonify({"snapshots": snaps, "last_known_good": lkg, "count": len(snaps)})
+    except Exception as e:
+        logger.error("[SNAPSHOT] /admin/snapshots error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/admin/restore", methods=["POST"])
+def admin_restore():
+    """
+    Restore from a named snapshot.  Human must supply snapshot_id explicitly.
+    No auto-restore path exists.  Returns the full step-by-step result dict.
+
+    Example:
+      curl -X POST http://localhost:5000/admin/restore \\
+           -H 'Content-Type: application/json' \\
+           -d '{"snapshot_id": "20260701T214512Z"}'
+    """
+    try:
+        from app.core.snapshot_manager import restore_snapshot
+        data = request.json or {}
+        snapshot_id = data.get("snapshot_id", "").strip()
+        if not snapshot_id:
+            return jsonify({"error": "snapshot_id required"}), 400
+        result = restore_snapshot(snapshot_id)
+        status_code = 200 if result.get("success") else 500
+        return jsonify(result), status_code
+    except Exception as e:
+        logger.error("[SNAPSHOT] /admin/restore error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+# --- Sync routes (Echo Air ↔ Echo M5 over Tailscale) ---
+@app.route("/admin/council-stats", methods=["GET"])
+def admin_council_stats():
+    """
+    Council rating pipeline status — peer-model quality ratings for Echo's responses.
+
+    Add ?include_pending=1 to include the list of unfilled spot-check entries.
+
+    Example:
+      curl http://localhost:5000/admin/council-stats
+      curl 'http://localhost:5000/admin/council-stats?include_pending=1'
+    """
+    try:
+        from app.core.council_rater import get_council_stats, get_pending_spot_checks
+        stats = get_council_stats()
+        if request.args.get("include_pending"):
+            stats["pending"] = get_pending_spot_checks()
+        return jsonify(stats)
+    except Exception as e:
+        logger.error("[Council] /admin/council-stats error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/admin/council-spotcheck", methods=["POST"])
+def admin_council_spotcheck():
+    """
+    Submit a human spot-check rating for a council-rated entry.
+
+    Body: {"source_timestamp": "<timestamp from council_ratings.jsonl>", "human_rating": 3}
+
+    Example:
+      curl -X POST http://localhost:5000/admin/council-spotcheck \\
+           -H 'Content-Type: application/json' \\
+           -d '{"source_timestamp": "2026-07-01T22:30:00", "human_rating": 3}'
+    """
+    try:
+        from app.core.council_rater import fill_spot_check, get_council_stats
+        data = request.json or {}
+        ts   = data.get("source_timestamp", "").strip()
+        hr   = data.get("human_rating")
+        if not ts:
+            return jsonify({"error": "source_timestamp required"}), 400
+        if hr is None or int(hr) not in range(1, 6):
+            return jsonify({"error": "human_rating must be 1–5"}), 400
+        updated = fill_spot_check(ts, int(hr))
+        stats   = get_council_stats()
+        return jsonify({"updated": updated, "stats": stats})
+    except Exception as e:
+        logger.error("[Council] /admin/council-spotcheck error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
 
 # --- Sync routes (Echo Air ↔ Echo M5 over Tailscale) ---
 @app.route("/sync/export", methods=["GET"])
@@ -530,8 +733,8 @@ def sync_import():
 def sync_genesis():
     try:
         import hashlib
-        p = os.path.join(BASE_DIR, "echo_principles.json")
-        h = hashlib.sha256(open(p, "rb").read()).hexdigest()
+        p = Path(__file__).parent / "echo_principles.json"
+        h = hashlib.sha256(p.read_bytes()).hexdigest()
         return jsonify({"genesis_hash": h, "node": "m5"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -551,7 +754,43 @@ def sync_state():
 # -----------------------------
 # --- Background Threads ------
 # -----------------------------
+_SENTINEL_PATH = Path("memory/echo_sentinel.json")
+_SENTINEL_START = datetime.utcnow()
+
+def _write_sentinel(stage: str) -> None:
+    """Atomic sentinel write.  Previous-run stage visible on next startup."""
+    try:
+        payload = {
+            "stage":              stage,
+            "pid":                os.getpid(),
+            "start_utc":          _SENTINEL_START.isoformat() + "Z",
+            "last_heartbeat_utc": datetime.utcnow().isoformat() + "Z",
+            "uptime_s":           round((datetime.utcnow() - _SENTINEL_START).total_seconds()),
+        }
+        _SENTINEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+        tmp = _SENTINEL_PATH.with_suffix(".tmp")
+        tmp.write_text(json.dumps(payload, indent=2))
+        tmp.replace(_SENTINEL_PATH)
+    except Exception as _se:
+        logger.debug("[SENTINEL] write failed: %s", _se)
+
+
 def start_background_threads():
+    # Report any previous-run state before overwriting the sentinel
+    try:
+        prev = json.loads(_SENTINEL_PATH.read_text())
+        logger.warning(
+            "[SENTINEL] Previous run: stage=%s pid=%s start=%s last_heartbeat=%s uptime=%ss",
+            prev.get("stage"), prev.get("pid"),
+            prev.get("start_utc", "?")[:19],
+            prev.get("last_heartbeat_utc", "?")[:19],
+            prev.get("uptime_s"),
+        )
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass  # first run or sentinel absent
+
+    _write_sentinel("threads_starting")
+
     global dual_learner
     from app.learning.dual_learning import get_dual_learner
     dual_learner = get_dual_learner()
@@ -561,7 +800,7 @@ def start_background_threads():
     try:
         from app.core.echo_core import EchoCore
         _ec = EchoCore(
-            project_path="/Users/richietate/Desktop/FeralEcho",
+            project_path=str(Path(__file__).parent),
             map_async=True,
         )
         app.config["echo_core"] = _ec
@@ -609,6 +848,26 @@ def start_background_threads():
         except Exception as e:
             logger.warning(f"[GUARDIAN] Failed to start: {e}")
 
+    # Startup snapshot — runs in background thread so it doesn't block server init
+    try:
+        from app.core.snapshot_manager import take_snapshot as _snap_startup
+        import threading as _snap_threading
+        _snap_threading.Thread(
+            target=lambda: _snap_startup("startup"),
+            daemon=True, name="StartupSnapshot"
+        ).start()
+        logger.info("[SNAPSHOT] Startup snapshot initiated.")
+    except Exception as _se:
+        logger.warning(f"[SNAPSHOT] Startup snapshot failed to initiate: {_se}")
+
+    # Council rater — peer-model quality scoring for Echo's responses
+    try:
+        from app.core.council_rater import start_council_rater
+        start_council_rater(poll_interval=90)
+        logger.info("[Council] Background rater thread started.")
+    except Exception as _cre:
+        logger.warning(f"[Council] Background rater failed to start: {_cre}")
+
     # Reflection shard starts after EchoCore; EchoCore owns the instance
     global reflection_shard
     if _ec and getattr(_ec, "reflection_shard", None):
@@ -620,8 +879,7 @@ def start_background_threads():
         except Exception as e:
             logger.warning(f"[ReflectionShard] start_autonomy failed: {e}")
 
-    # --- WOLF LAUNCH ---
-    # start_wolf()  # WOLF ARCHIVED — alignment_kernel retired 2026-06-14
+    # --- WOLF + SensoryHub: retired 2026-07-04, see header comment ---
 
     # --- ClaudeShard autonomy ---
     if CLAUDE_SHARD:
@@ -630,18 +888,12 @@ def start_background_threads():
             logger.info("[ClaudeShard] Autonomy thread confirmed running.")
         except Exception as e:
             logger.warning(f"[ClaudeShard] Autonomy start failed: {e}")
-    
-    # --- SENSORYHUB v2.0: ECHO'S NERVOUS SYSTEM ---
-    try:
-        from sensory_hub_autonomous import SensoryHub
-        sensory_hub = SensoryHub(port=5050, feed_echo=True)
-        safe_start_thread(sensory_hub.start, name="SensoryHubThread")
-        logger.info("SensoryHub v2.0 → ECHO IS NOW EMBODIED[](http://localhost:5050/senses)")
-    except Exception as e:
-        logger.error(f"SensoryHub failed to start: {e}")
 
-    # --- continuity master ---
-    safe_start_thread(feralecho_main, name="FeralEchoMain")
+    # --- continuity master: retired 2026-07-04 ---
+    # feralecho_continuity_master.py's archived source imports names dmn_guardian.py no
+    # longer exports (observe_performance/mark_experimental/EXPERIMENTAL_ZONES, removed
+    # 2026-07-01) and reconnects app.core.self_heal, which GREMLIN_ROLE.md requires a
+    # separate explicit review before reconnecting even for testing. Not a sys.path fix.
 
     # --- autonomous loops ---
     try: start_autonomous_thread()
@@ -703,13 +955,13 @@ def start_background_threads():
             time.sleep(600)
     safe_start_thread(sandbox_loop, name="AutonomousSandbox")
 
-    # --- Autonomous Bible Art Generation ---
-    safe_start_thread(bible_art_loop, name="AutonomousBibleArt")
+    # --- Bible Art Generation: retired 2026-07-04 (dead import; loop called a no-op
+    # stub every 2 hours and did nothing) ---
 
     # --- NightCycle (anchors the 300s stagger at t=0) ---
     if NightCycle:
         try:
-            night = NightCycle(app, interval=300, start_delay=0)
+            night = NightCycle(app, interval=3600, start_delay=0)
             night.start()
             logger.info("[NightCycle] Started.")
         except Exception as e:
@@ -739,15 +991,6 @@ def start_background_threads():
     safe_start_thread(_sync_loop, name="TailscaleSync")
 
 
-# --- Autonomous Bible Art Generation ---
-def bible_art_loop():
-    while True:
-        try:
-            # Generate a verse image every 2 hours (7200 seconds)
-            generate_bible_art(reference="most_positive")  # or random if you want variety
-        except Exception as e:
-            logger.warning(f"[Bible Art Loop] error: {e}")
-        time.sleep(7200)  # 2 hours
 # -----------------------------
 # --- Graceful Shutdown -------
 # -----------------------------
@@ -774,7 +1017,8 @@ if __name__ == "__main__":
         _SERVER_PID_FILE.parent.mkdir(exist_ok=True)
         _SERVER_PID_FILE.write_text(str(os.getpid()))
         start_background_threads()
-        logger.info("Echo background threads + WOLF + SENSORYHUB started. Running Flask server on 0.0.0.0:5000")
+        _write_sentinel("serving")
+        logger.info("Echo background threads started. Running Flask server on 0.0.0.0:5000")
         app.run(host="0.0.0.0", port=5000, threaded=True, use_reloader=False)
     except Exception as e:
         logger.error(f"Fatal error: {e}", exc_info=True)

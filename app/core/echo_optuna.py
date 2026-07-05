@@ -27,7 +27,12 @@ class EchoOptuna:
         return a sensible default prompt.
         """
         try:
-            mems = retrieve_relevant_memories(self.memory_query, top_k=self.top_k_prompts)
+            # Exclude autonomous (news feed) entries — they produce irrelevant trial prompts
+            # and exhibit the same source-as-identity confabulation as Finding 14.
+            mems = [
+                m for m in retrieve_relevant_memories(self.memory_query, top_k=self.top_k_prompts * 3)
+                if m.get("meta", {}).get("memory_source") != "autonomous"
+            ][:self.top_k_prompts]
             if mems:
                 # Prefer selecting a single memory (keeps prompts focused).
                 choice = random.choice(mems)

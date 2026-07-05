@@ -147,7 +147,6 @@ def query_ollama(prompt: str, persona: Optional[Dict] = None, model: Optional[st
     payload = {
         "model": model,
         "prompt": prompt,
-        "system": "",
         "stream": False,
         "options": {"num_ctx": 8192, "num_predict": 512}
     }
@@ -258,7 +257,6 @@ def stream_query_ollama(
     payload = {
         "model": model,
         "prompt": prompt,
-        "system": "",
         "stream": True,
         "options": options,
     }

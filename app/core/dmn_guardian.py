@@ -136,6 +136,15 @@ def start_guardian_loop(echo_core=None, interval=120):
                 except Exception as _sae:
                     logging.debug("[GUARDIAN] snapshot check_and_alert error: %s", _sae)
 
+                # Self-edit outcome evaluation (Finding 8) — log-only, does not
+                # feed dim[6] or self-edit targeting. Cheap no-op unless a
+                # pending outcome's window has actually closed.
+                try:
+                    from app.core.self_edit_outcome_tracker import evaluate_pending_outcomes
+                    evaluate_pending_outcomes()
+                except Exception as _oee:
+                    logging.debug("[GUARDIAN] self-edit outcome evaluation error: %s", _oee)
+
                 # Crash sentinel heartbeat — keeps last_heartbeat_utc current
                 try:
                     import json as _json_s

@@ -681,6 +681,24 @@ def admin_council_stats():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/admin/self-edit-outcomes", methods=["GET"])
+def admin_self_edit_outcomes():
+    """
+    Self-edit outcome tracker (Finding 8) — before/after quality_score,
+    council_rating, and human-rating windows around each successful self-edit.
+    Log-only: does not feed echo_state dim[6] or self-edit targeting.
+
+    Example:
+      curl http://localhost:5000/admin/self-edit-outcomes
+    """
+    try:
+        from app.core.self_edit_outcome_tracker import get_outcomes_summary
+        return jsonify(get_outcomes_summary())
+    except Exception as e:
+        logger.error("[SelfEditOutcome] /admin/self-edit-outcomes error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/admin/council-spotcheck", methods=["POST"])
 def admin_council_spotcheck():
     """

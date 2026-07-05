@@ -1164,6 +1164,11 @@ def execute_self_edit(prompt: str, intensity: float | None = None, **kwargs):
         append_to_journal("SELF_EDIT", f"prompt: {prompt} | result: success | timestamp: {datetime.utcnow().isoformat()}")
         logging.info("Self-edit loaded successfully.")
         try:
+            from app.core.self_edit_outcome_tracker import record_pending_outcome
+            record_pending_outcome(task_type)
+        except Exception as _ote:
+            logging.debug(f"[SELF-EDIT-OUTCOME] record_pending_outcome failed: {_ote}")
+        try:
             from app.core.snapshot_manager import take_snapshot as _snap
             _snap("post_self_edit")
         except Exception as _snap_err:

@@ -81,3 +81,9 @@ richietate.txt
 sandbox/experiments/exp_*.py
 sandbox/scripts/archive/
 staging/_*.py
+sandbox/scripts/test_broken.py
+sandbox/scripts/test_fixed.py
+sandbox/scripts/test_future.py
+sandbox/scripts/v1_clean.py
+sandbox/scripts/v2_broken.py
+sandbox/scripts/v3_pipeline.py

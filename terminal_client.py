@@ -556,7 +556,7 @@ def send_message_stream(
     else:
         try:
             from app.core.echo_model_orchestrator import echo_query
-            raw_response = echo_query(full_msg, task_type=_task_type)
+            raw_response = echo_query(full_msg, task_type=_task_type, source="user_conversation")
 
         except Exception as orch_err:
             import traceback

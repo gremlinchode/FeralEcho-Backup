@@ -486,7 +486,7 @@ def mirror_echo():
         if echo_model_orchestrator and msg:
             try:
                 task_type = echo_model_orchestrator.detect_task_type(msg)
-                echo_reply_text = echo_model_orchestrator.echo_query(msg, task_type=task_type)
+                echo_reply_text = echo_model_orchestrator.echo_query(msg, task_type=task_type, source="user_conversation")
             except Exception as eq_err:
                 logger.warning(f"[MIRROR_ECHO] echo_query failed: {eq_err}")
         if not echo_reply_text:

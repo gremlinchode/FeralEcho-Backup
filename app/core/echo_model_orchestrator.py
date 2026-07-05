@@ -197,7 +197,8 @@ def log_interaction(
     quality_score: int,
     river_influence: float,
     sandbox_outcome: str = None,
-    notes: str = None
+    notes: str = None,
+    source: str = "autonomous"
 ):
     os.makedirs(os.path.dirname(INTERACTION_LOG_PATH), exist_ok=True)
     entry = {
@@ -212,6 +213,7 @@ def log_interaction(
         "river_influence": round(river_influence, 3),
         "sandbox_outcome": sandbox_outcome,
         "notes": notes,
+        "source": source,
     }
     with open(INTERACTION_LOG_PATH, "a") as f:
         f.write(json.dumps(entry) + "\n")
@@ -287,8 +289,17 @@ def _apply_pending_user_ratings() -> int:
         if not entries:
             return 0
 
-        # Separate ratings from interactions, keep only unprocessed ratings
-        interactions = [e for e in entries if e.get("type") != "user_rating"]
+        # Separate ratings from interactions, keep only unprocessed ratings.
+        # Only source == "user_conversation" entries are eligible attribution
+        # targets — a human's typed rating must not land on an autonomous
+        # reflection/fetch-cycle entry that happened to be logged most
+        # recently before it. Entries predating the source tag (2026-07-05)
+        # have no "source" field and are correctly excluded rather than
+        # guessed at.
+        interactions = [
+            e for e in entries
+            if e.get("type") != "user_rating" and e.get("source") == "user_conversation"
+        ]
         ratings = [
             e for e in entries
             if e.get("type") == "user_rating"
@@ -1021,7 +1032,7 @@ def ollama_query(model_name, prompt, max_tokens: int = 1024):
 # -------------------------------
 # 9. Echo Query — Deliberation Wired
 # -------------------------------
-def echo_query(prompt, use_all=False, task_type=None, temperature=None):
+def echo_query(prompt, use_all=False, task_type=None, temperature=None, source: str = "autonomous"):
     global _query_count
     _query_count += 1
 
@@ -1111,6 +1122,7 @@ def echo_query(prompt, use_all=False, task_type=None, temperature=None):
                 response=response,
                 quality_score=quality,
                 river_influence=get_river_brain().influence_weight,
+                source=source,
             )
 
             # echo_self_assess() removed: trained River on self-issued stylistic markers
@@ -1192,7 +1204,8 @@ def echo_query(prompt, use_all=False, task_type=None, temperature=None):
                 prompt=prompt,
                 response=response,
                 quality_score=quality,
-                river_influence=get_river_brain().influence_weight
+                river_influence=get_river_brain().influence_weight,
+                source=source,
             )
         best_model, best_response, best_quality = None, "", -1
         for name, resp in responses.items():
@@ -1223,7 +1236,8 @@ def echo_query(prompt, use_all=False, task_type=None, temperature=None):
             prompt=prompt,
             response=response,
             quality_score=quality,
-            river_influence=get_river_brain().influence_weight
+            river_influence=get_river_brain().influence_weight,
+            source=source,
         )
         save_reflection({
             "prompt": prompt,

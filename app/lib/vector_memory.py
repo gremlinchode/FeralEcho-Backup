@@ -29,8 +29,8 @@ class VectorMemory:
     def __init__(
         self,
         dim: Optional[int] = None,
-        index_path: str = "data/faiss.index",
-        meta_path: str = "data/memory_meta.json",
+        index_path: str = "memory/faiss.index",
+        meta_path: str = "memory/memory_meta.json",
     ):
         self.dim = dim
         self.index_path = index_path
@@ -65,6 +65,13 @@ class VectorMemory:
                 if self.dim is None:
                     self.dim = self.index.d
                 logging.info(f"Loaded FAISS index from {self.index_path} with dim {self.dim}")
+                if self.index.ntotal != len(self.meta):
+                    logging.warning(
+                        "[VectorMemory] ntotal mismatch on load: FAISS=%d vectors, meta=%d entries. "
+                        "A previous persist was interrupted between the two atomic writes. "
+                        "Meta is authoritative; unreachable vector(s) self-correct on next full rebuild.",
+                        self.index.ntotal, len(self.meta),
+                    )
             elif self.dim is not None:
                 self.index = faiss.IndexFlatIP(self.dim)
                 logging.info(f"Created new FAISS IndexFlatIP with dim {self.dim}")
@@ -139,18 +146,34 @@ class VectorMemory:
         return results
 
     def _persist(self) -> None:
-        """Persist FAISS index and metadata to disk safely."""
+        """Persist metadata and FAISS index atomically via temp-file swap.
+
+        Order: meta written and committed first, then FAISS index.
+        If the process is killed between the two writes, meta has N+1 entries
+        while FAISS has N vectors — a detectable ntotal/meta-count mismatch.
+        The inverse (FAISS first, then meta open("w") truncates the file) was
+        the 2026-07-02 split-brain root cause and is eliminated by this ordering.
+        """
         try:
             os.makedirs(os.path.dirname(self.index_path), exist_ok=True)
             os.makedirs(os.path.dirname(self.meta_path), exist_ok=True)
 
-            if self.index is not None:
-                faiss.write_index(self.index, self.index_path)
-
-            with open(self.meta_path, "w", encoding="utf-8") as f:
+            # Step 1: Write metadata atomically (source of truth for id→text mapping)
+            meta_tmp = self.meta_path + ".tmp"
+            with open(meta_tmp, "w", encoding="utf-8") as f:
                 json.dump(self.meta, f, ensure_ascii=False, indent=2)
+            os.replace(meta_tmp, self.meta_path)
 
-            logging.info(f"Persisted FAISS index to {self.index_path} and metadata to {self.meta_path}")
+            # Step 2: Write FAISS index atomically
+            if self.index is not None:
+                index_tmp = self.index_path + ".tmp"
+                faiss.write_index(self.index, index_tmp)
+                os.replace(index_tmp, self.index_path)
+
+            logging.info(
+                "Persisted VectorMemory: %d vectors, %d meta entries",
+                self.index.ntotal if self.index else 0, len(self.meta),
+            )
         except Exception as e:
             logging.error(f"Failed to persist VectorMemory data: {e}")
 

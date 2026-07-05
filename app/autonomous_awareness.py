@@ -17,10 +17,15 @@ import time
 import logging
 from app.core.memory_bridge import log_dream_bridge, retrieve_relevant_memories
 from app.core.awareness_tools_integration import discover_and_register_tools
+from app.core.stillness_state import wait_for_activity
 
 # --- Configuration ---
-AWARENESS_SLEEP = 1800  # seconds between awareness cycles
+AWARENESS_SLEEP = 1800   # seconds between awareness cycles
+CODE_SCAN_INTERVAL = 86400  # full file-walk at most once per day
 TOOLS_PATH = os.path.join(os.getcwd(), "app", "core")
+
+_last_code_scan: float = 0.0       # tracks last file-walk timestamp
+_env_learned_this_boot: bool = False  # learn_environment() runs once per server start
 
 logger = logging.getLogger(__name__)
 
@@ -60,25 +65,28 @@ def analyze_python_code(code_str: str):
 
 def learn_environment():
     """
-    Gathers system and environment info safely and efficiently.
-    Uses importlib.metadata for accurate installed-package discovery.
+    Gathers system and environment info once per server boot.
+    These facts are static — OS, arch, Python version do not change at runtime.
+    Writing them every 1800s was producing identical FAISS entries each cycle.
     """
+    global _env_learned_this_boot
+    if _env_learned_this_boot:
+        return
+    _env_learned_this_boot = True
 
     def safe_get(label, func):
         try:
             value = func()
             log_dream_bridge(f"[Env] {label}: {value}")
         except Exception as e:
-            log_dream_bridge(f"[EnvError] {label} failed: {e}")
+            logger.debug(f"[Env] {label} failed: {e}")
 
-    # System info
     safe_get("OS", platform.system)
     safe_get("OS Version", platform.version)
     safe_get("Architecture", platform.machine)
     safe_get("Python Version", platform.python_version)
     safe_get("Current Directory", os.getcwd)
 
-    # Installed packages — count only, not the full list (avoids FAISS bloat)
     def get_installed_packages():
         return len(list(importlib.metadata.distributions()))
 
@@ -116,10 +124,13 @@ def reflect_on_knowledge(tag_filter=None):
 # ============================================================
 
 def awareness_loop():
+    global _last_code_scan
     while True:
+        # Pause during stillness — block here until Echo returns to activity.
+        wait_for_activity()
         logger.info("Starting autonomous awareness cycle...")
 
-        # 1. Learn environment
+        # 1. Learn environment — once per boot only (facts don't change at runtime)
         learn_environment()
 
         # 2. Discover & register Python tools dynamically
@@ -127,24 +138,39 @@ def awareness_loop():
             discover_and_register_tools(TOOLS_PATH)
             logger.info("Tool discovery cycle complete.")
         except Exception as e:
-            log_dream_bridge(f"[AwarenessLoop] Tool discovery failed: {e}")
+            logger.warning(f"[AwarenessLoop] Tool discovery failed: {e}")
 
-        # 3. Analyze all project Python code
-        # time.sleep(2) between each file prevents FAISS write storms
-        # that previously caused system-wide lag and OOM kills.
-        SKIP_DIRS = {"self_edit_backups", "sandbox", "__pycache__", ".git", "lexpredict-lexnlp", "llama.cpp", "chatbot", "calculator", "archive_optional_files", "archived_files", "backup"}
-        for root, dirs, files in os.walk(os.getcwd()):
-            dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
-            for file in files:
-                if file.endswith(".py"):
-                    try:
-                        path = os.path.join(root, file)
-                        with open(path, "r", encoding="utf-8") as f:
-                            code = f.read()
-                        analyze_python_code(code)
-                        time.sleep(2)  # reduced from 10s
-                    except Exception as e:
-                        log_dream_bridge(f"[AwarenessLoop] Failed reading {file}: {e}")
+        # 3. Analyze all project Python code — at most once per day.
+        # Previously ran every 1800s with time.sleep(2) per file, producing
+        # 907 FAISS writes per cycle (145K entries per day). Now gated to
+        # CODE_SCAN_INTERVAL (86400s) with no inter-file sleep — dedup in
+        # _try_register() and analyze_python_code() prevents redundant entries.
+        now = time.time()
+        if now - _last_code_scan >= CODE_SCAN_INTERVAL:
+            _last_code_scan = now
+            SKIP_DIRS = {
+                "self_edit_backups", "sandbox", "__pycache__", ".git",
+                "lexpredict-lexnlp", "llama.cpp", "chatbot", "calculator",
+                "archive_optional_files", "archived_files", "backup",
+            }
+            scanned = 0
+            for root, dirs, files in os.walk(os.getcwd()):
+                dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+                for file in files:
+                    if file.endswith(".py"):
+                        try:
+                            path = os.path.join(root, file)
+                            with open(path, "r", encoding="utf-8") as f:
+                                code = f.read()
+                            analyze_python_code(code)
+                            scanned += 1
+                        except Exception as e:
+                            logger.debug(f"[AwarenessLoop] Failed reading {file}: {e}")
+            logger.info("[AwarenessLoop] Code scan complete — %d files analyzed.", scanned)
+        else:
+            remaining = int(CODE_SCAN_INTERVAL - (now - _last_code_scan))
+            logger.debug("[AwarenessLoop] Code scan skipped — next in %ds.", remaining)
+
         # 4. Reflect on stored knowledge
         reflect_on_knowledge()
 

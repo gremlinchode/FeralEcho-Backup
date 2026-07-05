@@ -24,17 +24,12 @@ DEFAULT_LEAK_PROB = 0.03
 DEFAULT_LEAK_COOLDOWN = 600
 
 # ---------------------- EMBEDDING ENGINE ----------------------
-_embed_model = None
-
 def _get_embed_model():
-    global _embed_model
-    if _embed_model is None:
-        try:
-            from sentence_transformers import SentenceTransformer
-            _embed_model = SentenceTransformer('all-MiniLM-L6-v2')
-        except Exception:
-            _embed_model = False
-    return _embed_model if _embed_model else None
+    try:
+        from app.core.sentence_transformer_singleton import get_sentence_transformer
+        return get_sentence_transformer('all-MiniLM-L6-v2')
+    except Exception:
+        return None
 
 def offline_embed(text: str, dim: int = 128) -> np.ndarray:
     model = _get_embed_model()

@@ -8,6 +8,7 @@ Memory Bridge for FeralEcho (Autonomous Pruning & Crash-Proof)
 """
 
 import hashlib
+import json
 import os
 import logging
 import gzip
@@ -16,7 +17,7 @@ import uuid
 from threading import Lock
 from typing import List, Dict, Any, Optional
 import numpy as np
-from sentence_transformers import SentenceTransformer
+from app.core.sentence_transformer_singleton import get_sentence_transformer
 
 from app.core import config
 from app.lib.vector_memory import VectorMemory, MemoryItem
@@ -43,7 +44,7 @@ os.makedirs(ARCHIVE_DIR, exist_ok=True)
 VECTOR_INDEX_PATH = os.path.join(config.MEMORY_DIR, "faiss.index")
 VECTOR_META_PATH = os.path.join(config.MEMORY_DIR, "memory_meta.json")
 
-embedding_model = SentenceTransformer(MEMORY_MODEL_NAME)
+embedding_model = get_sentence_transformer(MEMORY_MODEL_NAME)
 vector_memory = VectorMemory(
     dim=384,
     index_path=VECTOR_INDEX_PATH,
@@ -66,6 +67,29 @@ for file_path in [ACTIVE_JOURNAL, DREAM_BRIDGE_FILE, SELF_EDIT_FILE]:
 # --- Validator Gate ----------
 # -----------------------------
 
+# Fail-open (allow the write through) rather than fail-closed on validator trouble —
+# flipping to fail-closed would mean a transient validator bug silently stops ALL
+# memory writes, which is a worse silent failure than an unvalidated write. Instead,
+# every fail-open is counted and persisted so it's visible rather than buried in a
+# log line nobody reads (same principle as council_rater.py's skipped_no_peer counter).
+_VALIDATOR_FAIL_OPEN_PATH = os.path.join(config.MEMORY_DIR, "validator_fail_open.json")
+
+
+def _record_validator_fail_open(reason: str) -> None:
+    try:
+        state = {"count": 0, "last_reason": None, "last_ts": None}
+        if os.path.exists(_VALIDATOR_FAIL_OPEN_PATH):
+            with open(_VALIDATOR_FAIL_OPEN_PATH, encoding="utf-8") as f:
+                state = json.load(f)
+        state["count"] = state.get("count", 0) + 1
+        state["last_reason"] = reason
+        state["last_ts"] = datetime.now(timezone.utc).isoformat()
+        with open(_VALIDATOR_FAIL_OPEN_PATH, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2)
+    except Exception:
+        pass  # the counter itself must never be able to block a write
+
+
 def _validate_before_commit(signal: str, reflection: str, source: str = "unknown") -> bool:
     """
     Gate function. Returns True if content is safe to commit to FAISS.
@@ -74,6 +98,7 @@ def _validate_before_commit(signal: str, reflection: str, source: str = "unknown
     """
     if not VALIDATOR_AVAILABLE:
         logging.warning(f"[MEMORY_GATE] Validator unavailable — allowing unvalidated write from {source}")
+        _record_validator_fail_open(f"module_unavailable:{source}")
         return True
 
     entry = {
@@ -100,6 +125,7 @@ def _validate_before_commit(signal: str, reflection: str, source: str = "unknown
         # Validator itself crashed — fail open with a warning rather than
         # crashing Echo's pipeline
         logging.error(f"[MEMORY_GATE] Validator raised exception: {e}. Allowing write.")
+        _record_validator_fail_open(f"exception:{type(e).__name__}:{source}")
         return True
 
 # -----------------------------
@@ -223,17 +249,34 @@ def log_interaction(user_text: str, echo_response: str, tags: str = "utterance")
 # --- Dream Logging -----------
 # -----------------------------
 
-def log_dream_bridge(dream_text: str, meta: Optional[dict] = None) -> None:
+def log_dream_bridge(dream_text: str, meta: Optional[dict] = None, embedding_text: Optional[str] = None) -> None:
     """
     Log dream entry safely.
-    v2.1: validator gates before FAISS commit.
-    Dream is always written to flat log; vector commit is gated.
+    v2.2: validator gates before FAISS commit. Blocked entries are still
+    stored in FAISS with validation_warning=True so dedup checks on
+    subsequent cycles can find near-duplicates — preventing the
+    journal/FAISS divergence that allowed duplicates through when an
+    entry was blocked. The warning tag lets retrieval callers filter
+    flagged entries if needed.
+    Dream is always written to flat log regardless of validation outcome.
     meta: extra fields merged into the MemoryItem (e.g. memory_source="autonomous")
+    embedding_text: if provided, this text is embedded in FAISS instead of dream_text.
+        Use when dream_text contains a temporal-context prefix that should not be
+        embedded (e.g. fetch_and_log passes ctx+snippet as dream_text but snippet-only
+        as embedding_text so _is_duplicate(snippet) can match the stored vector).
     """
     timestamp = datetime.now(timezone.utc).isoformat()
 
     with memory_lock:
         append_to_journal("DREAM_BRIDGE", dream_text)
+
+    # Build base metadata — used by both the blocked and normal paths
+    dream_meta = {"role": "dream", "timestamp": timestamp}
+    if meta:
+        dream_meta.update(meta)
+
+    # Text to embed — use embedding_text when provided to keep ctx out of the vector
+    text_to_embed = embedding_text if embedding_text is not None else dream_text
 
     # Gate vector memory commit
     if not _validate_before_commit(
@@ -241,14 +284,19 @@ def log_dream_bridge(dream_text: str, meta: Optional[dict] = None) -> None:
         reflection=dream_text,
         source="log_dream_bridge"
     ):
-        logging.info("[MEMORY_GATE] Dream skipped for vector commit.")
+        # FIX #6: store in FAISS with warning tag instead of dropping entirely.
+        # Dropping caused dedup to miss near-duplicates on the next cycle.
+        logging.info("[MEMORY_GATE] Dream flagged — storing to FAISS with validation_warning=True")
+        flagged_meta = {**dream_meta, "validation_warning": True}
+        flagged_item = MemoryItem(str(uuid.uuid4()), text_to_embed, flagged_meta)
+        embedding = embed_text(text_to_embed)
+        if embedding.shape[0] == 1:
+            with memory_lock:
+                vector_memory.add([flagged_item], embedding)
         return
 
-    dream_meta = {"role": "dream", "timestamp": timestamp}
-    if meta:
-        dream_meta.update(meta)
-    dream_item = MemoryItem(str(uuid.uuid4()), dream_text, dream_meta)
-    embedding = embed_text(dream_text)
+    dream_item = MemoryItem(str(uuid.uuid4()), text_to_embed, dream_meta)
+    embedding = embed_text(text_to_embed)
     if embedding.shape[0] == 1:
         with memory_lock:
             vector_memory.add([dream_item], embedding)

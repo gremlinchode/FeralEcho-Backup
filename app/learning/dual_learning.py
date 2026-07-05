@@ -9,9 +9,12 @@ import numpy as np
 
 # Try to import sentence transformer for embeddings; fallback to sklearn Tfidf
 try:
-    from sentence_transformers import SentenceTransformer
-    EMBED_MODEL = SentenceTransformer("all-MiniLM-L6-v2")  # small & fast
+    from app.core.sentence_transformer_singleton import get_sentence_transformer
+    EMBED_MODEL = None  # resolved lazily so this module doesn't trigger model load at import
     def embed_texts(texts):
+        global EMBED_MODEL
+        if EMBED_MODEL is None:
+            EMBED_MODEL = get_sentence_transformer("all-MiniLM-L6-v2")
         return EMBED_MODEL.encode(texts, show_progress_bar=False)
 except Exception:
     EMBED_MODEL = None

@@ -179,18 +179,23 @@ def update_question_quality(
     question: str,
     quality: float
 ):
-
     entries = _load_garden()
 
     for entry in entries:
-
         if entry["question"] == question:
-
             entry["quality_scores"].append(quality)
-
             entry["times_asked"] += 1
-
             entry["last_asked"] = time.time()
+
+            # Auto-increment resolution: each meaningful reflection nudges the
+            # question toward settled. quality 1.0 adds 0.5 per call, so ~9
+            # strong reflections will reach the 4.5 "resolved" threshold.
+            if quality > 0.3:
+                current = entry.get("resolution_score", 0.0)
+                entry["resolution_score"] = min(5.0, current + quality * 0.5)
+                if entry["resolution_score"] >= 4.5:
+                    entry["status"] = "resolved"
+                    logging.info("[GARDEN] Question resolved: %s", question[:80])
 
             break
 

@@ -19,12 +19,13 @@ class NightCycle:
     Handles autonomous night-time cycles for memory reflection, dream logging, and self-edits.
     """
 
-    def __init__(self, app=None, interval: int = 300, start_delay: int = 0):
+    def __init__(self, app=None, interval: int = 300, start_delay: int = 0, force: bool = False):
         """
         Args:
             app: Optional Flask app or context object (can be None)
             interval: Time between cycles in seconds (default 5 min)
             start_delay: Seconds to sleep before the first cycle (for staggering)
+            force: Accepted for call-site compatibility; currently unused.
         """
         self.app = app
         self.interval = interval
@@ -32,6 +33,13 @@ class NightCycle:
         self.running = False
         self.thread: Optional[threading.Thread] = None
         logging.info(f"[NightCycle] Initialized with interval={self.interval}s start_delay={self.start_delay}s")
+
+    def start_once(self):
+        """Run a single reflection cycle synchronously (used by /force_nightcycle endpoint)."""
+        try:
+            self._perform_reflection()
+        except Exception as e:
+            logging.error(f"[NightCycle] start_once error: {e}")
 
     def start(self):
         if not self.running:
@@ -78,12 +86,17 @@ class NightCycle:
 
         # Shadow accuracy check — compare experimental targets to what actually happened
         try:
-            from app.core.shadow_model import log_accuracy
+            from app.core.shadow_model import log_accuracy, check_and_correct
             delta = log_accuracy()
             if "focus_matches" in delta:
                 logging.info(
                     "[NightCycle] Shadow accuracy | focus_matches=%s | shadow=%s | real=%s",
                     delta["focus_matches"], delta.get("shadow_focus"), delta.get("real_focus"),
+                )
+            corrected = check_and_correct(delta)
+            if corrected:
+                logging.warning(
+                    "[NightCycle] Shadow drift corrected → new focus proposed: %s", corrected
                 )
         except Exception as _se:
             logging.debug("[NightCycle] Shadow accuracy check failed: %s", _se)

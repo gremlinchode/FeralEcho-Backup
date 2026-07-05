@@ -11,6 +11,7 @@ import time
 import logging
 import random
 from pathlib import Path
+from app.core.stillness_state import wait_for_activity
 from app.core.garden_manager import (
     initialize_garden,
     select_from_garden,
@@ -79,7 +80,13 @@ except Exception as e:
 # -----------------------------
 # --- Ghost Import Stub -------
 # -----------------------------
-# echo_python_mastery.py doesn't exist — stub it so imports don't fail
+# NOT simply a wrong import path (checked 2026-07-04): the real package at
+# app.core.echo_python_mastery/__init__.py only exports teach_basics/teach_code_quality/
+# teach_best_practices/teach_advanced/teach_debugging/teach_testing — it has never
+# implemented get_recent_feedback()/practice_idle() under any name. Pointing this import
+# at the real package would still fail. Left as an honest no-op stub rather than
+# inventing an unspecified feedback API; wiring real mastery feedback into the
+# scheduler is a real feature gap, not a one-line fix.
 import types, sys
 if 'echo_python_mastery' not in sys.modules:
     _mastery_stub = types.ModuleType('echo_python_mastery')
@@ -225,14 +232,19 @@ def weighted_prompt_selection():
         if prompt in PROMPT_HISTORY:
             last_used = PROMPT_HISTORY[prompt]['timestamp']
             time_since_last = time.time() - last_used
+            selection_count = PROMPT_HISTORY[prompt].get('selection_count', 1)
+            avg_quality = PROMPT_HISTORY[prompt].get('avg_quality', 0.0)
             # Novelty bonus — grows over time since last use
             weight += min(time_since_last / 600, 2)
             # Quality penalty — suppress recently used high-quality prompts
-            # so verbosity doesn't create attractors
             prev_quality = PROMPT_HISTORY[prompt].get('response_quality', 0)
             recency_factor = max(0, 1 - (time_since_last / 3600))  # fades over 1 hour
             weight -= prev_quality * recency_factor * 1.5
-            weight = max(weight, 0.1)  # floor — never fully exclude
+            # Saturation penalty: prompts reflected on 8+ times with good quality
+            # are deprioritized — Echo has processed them sufficiently
+            if selection_count >= 8 and avg_quality > 0.5:
+                weight *= 0.1
+            weight = max(weight, 0.05)
         else:
             # Never asked — high priority
             weight += 3.0
@@ -258,21 +270,27 @@ def weighted_prompt_selection():
     selected = random.choices(BASE_THOUGHT_CHEST, weights=probabilities, k=1)[0]
     return selected
 
-def score_response_quality(response: str) -> float:
+def score_response_quality(response: str, task_type: str = "personal") -> float:
     """
-    Quality signal for reflection responses. Peaks at ~400 chars.
-    Bloat over 2,000 chars is penalized — verbosity is not quality.
+    Quality signal for reflection responses. Returns 0.0–1.0.
+
+    Delegates to echo_quality_scorer._score_response_quality() (int 0–4, normalized /4)
+    rather than the prior length+diversity heuristic, which scored verbose hollow
+    responses higher than short genuine ones — same vulnerability as the original
+    River quality scorer, operating in the prompt-selection layer. Falls back to
+    length+diversity if the scorer module is unavailable at import time.
     """
     if not response or "[ERROR]" in response:
         return 0.0
-    n = len(response)
-    if n > 2000:
-        length_score = 0.2
-    else:
-        length_score = min(n / 400.0, 1.0)
-    unique_words = len(set(response.lower().split()))
-    diversity_score = min(unique_words / 100.0, 1.0)
-    return (length_score + diversity_score) / 2.0
+    try:
+        from echo_quality_scorer import _score_response_quality as _sq
+        return _sq(response, task_type) / 4.0
+    except ImportError:
+        n = len(response)
+        length_score = 0.2 if n > 2000 else min(n / 400.0, 1.0)
+        unique_words = len(set(response.lower().split()))
+        diversity_score = min(unique_words / 100.0, 1.0)
+        return (length_score + diversity_score) / 2.0
 
 # -----------------------------
 # --- Core Reflection ---------
@@ -318,20 +336,9 @@ def reflect(prompt: str) -> str:
             except Exception as e:
                 logging.warning(f"[SCHEDULER] Memory store failed: {e}")
 
-        # A4: Log reflection to interaction_log so RiverBrain sees autonomous activity
-        if LOG_INTERACTION_AVAILABLE:
-            try:
-                _log_interaction(
-                    model_name="emergent_scheduler",
-                    task_type="autonomous_reflection",
-                    prompt=prompt,
-                    response=response,
-                    quality_score=quality,
-                    river_influence=0.0,
-                    notes="autonomous_reflection",
-                )
-            except Exception as _lie:
-                logging.debug(f"[SCHEDULER] log_interaction failed: {_lie}")
+        # NOTE: interaction_log entry is already written by echo_query() internals.
+        # A second log_interaction() call here was producing duplicate rows with
+        # model_name="emergent_scheduler" for every reflection. Removed.
 
         # Shadow: auto-propose experimental focus from reflection content
         try:
@@ -436,6 +443,26 @@ def emergent_loop():
         _should_throttle = lambda: False
 
     while not shutdown_flag.is_set():
+        # Autonomous stillness — check system signals before each cycle.
+        # Imports are lazy so numpy is only loaded when we actually check.
+        try:
+            from app.stillness import should_enter_stillness, Stillness
+            _enter, _reason, _dur = should_enter_stillness()
+            if _enter:
+                logging.info("[SCHEDULER] Entering autonomous stillness: %s (%ds)", _reason, _dur)
+                _s = Stillness()
+                _s.enter(_reason)
+                _s.reflect(f"…resting in {_reason}…")
+                _s.breathe(_dur)
+                _s.exit(insight=f"completed {_reason} stillness")
+                continue
+        except Exception as _se:
+            logging.debug("[SCHEDULER] Stillness check failed: %s", _se)
+
+        # Respect stillness entered by any path — block here, re-check every 60s.
+        if not wait_for_activity(timeout=60):
+            continue
+
         # C2: Skip inference when system is under load
         if _should_throttle():
             logging.warning("[SCHEDULER] System under pressure — skipping reflection this cycle")
@@ -452,11 +479,18 @@ def emergent_loop():
             # Actually ask — and actually answer
             response = reflect(prompt)
 
-            # Update history with quality score
+            # Update history with quality score — track cumulative usage for saturation
             quality = score_response_quality(response)
+            prev = PROMPT_HISTORY.get(prompt, {})
+            prev_count = prev.get('selection_count', 0)
+            prev_avg = prev.get('avg_quality', 0.0)
+            new_count = prev_count + 1
+            new_avg = (prev_avg * prev_count + quality) / new_count
             PROMPT_HISTORY[prompt] = {
                 'timestamp': time.time(),
-                'response_quality': quality
+                'response_quality': quality,
+                'selection_count': new_count,
+                'avg_quality': round(new_avg, 4),
             }
 
             # Update garden quality for this question

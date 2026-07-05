@@ -15,6 +15,7 @@ import warnings
 import logging
 import random
 from collections import deque
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ---------------- SAFEGUARDS ---------------- #
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -38,6 +39,15 @@ except ImportError:
 
 # ---------------- IMPORTS ---------------- #
 from app.internet_tools.autonomous_fetch import FETCH_SOURCES, fetch_and_log
+from app.internet_tools.autonomous_fetch import _fetch_hackernews
+from app.core.temporal_environment import get_temporal_environment_context
+
+try:
+    from app.internet_tools.claude_research import fetch_claude_research
+    _CLAUDE_RESEARCH_AVAILABLE = True
+except Exception as _cr_import_err:
+    _CLAUDE_RESEARCH_AVAILABLE = False
+    logging.warning(f"[LOOP] Claude research unavailable: {_cr_import_err}")
 
 try:
     from app.core.predictive_loop import get_world_model as _get_world_model
@@ -60,6 +70,7 @@ from app.core.memory_tools import log_memory_event
 from app.core.awareness_tools_integration import discover_and_register_tools
 from sandbox.runner import run_sandbox_script
 from app.core.memory_bridge import log_dream_bridge
+from app.core.stillness_state import wait_for_activity
 from app.autonomous_harmony_manager import HarmonyManager
 
 # ---------------- CONFIG ---------------- #
@@ -125,8 +136,11 @@ def run_autonomous_sandbox_cycle():
             logger.info(f"[SANDBOX RESULT] {output}")
         else:
             logger.warning(f"[SANDBOX ERROR] {output}")
-        log_dream_bridge(f"Sandbox run: {script_to_run} | Result: {output}",
-                         meta={"memory_source": "autonomous"})
+            # Only write failures to dream_bridge — baseline success
+            # ("Computation result = 285") has no semantic retrieval value
+            # and was writing a low-signal FAISS entry on every run.
+            log_dream_bridge(f"[SandboxFailure] {script_to_run} | {output}",
+                             meta={"memory_source": "autonomous"})
         return True
     except Exception as e:
         logger.error(f"[SANDBOX] Error: {e}", exc_info=True)
@@ -138,6 +152,9 @@ def autonomous_loop():
     cycle_count = 0
 
     while True:
+        # Pause during stillness — block here until Echo returns to activity.
+        wait_for_activity()
+
         logger.info("Starting autonomous fetch cycle...")
         cycle_count += 1
         fetch_count = 0
@@ -158,13 +175,50 @@ def autonomous_loop():
         collected_texts: list[str] = []
 
         # 1. Fetch content — collect snippets for predictive update
-        for name, url in FETCH_SOURCES:
-            try:
-                snippets = fetch_and_log(name, url)
-                collected_texts.extend(snippets)
+        # FIX #3: build temporal context once per cycle, reuse across all sources
+        try:
+            _cycle_ctx = get_temporal_environment_context(
+                weather_api_key=os.environ.get("OPENWEATHER_API_KEY")
+            )
+        except Exception as _ctx_err:
+            logger.warning(f"[LOOP] Temporal context failed: {_ctx_err}")
+            _cycle_ctx = None
+
+        # FIX #4: parallel fetching — 3 concurrent workers, capped to avoid
+        # hammering sources or overwhelming FAISS with concurrent writes
+        def _fetch_one(args):
+            n, u = args
+            return n, fetch_and_log(n, u, temporal_context=_cycle_ctx)
+
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            futures = {pool.submit(_fetch_one, (name, url)): name for name, url in FETCH_SOURCES}
+            for future in as_completed(futures):
+                try:
+                    src_name, snippets = future.result()
+                    collected_texts.extend(snippets)
+                    fetch_count += 1
+                except Exception as e:
+                    logger.error(f"Error fetching {futures[future]}: {e}", exc_info=True)
+
+        # Hacker News (two-step fetch, runs after parallel pool closes)
+        try:
+            hn_snippets = _fetch_hackernews(temporal_context=_cycle_ctx)
+            collected_texts.extend(hn_snippets)
+            if hn_snippets:
                 fetch_count += 1
+        except Exception as e:
+            logger.error(f"[LOOP] Hacker News fetch failed: {e}", exc_info=True)
+
+        # Claude research synthesis — rate-limited internally to 1/hour
+        if _CLAUDE_RESEARCH_AVAILABLE:
+            try:
+                research = fetch_claude_research()
+                if research:
+                    log_dream_bridge(research, meta={"memory_source": "claude_research"})
+                    collected_texts.append(research)
+                    logger.info("[LOOP] Claude research synthesized and stored.")
             except Exception as e:
-                logger.error(f"Error fetching ({name}, {url}): {e}", exc_info=True)
+                logger.warning(f"[LOOP] Claude research failed: {e}")
 
         # Predictive: update world model and register surprise
         if _wm and collected_texts:

@@ -436,12 +436,6 @@ def emergent_loop():
     # never all coincide at the same second.
     time.sleep(60)
 
-    # Safe import of throttle guard (C2)
-    try:
-        from app.core.system_guard import should_throttle as _should_throttle
-    except Exception:
-        _should_throttle = lambda: False
-
     while not shutdown_flag.is_set():
         # Autonomous stillness — check system signals before each cycle.
         # Imports are lazy so numpy is only loaded when we actually check.
@@ -463,9 +457,10 @@ def emergent_loop():
         if not wait_for_activity(timeout=60):
             continue
 
-        # C2: Skip inference when system is under load
-        if _should_throttle():
-            logging.warning("[SCHEDULER] System under pressure — skipping reflection this cycle")
+        # C2: Skip inference when system is under load — shared gate (autonomy_coordinator)
+        from app.core.autonomy_coordinator import should_run_cycle
+        if not should_run_cycle("emergent_scheduler"):
+            logging.warning("[SCHEDULER] System under pressure or in stillness — skipping reflection this cycle")
             time.sleep(120)
             continue
         try:

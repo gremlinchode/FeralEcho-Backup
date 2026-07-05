@@ -699,6 +699,23 @@ def admin_self_edit_outcomes():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/admin/autonomy-status", methods=["GET"])
+def admin_autonomy_status():
+    """
+    Last-check status for FeralEcho's three autonomy loops (emergent_scheduler,
+    autonomous_loop, self_edit_loop) — shared throttle/stillness gate registry.
+
+    Example:
+      curl http://localhost:5000/admin/autonomy-status
+    """
+    try:
+        from app.core.autonomy_coordinator import get_autonomy_status
+        return jsonify(get_autonomy_status())
+    except Exception as e:
+        logger.error("[AutonomyCoordinator] /admin/autonomy-status error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/admin/council-spotcheck", methods=["POST"])
 def admin_council_spotcheck():
     """
@@ -971,6 +988,11 @@ def start_background_threads():
             optimizer = EchoOptuna()
             while True:
                 try:
+                    from app.core.autonomy_coordinator import should_run_cycle
+                    if not should_run_cycle("self_edit_loop"):
+                        logger.info("[SELF-EDIT-LOOP] Skipping cycle — throttled or in stillness.")
+                        time.sleep(120)
+                        continue
                     best_params, _ = optimizer.optimize_self_edit(n_trials=10)
                     if self_edit_manager:
                         self_edit_manager.perform_self_edit(

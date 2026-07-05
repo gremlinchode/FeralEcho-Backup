@@ -60,13 +60,6 @@ try:
 except Exception:
     _LOG_INTERACTION_AVAILABLE = False
 
-try:
-    from app.core.system_guard import should_throttle
-except Exception:
-    should_throttle = lambda: False
-
-from app.core.echo_optuna import EchoOptuna
-from app.core.memory_tools import log_memory_event
 from app.core.awareness_tools_integration import discover_and_register_tools
 from sandbox.runner import run_sandbox_script
 from app.core.memory_bridge import log_dream_bridge
@@ -75,14 +68,12 @@ from app.autonomous_harmony_manager import HarmonyManager
 
 # ---------------- CONFIG ---------------- #
 AUTONOMOUS_SLEEP = 3600
-OPTUNA_SLEEP = 7200
 SANDBOX_INTERVAL = 3
 TOOLS_PATH = os.path.join(os.getcwd(), "app", "tools")
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-optimizer = EchoOptuna()
 harmony_manager = HarmonyManager()
 
 # ---------------- CYCLE HISTORY ---------------- #
@@ -148,7 +139,6 @@ def run_autonomous_sandbox_cycle():
 
 # ---------------- AUTONOMOUS LOOP ---------------- #
 def autonomous_loop():
-    last_optuna_run = 0
     cycle_count = 0
 
     while True:
@@ -159,9 +149,10 @@ def autonomous_loop():
         cycle_count += 1
         fetch_count = 0
 
-        # C2: Skip inference-heavy work when system is under load
-        if should_throttle():
-            logger.warning("[LOOP] System under pressure — skipping inference this cycle")
+        # C2: Skip inference-heavy work when system is under load — shared gate (autonomy_coordinator)
+        from app.core.autonomy_coordinator import should_run_cycle
+        if not should_run_cycle("autonomous_loop"):
+            logger.warning("[LOOP] System under pressure or in stillness — skipping inference this cycle")
             time.sleep(120)
             continue
 
@@ -256,18 +247,14 @@ def autonomous_loop():
         if cycle_count % SANDBOX_INTERVAL == 0:
             sandbox_ran = run_autonomous_sandbox_cycle()
 
-        # 4. Optuna self-edit
-        now = time.time()
+        # 4. Optuna self-edit — removed (Finding B). This ran its own EchoOptuna()
+        # instance against the same sqlite:///memory/optuna.db study that
+        # run.py's self_edit_loop uses, on an independent ~2hr timer, but never
+        # deployed a result via perform_self_edit(). run.py's loop is the single
+        # authoritative self-edit path; this was redundant trial computation
+        # sharing storage with it. optuna_ran kept (always False) — only feeds
+        # the cosmetic Harmony intensity score below.
         optuna_ran = False
-        if now - last_optuna_run > OPTUNA_SLEEP:
-            try:
-                log_memory_event("info", "Optuna self-edit triggered")
-                best_params, best_score = optimizer.optimize_self_edit(n_trials=10)
-                log_memory_event("info", f"Self-edit finished: best_params={best_params}, best_score={best_score}")
-                last_optuna_run = now
-                optuna_ran = True
-            except Exception as e:
-                logger.error(f"Optuna error: {e}", exc_info=True)
 
         # 5. Record intensity and decide on Harmony
         record_cycle_intensity(fetch_count, sandbox_ran, optuna_ran)

@@ -29,20 +29,21 @@ def inspect_function(module, func_name, expected_params=None):
     return True, func
 
 def repair_append_to_journal(memory_tools):
+    # Actual signature: append_to_journal(tag: str, echo_text: str)
     exists, func = inspect_function(memory_tools, "append_to_journal",
-                                   expected_params=["category", "content", "echo_text"])
+                                   expected_params=["tag", "echo_text"])
     if not exists:
         logging.warning("[REPAIR] Creating stub append_to_journal...")
-        def stub_append_to_journal(category=None, content=None, echo_text=None):
-            logging.info(f"[STUB append_to_journal] called with category={category}, content={content}, echo_text={echo_text}")
+        def stub_append_to_journal(tag=None, echo_text=None):
+            logging.info(f"[STUB append_to_journal] called with tag={tag}, echo_text={echo_text}")
         memory_tools.append_to_journal = stub_append_to_journal
         return True
 
     sig = inspect.signature(func)
-    if "echo_text" not in sig.parameters:
-        logging.info("[REPAIR] Wrapping append_to_journal to add 'echo_text' param.")
-        def wrapper(category=None, content=None, echo_text=None):
-            return func(category=category, content=content)
+    if "tag" not in sig.parameters:
+        logging.info("[REPAIR] Wrapping append_to_journal to match (tag, echo_text) signature.")
+        def wrapper(tag=None, echo_text=None):
+            return func(tag=tag, echo_text=echo_text)
         memory_tools.append_to_journal = wrapper
         return True
 
@@ -77,10 +78,15 @@ def repair_memory_bridge(memory_bridge):
 def repair_vector_memory_index(vector_memory_module):
     """
     Replace fragile FAISS repair with robust VectorMemory initialization.
+
+    Pass memory_bridge's vector_memory (memory/ path), NOT app.lib.vector_memory
+    (data/ path — the legacy split-brain index).  The fallback strings below
+    match the authoritative memory/ location; they only fire when the module
+    lacks VECTOR_INDEX_PATH / VECTOR_META_PATH attributes entirely.
     """
     repaired = False
-    index_path = getattr(vector_memory_module, "VECTOR_INDEX_PATH", "data/faiss.index")
-    meta_path = getattr(vector_memory_module, "VECTOR_META_PATH", "data/memory_meta.json")
+    index_path = getattr(vector_memory_module, "VECTOR_INDEX_PATH", "memory/faiss.index")
+    meta_path = getattr(vector_memory_module, "VECTOR_META_PATH", "memory/memory_meta.json")
 
     # Ensure directories exist
     os.makedirs(os.path.dirname(index_path), exist_ok=True)

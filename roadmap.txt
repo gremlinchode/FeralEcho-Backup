@@ -1,0 +1,92 @@
+cat > roadmap.txt <<'EOF'
+SYSTEM: ECHO
+VERSION: ROADMAP_V2_GREMLIN_2026_07_04
+
+PRINCIPLE:
+ALIGN(runtime_state, logs, memory, code_descriptions) == TRUE
+
+---
+
+PHASE_1_TRUTH_RECONCILIATION:
+
+RULE 1:
+IF subsystem.status == "described_active" AND subsystem.runtime == "not_running"
+THEN action := {DEPRECATE | RESTORE_IMPL}
+
+RULE 2:
+ClaudeShard.type := "heuristic_only"
+OR upgrade_to := "llm_backed_evaluator"
+NO_AMBIGUOUS_STATE_ALLOWED
+
+RULE 3:
+FAISS.count == interaction_log.count MUST BE TRUE
+IF FALSE:
+    trace_write_path()
+    or DISABLE_WRITES()
+
+RULE 4:
+FOR subsystem IN [WOLF, SensoryHub, Bible, continuity_master]:
+    state ∈ {ACTIVE, ARCHIVED, REMOVED}
+    ENFORCE SINGLE_STATE
+
+RULE 5:
+ALL_FILESYSTEM_PATHS:
+    BASE := PROJECT_ROOT(__file__)
+    FORBID cwd_DEPENDENT_PATHS
+
+---
+
+PHASE_2_CONTROL_PLANE:
+
+RULE 6:
+scheduler.count == 1
+ALL_loops MUST_REGISTER_TO scheduler
+FORBID independent while True loops
+
+RULE 7:
+TRUTH_PRIORITY:
+    runtime > logs > memory > code_text
+
+RULE 8:
+self_edit_success :=
+    delta(failure_metric) < 0
+NOT gate_pass OR execution_success
+
+RULE 9:
+FOR EACH loop:
+    REQUIRE {
+        purpose,
+        output,
+        frequency,
+        dependencies,
+        stop_condition
+    }
+
+---
+
+PHASE_3_EXPANSION:
+
+RULE 10:
+ALL autonomous actions MUST_BE:
+    sandboxed AND logged AND reversible
+
+RULE 11:
+ALL self-modifications MUST_OUTPUT:
+    {what_changed, why, impact, replacement}
+
+---
+
+HARD_CONSTRAINTS:
+DO NOT MODIFY:
+    F1/F2/F3_PIPELINE
+    SNAPSHOT_RESTORE = HUMAN_ONLY
+    SANDBOX_BOUNDARY
+    KILL_SWITCH
+    COUNCIL_GATES
+
+---
+
+GOAL:
+MINIMIZE(DRIFT between {runtime, memory, logs, code})
+EOF
+

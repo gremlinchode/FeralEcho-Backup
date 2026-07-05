@@ -121,10 +121,9 @@ def safe_wrapper(func: Callable, func_name: str) -> Callable:
     def wrapped(*args, **kwargs):
         try:
             result = func(*args, **kwargs)
-            log_dream_bridge(
-                f"[ToolManager] '{func_name}' called — "
-                f"args={args!r}, kwargs={kwargs!r}"
-            )
+            # Success path: log at debug level only — every tool invocation was
+            # previously writing to dream_bridge (a FAISS embed+write per call).
+            logger.debug("[ToolManager] '%s' called args=%r kwargs=%r", func_name, args, kwargs)
             return result
         except Exception as exc:
             log_dream_bridge(f"[ToolManager] Error in '{func_name}': {exc}")
@@ -186,7 +185,7 @@ def _try_register(
         ))
         if h:
             _registered_hashes[h] = name
-        log_dream_bridge(f"[AwarenessIntegration] Registered '{name}' ({source_label})")
+        logger.debug("[AwarenessIntegration] Registered '%s' (%s)", name, source_label)
         return True
     except Exception as exc:
         logger.debug(f"Registration failed for '{name}': {exc}")
@@ -245,9 +244,7 @@ def discover_and_register_tools(path: str = ".") -> int:
                 if _try_register(func_name, real_func, desc, source_label=file):
                     registered += 1
 
-    log_dream_bridge(
-        f"[AwarenessIntegration] Local scan complete — {registered} new tools registered."
-    )
+    logger.info("[AwarenessIntegration] Local scan complete — %d new tools registered.", registered)
     return registered
 
 
@@ -276,10 +273,8 @@ def register_package_functions(package_name: str) -> int:
     registered = 0
     for name in names:
         if registered >= MAX_TOOLS_PER_PACKAGE:
-            log_dream_bridge(
-                f"[AwarenessIntegration] Cap reached for '{package_name}' "
-                f"({MAX_TOOLS_PER_PACKAGE} tools)."
-            )
+            logger.debug("[AwarenessIntegration] Cap reached for '%s' (%d tools).",
+                         package_name, MAX_TOOLS_PER_PACKAGE)
             break
 
         try:
@@ -314,10 +309,8 @@ def register_package_functions(package_name: str) -> int:
             source_label="introspection",
         )
 
-    log_dream_bridge(
-        f"[AwarenessIntegration] Package '{package_name}' — "
-        f"{registered} new tools registered."
-    )
+    logger.info("[AwarenessIntegration] Package '%s' — %d new tools registered.",
+                package_name, registered)
     return registered
 
 
@@ -336,9 +329,7 @@ def discover_installed_packages() -> int:
             continue
         total += register_package_functions(package_name)
 
-    log_dream_bridge(
-        f"[AwarenessIntegration] Package discovery complete — {total} new tools registered."
-    )
+    logger.info("[AwarenessIntegration] Package discovery complete — %d new tools registered.", total)
     return total
 
 

@@ -237,7 +237,7 @@ class SelfModelUpdater:
         regular echo_query reflections).
         """
         edit_entries = [
-            e for e in shard_entries if "generated_code" in e
+            e for e in shard_entries if e.get("generated_code")
         ]
         total = len(edit_entries)
         successes = sum(1 for e in edit_entries if e.get("result") == "success")
@@ -509,7 +509,8 @@ class SelfModelUpdater:
             for task, cur in current_performance.items():
                 cur_q = cur.get("avg_quality_score", 0)
                 old_q = old_perf.get(task, {}).get("avg_quality_score", 0)
-                delta[task] = round(cur_q - old_q, 4)
+                raw = cur_q - old_q
+                delta[task] = round(max(-1.0, min(1.0, raw)), 4)
             return {
                 "compared_to": snapshots[0].name,
                 "quality_delta_by_task": delta,

@@ -26,7 +26,7 @@ import json
 import logging
 import math
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -100,10 +100,11 @@ def compute(introspection_state: dict) -> np.ndarray:
     # [6] edit_momentum — self_edit success rate
     vec[6] = min(float(se.get("success_rate", 0.0)), 1.0)
 
-    # [7] temporal_phase — UTC hour as sine wave mapped to 0-1
-    now_utc = datetime.now(timezone.utc)
-    hour_frac = now_utc.hour + now_utc.minute / 60.0
-    vec[7] = float((math.sin(2 * math.pi * hour_frac / 24.0) + 1.0) / 2.0)
+    # [7] temporal_phase — local-time circadian signal (0.0=midnight, 1.0=noon)
+    # Phase-shifted by 6h so the peak lands at noon, not dawn.
+    now_local = datetime.now()
+    hour_frac = now_local.hour + now_local.minute / 60.0
+    vec[7] = float((math.sin(2 * math.pi * (hour_frac - 6.0) / 24.0) + 1.0) / 2.0)
 
     return vec
 

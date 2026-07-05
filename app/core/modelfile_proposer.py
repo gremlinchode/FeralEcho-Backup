@@ -108,6 +108,7 @@ class ModelfileProposer:
         proposal = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "generation": self_model.get("generation", 0),
+            "status": "pending",
             "changes": changes,
             "reasoning_summary": reasoning,
             "touches_system_block": touches_system,

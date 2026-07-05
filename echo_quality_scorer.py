@@ -145,18 +145,30 @@ def _count_regex_hits(text: str, patterns: list) -> int:
 
 def _has_real_code(response: str) -> bool:
     """Check if response contains actual executable code, not just code-talk."""
+    def _count_real_nodes(tree) -> int:
+        return len([n for n in ast.walk(tree)
+                    if isinstance(n, (ast.FunctionDef, ast.ClassDef,
+                                      ast.Assign, ast.Return, ast.Import,
+                                      ast.ImportFrom, ast.Expr))])
+
+    # Path 1: explicitly fenced block (```python, ```py, or plain ```)
     code_block = re.search(r'```(?:python|py)?\s*\n(.*?)\n```', response, re.DOTALL)
-    if not code_block:
-        return False
-    code = code_block.group(1).strip()
+    if code_block:
+        try:
+            tree = ast.parse(code_block.group(1).strip())
+            return _count_real_nodes(tree) >= 2
+        except SyntaxError:
+            return False
+
+    # Path 2: unfenced raw Python. The self-edit pipeline instructs models to
+    # output code with no markdown fencing ("Output ONLY valid Python code"),
+    # so valid code arrives as plain text. Attempt ast.parse() on the full
+    # response — prose (numbered plans, narrative sentences) reliably fails
+    # because list numbering ("1. ...") and natural-language openers are not
+    # valid Python syntax.
     try:
-        tree = ast.parse(code)
-        # Must have at least one real statement (not just comments/pass)
-        real_nodes = [n for n in ast.walk(tree)
-                      if isinstance(n, (ast.FunctionDef, ast.ClassDef,
-                                        ast.Assign, ast.Return, ast.Import,
-                                        ast.ImportFrom, ast.Expr))]
-        return len(real_nodes) >= 2
+        tree = ast.parse(response)
+        return _count_real_nodes(tree) >= 2
     except SyntaxError:
         return False
 
@@ -262,6 +274,23 @@ def _uncertainty_integrity_score(response: str) -> float:
 
     raw = min(hits / 2.0, 1.0) - min(false_hits * 0.3, 0.6)
     return max(round(raw, 3), 0.0)
+def _has_static_errors(tree) -> bool:
+    """Detect statically-obvious code errors (currently: literal division by zero)."""
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div) and
+                isinstance(node.right, ast.Constant) and node.right.value == 0):
+            return True
+    return False
+
+
+def _ast_complexity(tree) -> int:
+    """Count meaningful structural nodes as proxy for algorithmic substance."""
+    STRUCTURAL = (ast.If, ast.For, ast.While, ast.ListComp, ast.DictComp,
+                  ast.SetComp, ast.GeneratorExp, ast.Try, ast.With,
+                  ast.AsyncFor, ast.AsyncWith)
+    return sum(1 for n in ast.walk(tree) if isinstance(n, STRUCTURAL))
+
+
 def _confabulation_penalty(response: str) -> float:
     """
     Returns 0.0-1.0 penalty score (higher = more confabulation detected).
@@ -307,54 +336,58 @@ def _score_response_quality(response: str, task_type: str = "general") -> int:
     if len(response) < 20:
         return 0
 
-    # Task-specific hard failures
+    # Coding: self-contained branch — never falls through to substance/penalty scoring.
+    # Scoring tiers (2026-07-02):
+    #   1 — no detectable code, or static red flag (literal division by zero)
+    #   2 — stub/trivial: valid syntax, AST complexity 0 (no If/For/While/comprehension)
+    #   3 — some structure: 1-2 meaningful control-flow nodes
+    #   4 — non-trivial algorithm: 3+ structural nodes
+    # Prose word count removed as 3→4 differentiator — it rewarded verbose wrong answers.
+    # Known static-analysis limit: incorrect control-flow logic (wrong bounds, off-by-one)
+    # is undetectable without execution. See findings tracker Finding 11 / wrong_logic_bug.
     if task_type == "coding":
         if not _has_real_code(response):
-            # Talking about code but not writing it — low quality
-            score = 1
+            return 1
+
+        code_block = re.search(r'```(?:python|py)?\s*\n(.*?)\n```', response, re.DOTALL)
+        code_text = code_block.group(1).strip() if code_block else response
+        try:
+            tree = ast.parse(code_text)
+        except SyntaxError:
+            return 1  # parse failed on extracted block — treat as bad
+
+        if _has_static_errors(tree):
+            return 1
+
+        c = _ast_complexity(tree)
+        if c == 0:
+            return 2
+        elif c < 3:
+            return 3
         else:
-            score = 3  # Real code present, start from 3
-            # Bonus: check if it has explanatory prose too
-            prose_words = len([w for w in response.split()
-                               if not w.startswith('`')])
-            if prose_words > 50:
-                score = 4
-            return score
+            return 4
 
     # Universal dimensions
+    # identity_coherence removed from all formulae 2026-07-02 (keyword stuffing vulnerability).
+    # _identity_coherence_score() retained in case it's useful as a feature elsewhere.
     substance = _substance_score(response)
-    identity = _identity_coherence_score(response)
     penalty = _confabulation_penalty(response)
     scripture = _scripture_integrity_score(response)
 
-    # Personal task: weight interiority and uncertainty heavily
-    if task_type == "personal":
-        interiority = _interiority_score(response)
-        uncertainty = _uncertainty_integrity_score(response)
-        raw = (
-            0.20 * substance +
-            0.20 * interiority +
-            0.20 * uncertainty +
-            0.20 * identity +
-            0.10 * scripture +
-            0.10 * (1.0 - penalty)
-        )
-        
-    elif task_type == "creative":
-        # For creative: substance and identity matter most, less scripture pressure
-        raw = (
-            0.40 * substance +
-            0.30 * identity +
-            0.20 * (1.0 - penalty) +
-            0.10 * scripture
-        )
-    else:  # general
-        raw = (
-            0.35 * substance +
-            0.25 * identity +
-            0.25 * (1.0 - penalty) +
-            0.15 * scripture
-        )
+    # Unified formula for personal/creative/general — 2026-07-02.
+    # All positive keyword-reward dimensions removed (identity_coherence,
+    # interiority_score, uncertainty_integrity_score): each was gameable by
+    # an LLM that has learned to produce the relevant markers stylistically.
+    # Adversarial test showed keyword stuffing scored 4/4 despite no coherent
+    # content. The scorer is now honest about its ceiling: it detects clearly
+    # bad responses (empty, hollow, confabulated) but cannot distinguish genuine
+    # depth from stylistic mimicry. That distinction requires council rating.
+    #
+    # interiority_score() is kept in _extract_quality_features_v2() as a River
+    # feature — River may learn its correlation (or anti-correlation) with council
+    # ratings. uncertainty_integrity_score() has no remaining reader; it is
+    # dormant code (logged in findings tracker, same treatment as self_heal.py).
+    raw = 0.60 * substance + 0.25 * (1.0 - penalty) + 0.15 * scripture
 
     # Map 0.0-1.0 raw score to 0-4 int
     if raw < 0.2:
@@ -450,7 +483,7 @@ def _extract_quality_features_v2(
         "is_mistral": 1.0 if "mistral" in model_name.lower() else 0.0,
         # New dimensions
         "substance_score": _substance_score(response),
-        "identity_coherence": _identity_coherence_score(response),
+        "identity_coherence": 0.0,  # removed from scoring 2026-07-02; kept at 0.0 to preserve feature vector shape
         "confabulation_penalty": _confabulation_penalty(response),
         "scripture_integrity": _scripture_integrity_score(response),
         "interiority_score": _interiority_score(response) if task_type == "personal" else 0.0,

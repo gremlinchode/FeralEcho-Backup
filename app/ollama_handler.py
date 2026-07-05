@@ -116,18 +116,6 @@ def stop_ollama_server():
         _ollama_process = None
 
 
-def _load_persona() -> Optional[Dict]:
-    if os.path.exists(PERSONA_FILE):
-        try:
-            with open(PERSONA_FILE, 'r') as f:
-                persona = json.load(f)
-                logging.debug(f"Loaded persona: {persona.get('name', 'Unknown')}")
-                return persona
-        except Exception as e:
-            logging.error(f"Failed to load persona.json: {e}")
-    else:
-        logging.warning("persona.json not found. Proceeding without persona.")
-    return None
 
 
 # ---- Query functions ----
@@ -153,9 +141,6 @@ def query_ollama(prompt: str, persona: Optional[Dict] = None, model: Optional[st
             except Exception as e:
                 logging.error(f"[MLX] query_ollama MLX routing failed: {e}")
                 return "I'm having trouble thinking right now. Please try again later."
-
-    if persona is None:
-        persona = _load_persona()
 
     logging.debug(f"Querying Ollama with prompt: {prompt}")
 
@@ -259,9 +244,6 @@ def stream_query_ollama(
             return
         else:
             logging.warning(f"[MLX] No mlx_path found for {model} — falling through to Ollama")
-
-    if persona is None:
-        persona = _load_persona()
 
     logging.debug(f"Streaming query to Ollama model={model} with prompt: {prompt}")
 

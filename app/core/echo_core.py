@@ -26,7 +26,7 @@ logger.addHandler(logging.NullHandler())
 # Guardian Integration
 # --------------------------
 try:
-    from app.core.dmn_guardian import guardian_log, verify_integrity, verify_pipelines, assess_sandbox_risk
+    from app.core.dmn_guardian import guardian_log, verify_integrity, verify_pipelines
     GUARDIAN_ENABLED = True
     logger.info("[EchoCore] DMN Guardian detected and integrated.")
 except ImportError:
@@ -68,7 +68,6 @@ class EchoCore:
         self._threads: Dict[str, threading.Thread] = {}
         self._commands: Dict[str, Callable[..., Any]] = {}
         self._experimental_zones: set[str] = set()
-        self._sandbox_risks: Dict[str, float] = {}
 
         # Event bus
         self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
@@ -250,9 +249,6 @@ class EchoCore:
                             fn = getattr(mod, attr)
                             if callable(fn) and not attr.startswith("_"):
                                 self.register_command(attr, fn)
-                                if GUARDIAN_ENABLED:
-                                    risk = assess_sandbox_risk(f"{rel_module}.{attr}")
-                                    self._sandbox_risks[f"{rel_module}.{attr}"] = risk
                     except Exception as e:
                         logger.debug(f"[EchoCore] Could not import {rel_module}: {e}")
 

@@ -104,6 +104,7 @@ DIRECT_ECHO_TASKS: set[str] = {
     "faith",
     "poetry",
     "dream",
+    "creative",
 }
 
 # Synthesis prompt template.  Keep it tight — local models have
@@ -293,13 +294,9 @@ def deliberate_and_learn(
     """
     synth_model = synthesis_model or ECHO_SYNTHESIS_MODEL
 
-    # ── 0. Warm up Echo before council queries begin ──────────
-    # Prevents synthesis timeouts caused by councillors evicting
-    # Echo from memory during their own inference passes.
-    logging.info(f"[DELIBERATION] Warming up {synth_model}")
-    _warm_up_echo(synth_model)
-
     # ── 1. Direct Echo path for intimate task types ───────────
+    # No warm-up needed — warm-up only matters when councillors may evict
+    # Echo from memory before synthesis. Direct path skips the council.
     if task_type in DIRECT_ECHO_TASKS:
         logging.info(
             f"[DELIBERATION] Direct Echo path for task={task_type} — bypassing council"
@@ -307,6 +304,12 @@ def deliberate_and_learn(
         response = _ollama_query(synth_model, prompt, timeout=SYNTHESIS_TIMEOUT)
         river_brain.learn(synth_model, task_type, response)
         return response
+
+    # ── 1b. Warm up Echo before council queries begin ─────────
+    # Councillors may evict Echo from GPU memory during their passes.
+    # Warm-up here — after the direct-path check — prevents synthesis timeouts.
+    logging.info(f"[DELIBERATION] Warming up {synth_model}")
+    _warm_up_echo(synth_model)
 
     # ── 2. Select council ─────────────────────────────────────
     council = _select_council(task_type, river_brain, model_pool, council_size)
@@ -377,17 +380,19 @@ def deliberate_and_learn(
         return best
 
     # ── 7. Post-synthesis learning ────────────────────────────
-    # Credit all councillors and the synthesizer based on the final
-    # outcome. Learning happens here — after synthesis — so River
-    # scores reflect the quality of the complete deliberation, not
-    # just individual council responses.
+    # Each councillor learns from its OWN response — not the synthesis.
+    # Crediting all models with the synthesized output inflated every
+    # councillor's River score regardless of actual contribution quality.
+    # Only the synthesis model (Echo) learns from the final synthesis.
     logging.info(
         f"[DELIBERATION] Synthesis complete | "
         f"council_size={len(valid_opinions)} | "
         f"synth_model={synth_model} | "
         f"response_len={len(final_response)}"
     )
-    for model in list(valid_opinions.keys()) + [synth_model]:
-        river_brain.learn(model, task_type, final_response)
+    for model, opinion in valid_opinions.items():
+        if model != synth_model:
+            river_brain.learn(model, task_type, opinion)
+    river_brain.learn(synth_model, task_type, final_response)
 
     return final_response

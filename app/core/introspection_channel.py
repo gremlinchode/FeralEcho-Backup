@@ -80,6 +80,39 @@ class IntrospectionChannel:
     def stop(self):
         self._stop_event.set()
 
+    def reset_drift_detectors(self) -> list:
+        """
+        Reset all PageHinkley drift detectors to a clean state.
+        Call this after any structural change to River's training signal
+        (e.g. removing cross-training contamination) so the detectors
+        establish a new baseline from post-fix observations.
+        Writes drift_detector_reset_at to memory/snapshot_baseline.json via
+        patch_baseline_meta() (locked, atomic temp-then-rename) so post-reset
+        observation counts are measurable going forward.
+        Returns the list of task types reset.
+        """
+        reset = []
+        for task, det in self._drift_detectors.items():
+            try:
+                det._reset()
+                reset.append(task)
+            except Exception as e:
+                logger.warning("[Introspection] drift detector reset failed for %s: %s", task, e)
+        ts = datetime.now(timezone.utc).isoformat()
+        try:
+            from app.core.snapshot_manager import patch_baseline_meta
+            patch_baseline_meta("drift_detector_reset_at", ts)
+            logger.info(
+                "[Introspection] Drift detectors reset: %s — drift_detector_reset_at=%s written to snapshot_baseline.json",
+                reset, ts,
+            )
+        except Exception as e:
+            logger.warning(
+                "[Introspection] reset timestamp write failed: %s — detectors were reset, timestamp not persisted", e
+            )
+            logger.info("[Introspection] Drift detectors reset: %s", reset)
+        return reset
+
     # ── Public API ─────────────────────────────────────────────────────
 
     def collect(self) -> dict:
@@ -308,36 +341,43 @@ class IntrospectionChannel:
         result = {
             "hours_since_last_success": None,
             "last_success_prompt_preview": "",
+            "success_rate": 0.0,
         }
         try:
-            # reflection_shard.jsonl contains self-edit entries with
-            # result: "success"/"failed" and a "generated_code" key.
             shard_path = os.path.join(self._memory_dir, "reflection_shard.jsonl")
             if not os.path.exists(shard_path):
                 return result
 
             lines = _tail_lines(shard_path, 500)
+            found_last_success = False
+            edit_total = 0
+            edit_success = 0
+
             for raw in reversed(lines):
                 try:
                     entry = json.loads(raw)
                 except Exception:
                     continue
-                # Self-edit reflections have a "result" field and "generated_code"
-                if entry.get("result") == "success" and "generated_code" in entry:
-                    ts_str = entry.get("timestamp", "")
-                    try:
-                        ts = datetime.fromisoformat(ts_str)
-                        if ts.tzinfo is None:
-                            ts = ts.replace(tzinfo=timezone.utc)
-                        age_h = (
-                            datetime.now(timezone.utc) - ts
-                        ).total_seconds() / 3600
-                        result["hours_since_last_success"] = round(age_h, 2)
-                        prompt = entry.get("prompt", "")
-                        result["last_success_prompt_preview"] = prompt[:120]
-                    except Exception:
-                        pass
-                    break
+                if not entry.get("generated_code"):
+                    continue
+                edit_total += 1
+                if entry.get("result") == "success":
+                    edit_success += 1
+                    if not found_last_success:
+                        found_last_success = True
+                        ts_str = entry.get("timestamp", "")
+                        try:
+                            ts = datetime.fromisoformat(ts_str)
+                            if ts.tzinfo is None:
+                                ts = ts.replace(tzinfo=timezone.utc)
+                            age_h = (datetime.now(timezone.utc) - ts).total_seconds() / 3600
+                            result["hours_since_last_success"] = round(age_h, 2)
+                            result["last_success_prompt_preview"] = entry.get("prompt", "")[:120]
+                        except Exception:
+                            pass
+
+            if edit_total > 0:
+                result["success_rate"] = round(edit_success / edit_total, 4)
 
         except Exception as e:
             logger.warning("[Introspection] self_edit collect failed: %s", e)

@@ -24,6 +24,7 @@ import uuid
 import numpy as np
 import time
 import faiss
+import requests
 from pathlib import Path
 from datetime import datetime
 
@@ -239,15 +240,36 @@ def retrieve_memory_context(msg: str, k=5) -> str:
         if not raw_memories:
             return ""
 
-        # Prefer entries tagged as user conversations; fall back to all if too few
+        # Prefer user-conversation entries. When falling back (fewer than k match),
+        # never include autonomous-sourced entries (news feed, fetch cycle) — they
+        # are external observations, not history, and the model treats unlabeled
+        # retrieved text as first-person memory (Finding 14, 2026-07-02).
         conv_memories = [
             (text, score, meta) for text, score, meta in raw_memories
             if meta.get("memory_source") == "user_conversation"
         ]
-        relevant_memories = conv_memories[:k] if len(conv_memories) >= k else raw_memories[:k]
+        non_autonomous = [
+            (text, score, meta) for text, score, meta in raw_memories
+            if meta.get("memory_source") != "autonomous"
+        ]
+        relevant_memories = (
+            conv_memories[:k]
+            if len(conv_memories) >= k
+            else non_autonomous[:k]
+        )
+
+        def _source_label(meta: dict) -> str:
+            src = meta.get("memory_source", "")
+            role = meta.get("role", "")
+            if src == "user_conversation" and role in ("user", "echo"):
+                return "[past interaction]"
+            elif src == "user_conversation":
+                return "[reference]"
+            else:
+                return "[system log]"
 
         memory_context = "\n".join([
-            f"- {text}"
+            f"- {_source_label(meta)}: {text}"
             for text, score, meta in relevant_memories
         ])
 
@@ -316,30 +338,100 @@ def save_memory(user_msg: str, response_text: str):
 # ---------------------------------
 _INTERACTION_LOG = Path("memory/interaction_log.jsonl")
 
-def _prompt_user_rating(response_text: str) -> None:
-    """Non-blocking 4-second window for the user to rate Echo's response 1-5."""
+def _save_rating(rating: int, response_text: str) -> None:
+    """Write a user rating to the interaction log. Called from the main input loop."""
     try:
-        console.print("[dim]  Rate this response [1-5] or press Enter to skip:[/dim] ", end="")
-        sys.stdout.flush()
-        ready, _, _ = select.select([sys.stdin], [], [], 4.0)
-        if ready:
-            line = sys.stdin.readline().strip()
-            if line and line in "12345" and len(line) == 1:
-                rating = int(line)
-                entry = {
-                    "timestamp": datetime.utcnow().isoformat(),
-                    "type": "user_rating",
-                    "rating": rating,
-                    "response_preview": response_text[:80].replace("\n", " "),
-                }
-                _INTERACTION_LOG.parent.mkdir(parents=True, exist_ok=True)
-                with open(_INTERACTION_LOG, "a") as fh:
-                    fh.write(json.dumps(entry) + "\n")
-                console.print(f"[dim]Rating {rating} saved.[/dim]")
-            else:
-                console.print()
-        else:
-            console.print()
+        entry = {
+            "timestamp":        datetime.utcnow().isoformat(),
+            "type":             "user_rating",
+            "rating":           rating,
+            "response_preview": response_text[:80].replace("\n", " "),
+        }
+        _INTERACTION_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with open(_INTERACTION_LOG, "a") as fh:
+            fh.write(json.dumps(entry) + "\n")
+    except Exception:
+        pass
+
+# ---------------------------------
+# --- Session Conversation Buffer -
+# ---------------------------------
+_conv_history: list = []       # [{ts, user, echo}] — turns in this session
+_history_summaries: list = []  # one-line compressed notes for turns that fell off the window
+_HISTORY_TOKEN_BUDGET = 4000   # ~4000 tokens; leaves room for response under num_ctx=8192
+
+def _est_tokens(text: str) -> int:
+    return max(1, len(text) // 4)
+
+def _history_token_count() -> int:
+    turn_tokens = sum(
+        _est_tokens(t["user"]) + _est_tokens(t["echo"])
+        for t in _conv_history
+    )
+    summary_tokens = sum(_est_tokens(s) for s in _history_summaries)
+    return turn_tokens + summary_tokens + 50  # 50-token overhead for formatting
+
+def _format_history_block() -> str:
+    """Render session history for prompt injection. Returns '' if no history."""
+    if not _conv_history and not _history_summaries:
+        return ""
+
+    parts = []
+    n_compressed = len(_history_summaries)
+
+    if _history_summaries:
+        parts.append("[Earlier in this conversation — compressed:]")
+        for s in _history_summaries:
+            parts.append(f"  {s}")
+
+    turn_offset = n_compressed + 1
+    for i, turn in enumerate(_conv_history):
+        turn_num = turn_offset + i
+        ts_short = turn["ts"][:19].replace("T", " ")
+        parts.append(f"Turn {turn_num} [{ts_short} UTC]:")
+        parts.append(f"  You: {turn['user']}")
+        parts.append(f"  Echo: {turn['echo']}")
+
+    inner = "\n".join(parts)
+    return (
+        "[Conversation history — this session]\n"
+        + inner
+        + "\n[End of conversation history]"
+    )
+
+def _store_turn_in_history(user_msg: str, echo_response: str) -> None:
+    """Add a completed turn. If over budget, compress-and-drop the oldest turn."""
+    global _conv_history, _history_summaries
+
+    _conv_history.append({
+        "ts": datetime.utcnow().isoformat(),
+        "user": user_msg,
+        "echo": echo_response,
+    })
+
+    while _history_token_count() > _HISTORY_TOKEN_BUDGET and len(_conv_history) > 1:
+        oldest = _conv_history.pop(0)
+        q = oldest["user"]
+        topic = q[:60] + ("..." if len(q) > 60 else "")
+        _history_summaries.append(f'You asked: "{topic}"')
+
+def _save_turn_to_server(user_msg: str, echo_response: str, task_type: str) -> None:
+    """POST conversation turn to the server for FAISS persistence (Piece B).
+    Silent on all errors — never blocks the conversation.
+    """
+    if not _server_is_running():
+        return
+    try:
+        requests.post(
+            f"{SERVER_URL}/memory/conversation",
+            json={
+                "user_msg": user_msg,
+                "echo_response": echo_response,
+                "task_type": task_type,
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+            timeout=3,
+        )
     except Exception:
         pass
 
@@ -355,6 +447,9 @@ def send_message_stream(
     """
 
     global temporal_context
+
+    # Capture raw user input before any context injection modifies msg
+    original_msg = msg
 
     # ---------------------------------
     # Inject environmental awareness
@@ -386,7 +481,7 @@ def send_message_stream(
     if memory_context:
 
         full_msg = (
-            f"Context from past memories:\n"
+            f"Context (past interactions and system logs — not assertions about identity):\n"
             f"{memory_context}\n\n"
             f"User: {msg}"
         )
@@ -394,38 +489,100 @@ def send_message_stream(
     else:
         full_msg = msg
 
+    # Prepend this session's conversation history so Echo has within-session continuity
+    history_block = _format_history_block()
+    if history_block:
+        full_msg = history_block + "\n\n" + full_msg
+
+    # ---------------------------------
+    # Ground-truth injection (introspective queries only)
+    # Mirrors TOOL_AWARE_TASKS gating in echo_model_orchestrator.py:
+    # only fires when the prompt is about Echo's own internal state,
+    # only injects the slice(s) relevant to what's being asked.
+    # ---------------------------------
+    try:
+        from app.core.echo_ground_truth import _is_introspective, get_structural_self_facts
+        if _is_introspective(msg):
+            ground_truth = get_structural_self_facts(msg)
+            if ground_truth:
+                full_msg = ground_truth + "\n" + full_msg
+    except Exception as _gt_err:
+        pass  # never block a response over a diagnostic read
+
+    # ---------------------------------
+    # Tool context injection (file/directory queries only)
+    # Pre-executes the tool and injects the result before generation.
+    # ---------------------------------
+    try:
+        from app.core.echo_tool_context import _needs_tool_context, get_tool_context
+        if _needs_tool_context(msg):
+            tool_ctx = get_tool_context(msg)
+            if tool_ctx:
+                full_msg = tool_ctx + "\n\n" + full_msg
+    except Exception as _tc_err:
+        pass  # never block a response over a tool read
+
+    # Resolve task type early — needed by both the echo_query call and memory tagging
+    _task_type = "general"
+    try:
+        from app.core.echo_model_orchestrator import resolve_task_type as _rtt
+        _task_type, _ = _rtt(original_msg)
+    except Exception:
+        pass
+
+    # ---------------------------------
+    # Tool dispatch loop
+    # Routes tool-eligible prompts through llama3.1:8b (the dispatch
+    # model) which has native tool-calling support. All tool decisions
+    # and results are logged to memory/tool_dispatch.log with the
+    # dispatch model name — never attributed to echo:latest.
+    # Falls back to echo_query silently on any import or runtime error.
+    # ---------------------------------
+    _dispatch_result = None
+    try:
+        from app.core.echo_tool_dispatch import needs_dispatch, run_tool_dispatch
+        if needs_dispatch(msg):
+            _dispatch_result = run_tool_dispatch(full_msg, session_id=str(uuid.uuid4())[:8])
+    except Exception as _disp_err:
+        pass  # dispatch failure must never block a response
+
     # ---------------------------------
     # Generate response
     # ---------------------------------
     response_text = ""
 
-    try:
-        from app.core.echo_model_orchestrator import echo_query, resolve_task_type
-        task_type, _ = resolve_task_type(msg)
-        raw_response = echo_query(full_msg, task_type=task_type)
-
-    except Exception as orch_err:
-        import traceback
-        console.print(f"[bold yellow]Orchestrator fallback — using Ollama direct:[/bold yellow] {orch_err}")
-        console.print(f"[bold red]FULL ERROR:[/bold red] {traceback.format_exc()}")
+    if _dispatch_result is not None:
+        raw_response = _dispatch_result.get("response", "")
+    else:
         try:
-            buffer = []
-            for token in ollama_handler.stream_query_ollama(full_msg):
-                buffer.append(token)
-            raw_response = "".join(buffer).strip()
+            from app.core.echo_model_orchestrator import echo_query
+            raw_response = echo_query(full_msg, task_type=_task_type)
 
-        except Exception as e:
-            console.print(f"[bold red]Streaming Error:[/bold red] {e}")
-            raw_response = "Error: could not stream message."
+        except Exception as orch_err:
+            import traceback
+            console.print(f"[bold yellow]Orchestrator fallback — using Ollama direct:[/bold yellow] {orch_err}")
+            console.print(f"[bold red]FULL ERROR:[/bold red] {traceback.format_exc()}")
+            try:
+                buffer = []
+                for token in ollama_handler.stream_query_ollama(full_msg):
+                    buffer.append(token)
+                raw_response = "".join(buffer).strip()
+
+            except Exception as e:
+                console.print(f"[bold red]Streaming Error:[/bold red] {e}")
+                raw_response = "Error: could not stream message."
 
     response_text = clean_response_text(raw_response)
 
-    console.print(f"💬 Echo: {response_text}\n")
+    # Store in session history buffer and persist to server
+    _store_turn_in_history(original_msg, response_text)
+    _save_turn_to_server(original_msg, response_text, _task_type)
 
-    _prompt_user_rating(response_text)
+    console.print(f"💬 Echo: {response_text}\n")
+    console.print("[dim]  (type 1–5 at the next prompt to rate this response)[/dim]")
 
     # ---------------------------------
-    # Save memory
+    # Save memory (gated: only fires when server is NOT running)
     # ---------------------------------
     save_memory(msg, response_text)
 
@@ -470,6 +627,7 @@ def main():
     )
 
     first_message = True
+    last_response: str = ""   # held for rating until replaced by the next response
 
     # Start temporal awareness updater
     threading.Thread(
@@ -487,6 +645,12 @@ def main():
             ).strip()
 
             if not msg:
+                continue
+
+            # Rating shortcut: bare 1–5 rates the previous response, then loops back.
+            if msg in {"1", "2", "3", "4", "5"} and last_response:
+                _save_rating(int(msg), last_response)
+                console.print(f"[dim]  Rating {msg} saved.[/dim]")
                 continue
 
             # Exit commands
@@ -549,6 +713,7 @@ def main():
                 )
 
                 speak_async(response)
+                last_response = response
 
                 first_message = False
 

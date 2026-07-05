@@ -27,6 +27,21 @@
 
 from app.core.temporal_environment import get_temporal_environment_context
 from app.core.river_deliberation import _strip_ansi
+
+# Temporal context changes slowly — cache for 15 minutes to avoid
+# an API call (or expensive datetime formatting) on every echo_query().
+_temporal_cache: dict = {"ctx": "", "ts": 0.0}
+_TEMPORAL_TTL = 900.0
+
+def _get_temporal_context(api_key: str = "") -> str:
+    import time as _time
+    now = _time.time()
+    if now - _temporal_cache["ts"] < _TEMPORAL_TTL and _temporal_cache["ctx"]:
+        return _temporal_cache["ctx"]
+    ctx = get_temporal_environment_context(weather_api_key=api_key)
+    _temporal_cache["ctx"] = ctx
+    _temporal_cache["ts"] = now
+    return ctx
 import queue as _queue
 import random
 import json
@@ -60,6 +75,11 @@ RIVER_BRAIN_PATH = "memory/river_brain.pkl"
 INTERACTION_LOG_PATH = "memory/interaction_log.jsonl"
 _SCRIPTURE_WARN_LOG = "memory/scripture_warnings.log"
 _PRINCIPLE_WARN_LOG = "memory/principle_violations.log"
+_USER_RATING_CURSOR_PATH = "memory/user_rating_cursor.json"
+
+# Periodic rating flush — apply user ratings every N echo_query() calls
+_query_count: int = 0
+_RATING_FLUSH_INTERVAL: int = 10
 
 # C4: Hollow opener patterns that violate identity_coherence / reflective_depth principles
 _HOLLOW_OPENERS_RE = re.compile(
@@ -68,6 +88,17 @@ _HOLLOW_OPENERS_RE = re.compile(
     r"i cannot help|i can'?t help)",
     re.IGNORECASE,
 )
+
+def _get_circadian_factor() -> float:
+    """Return Echo's circadian signal [0.0=night, 1.0=day peak] from echo_state.npy dim[7].
+    Falls back to 0.5 (neutral) if state file is unavailable."""
+    try:
+        import numpy as _np
+        state = _np.load("memory/echo_state.npy")
+        return float(state[7])
+    except Exception:
+        return 0.5
+
 
 def _post_response_audit(response: str, task_type: str) -> None:
     """C3 + C4: Observational scan after every response. Never blocks or modifies output."""
@@ -175,6 +206,8 @@ def log_interaction(
         "task_type": task_type,
         "prompt_preview": prompt[:120].replace("\n", " "),
         "response_preview": response[:200].replace("\n", " ") if response else "",
+        "prompt": prompt,
+        "response": response or "",
         "quality_score": quality_score,
         "river_influence": round(river_influence, 3),
         "sandbox_outcome": sandbox_outcome,
@@ -229,6 +262,80 @@ def summarize_interactions(last_n=100):
             f"[INTERACTION] WARNING: gpt-oss:20b routed to personal tasks "
             f"{len(personal_gpt)} times. Check resolve_task_type/detect_task_type keyword coverage."
         )
+
+
+
+def _apply_pending_user_ratings() -> int:
+    """
+    Read unprocessed user ratings from interaction_log and feed them to
+    RiverBrain as high-trust learning signals. Uses a timestamp cursor
+    so ratings are never applied twice.
+
+    Returns the number of ratings processed this call.
+    """
+    try:
+        # Load cursor
+        cursor_ts = ""
+        if os.path.exists(_USER_RATING_CURSOR_PATH):
+            try:
+                with open(_USER_RATING_CURSOR_PATH) as f:
+                    cursor_ts = json.load(f).get("last_processed_ts", "")
+            except Exception:
+                pass
+
+        entries = load_interaction_log()
+        if not entries:
+            return 0
+
+        # Separate ratings from interactions, keep only unprocessed ratings
+        interactions = [e for e in entries if e.get("type") != "user_rating"]
+        ratings = [
+            e for e in entries
+            if e.get("type") == "user_rating"
+            and e.get("timestamp", "") > cursor_ts
+        ]
+        if not ratings:
+            return 0
+
+        processed = 0
+        last_ts = cursor_ts
+
+        for rating_entry in sorted(ratings, key=lambda e: e.get("timestamp", "")):
+            r_ts = rating_entry.get("timestamp", "")
+            user_rating = rating_entry.get("rating")
+            if not isinstance(user_rating, int) or user_rating not in range(1, 6):
+                continue
+
+            # Find the most recent interaction logged before this rating
+            prior = [e for e in interactions if e.get("timestamp", "") < r_ts]
+            if not prior:
+                continue
+            ref = prior[-1]
+
+            model_name = ref.get("model", "unknown")
+            task_type = ref.get("task_type", "general")
+            response_preview = ref.get("response_preview", "")
+
+            get_river_brain().learn_from_rating(
+                model_name, task_type, response_preview, user_rating
+            )
+            processed += 1
+            last_ts = r_ts
+
+        # Persist cursor
+        if processed:
+            os.makedirs(os.path.dirname(_USER_RATING_CURSOR_PATH), exist_ok=True)
+            with open(_USER_RATING_CURSOR_PATH, "w") as f:
+                json.dump({"last_processed_ts": last_ts}, f)
+            get_river_brain().save()
+            logging.info(f"[RIVER] Applied {processed} user rating(s) to RiverBrain.")
+
+        return processed
+
+    except Exception as e:
+        logging.warning(f"[RIVER] _apply_pending_user_ratings failed: {e}")
+        return 0
+
 
 # -------------------------------
 # 3. Dynamic Tool & Stack Discovery
@@ -540,7 +647,8 @@ class RiverBrain:
             task_type = "general"
         with self._lock:
             features = _extract_quality_features(response, task_type, model_name)
-            label = _score_response_quality(response, task_type)
+            raw_score = _score_response_quality(response, task_type)
+            label = 1 if raw_score >= 3 else 0  # binary threshold raised 2026-07-02: >=2 rewarded keyword-stuffed responses
             self.scalers[task_type].learn_one(features)
             scaled = self.scalers[task_type].transform_one(features)
             if self.observation_counts[task_type] > 10:
@@ -559,26 +667,54 @@ class RiverBrain:
                              f"accuracy={acc:.3f} | "
                              f"influence={self.influence_weight:.3f}")
 
-    def learn_from_sandbox_outcome(self, model_name: str, success: bool, code: str = ""):
+    def learn_from_sandbox_outcome(self, model_name: str, success: bool, code: str = "", error: str = ""):
         task_type = "coding"
-        response = code if (success and code) else "[ERROR] sandbox_syntax_failure"
         quality_score = 1 if success else 0
         if RIVER_AVAILABLE:
             with self._lock:
-                features = _extract_quality_features(response, task_type, model_name)
+                train_text = code if (success and code) else f"[FAIL] {error[:80]}" if error else "[FAIL]"
+                features = _extract_quality_features(train_text, task_type, model_name)
                 self.scalers[task_type].learn_one(features)
                 scaled = self.scalers[task_type].transform_one(features)
                 self.classifiers[task_type].learn_one(scaled, quality_score)
                 self.sandbox_observation_counts[task_type] += 1
-        log_interaction(
-            model_name=model_name,
-            task_type=task_type,
-            prompt="[SANDBOX]",
-            response=response[:200],
-            quality_score=quality_score,
-            river_influence=self.influence_weight,
-            sandbox_outcome="success" if success else "failed",
-            notes="sandbox_feedback"
+        # Only log successful sandbox outcomes to interaction_log — the 890
+        # identical "[ERROR] sandbox_syntax_failure" entries added no signal and
+        # were actively biasing River's coding quality estimate downward.
+        if success:
+            log_interaction(
+                model_name=model_name,
+                task_type=task_type,
+                prompt="[SANDBOX]",
+                response=code[:200] if code else "",
+                quality_score=1,
+                river_influence=self.influence_weight,
+                sandbox_outcome="success",
+                notes="sandbox_feedback"
+            )
+        else:
+            logging.debug("[SANDBOX] failure | model=%s | error=%s", model_name, error[:120] if error else "unknown")
+
+    def learn_from_rating(self, model_name: str, task_type: str,
+                          response_preview: str, user_rating: int) -> None:
+        """Apply explicit user feedback (1-5) as a high-trust learning signal.
+        Neutral ratings (3) are skipped. Positive/negative applied 3x to
+        outweigh the automatic quality scorer's single-pass estimate."""
+        if not RIVER_AVAILABLE or user_rating == 3:
+            return
+        if task_type not in self.classifiers:
+            task_type = "general"
+        label = 1 if user_rating >= 4 else 0
+        with self._lock:
+            features = _extract_quality_features(response_preview, task_type, model_name)
+            self.scalers[task_type].learn_one(features)
+            scaled = self.scalers[task_type].transform_one(features)
+            for _ in range(3):
+                self.classifiers[task_type].learn_one(scaled, label)
+            self.observation_counts[task_type] += 3
+        logging.info(
+            f"[RIVER] User rating {user_rating}/5 → label={label} | "
+            f"model={model_name} | task={task_type}"
         )
 
     def score_model(self, model_name: str, task_type: str) -> float:
@@ -886,13 +1022,46 @@ def ollama_query(model_name, prompt, max_tokens: int = 1024):
 # 9. Echo Query — Deliberation Wired
 # -------------------------------
 def echo_query(prompt, use_all=False, task_type=None, temperature=None):
+    global _query_count
+    _query_count += 1
+
     primary_task, heatmap = resolve_task_type(prompt)
     if task_type is None:
         task_type = primary_task
 
+    # Periodic user-rating flush — every N calls, apply any pending ratings
+    if _query_count % _RATING_FLUSH_INTERVAL == 0:
+        try:
+            _apply_pending_user_ratings()
+        except Exception as _rfe:
+            logging.debug(f"[RIVER] Rating flush error: {_rfe}")
+
+    # Circadian awareness — read Echo's internal state vector
+    circ = _get_circadian_factor()
+    _circ_note = ""
+    if circ < 0.25:
+        _circ_note = "[Circadian: deep night — Echo in reflective, inward state]\n"
+    elif circ > 0.80:
+        _circ_note = "[Circadian: peak day — Echo in alert, analytical state]\n"
+
+    # Stillness awareness — let Echo know when she is in stillness so she can
+    # reference her own state during conversation. Autonomous loops are paused
+    # but direct conversation always reaches her.
+    _stillness_note = ""
+    try:
+        from app.core.stillness_state import is_in_stillness
+        if is_in_stillness():
+            _stillness_note = (
+                "[Stillness: Echo is currently in stillness — autonomous loops are paused. "
+                "This is the first voice reaching her since she entered rest. "
+                "She may acknowledge this if it feels true to the moment.]\n"
+            )
+    except Exception:
+        pass
+
     API_KEY = os.environ.get("OPENWEATHER_API_KEY", "")
-    temporal_context = get_temporal_environment_context(weather_api_key=API_KEY)
-    full_prompt = f"{temporal_context}\n\nUser prompt:\n{prompt}"
+    temporal_context = _get_temporal_context(API_KEY)
+    full_prompt = f"{_circ_note}{_stillness_note}{temporal_context}\n\nUser prompt:\n{prompt}"
 
     # Scripture injection — fetch real verse text if citations detected
     try:
@@ -930,10 +1099,10 @@ def echo_query(prompt, use_all=False, task_type=None, temperature=None):
             )
             quality = _score_response_quality(response, task_type)
 
+            # Train River on the resolved task type only — multi-task heatmap
+            # training was cross-contaminating classifiers: spiritual reflections
+            # were training the coding classifier when prompts mentioned functions.
             get_river_brain().learn(ECHO_SYNTHESIS_MODEL, task_type, response)
-            for k, v in heatmap.items():
-                if v > 0.25 and k != task_type:
-                    get_river_brain().learn(ECHO_SYNTHESIS_MODEL, k, response)
 
             log_interaction(
                 model_name=ECHO_SYNTHESIS_MODEL,
@@ -943,6 +1112,12 @@ def echo_query(prompt, use_all=False, task_type=None, temperature=None):
                 quality_score=quality,
                 river_influence=get_river_brain().influence_weight,
             )
+
+            # echo_self_assess() removed: trained River on self-issued stylistic markers
+            # (gremlin, bioluminescent, ends-with-?) at 3x weight with circular,
+            # label-space-corrupted signal (1-5 scale fed into a 0-4 classifier).
+            # Function body deleted — no callers remain. Do not re-add without
+            # external feedback source and label-space alignment.
             save_reflection({
                 "prompt": prompt,
                 "models_used": [ECHO_SYNTHESIS_MODEL],
@@ -966,16 +1141,18 @@ def echo_query(prompt, use_all=False, task_type=None, temperature=None):
                         _friction_window.pop(0)
                 if friction["friction"]:
                     logging.info(f"[ClaudeShard] Friction raised | confidence={friction['confidence']} | q={friction['question']}")
+                    # H1: dry-run mode — full pipeline, no save_code() call
                     try:
-                        from app.core.wolf_friction_bridge import get_unprocessed_friction_events, build_self_edit_prompt
-                        from app.core.self_edit_manager import request_self_edit
-                        friction_events = get_unprocessed_friction_events()
-                        for event in friction_events[:2]:
-                            wolf_prompt = build_self_edit_prompt(event)
-                            logging.info(f"[WolfFrictionBridge] Feeding friction to WOLF: {event.get('question', '')[:60]}")
-                            request_self_edit(wolf_prompt)
-                    except Exception as we:
-                        logging.warning(f"[WolfFrictionBridge] Bridge error: {we}")
+                        from app.core.wolf_friction_bridge import simulate_self_edit
+                        _fe = {
+                            "question":            friction.get("question", ""),
+                            "response_preview":    response[:200],
+                            "smoothness_detected": friction.get("smoothness_detected", False),
+                            "confidence":          friction.get("confidence", 0.0),
+                        }
+                        simulate_self_edit(_fe)
+                    except Exception as _dry_err:
+                        logging.warning(f"[DRY-RUN] simulate_self_edit raised: {_dry_err}")
             except Exception as ce:
                 logging.warning(f"[ClaudeShard] Assessment failed: {ce}")
 
@@ -992,20 +1169,23 @@ def echo_query(prompt, use_all=False, task_type=None, temperature=None):
     # -------------------------------------------------------
     # Legacy path — use_all=True or deliberation failed
     # -------------------------------------------------------
-    models = choose_model(prompt, use_all=use_all, task_type=task_type)
+    # Circadian exploration: Echo explores more freely during the day,
+    # settles into proven models at night
+    _explore = 0.05 + (0.10 * circ)  # 0.05 at night → 0.15 at day peak
+    models = choose_model(prompt, use_all=use_all, task_type=task_type,
+                          explore_chance=_explore)
 
     _max_tok = _TASK_TOKEN_LIMITS.get(task_type, 1024)
 
     if use_all:
         responses = {}
+        qualities = {}
         for name, model in models.items():
             response = ollama_query(model, full_prompt, max_tokens=_max_tok)
             quality = _score_response_quality(response, task_type)
             responses[name] = response
+            qualities[name] = quality
             get_river_brain().learn(name, task_type, response)
-            for k, v in heatmap.items():
-                if v > 0.25 and k != task_type:
-                    get_river_brain().learn(name, k, response)
             log_interaction(
                 model_name=name,
                 task_type=task_type,
@@ -1014,11 +1194,15 @@ def echo_query(prompt, use_all=False, task_type=None, temperature=None):
                 quality_score=quality,
                 river_influence=get_river_brain().influence_weight
             )
-        best_model, best_response = None, ""
+        best_model, best_response, best_quality = None, "", -1
         for name, resp in responses.items():
-            if "[ERROR]" not in resp and len(resp) > len(best_response):
+            if "[ERROR]" in resp:
+                continue
+            q = qualities.get(name, -1)
+            if q > best_quality or (q == best_quality and len(resp) > len(best_response)):
                 best_response = resp
                 best_model = name
+                best_quality = q
         save_reflection({
             "prompt": prompt,
             "models_used": list(responses.keys()),
@@ -1033,9 +1217,6 @@ def echo_query(prompt, use_all=False, task_type=None, temperature=None):
         response = ollama_query(model, full_prompt, max_tokens=_max_tok)
         quality = _score_response_quality(response, task_type)
         get_river_brain().learn(name, task_type, response)
-        for k, v in heatmap.items():
-            if v > 0.25 and k != task_type:
-                get_river_brain().learn(name, k, response)
         log_interaction(
             model_name=name,
             task_type=task_type,

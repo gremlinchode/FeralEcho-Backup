@@ -114,6 +114,57 @@ def log_accuracy() -> dict:
     return delta
 
 
+_DRIFT_THRESHOLD = -0.15   # task quality delta worse than this triggers correction
+_CORRECTION_LOG = Path("memory/shadow_corrections.log")
+
+
+def check_and_correct(delta: dict) -> "str | None":
+    """
+    Inspect a delta from log_accuracy() and, when calibration has drifted
+    significantly for any task type, propose a corrective focus and log it.
+
+    Returns the corrected task type, or None if delta was within tolerance.
+    """
+    quality_deltas = delta.get("quality_delta_from_shadow", {})
+    if not quality_deltas:
+        return None
+
+    worst_task = min(quality_deltas, key=lambda t: quality_deltas[t])
+    worst_delta = quality_deltas[worst_task]
+    if worst_delta >= _DRIFT_THRESHOLD:
+        return None
+
+    # propose() intentionally absent (2026-07-03):
+    # Shadow corrections are advisory-only until the signal is externally validated.
+    # Both sides of the shadow comparison trace to Echo's own outputs (reflection
+    # keyword matching vs. quality_score on Echo responses) — no external anchor.
+    # Corrections are logged below for future human review. See Finding 18.
+    # Reconnect by restoring propose() here once shadow_corrections.log shows
+    # consistent correlation with actual River accuracy improvement.
+
+    try:
+        entry = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "corrected_task": worst_task,
+            "delta": worst_delta,
+            "all_deltas": quality_deltas,
+            "shadow_focus": delta.get("shadow_focus"),
+            "real_focus": delta.get("real_focus"),
+        }
+        _CORRECTION_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with open(_CORRECTION_LOG, "a") as f:
+            import json as _json
+            f.write(_json.dumps(entry) + "\n")
+    except Exception as e:
+        logger.warning("[SHADOW] check_and_correct log failed: %s", e)
+
+    logger.warning(
+        "[SHADOW] Calibration drift | task=%s delta=%.3f → proposed corrective focus",
+        worst_task, worst_delta,
+    )
+    return worst_task
+
+
 def propose_from_reflection(reflection_text: str) -> None:
     """Auto-propose a shadow target based on what Echo just reflected on.
 

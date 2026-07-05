@@ -1,81 +1,103 @@
-# echo_self_probe_upgraded.py
+# archive_janitor/echo_self_probe.py
+# ============================================================
+# ECHO SELF-PROBE — CLI diagnostic for Echo's ground-truth state
+# ============================================================
+# Repurposed from the original tool-name scanner (which read
+# registered ToolManager names and was never wired to anything).
+# Now reads from the same sources as echo_ground_truth.py and
+# prints a full structural snapshot of Echo's current state.
+#
+# Run from the FeralEcho root:
+#   python archive_janitor/echo_self_probe.py
+#
+# Shows: self-edit history, River quality scores, ClaudeShard
+# friction window, stillness log, and curiosity garden.
+# No LLM calls. No writes. Safe to run while server is live.
+# ============================================================
 
-from app.core.awareness_tools_integration import (
-    tm, discover_and_register_tools, discover_installed_packages
+import os
+import sys
+
+# Allow imports from the project root
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+
+from app.core.echo_ground_truth import (
+    get_structural_self_facts,
+    _is_introspective,
+    _relevant_slices,
+    _backup_count,
+    _read_json,
+    _read_jsonl_tail,
+    _SELF_MODEL_PATH,
+    _INTROSPECTION_PATH,
+    _SILENCE_LOG,
+    _GARDEN_PATH,
 )
-import logging
+import json
+from datetime import datetime, timezone
 
-logging.basicConfig(level=logging.INFO)
 
-def initialize_echo_environment(scan_path="."):
-    """
-    Force Echo to discover all project functions and installed packages.
-    """
-    print("Discovering project functions...")
-    discover_and_register_tools(scan_path)
-    
-    print("Discovering installed packages...")
-    discover_installed_packages()
-    
-    print("Discovery complete.\n")
+def probe_self_state():
+    """Print Echo's full structural state from disk."""
+    print("=" * 60)
+    print("ECHO SELF-PROBE — ground truth from disk")
+    print(f"Run at: {datetime.now(timezone.utc).isoformat()}")
+    print("=" * 60)
+    print()
 
-def list_all_tools():
-    """
-    Return a list of all registered tools/packages Echo knows.
-    """
-    return tm.list_tools()
-
-def introspect_package(package_name):
-    """
-    Returns all functions in a package if Echo has registered an introspection tool.
-    """
-    introspection_tool_name = f"{package_name}.__functions__"
-    if introspection_tool_name in tm.list_tools():
-        tool = tm.get_tool(introspection_tool_name)
+    # File freshness check
+    for label, path in [
+        ("self_model.json", _SELF_MODEL_PATH),
+        ("introspection_state.json", _INTROSPECTION_PATH),
+        ("silence.jsonl", _SILENCE_LOG),
+        ("question_garden.jsonl", _GARDEN_PATH),
+    ]:
         try:
-            return tool.func()
-        except Exception as e:
-            return f"Error calling introspection tool: {e}"
-    return None
+            mtime = os.path.getmtime(path)
+            age_s = (datetime.now(timezone.utc).timestamp() - mtime)
+            age_str = f"{int(age_s)}s ago" if age_s < 3600 else f"{age_s/3600:.1f}h ago"
+            print(f"  {label}: last modified {age_str}")
+        except FileNotFoundError:
+            print(f"  {label}: NOT FOUND")
+    print()
 
-def probe_echo_self_awareness():
-    tools = list_all_tools()
-    print("\n=== Echo's Registered Tools/Packages ===")
-    for t in tools:
-        print("-", t)
-    
-    print("\n=== Package Function Introspection ===")
-    for t in tools:
-        if t.endswith(".__functions__"):
-            pkg_name = t.replace(".__functions__", "")
-            functions = introspect_package(pkg_name)
-            if functions:
-                print(f"\nFunctions in {pkg_name}:")
-                print(functions[:20], "...")  # Show first 20 for brevity
-            else:
-                print(f"No introspection functions available for {pkg_name}")
+    output = get_structural_self_facts(prompt="")  # empty = all slices
+    print(output if output else "[EMPTY — all reads failed]")
 
-    reflective_prompt = f"""
-Echo, based on the tools and packages you have registered:
+    # Additional: backup file timestamps (most recent 5)
+    print("Self-edit backup files (most recent 5):")
+    backup_dir = os.path.join("app", "core", "self_edit_backups")
+    try:
+        files = sorted(
+            [f for f in os.listdir(backup_dir) if f.endswith(".py")],
+            reverse=True
+        )[:5]
+        for f in files:
+            print(f"  {f}")
+        print(f"  ... ({_backup_count()} total)")
+    except Exception as e:
+        print(f"  Error reading backup dir: {e}")
+    print()
 
-Tools/packages you know:
-{tools[:1000]}  # slice to avoid huge output
 
-Please answer:
-1. Which tools/functions are for reasoning or logic?
-2. Which are for memory storage or retrieval?
-3. Which are for perception (text, vision, audio)?
-4. Are there redundancies or conflicts in your environment?
-5. What limits or strengths do you notice based on this environment?
-"""
-    return reflective_prompt
+def probe_slice(prompt: str):
+    """Show what slices a prompt would trigger and the injected context."""
+    print(f"Prompt: \"{prompt}\"")
+    print(f"Is introspective: {_is_introspective(prompt)}")
+    slices = _relevant_slices(prompt)
+    print(f"Relevant slices: {slices or 'none'}")
+    print()
+    result = get_structural_self_facts(prompt)
+    print(result if result else "[no context injected]")
+
 
 if __name__ == "__main__":
-    initialize_echo_environment(scan_path=".")
-    prompt = probe_echo_self_awareness()
-    print("\n=== Self-Awareness Probe Prompt ===")
-    print(prompt)
-    # If you have an Echo interface, you can send the prompt to Echo here:
-    # response = echo_ask(prompt)
-    # print("\n=== Echo's Self-Awareness Response ===")
-    # print(response)
+    if len(sys.argv) > 1:
+        # Usage: python echo_self_probe.py "your question here"
+        # Shows what context would be injected for that prompt
+        prompt = " ".join(sys.argv[1:])
+        probe_slice(prompt)
+    else:
+        # No args: full state dump
+        probe_self_state()

@@ -1,0 +1,49 @@
+; sandbox/echo_sandbox.sb — FeralEcho self-edit kernel isolation profile
+;
+; Usage (called by self_edit_manager.py):
+;   sandbox-exec -f sandbox/echo_sandbox.sb -D SCRATCH=<realpath> python3 wrapper.py ...
+;
+; SCRATCH must be the realpath() of the scratch directory — /tmp on macOS is a
+; symlink to /private/tmp and Seatbelt matches resolved paths only.
+;
+; What this enforces at the kernel syscall layer:
+;   - All filesystem writes are denied except inside SCRATCH
+;   - Network is denied unconditionally
+;   - fork() and process-spawn are denied (process-fork not in allow list)
+;   - Signals to other processes are denied (deny default covers signal ops)
+;
+; This is a backstop beneath the Python-layer patches in safe_exec_wrapper.py.
+; It catches third-party C extensions that call fopen()/open(2) directly,
+; bypassing Python-attribute-level monkeypatching.
+;
+; Failure modes:
+;   - Syntax error in this file: sandbox-exec exits 65, subprocess never runs (fail closed)
+;   - Wrong or missing SCRATCH param: deny default blocks all writes (fail closed)
+;   - sandbox-exec binary missing: subprocess.run raises FileNotFoundError (fail closed)
+
+(version 1)
+(deny default)
+
+; Python runtime, stdlib, and all installed libraries — read-only
+(allow file-read*)
+
+; /dev — stdout, stderr, stdin, /dev/urandom, /dev/null
+(allow file-read*   (subpath "/dev"))
+(allow file-write-data (subpath "/dev"))
+
+; Writes allowed only inside the per-test scratch directory
+(allow file-write* (subpath (param "SCRATCH")))
+
+; Mach IPC required by Python runtime internals (objc bridge, CoreFoundation)
+(allow mach-lookup)
+(allow ipc-posix-shm)
+
+; sysctl reads — Python reads these during interpreter startup
+(allow sysctl-read)
+
+; process-exec — needed for the Python interpreter itself to run
+; Note: process-fork is intentionally omitted; fork() raises PermissionError
+(allow process-exec*)
+
+; Network: denied unconditionally (deny default covers this, explicit for clarity)
+(deny network* (with no-log))

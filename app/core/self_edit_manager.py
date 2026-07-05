@@ -1180,8 +1180,33 @@ def execute_self_edit(prompt: str, intensity: float | None = None, **kwargs):
 # --- Optuna Integration ------
 # -----------------------------
 _last_targeted_prompt: dict[str, float] = {}
-_last_any_autonomous_edit: float = 0.0
 _TARGETED_PROMPT_COOLDOWN = 3600  # 60 minutes — global floor between autonomous self-edits
+
+
+def _load_last_autonomous_edit() -> float:
+    """Restore the cooldown timestamp across restarts (Finding H-1: an in-memory-only
+    cooldown resets to 0.0 on every restart, re-arming the exact storm condition the
+    60-min floor exists to block)."""
+    from pathlib import Path
+    try:
+        return float(json.loads(Path("memory/self_edit_cooldown.json").read_text()).get("last_any_autonomous_edit", 0.0))
+    except Exception:
+        return 0.0
+
+
+def _persist_last_autonomous_edit(ts: float) -> None:
+    from pathlib import Path
+    try:
+        p = Path("memory/self_edit_cooldown.json")
+        p.parent.mkdir(parents=True, exist_ok=True)
+        tmp = p.with_suffix(".tmp")
+        tmp.write_text(json.dumps({"last_any_autonomous_edit": ts}))
+        tmp.replace(p)
+    except Exception as _pe:
+        logging.debug(f"[SELF-EDIT] cooldown persist failed: {_pe}")
+
+
+_last_any_autonomous_edit: float = _load_last_autonomous_edit()
 
 def _build_targeted_prompt(task_type: str, creativity: float) -> str:
     """
@@ -1261,6 +1286,7 @@ def perform_self_edit(prompt=None, intensity=None, creativity=None, dry_run=None
             logging.info(f"[SELF-EDIT] Global cooldown active — skipping for {remaining}s")
             return False, f"Cooldown active ({remaining}s remaining)"
         _last_any_autonomous_edit = now  # stamp immediately so concurrent calls are also blocked
+        _persist_last_autonomous_edit(now)
 
     return execute_self_edit(prompt, intensity=intensity)
 

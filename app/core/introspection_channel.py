@@ -44,8 +44,10 @@ class IntrospectionChannel:
         try:
             from app.core import config
             self._memory_dir = config.MEMORY_DIR
+            self._journal_file = config.MEMORY_JOURNAL_FILE
         except Exception:
             self._memory_dir = _DEFAULT_MEMORY_DIR
+            self._journal_file = os.path.join(self._memory_dir, "memory_journal.log")
 
         self._state_path = os.path.join(self._memory_dir, "introspection_state.json")
         os.makedirs(self._memory_dir, exist_ok=True)
@@ -55,17 +57,65 @@ class IntrospectionChannel:
         # within ~6 samples of the actual drift point.
         # min_instances=30: don't alarm until at least 30 samples seen.
         # threshold=10.0: cumulative sum threshold before declaring drift.
-        try:
-            from river.drift import PageHinkley
-            self._drift_detectors: dict = {
-                task: PageHinkley(min_instances=30, threshold=10.0)
-                for task in ["coding", "creative", "personal", "reasoning", "general"]
-            }
-        except Exception:
-            self._drift_detectors = {}
+        #
+        # Audit finding: this dict was previously rebuilt fresh in every
+        # __init__ call with no persistence at all — a plain process restart
+        # silently discarded accumulated observations with no log line
+        # distinguishing "restarted" from reset_drift_detectors()'s
+        # deliberate, logged reset. Given this project's own documented
+        # restart-after-every-code-change workflow and min_instances=30
+        # before a detector can even alarm, this plausibly prevented these
+        # detectors from ever reaching steady state in normal operation.
+        # Now tries to load prior pickled state first (_load_drift_detectors);
+        # falls back to fresh detectors on any failure — same fail-open
+        # posture as every other persistence layer in this codebase
+        # (RiverBrain's "never overwrite richer state" guard, etc.).
+        self._drift_detectors_path = os.path.join(self._memory_dir, "drift_detectors.pkl")
+        self._drift_detectors = self._load_drift_detectors()
 
         logger.info("[Introspection] Channel initialized (interval=%ds, path=%s).",
                     interval, self._state_path)
+
+    def _load_drift_detectors(self) -> dict:
+        try:
+            from river.drift import PageHinkley
+        except Exception:
+            return {}
+        fresh = {
+            task: PageHinkley(min_instances=30, threshold=10.0)
+            for task in ["coding", "creative", "personal", "reasoning", "general"]
+        }
+        if not os.path.exists(self._drift_detectors_path):
+            logger.info("[Introspection] No prior drift-detector state found — starting fresh.")
+            return fresh
+        try:
+            import pickle
+            with open(self._drift_detectors_path, "rb") as f:
+                loaded = pickle.load(f)
+            if not isinstance(loaded, dict) or set(loaded.keys()) != set(fresh.keys()):
+                logger.warning("[Introspection] Drift-detector state file shape mismatch — starting fresh.")
+                return fresh
+            logger.info(
+                "[Introspection] Loaded prior drift-detector state for tasks: %s "
+                "(restart preserved accumulated observations, not a reset).",
+                sorted(loaded.keys()),
+            )
+            return loaded
+        except Exception as e:
+            logger.warning("[Introspection] Failed to load drift-detector state (%s) — starting fresh.", e)
+            return fresh
+
+    def _save_drift_detectors(self) -> None:
+        if not self._drift_detectors:
+            return
+        try:
+            import pickle
+            tmp_path = self._drift_detectors_path + ".tmp"
+            with open(tmp_path, "wb") as f:
+                pickle.dump(self._drift_detectors, f)
+            os.replace(tmp_path, self._drift_detectors_path)
+        except Exception as e:
+            logger.debug("[Introspection] Failed to persist drift-detector state: %s", e)
 
     # ── Lifecycle ──────────────────────────────────────────────────────
 
@@ -133,6 +183,7 @@ class IntrospectionChannel:
             "predictive_loops": self._collect_predictive_loops(),
         }
         self._write(state)
+        self._save_drift_detectors()
         try:
             from app.core.echo_state import update as _echo_state_update
             _echo_state_update(state)
@@ -319,16 +370,31 @@ class IntrospectionChannel:
             try:
                 from app.core.memory_bridge import vector_memory
                 idx = getattr(vector_memory, "index", None)
+                meta = getattr(vector_memory, "meta", None)
                 if idx is not None:
                     result["faiss_vector_count"] = int(idx.ntotal)
+                    # Ongoing version of the load-time-only check in
+                    # vector_memory.py's _load_or_rebuild_index() — that one
+                    # only fires once, at process start. This repeats it on
+                    # every introspection cycle so drift during a long-running
+                    # process doesn't go unnoticed until the next restart.
+                    if meta is not None and int(idx.ntotal) != len(meta):
+                        logger.warning(
+                            "[Introspection] FAISS/meta divergence: ntotal=%d meta=%d",
+                            idx.ntotal, len(meta),
+                        )
             except Exception:
                 pass
 
-            journal_path = os.path.join(
-                self._memory_dir, "memory_journal_active.log"
-            )
-            if os.path.exists(journal_path):
-                with open(journal_path, "r", encoding="utf-8", errors="replace") as f:
+            # Was reading memory_journal_active.log, which memory_bridge.py
+            # intentionally truncates to 0 after each consolidation pass —
+            # a different mechanism from the actual, ever-growing journal
+            # memory_tools.py writes to (config.MEMORY_JOURNAL_FILE). This
+            # produced a silently-wrong journal_line_count (confirmed 0 vs.
+            # a real count in the thousands) that self_model_updater.py then
+            # passed through into self_model.json with no cross-check.
+            if os.path.exists(self._journal_file):
+                with open(self._journal_file, "r", encoding="utf-8", errors="replace") as f:
                     result["journal_line_count"] = sum(1 for _ in f)
 
         except Exception as e:
@@ -526,6 +592,13 @@ class IntrospectionChannel:
             )
         except Exception as e:
             logger.warning("[Introspection] system_health collect failed: %s", e)
+            # Total collection failure is a genuinely unknown state, not a
+            # healthy one — the pre-initialized 0.0 default above reads
+            # identically to a perfectly idle system to any consumer
+            # (notably system_guard.py's throttle, the one thing this
+            # reading exists to feed), which previously meant a real
+            # fail-open on the one signal a safety throttle depends on.
+            result["ram_pressure_pct"] = None
         return result
 
     # ── Internal helpers ───────────────────────────────────────────────

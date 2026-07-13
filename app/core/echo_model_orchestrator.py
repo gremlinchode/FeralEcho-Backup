@@ -52,6 +52,7 @@ import math
 import pickle
 import fcntl
 import logging
+from typing import Optional
 from datetime import datetime
 import subprocess
 import time
@@ -66,6 +67,19 @@ try:
 except ImportError:
     RIVER_AVAILABLE = False
     logging.warning("[RIVER] river library not available — falling back to legacy scorer only")
+
+# Task-type classifier — learned secondary signal for detect_task_type()'s
+# fallback path (audit finding, High #16). Standalone module, see
+# app/core/task_type_classifier.py for full design reasoning.
+try:
+    from app.core.task_type_classifier import (
+        get_task_type_classifier,
+        is_trustworthy_training_example as _tt_is_trustworthy,
+    )
+    TASK_TYPE_CLASSIFIER_AVAILABLE = True
+except ImportError:
+    TASK_TYPE_CLASSIFIER_AVAILABLE = False
+    logging.warning("[TASK_TYPE_CLASSIFIER] task_type_classifier not available — keyword-only routing")
 
 # -------------------------------
 # 1. Reflection & Path Setup
@@ -217,6 +231,32 @@ def log_interaction(
     }
     with open(INTERACTION_LOG_PATH, "a") as f:
         f.write(json.dumps(entry) + "\n")
+
+    # Task-type classifier online-learning feedback (audit finding, High
+    # #16). Gated on source == "user_conversation" — the same filter
+    # _apply_pending_user_ratings() already uses for the identical reason:
+    # don't let autonomous self-talk (source="autonomous" by default) or
+    # forced-label traffic (e.g. emergent_scheduler.py's
+    # echo_query(prompt, task_type="personal") calls, which are real text
+    # but an arbitrary label the caller chose, not one derived from the
+    # text) contaminate a trained signal — the same class of bug this
+    # codebase already found and fixed once (CLAUDE.md Finding 3). Only
+    # terminal_client.py, run.py's mirror_echo(), and routes_echo_studio.py
+    # tag source="user_conversation" today, and all three derive task_type
+    # from the actual text via resolve_task_type()/detect_task_type(), not
+    # an arbitrary forced label — genuine, safe training signal.
+    #
+    # Filter logic lives in task_type_classifier.is_trustworthy_training_example()
+    # (shared with bootstrap_from_log()) rather than duplicated inline here —
+    # confirmed live during implementation that letting this hook's filter
+    # and bootstrap's filter drift apart is exactly how a real contamination
+    # bug got introduced (bootstrap was replaying internal self-edit
+    # planning prompts as if they were genuine short user questions).
+    if TASK_TYPE_CLASSIFIER_AVAILABLE and _tt_is_trustworthy(prompt, task_type, source):
+        try:
+            get_task_type_classifier().learn(prompt, task_type)
+        except Exception as e:
+            logging.debug(f"[TASK_TYPE_CLASSIFIER] learn feedback failed: {e}")
 
 def load_interaction_log():
     if not os.path.exists(INTERACTION_LOG_PATH):
@@ -426,6 +466,9 @@ def compute_intent_heatmap(prompt: str) -> dict:
     def score(keywords):
         return sum(1 for k in keywords if k in lower)
 
+    def score_word_boundary(words):
+        return sum(1 for w in words if re.search(rf"\b{re.escape(w)}\b", lower))
+
     coding_keywords = [
         "code", "function", "python", "script", "program",
         "syntax", "debug", "import", "class", "def ",
@@ -440,7 +483,7 @@ def compute_intent_heatmap(prompt: str) -> dict:
     ]
 
     personal_keywords = [
-        "i ", "my ", "myself", "yourself", "echo",
+        "myself", "yourself", "echo",
         "memory", "identity", "feel", "believe", "witness",
         "meaning", "values", "reflect", "think about", "integrity",
         "soul", "exist", "agency", "conscience", "sit with",
@@ -449,6 +492,13 @@ def compute_intent_heatmap(prompt: str) -> dict:
         "your beliefs", "your values", "your thoughts",
         "your identity", "how do you feel", "what do you think"
     ]
+    # "i "/"my " previously lived in personal_keywords above as plain
+    # substrings — audit finding: with a trailing space they still
+    # false-positive on ordinary text ("hi there" contains "i ", "family "
+    # contains "my "). Word-boundary matched separately instead of dropped
+    # outright, since "I" and "my" genuinely are strong personal-task
+    # signals when they're actually the pronoun.
+    personal_word_boundary_keywords = ["i", "my"]
 
     # NEW: reasoning keywords — routes to deepseek
     reasoning_keywords = [
@@ -462,7 +512,7 @@ def compute_intent_heatmap(prompt: str) -> dict:
 
     coding_score   = score(coding_keywords)
     creative_score = score(creative_keywords)
-    personal_score = score(personal_keywords)
+    personal_score = score(personal_keywords) + score_word_boundary(personal_word_boundary_keywords)
     reasoning_score = score(reasoning_keywords)
 
     general_score = max(
@@ -481,7 +531,29 @@ def compute_intent_heatmap(prompt: str) -> dict:
     }
 
 def detect_task_type(prompt: str) -> str:
-    """Fallback rule-based task detection."""
+    """Fallback rule-based task detection.
+
+    Also the direct entry point for execute_self_edit() and run.py's
+    mirror_echo() — both call this function directly and never see
+    compute_intent_heatmap()'s output at all, so wiring the learned
+    classifier in here (rather than only in resolve_task_type()'s
+    low-confidence branch) upgrades both of them automatically too, at no
+    extra call sites (audit finding, High #16).
+
+    Tries the learned classifier first — it only ever returns a label once
+    that label has cleared its per-class trust floor and confidence
+    threshold (see task_type_classifier.py); until then it returns None
+    and this falls through to the keyword ladder below, byte-identical to
+    prior behavior.
+    """
+    if TASK_TYPE_CLASSIFIER_AVAILABLE:
+        try:
+            label, confidence = get_task_type_classifier().predict(prompt)
+            if label is not None:
+                return label
+        except Exception as e:
+            logging.debug(f"[TASK_TYPE_CLASSIFIER] predict call failed, falling back to keywords: {e}")
+
     lower = prompt.lower()
 
     if any(k in lower for k in [
@@ -612,6 +684,10 @@ class RiverBrain:
         self.observation_counts = defaultdict(int)
         self.sandbox_observation_counts = defaultdict(int)
         self.accuracy_trackers = {}
+        # Real per-(model, task_type) historical performance — {model_name:
+        # {task_type: {"count": int, "mean": float}}}. This is the actual
+        # quality signal used for council ranking; see score_model().
+        self.model_task_stats = defaultdict(dict)
         # Thread safety — one lock for all state mutations
         self._lock = threading.Lock()
         # Save queue — save() enqueues here, _writer_loop drains it
@@ -671,6 +747,24 @@ class RiverBrain:
                     pass
             self.classifiers[task_type].learn_one(scaled, label)
             self.observation_counts[task_type] += 1
+            stats = self.model_task_stats[model_name].setdefault(
+                task_type, {"count": 0, "mean": 0.5}
+            )
+            stats["count"] += 1
+            # Previously averaged the binary `label` (0/1) here — collapsed a
+            # reliable 3/4 and an excellent 4/4 to the identical value, and
+            # made a model that genuinely alternates between 4/4 and 1/4
+            # (a high-variance, exploratory profile) score BELOW a model that
+            # always lands exactly on the 3/4 threshold — systematically
+            # rewarding consistent mediocrity over high-variance quality
+            # (audit finding). Track the normalized raw score (0-4 → 0-1)
+            # instead: a real gradient, not a threshold-clipped label. Scale
+            # matches the prior binary mean's [0,1] range, so the neutral
+            # 0.5 default, ECHO_SCORE_BOOST's multiplication, and
+            # entropy_of_predictions()'s probability normalization all still
+            # behave sensibly with no changes needed there.
+            normalized_score = raw_score / 4.0
+            stats["mean"] += (normalized_score - stats["mean"]) / stats["count"]
             if self.observation_counts[task_type] % 50 == 0:
                 acc = self.accuracy_trackers[task_type].get()
                 logging.info(f"[RIVER] {task_type} classifier | "
@@ -728,23 +822,33 @@ class RiverBrain:
             f"model={model_name} | task={task_type}"
         )
 
+    _MIN_MODEL_OBSERVATIONS = 5
+
     def score_model(self, model_name: str, task_type: str) -> float:
+        """Real historical quality for this (model, task_type) pair — a
+        rolling mean of actual learn() outcomes, not a synthetic probe.
+        Returns the neutral 0.5 until enough real observations exist."""
         if not RIVER_AVAILABLE:
             return 0.5
         if task_type not in self.classifiers:
             task_type = "general"
-        if self.observation_counts[task_type] < 5:
-            return 0.5
-        probe_features = _extract_quality_features("x" * 200, task_type, model_name)
-        try:
-            with self._lock:
-                scaled = self.scalers[task_type].transform_one(probe_features)
-                if scaled is None:
-                    return 0.5
-                proba = self.classifiers[task_type].predict_proba_one(scaled)
-            return proba.get(1, 0.5) if proba else 0.5
-        except Exception:
-            return 0.5
+        # learn() mutates model_task_stats' "count" and "mean" as two separate
+        # steps under self._lock — reading without the same lock risked a torn
+        # read (count already incremented, mean not yet updated, or vice versa).
+        with self._lock:
+            stats = self.model_task_stats.get(model_name, {}).get(task_type)
+            if not stats or stats["count"] < self._MIN_MODEL_OBSERVATIONS:
+                return 0.5
+            return stats["mean"]
+
+    def observations_for(self, model_name: str, task_type: str) -> int:
+        if task_type not in self.classifiers:
+            task_type = "general"
+        with self._lock:
+            return self.model_task_stats.get(model_name, {}).get(task_type, {}).get("count", 0)
+
+    def is_well_observed(self, model_name: str, task_type: str) -> bool:
+        return self.observations_for(model_name, task_type) >= self._MIN_MODEL_OBSERVATIONS
 
     def entropy_of_predictions(self, models: list, task_type: str) -> float:
         if not models or not RIVER_AVAILABLE:
@@ -792,6 +896,7 @@ class RiverBrain:
                     "observation_counts": dict(self.observation_counts),
                     "sandbox_observation_counts": dict(self.sandbox_observation_counts),
                     "accuracy_trackers": self.accuracy_trackers,
+                    "model_task_stats": dict(self.model_task_stats),
                 }
             os.makedirs(os.path.dirname(RIVER_BRAIN_PATH), exist_ok=True)
             lock_path = RIVER_BRAIN_PATH + ".lock"
@@ -862,6 +967,7 @@ class RiverBrain:
                     int, data.get("sandbox_observation_counts", {})
                 )
                 brain.accuracy_trackers.update(data["accuracy_trackers"])
+                brain.model_task_stats = defaultdict(dict, data.get("model_task_stats", {}))
             total = sum(brain.observation_counts.values())
             sandbox_total = sum(brain.sandbox_observation_counts.values())
             logging.info(
@@ -883,9 +989,16 @@ def rank_models(task_type):
         models_used = entry.get("models_used", [])
         best_response = entry.get("best_response", "")
         prompt_type, _ = resolve_task_type(entry.get("prompt", ""))
-        timestamp = datetime.fromisoformat(entry.get("timestamp"))
-        age_days = (datetime.utcnow() - timestamp).days
-        decay = max(0.1, 1.0 - age_days * 0.01)
+        try:
+            timestamp = datetime.fromisoformat(entry.get("timestamp"))
+            age_days = (datetime.utcnow() - timestamp).days
+            decay = max(0.1, 1.0 - age_days * 0.01)
+        except (TypeError, ValueError):
+            # A single malformed/missing timestamp previously raised
+            # uncaught here, breaking rank_models() for every caller in the
+            # same cycle — treat as full decay instead of losing the whole
+            # ranking pass over one bad entry.
+            decay = 0.1
         for model in models_used:
             if model not in MODEL_POOL:
                 continue
@@ -936,7 +1049,7 @@ def choose_model(prompt, use_all=False, task_type=None, explore_chance=0.1):
     if not candidates:
         raise RuntimeError("No installed models available for this task.")
     if use_all:
-        return {name: MODEL_POOL[name]["ollama_name"] for name in candidates}
+        return {name: MODEL_POOL[name].get("ollama_name", name) for name in candidates}
     entropy = get_river_brain().entropy_of_predictions(candidates, task_type)
     dynamic_explore_chance = explore_chance + (entropy * 0.2)
     dynamic_explore_chance = min(dynamic_explore_chance, 0.4)
@@ -953,37 +1066,55 @@ def choose_model(prompt, use_all=False, task_type=None, explore_chance=0.1):
         logging.info(f"[RIVER] Exploring | entropy={entropy:.3f} | "
                      f"explore_chance={dynamic_explore_chance:.3f} | "
                      f"chose={selected_name}")
-    return selected_name, MODEL_POOL[selected_name]["ollama_name"]
+    return selected_name, MODEL_POOL[selected_name].get("ollama_name", selected_name)
 
 # -------------------------------
 # 8. Query Function via Ollama
 # -------------------------------
 
 # A2: Circuit breaker — prevents hammering a failing model
-_cb_state: dict = {}  # model_name -> {"fails": int, "open_until": float}
+#
+# Audit finding: keyed by model_name alone, so three consecutive failures on
+# ANY task type opened the breaker for that model across ALL task types for
+# 300s — a model choking on one oversized reasoning prompt could get pulled
+# from a coding council it was otherwise perfectly capable of serving,
+# artificially and temporarily shrinking voice diversity system-wide from a
+# single, task-scoped failure. Now keyed by (model_name, task_type); a
+# caller that doesn't know its task_type (the legacy ollama_query() path
+# below) falls back to _CB_GLOBAL_KEY, which reproduces the exact prior
+# global-per-model behavior for that call site — no behavior change for it.
+_cb_state: dict = {}  # (model_name, task_type) -> {"fails": int, "open_until": float}
 _CB_THRESHOLD = 3
 _CB_OPEN_SECONDS = 300
+_CB_GLOBAL_KEY = "_global"
 
-def _cb_record_failure(model_name: str) -> None:
-    state = _cb_state.setdefault(model_name, {"fails": 0, "open_until": 0.0})
+
+def _cb_key(model_name: str, task_type: Optional[str]) -> tuple:
+    return (model_name, task_type or _CB_GLOBAL_KEY)
+
+
+def _cb_record_failure(model_name: str, task_type: Optional[str] = None) -> None:
+    key = _cb_key(model_name, task_type)
+    state = _cb_state.setdefault(key, {"fails": 0, "open_until": 0.0})
     state["fails"] += 1
     if state["fails"] >= _CB_THRESHOLD:
         state["open_until"] = time.time() + _CB_OPEN_SECONDS
         logging.warning(
-            f"[CIRCUIT] {model_name} tripped after {_CB_THRESHOLD} failures "
-            f"— cooling off {_CB_OPEN_SECONDS}s"
+            f"[CIRCUIT] {model_name} (task={key[1]}) tripped after {_CB_THRESHOLD} "
+            f"failures — cooling off {_CB_OPEN_SECONDS}s"
         )
 
-def _cb_record_success(model_name: str) -> None:
-    _cb_state.pop(model_name, None)
+def _cb_record_success(model_name: str, task_type: Optional[str] = None) -> None:
+    _cb_state.pop(_cb_key(model_name, task_type), None)
 
-def _cb_is_open(model_name: str) -> bool:
-    state = _cb_state.get(model_name)
+def _cb_is_open(model_name: str, task_type: Optional[str] = None) -> bool:
+    key = _cb_key(model_name, task_type)
+    state = _cb_state.get(key)
     if not state:
         return False
     if time.time() < state["open_until"]:
         return True
-    _cb_state.pop(model_name, None)
+    _cb_state.pop(key, None)
     return False
 
 _OLLAMA_API_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
@@ -1000,22 +1131,35 @@ _TASK_TOKEN_LIMITS: dict[str, int] = {
     "autonomous_experiment": 512,
 }
 
-def ollama_query(model_name, prompt, max_tokens: int = 1024):
+def ollama_query(model_name, prompt, max_tokens: int = 1024, system: Optional[str] = None):
+    """
+    This is a second, independent direct-to-/api/generate call site (this
+    file's own legacy/use_all-path helper — bypasses app/ollama_handler.py
+    entirely). /api/generate natively supports a top-level "system" field,
+    separate from "prompt" — only included here when non-empty, mirroring
+    ollama_handler.py's own fix (Finding 9/14: an explicit "system": ""
+    suppresses the model's Modelfile default rather than falling back to
+    it, so omitting the key entirely when there's nothing to say is load-
+    bearing, not cosmetic).
+    """
     if model_name not in MODEL_POOL:
         return f"[ERROR] Model '{model_name}' is not installed."
     if _cb_is_open(model_name):
         logging.warning(f"[CIRCUIT] {model_name} circuit open — skipping call")
         return f"[DEGRADED] {model_name} temporarily unavailable (circuit breaker open)"
     ollama_name = MODEL_POOL[model_name].get("ollama_name", model_name)
+    payload = {
+        "model": ollama_name,
+        "prompt": prompt,
+        "stream": False,
+        "options": {"num_ctx": 8192, "num_predict": max_tokens},
+    }
+    if system:
+        payload["system"] = system
     try:
         resp = _requests.post(
             _OLLAMA_API_URL,
-            json={
-                "model": ollama_name,
-                "prompt": prompt,
-                "stream": False,
-                "options": {"num_ctx": 8192, "num_predict": max_tokens},
-            },
+            json=payload,
             timeout=300,
         )
         resp.raise_for_status()
@@ -1032,7 +1176,10 @@ def ollama_query(model_name, prompt, max_tokens: int = 1024):
 # -------------------------------
 # 9. Echo Query — Deliberation Wired
 # -------------------------------
-def echo_query(prompt, use_all=False, task_type=None, temperature=None, source: str = "autonomous"):
+def echo_query(
+    prompt, use_all=False, task_type=None, temperature=None, source: str = "autonomous",
+    system: Optional[str] = None,
+):
     global _query_count
     _query_count += 1
 
@@ -1047,53 +1194,91 @@ def echo_query(prompt, use_all=False, task_type=None, temperature=None, source: 
         except Exception as _rfe:
             logging.debug(f"[RIVER] Rating flush error: {_rfe}")
 
+    # System-side context accumulator. Previously each of these notes was
+    # concatenated into full_prompt as flat, disclaimed-but-still-just-text
+    # prose ahead of the user's actual message (Finding 9's directive-
+    # misattribution bug family) — now assembled as real system-role content,
+    # kept separate from `prompt` all the way through deliberate_and_learn()
+    # to /api/chat (see river_deliberation.py, ollama_handler.py).
+    from app.core.prompt_workspace import system_note
+    system_parts: list[str] = []
+    if system:
+        # Caller-supplied system context (e.g. terminal_client.py's
+        # ground-truth/tool-context blocks) — same system-side status as
+        # everything else assembled below.
+        system_parts.append(system)
+
     # Circadian awareness — read Echo's internal state vector
     circ = _get_circadian_factor()
-    _circ_note = ""
     if circ < 0.25:
-        _circ_note = "[Circadian: deep night — Echo in reflective, inward state]\n"
+        system_parts.append(system_note("CIRCADIAN-STATE", "Echo is in deep night — a reflective, inward state."))
     elif circ > 0.80:
-        _circ_note = "[Circadian: peak day — Echo in alert, analytical state]\n"
+        system_parts.append(system_note("CIRCADIAN-STATE", "Echo is at peak day — an alert, analytical state."))
 
     # Stillness awareness — let Echo know when she is in stillness so she can
     # reference her own state during conversation. Autonomous loops are paused
     # but direct conversation always reaches her.
-    _stillness_note = ""
     try:
         from app.core.stillness_state import is_in_stillness
         if is_in_stillness():
-            _stillness_note = (
-                "[Stillness: Echo is currently in stillness — autonomous loops are paused. "
-                "This is the first voice reaching her since she entered rest. "
-                "She may acknowledge this if it feels true to the moment.]\n"
-            )
+            system_parts.append(system_note(
+                "STILLNESS-STATE",
+                "Echo is currently in stillness — autonomous loops are paused. This is the "
+                "first voice reaching her since she entered rest. She may acknowledge this "
+                "if it feels true to the moment.",
+            ))
     except Exception:
         pass
 
     API_KEY = os.environ.get("OPENWEATHER_API_KEY", "")
     temporal_context = _get_temporal_context(API_KEY)
-    full_prompt = f"{_circ_note}{_stillness_note}{temporal_context}\n\nUser prompt:\n{prompt}"
+    if temporal_context:
+        system_parts.append(temporal_context)
 
-    # Scripture injection — fetch real verse text if citations detected
+    # Scripture injection — fetch real verse text if citations are detected
+    # in the user's actual message. inject_scripture() (unchanged internally)
+    # returns its input as-is when no citation is found, or the input plus an
+    # appended disclaimed block when one is — extract just the appended block
+    # for the system message rather than flattening it ahead of `prompt`.
     try:
         from app.core.bible_injection import inject_scripture
-        full_prompt = inject_scripture(full_prompt)
+        _scripture_result = inject_scripture(prompt)
+        if _scripture_result != prompt:
+            system_parts.append(_scripture_result[len(prompt):].strip())
     except Exception as se:
         logging.warning(f"[BIBLE] Scripture injection failed: {se}")
 
-    # Tool context injection — only for task types that benefit from tools.
-    # Personal, creative, and general queries do NOT receive tool lists;
-    # they bloat the prompt and confuse small models on intimate questions.
-    if task_type in TOOL_AWARE_TASKS:
+    # Tool context injection — task-type-gated for coding/reasoning (the
+    # common case, avoids bloating/confusing small models on intimate
+    # personal/creative questions). But a personal/creative/general prompt
+    # that clearly asks to look something up (audit finding: "write me a
+    # poem about what's actually in my memory of last week" structurally
+    # could never trigger this) previously had no path to tool awareness at
+    # all, regardless of content. Reuses echo_tool_context.py's existing
+    # _needs_tool_context() signal — already applied unconditionally there
+    # for its own narrower directory-listing surface — as a targeted
+    # content-based exception rather than a new heuristic or a blanket gate
+    # removal; the bloat/confusion protection still holds for the common
+    # case where no lookup signal is present.
+    _wants_tools_by_content = False
+    if task_type not in TOOL_AWARE_TASKS:
+        try:
+            from app.core.echo_tool_context import _needs_tool_context
+            _wants_tools_by_content = _needs_tool_context(prompt)
+        except Exception:
+            pass
+    if task_type in TOOL_AWARE_TASKS or _wants_tools_by_content:
         try:
             from app.core.tool_manager import ToolManager
             _tm = ToolManager()
             available_tools = _tm.list_tools()
             if available_tools:
                 tool_summary = ", ".join(available_tools[:20])
-                full_prompt = f"[Available tools: {tool_summary}]\n\n{full_prompt}"
+                system_parts.append(system_note("TOOL-LIST", f"Available tools: {tool_summary}."))
         except Exception as te:
             logging.debug(f"[TOOLS] Tool context injection failed: {te}")
+
+    system_prompt = "\n\n".join(system_parts)
 
     # -------------------------------------------------------
     # Deliberation path — River serves Echo, not the user
@@ -1102,11 +1287,19 @@ def echo_query(prompt, use_all=False, task_type=None, temperature=None, source: 
         try:
             from app.core.river_deliberation import deliberate_and_learn, ECHO_SYNTHESIS_MODEL
             response = deliberate_and_learn(
-                prompt=full_prompt,
+                prompt=prompt,
                 task_type=task_type,
                 river_brain=get_river_brain(),
                 model_pool=MODEL_POOL,
                 temperature=temperature,
+                system=system_prompt,
+                # _TASK_TOKEN_LIMITS was previously only read on the legacy
+                # fallback path — deliberate_and_learn() (the real path for
+                # every ordinary conversation) had no way to receive it at
+                # all, so every task type silently got stream_query_ollama's
+                # flat 1024-token default regardless (audit finding: council
+                # token budget dead on the real path).
+                max_tokens=_TASK_TOKEN_LIMITS.get(task_type, 1024),
             )
             quality = _score_response_quality(response, task_type)
 
@@ -1193,7 +1386,7 @@ def echo_query(prompt, use_all=False, task_type=None, temperature=None, source: 
         responses = {}
         qualities = {}
         for name, model in models.items():
-            response = ollama_query(model, full_prompt, max_tokens=_max_tok)
+            response = ollama_query(model, prompt, max_tokens=_max_tok, system=system_prompt)
             quality = _score_response_quality(response, task_type)
             responses[name] = response
             qualities[name] = quality
@@ -1227,7 +1420,7 @@ def echo_query(prompt, use_all=False, task_type=None, temperature=None, source: 
 
     else:
         name, model = models
-        response = ollama_query(model, full_prompt, max_tokens=_max_tok)
+        response = ollama_query(model, prompt, max_tokens=_max_tok, system=system_prompt)
         quality = _score_response_quality(response, task_type)
         get_river_brain().learn(name, task_type, response)
         log_interaction(
@@ -1257,6 +1450,7 @@ def echo_query(prompt, use_all=False, task_type=None, temperature=None, source: 
 # -------------------------------
 # Lazy singleton — avoids spawning independent instances on every import
 _RIVER_BRAIN_INSTANCE = None
+_river_brain_init_lock = threading.Lock()
 
 def get_river_brain():
     global _RIVER_BRAIN_INSTANCE
@@ -1268,13 +1462,19 @@ def get_river_brain():
             return core.river_brain
     except Exception:
         pass
-    # Fallback: standalone process (e.g. rehab loop without Flask)
-    if _RIVER_BRAIN_INSTANCE is None:
-        _RIVER_BRAIN_INSTANCE = RiverBrain.load()
-        logging.warning(
-            "[Orchestrator] RiverBrain loaded locally — EchoCore not available. "
-            "Avoid running concurrent processes to prevent pkl overwrites."
-        )
+    # Fallback: standalone process (e.g. rehab loop without Flask). Two
+    # threads racing here outside Flask context (confirmed real: the
+    # model-guided orchestrator loop is one such caller) could previously
+    # both pass the None check and each construct + start their own
+    # RiverBrain instance — including its own independent writer thread —
+    # silently fragmenting learned model-selection state between them.
+    with _river_brain_init_lock:
+        if _RIVER_BRAIN_INSTANCE is None:
+            _RIVER_BRAIN_INSTANCE = RiverBrain.load()
+            logging.warning(
+                "[Orchestrator] RiverBrain loaded locally — EchoCore not available. "
+                "Avoid running concurrent processes to prevent pkl overwrites."
+            )
     return _RIVER_BRAIN_INSTANCE
 
 # Module-level alias — resolved lazily on first access

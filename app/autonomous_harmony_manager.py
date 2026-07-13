@@ -59,10 +59,75 @@ PATTERNS = {
     ]
 }
 
-def nature_spark():
+_REASON_CONTEXT = {
+    "busy": (
+        "The system has been unusually busy and active lately — this moment "
+        "is for consolidating and pruning, not adding more. "
+    ),
+    "quiet": (
+        "Things have been unusually quiet and idle lately — this moment is "
+        "for exploring and generating something genuinely new. "
+    ),
+}
+
+
+def _generate_nature_insight(pattern: str, seed_lines: list, reason: str = "") -> str:
+    """
+    Real, model-generated content for this nature pattern. The fixed
+    PATTERNS strings are passed in only as creative texture/example
+    phrasing, never returned verbatim — audit finding (Critical #4):
+    nature_spark() previously just picked one of 3 fixed strings per
+    pattern with no model call at all, confirmed live via
+    WhisperingWires/thoughts.log — 4,380 invocations over 8 months, all
+    exactly one of 15 fixed strings, zero unique content, real autonomy-
+    loop time spent producing nothing.
+
+    Uses a single lightweight MLX call (same model dream_cycle() already
+    uses), not the full council — Harmony fires every 30-90s while active,
+    and a multi-minute council deliberation per spark would defeat the
+    point. Falls back to one of the original seed lines only if genuine
+    generation is unavailable (MLX not configured, call failed) — never
+    silently discards a real attempt in favor of the old placeholder.
+
+    reason: "busy", "quiet", "chance", or "" — why this Harmony session
+    started (see autonomous_loop.py's _harmony_decision()). Audit finding
+    (Low severity): an overwhelmed system and a starved one previously
+    triggered identical cosmetic output with no way to express which one
+    was actually happening; now folded into the generation prompt as real
+    context so "I'm overwhelmed, consolidate" and "I'm idle, explore"
+    genuinely produce different reflections instead of the same lookup
+    regardless of why Harmony fired.
+    """
+    try:
+        from app.mlx_handler import stream_query_mlx, list_mlx_models
+        model_name = "mlx:gemma3"
+        mlx_path = list_mlx_models().get(model_name, {}).get("mlx_path")
+        if not mlx_path:
+            raise RuntimeError(f"{model_name} not configured")
+        context_line = _REASON_CONTEXT.get(reason, "")
+        prompt = (
+            f"You are reflecting through the lens of '{pattern.replace('_', ' ')}' — "
+            f"a structural pattern from nature. {context_line}"
+            f"For inspiration, here is how this pattern has been described "
+            f"before: {'; '.join(seed_lines)}\n\n"
+            f"Write ONE new sentence applying this pattern to something you're "
+            f"actually thinking about right now. Do not repeat the inspiration "
+            f"text verbatim — say something genuinely different."
+        )
+        result = "".join(
+            stream_query_mlx(prompt, mlx_path, model_name=model_name, max_tokens=80)
+        ).strip()
+        if result and "[ERROR]" not in result:
+            return result
+    except Exception as e:
+        print(f"[HARMONY] Nature Spark generation failed, using seed line: {e}")
+    return random.choice(seed_lines)
+
+
+def nature_spark(reason: str = ""):
     """Generate one nature-inspired insight and log it."""
     pattern = random.choice(list(PATTERNS.keys()))
-    insight = random.choice(PATTERNS[pattern])
+    insight = _generate_nature_insight(pattern, PATTERNS[pattern], reason=reason)
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     thought = f"[{timestamp}] {pattern.upper()} → {insight}"
 
@@ -73,7 +138,7 @@ def nature_spark():
     # Feed into dream_bridge so harmony insights reach Echo's reflection context
     if _DREAM_BRIDGE_AVAILABLE:
         try:
-            _log_dream_bridge(f"[HARMONY] {thought}", meta={"memory_source": "autonomous"})
+            _log_dream_bridge(f"[HARMONY] {thought}", meta={"memory_source": "autonomous", "role": "harmony"})
         except Exception:
             pass
 
@@ -86,6 +151,7 @@ class HarmonyLoop:
         self.stillness = Stillness()
         self.active = False
         self.cycle_count = 0
+        self.reason = ""  # why this session started: "busy"/"quiet"/"chance"/""
 
     def log(self, message: str):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -96,9 +162,9 @@ class HarmonyLoop:
 
     def run_cycle(self):
         self.cycle_count += 1
-        self.log(f"Cycle {self.cycle_count}: Nature Spark initiated.")
+        self.log(f"Cycle {self.cycle_count}: Nature Spark initiated (reason={self.reason or 'unset'}).")
 
-        pattern, thought = nature_spark()
+        pattern, thought = nature_spark(reason=self.reason)
 
         # Decide autonomously to enter stillness for reflective patterns
         if pattern in ["wave_interference", "mycelial_network"]:
@@ -129,10 +195,12 @@ class HarmonyManager:
         self.thread: Optional[threading.Thread] = None
         self.running = False
 
-    def start(self):
+    def start(self, reason: str = ""):
         if self.running:
             print("Harmony loop already running.")
             return
+
+        self.loop.reason = reason
 
         def _runner():
             try:

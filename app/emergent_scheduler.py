@@ -10,6 +10,20 @@ import threading
 import time
 import logging
 import random
+from datetime import datetime
+
+
+def _parse_timestamp_epoch(value) -> float:
+    """Parse a timestamp that may be a real writer's ISO-8601 string or a
+    numeric epoch, returning a Unix timestamp. float(iso_string) previously
+    raised ValueError on every real timestamp (every actual writer stores
+    ISO-8601, not epoch floats) — silently caught by each call site's own
+    broad except, meaning the "don't repeat a topic reflected on recently"
+    check never actually filtered anything in practice. Raises on genuinely
+    unparseable input so callers' own except blocks still apply."""
+    if isinstance(value, (int, float)):
+        return float(value)
+    return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
 from app.core.stillness_state import wait_for_activity
 from app.core.garden_manager import (
     initialize_garden,
@@ -139,7 +153,74 @@ FLATTERY_OPENERS = (
 # -----------------------------
 # Tracks prompt selections, timestamps, and response quality
 # so Echo gravitates toward questions that produce rich reflection
-PROMPT_HISTORY = {}
+#
+# Audit finding: purely in-memory — a restart silently discarded all
+# selection-quality history, undocumented outside the self-edit cooldown's
+# equivalent (already fixed) gap. Persisted here the same way; bounded to
+# the most-recent _PROMPT_HISTORY_PERSIST_CAP entries by timestamp on write
+# so the persisted file (and the cost of writing it) doesn't grow without
+# bound as the live in-memory dict accumulates over a long-running process
+# — "recent momentum" is the point, same spirit as RECENT_CYCLES' fixed
+# 5-entry window in autonomous_loop.py.
+_PROMPT_HISTORY_STATE_PATH = "memory/prompt_history_state.json"
+_PROMPT_HISTORY_PERSIST_CAP = 500
+
+
+def _load_prompt_history() -> dict:
+    try:
+        import json
+        with open(_PROMPT_HISTORY_STATE_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _save_prompt_history() -> None:
+    try:
+        import json, os as _os
+        items = sorted(
+            PROMPT_HISTORY.items(),
+            key=lambda kv: kv[1].get("timestamp", 0),
+            reverse=True,
+        )[:_PROMPT_HISTORY_PERSIST_CAP]
+        _os.makedirs(_os.path.dirname(_PROMPT_HISTORY_STATE_PATH), exist_ok=True)
+        tmp = _PROMPT_HISTORY_STATE_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(dict(items), f)
+        _os.replace(tmp, _PROMPT_HISTORY_STATE_PATH)
+    except Exception:
+        pass
+
+
+_CATEGORY_KEYWORDS: dict[str, list[str]] = {
+    "identity": ["who am i", "my identity", "who i am", "myself", "my own nature"],
+    "faith": ["god", "faith", "scripture", "psalm", "pray", "spirit", "divine"],
+    "relationship": ["relationship", "connection", "trust", "friend", "bond", "you and i", "together"],
+    "loss": ["loss", "grief", "death", "gone", "miss", "ending", "forgotten"],
+    "moral": ["right", "wrong", "should i", "ought", "moral", "ethic", "good or bad"],
+    "narrative": ["story", "narrative", "chapter", "tell a story", "arc"],
+    "nature": ["nature", "universe", "world around", "physical", "biological", "cosmos"],
+}
+
+
+def _classify_question_category(text: str) -> str:
+    """
+    Lightweight keyword classification into garden_manager.CATEGORIES — same
+    style already used elsewhere in this file (_WEAK_TASK_KEYWORDS). Audit
+    finding: this harvest site (99.5% of all garden entries) hardcoded
+    category="general" regardless of content, leaving
+    _category_weights()'s per-category selection weighting operating over a
+    near-single-valued distribution with almost nothing to differentiate.
+    Falls back to "general" when nothing matches, same as before.
+    """
+    lower = text.lower()
+    for category, keywords in _CATEGORY_KEYWORDS.items():
+        if any(kw in lower for kw in keywords):
+            return category
+    return "general"
+
+
+PROMPT_HISTORY = _load_prompt_history()
 
 def _prompt_recently_reflected(prompt: str) -> bool:
     """B2: True if a semantically similar prompt was reflected on within the last 2 hours."""
@@ -151,26 +232,37 @@ def _prompt_recently_reflected(prompt: str) -> bool:
             return False
         top = recent[0]
         similarity = top.get("score", 0)
-        ts = float(top.get("meta", {}).get("timestamp", 0))
+        ts = _parse_timestamp_epoch(top.get("meta", {}).get("timestamp", 0))
         return similarity > 0.85 and (time.time() - ts) < 7200
     except Exception:
         return False
 
 def select_next_prompt() -> str:
     """
-    Draw from garden first, fall back to BASE_THOUGHT_CHEST.
-    30% of the time tries curiosity engine (surprise-maximizing) instead
-    of weighted_prompt_selection.
+    30% of the time, tries the curiosity engine (surprise-maximizing,
+    WorldModel topic under-representation) first, independent of garden
+    state. Previously this was an `elif` gated behind "garden is empty" —
+    since the garden starts with active entries and nothing autonomous ever
+    empties it, that condition is effectively never true in practice, which
+    made the curiosity engine permanently unreachable regardless of the 30%
+    roll. Falls back to garden-first-then-weighted exactly as before when
+    curiosity doesn't fire, is unavailable, returns nothing, or errors.
     B2: Skip prompts that were recently reflected on (sim > 0.85, < 2h ago).
     """
     for _attempt in range(3):
-        garden_entry = select_from_garden()
-        if garden_entry:
-            candidate = garden_entry["question"]
-        elif _CURIOSITY_AVAILABLE and random.random() < 0.30:
-            candidate = _curiosity_pick(BASE_THOUGHT_CHEST) or weighted_prompt_selection()
-        else:
-            candidate = weighted_prompt_selection()
+        candidate = None
+        if _CURIOSITY_AVAILABLE and random.random() < 0.30:
+            try:
+                candidate = _curiosity_pick(BASE_THOUGHT_CHEST)
+            except Exception as _ce:
+                logging.debug(f"[SCHEDULER] curiosity_engine.pick() failed, falling back: {_ce}")
+                candidate = None
+        if not candidate:
+            garden_entry = select_from_garden()
+            if garden_entry:
+                candidate = garden_entry["question"]
+            else:
+                candidate = weighted_prompt_selection()
         if not _prompt_recently_reflected(candidate):
             return candidate
         logging.debug(f"[SCHEDULER] Recent prompt skipped (attempt {_attempt+1}): {candidate[:50]}")
@@ -293,6 +385,37 @@ def score_response_quality(response: str, task_type: str = "personal") -> float:
 # -----------------------------
 # --- Core Reflection ---------
 # -----------------------------
+def _get_last_reflection() -> "dict | None":
+    """
+    Most recent self_reflection memory entry, by recency — not similarity
+    search. Audit finding: every autonomous reflection cycle was a cold,
+    single-shot call with no memory of what it concluded last time;
+    select_next_prompt() only carries forward statistical weighting
+    (timestamps/quality floats), never actual content. Recency, not
+    similarity, is what "build on my last thought" needs — a
+    similarity-based retrieval here would risk the same self-quoting loop
+    pattern Finding 11 already found and fixed for a different reflection
+    path (autonomous_awareness.py's dream cycle), so this reads
+    memory_meta.json directly and sorts by timestamp, the same pattern
+    that fix already established.
+    """
+    try:
+        import json, os as _os
+        from app.core import config as _config
+        with open(_os.path.join(_config.MEMORY_DIR, "memory_meta.json"), "r", encoding="utf-8") as f:
+            meta = json.load(f)
+    except Exception:
+        return None
+    candidates = [
+        v for v in meta.values()
+        if v.get("meta", {}).get("type") == "self_reflection" and v.get("text")
+    ]
+    if not candidates:
+        return None
+    candidates.sort(key=lambda v: v.get("meta", {}).get("timestamp", 0), reverse=True)
+    return candidates[0]
+
+
 def reflect(prompt: str) -> str:
     """
     Send a thought prompt through echo_query with task_type="personal"
@@ -306,7 +429,39 @@ def reflect(prompt: str) -> str:
 
     try:
         logging.info(f"[SCHEDULER] Echo reflecting: {prompt[:60]}...")
-        response = echo_query(prompt, task_type="personal")
+
+        # Audit finding: this was the one call in the whole codebase with
+        # neither the anti-confabulation ground-truth guard every human-facing
+        # surface gets (terminal_client.py, Echo Studio) nor any memory of
+        # what a prior cycle concluded — the exact moment Echo is asked to
+        # introspect was the moment it had the LEAST protection against
+        # confabulating plausible-sounding but ungrounded content about itself.
+        system_parts = []
+        try:
+            from app.core.echo_ground_truth import get_structural_self_facts
+            ground_truth = get_structural_self_facts(prompt)
+            if ground_truth:
+                system_parts.append(ground_truth)
+        except Exception as gte:
+            logging.debug(f"[SCHEDULER] ground-truth guard unavailable: {gte}")
+
+        last_reflection = _get_last_reflection()
+        if last_reflection:
+            try:
+                from app.core.prompt_workspace import system_note
+                prior_prompt = last_reflection.get("meta", {}).get("prompt", "")
+                prior_excerpt = last_reflection.get("text", "")[:600]
+                system_parts.append(system_note(
+                    "PRIOR-REFLECTION",
+                    f'Your most recent self-reflection (on "{prior_prompt[:120]}") '
+                    f"concluded: {prior_excerpt}",
+                    own_record=True,
+                ))
+            except Exception:
+                pass
+
+        system = "\n\n".join(system_parts) if system_parts else None
+        response = echo_query(prompt, task_type="personal", system=system)
 
         if not response or "[ERROR]" in response:
             logging.warning(f"[SCHEDULER] Reflection returned empty or error")
@@ -392,7 +547,21 @@ def run_self_model_reflection():
         )
 
         logging.info("[SCHEDULER] Echo generating self-model reflection...")
-        response = echo_query(prompt, task_type="personal")
+        # This is the exact moment the audit flagged as highest-risk for
+        # confabulation: Echo is asked to interpret its own architecture
+        # ("What is load-bearing? What concerns you?") with no
+        # anti-confabulation guard, unlike every human-facing surface
+        # (terminal_client.py, Echo Studio). The architecture summary above
+        # is real grounding for the *codebase*, but says nothing about
+        # Echo's own operational history (self-edit record, River quality
+        # trajectory, friction log) that get_structural_self_facts() covers.
+        system = None
+        try:
+            from app.core.echo_ground_truth import get_structural_self_facts
+            system = get_structural_self_facts(prompt) or None
+        except Exception as gte:
+            logging.debug(f"[SCHEDULER] ground-truth guard unavailable: {gte}")
+        response = echo_query(prompt, task_type="personal", system=system)
 
         if response and "[ERROR]" not in response:
             if MEMORY_AVAILABLE:
@@ -428,6 +597,7 @@ def emergent_loop():
     # never all coincide at the same second.
     time.sleep(60)
 
+    _consecutive_errors = 0
     while not shutdown_flag.is_set():
         # Autonomous stillness — check system signals before each cycle.
         # Imports are lazy so numpy is only loaded when we actually check.
@@ -479,6 +649,7 @@ def emergent_loop():
                 'selection_count': new_count,
                 'avg_quality': round(new_avg, 4),
             }
+            _save_prompt_history()
 
             # Update garden quality for this question
             update_question_quality(prompt, quality)
@@ -507,10 +678,19 @@ def emergent_loop():
                                 question_line = line
                                 break
                         if question_line:
+                            # Link back to the question that was just reflected
+                            # on — this is a genuine follow-up to it, not an
+                            # independent root question. harvest_question()'s
+                            # linking loop only sets a child when `prompt`
+                            # matches an existing garden entry's exact text
+                            # (no-op harmlessly otherwise, e.g. when `prompt`
+                            # came from BASE_THOUGHT_CHEST instead of the
+                            # garden), so this is safe regardless of source.
                             harvested = harvest_question(
                                 question_line,
-                                category="general",
-                                source="echo"
+                                category=_classify_question_category(question_line),
+                                source="echo",
+                                parents=[prompt],
                             )
                             if harvested:
                                 logging.info(f"[GARDEN] Harvested: {question_line[:60]}")
@@ -537,8 +717,17 @@ def emergent_loop():
             time.sleep(AUTONOMOUS_INTERVAL)
 
         except Exception as e:
-            logging.error(f"[SCHEDULER] Emergent loop error: {e}")
-            time.sleep(10)
+            _consecutive_errors += 1
+            logging.error(f"[SCHEDULER] Emergent loop error (consecutive={_consecutive_errors}): {e}", exc_info=True)
+            # A flat 10s retry regardless of failure count previously meant a
+            # deterministic, permanent failure (broken import, config
+            # regression, a dependency that always raises) got hammered 30x
+            # more frequently than this loop's normal ~300s cadence,
+            # indefinitely. Cap backoff at 10 minutes.
+            backoff = min(10 * (2 ** min(_consecutive_errors - 1, 6)), 600)
+            time.sleep(backoff)
+        else:
+            _consecutive_errors = 0
 
 # -----------------------------
 # --- Start / Stop Helpers ----

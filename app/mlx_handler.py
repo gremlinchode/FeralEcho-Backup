@@ -18,6 +18,7 @@ from typing import Generator
 _MLX_AVAILABLE = False
 try:
     from mlx_lm import load as _mlx_load, generate as _mlx_generate
+    from mlx_lm.sample_utils import make_sampler as _mlx_make_sampler
     _MLX_AVAILABLE = True
     logging.info("[MLX] mlx-lm backend available")
 except ImportError:
@@ -41,14 +42,24 @@ def _load_mlx_model(mlx_path: str):
     return _model_cache[mlx_path]
 
 
-def _format_prompt(tokenizer, prompt: str, model_name: str) -> str:
+def _format_prompt(tokenizer, prompt: str, model_name: str, system: str = None) -> str:
     """
     Apply the model's chat template so instruction-tuned models respond
     in the right format. Disables Qwen3 thinking mode for council use —
     we want the conclusion, not the chain-of-thought.
+
+    system: optional system-role turn, prepended ahead of the user turn.
+    The tokenizer's chat template already supports a system role natively —
+    this only needed a kwarg to actually use it, so mlx:* councillors don't
+    regress to system-content-stuffed-in-the-user-turn once Ollama
+    councillors in the same council cycle get real system messages
+    (see river_deliberation.py's system= threading).
     """
     try:
-        messages = [{"role": "user", "content": prompt}]
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
         kwargs = {"tokenize": False, "add_generation_prompt": True}
         if "qwen3" in model_name.lower() or "qwen-3" in model_name.lower():
             kwargs["enable_thinking"] = False
@@ -62,31 +73,48 @@ def stream_query_mlx(
     mlx_path: str,
     model_name: str = "",
     max_tokens: int = 1024,
+    system: str = None,
+    temperature: float = None,
 ) -> Generator[str, None, None]:
     """
     Run inference on an MLX model and yield the response as a single chunk.
     Interface mirrors stream_query_ollama() so it drops in anywhere that
     function is called.
+
+    temperature: previously silently dropped entirely — stream_query_ollama's
+    MLX routing branch didn't forward it and this function had no parameter
+    to receive it. mlx_lm's generate_step() defaults to a greedy/argmax
+    sampler when none is given (make_sampler's own temp=0.0 default), so
+    MLX councillors were generating fully deterministic output every call
+    regardless of what temperature the rest of a council cycle used — worse
+    than "same fixed operating point" (the Ollama-side half of this finding),
+    genuinely zero sampling diversity. When temperature is given, builds a
+    real sampler so MLX councillors match Ollama councillors' behavior in
+    the same cycle instead of regressing to greedy decoding.
     """
     if not _MLX_AVAILABLE:
-        yield "I'm having trouble thinking right now. MLX backend is not available."
+        yield "[ERROR] MLX backend is not available."
         return
     try:
         model, tokenizer = _load_mlx_model(mlx_path)
-        formatted = _format_prompt(tokenizer, prompt, model_name or mlx_path)
+        formatted = _format_prompt(tokenizer, prompt, model_name or mlx_path, system=system)
+        _gen_kwargs = {}
+        if temperature is not None:
+            _gen_kwargs["sampler"] = _mlx_make_sampler(temp=max(0.0, min(2.0, temperature)))
         response = _mlx_generate(
             model,
             tokenizer,
             prompt=formatted,
             max_tokens=max_tokens,
             verbose=False,
+            **_gen_kwargs,
         )
         # Strip any residual thinking tags (Qwen3 safety net)
         response = _THINK_TAG_RE.sub("", response).strip()
         yield response
     except Exception as e:
         logging.error(f"[MLX] Generation failed for {mlx_path}: {e}")
-        yield "I'm having trouble thinking right now. Please try again later."
+        yield f"[ERROR] MLX generation failed: {e}"
 
 
 def list_mlx_models() -> dict:

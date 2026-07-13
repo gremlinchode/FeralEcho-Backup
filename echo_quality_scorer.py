@@ -143,6 +143,28 @@ def _count_regex_hits(text: str, patterns: list) -> int:
     return sum(1 for p in patterns if re.search(p, lower))
 
 
+_FENCE_CLOSED_RE = re.compile(r'```(?:python|py)?\s*\n(.*?)\n```', re.DOTALL)
+_FENCE_OPEN_RE = re.compile(r'```(?:python|py)?\s*\n')
+
+
+def _extract_code_text(response: str) -> str:
+    """Extract the Python portion of a response, tolerating a truncated
+    (unclosed) fenced block — a real failure mode when generation hits its
+    token ceiling mid-block. Without this, a substantial but cut-off
+    implementation fell through to parsing the *raw* response including the
+    literal opening ```python marker, which is invalid syntax, and scored
+    as "no detectable code" despite containing real code."""
+    closed = _FENCE_CLOSED_RE.search(response)
+    if closed:
+        return closed.group(1).strip()
+
+    open_match = _FENCE_OPEN_RE.search(response)
+    if open_match:
+        return response[open_match.end():].strip()
+
+    return response
+
+
 def _has_real_code(response: str) -> bool:
     """Check if response contains actual executable code, not just code-talk."""
     def _count_real_nodes(tree) -> int:
@@ -151,23 +173,11 @@ def _has_real_code(response: str) -> bool:
                                       ast.Assign, ast.Return, ast.Import,
                                       ast.ImportFrom, ast.Expr))])
 
-    # Path 1: explicitly fenced block (```python, ```py, or plain ```)
-    code_block = re.search(r'```(?:python|py)?\s*\n(.*?)\n```', response, re.DOTALL)
-    if code_block:
-        try:
-            tree = ast.parse(code_block.group(1).strip())
-            return _count_real_nodes(tree) >= 2
-        except SyntaxError:
-            return False
-
-    # Path 2: unfenced raw Python. The self-edit pipeline instructs models to
-    # output code with no markdown fencing ("Output ONLY valid Python code"),
-    # so valid code arrives as plain text. Attempt ast.parse() on the full
-    # response — prose (numbered plans, narrative sentences) reliably fails
-    # because list numbering ("1. ...") and natural-language openers are not
-    # valid Python syntax.
+    # Unfenced raw Python also lands here (self-edit prompts instruct models
+    # to output code with no markdown fencing) — _extract_code_text() returns
+    # the response unchanged when no fence marker is present at all.
     try:
-        tree = ast.parse(response)
+        tree = ast.parse(_extract_code_text(response))
         return _count_real_nodes(tree) >= 2
     except SyntaxError:
         return False
@@ -284,10 +294,22 @@ def _has_static_errors(tree) -> bool:
 
 
 def _ast_complexity(tree) -> int:
-    """Count meaningful structural nodes as proxy for algorithmic substance."""
+    """Count meaningful structural nodes as proxy for algorithmic substance.
+
+    Includes IfExp (ternary) and BoolOp (and/or short-circuit guards) —
+    previously only counted statement-level If/For/While/comprehensions, so
+    a concise recursive function or guard clause expressed as a ternary or
+    boolean short-circuit (real conditional logic, just not a statement)
+    scored identically to a trivial `return a + b` stub (audit finding: the
+    scorer rewards imperative verbosity over concise-but-correct code).
+    Does not attempt to detect algorithmic substance inside a single dense
+    function call (e.g. a vectorized numpy expression) — that needs
+    semantic understanding a static AST count can't provide. A known,
+    documented limitation, not something this change claims to fix.
+    """
     STRUCTURAL = (ast.If, ast.For, ast.While, ast.ListComp, ast.DictComp,
                   ast.SetComp, ast.GeneratorExp, ast.Try, ast.With,
-                  ast.AsyncFor, ast.AsyncWith)
+                  ast.AsyncFor, ast.AsyncWith, ast.IfExp, ast.BoolOp)
     return sum(1 for n in ast.walk(tree) if isinstance(n, STRUCTURAL))
 
 
@@ -349,8 +371,7 @@ def _score_response_quality(response: str, task_type: str = "general") -> int:
         if not _has_real_code(response):
             return 1
 
-        code_block = re.search(r'```(?:python|py)?\s*\n(.*?)\n```', response, re.DOTALL)
-        code_text = code_block.group(1).strip() if code_block else response
+        code_text = _extract_code_text(response)
         try:
             tree = ast.parse(code_text)
         except SyntaxError:
@@ -387,7 +408,21 @@ def _score_response_quality(response: str, task_type: str = "general") -> int:
     # feature — River may learn its correlation (or anti-correlation) with council
     # ratings. uncertainty_integrity_score() has no remaining reader; it is
     # dormant code (logged in findings tracker, same treatment as self_heal.py).
-    raw = 0.60 * substance + 0.25 * (1.0 - penalty) + 0.15 * scripture
+    #
+    # Scripture-fidelity previously always took a fixed 0.15 weight, even for
+    # responses that never mention scripture at all (audit finding) — in that
+    # case _scripture_integrity_score() returns the neutral 0.5 sentinel, so
+    # this term contributed a constant 0.075 regardless of anything about the
+    # response: a hardcoded, doctrinally-specific check permanently baked into
+    # the signal training River's model selection for every non-coding task,
+    # whether or not scripture was ever relevant. Only include it when a
+    # citation is actually present (scripture != the neutral sentinel);
+    # otherwise redistribute its weight across the two genuinely universal
+    # dimensions. Byte-identical to before for the rare case that does cite.
+    if scripture != 0.5:
+        raw = 0.60 * substance + 0.25 * (1.0 - penalty) + 0.15 * scripture
+    else:
+        raw = 0.70 * substance + 0.30 * (1.0 - penalty)
 
     # Map 0.0-1.0 raw score to 0-4 int
     if raw < 0.2:
@@ -424,7 +459,12 @@ def _extract_quality_features_v2(
     - hollow_ratio
     - has_real_code (coding tasks)
     """
-    TASK_TYPE_MAP = {"general": 0, "coding": 1, "creative": 2, "personal": 3}
+    # Kept in sync with echo_model_orchestrator.py's TASK_TYPE_MAP — that
+    # copy added "reasoning": 4 when the reasoning task type was introduced,
+    # but this local duplicate was never updated, so every reasoning-task
+    # response's task_type_id feature silently defaulted to 0 (== general),
+    # degrading River's task-specific pattern learning for reasoning tasks.
+    TASK_TYPE_MAP = {"general": 0, "coding": 1, "creative": 2, "personal": 3, "reasoning": 4}
 
     base = {
         "length_norm": 0.0,

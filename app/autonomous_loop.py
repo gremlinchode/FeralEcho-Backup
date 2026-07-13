@@ -61,7 +61,7 @@ except Exception:
     _LOG_INTERACTION_AVAILABLE = False
 
 from app.core.awareness_tools_integration import discover_and_register_tools
-from sandbox.runner import run_sandbox_script
+from sandbox.run_script import run_sandbox_script_isolated as run_sandbox_script
 from app.core.memory_bridge import log_dream_bridge
 from app.core.stillness_state import wait_for_activity
 from app.autonomous_harmony_manager import HarmonyManager
@@ -72,29 +72,106 @@ SANDBOX_INTERVAL = 3
 TOOLS_PATH = os.path.join(os.getcwd(), "app", "tools")
 
 logger = logging.getLogger(__name__)
+
+# Bounds for surprise-modulated sleep — see _compute_next_sleep below.
+_SLEEP_MODULATION_MIN: float = 0.5
+_SLEEP_MODULATION_MAX: float = 1.5
+
+
+def _compute_next_sleep(wm, base_sleep: int) -> int:
+    """
+    Modulate the next cycle's sleep by how surprising the world model found
+    what it just observed, relative to its own recent baseline — audit
+    finding: WorldModel.update() computes a real KL-divergence surprise_F
+    every cycle, but nothing downstream ever consumed it; every loop
+    cadence in this codebase was a flat constant regardless. More surprising
+    than the recent baseline (ratio > 1) shortens the wait, so a genuinely
+    novel stretch of content gets followed up on sooner; less surprising
+    lengthens it. Bounded to [0.5x, 1.5x] of base_sleep so this can never
+    produce a runaway fast-loop or an excessively long silent gap — a
+    modulation, not a replacement, of the fixed interval.
+    """
+    if wm is None:
+        return base_sleep
+    try:
+        last, r10, r50 = wm.get_surprise()
+    except Exception:
+        return base_sleep
+    baseline = r50 if r50 > 1e-6 else (r10 if r10 > 1e-6 else 0.0)
+    if baseline <= 1e-6:
+        return base_sleep
+    ratio = last / baseline
+    multiplier = max(_SLEEP_MODULATION_MIN, min(_SLEEP_MODULATION_MAX, 1.0 / ratio))
+    return int(base_sleep * multiplier)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 harmony_manager = HarmonyManager()
 
 # ---------------- CYCLE HISTORY ---------------- #
-RECENT_CYCLES = deque(maxlen=5)  # store last 5 cycles' intensity scores
+# Audit finding: this was purely in-memory — a restart silently discarded
+# whatever "momentum" had accumulated, with should_enter_harmony() starting
+# blind again every time (mirrors the same pattern already fixed for the
+# self-edit cooldown and, this pass, drift detectors/terminal session).
+# Only 5 small floats, so persisting on every update is cheap.
+_MOMENTUM_STATE_PATH = "memory/autonomous_loop_momentum.json"
+
+
+def _load_recent_cycles() -> deque:
+    try:
+        import json
+        with open(_MOMENTUM_STATE_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return deque(data.get("recent_cycles", []), maxlen=5)
+    except Exception:
+        return deque(maxlen=5)
+
+
+def _save_recent_cycles() -> None:
+    try:
+        import json
+        os.makedirs(os.path.dirname(_MOMENTUM_STATE_PATH), exist_ok=True)
+        tmp = _MOMENTUM_STATE_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"recent_cycles": list(RECENT_CYCLES)}, f)
+        os.replace(tmp, _MOMENTUM_STATE_PATH)
+    except Exception:
+        pass
+
+
+RECENT_CYCLES = _load_recent_cycles()  # store last 5 cycles' intensity scores
 
 def record_cycle_intensity(fetch_count, sandbox_ran, optuna_ran):
     """Compute a simple intensity score for this cycle."""
     score = fetch_count + (2 if sandbox_ran else 0) + (3 if optuna_ran else 0)
     RECENT_CYCLES.append(score)
+    _save_recent_cycles()
     return score
+
+def _harmony_decision() -> tuple:
+    """Returns (should_enter, reason) — reason is "busy", "quiet", or
+    "chance". Split out from should_enter_harmony() (which stays a thin
+    wrapper, unchanged signature/behavior for any other caller) so the
+    actual trigger reason can be threaded into HarmonyManager.start() —
+    audit finding: an overwhelmed system and a starved one previously
+    triggered identical cosmetic output with no way to express which one
+    was actually happening."""
+    if not RECENT_CYCLES:
+        return False, ""
+    avg_intensity = sum(RECENT_CYCLES) / len(RECENT_CYCLES)
+    # Trigger if recent cycles are very busy or unusually quiet
+    if avg_intensity >= 5:
+        return True, "busy"
+    if avg_intensity <= 1:
+        return True, "quiet"
+    # Small random chance otherwise
+    if random.random() < 0.1:
+        return True, "chance"
+    return False, ""
+
 
 def should_enter_harmony():
     """Decide autonomously if Harmony should run."""
-    if not RECENT_CYCLES:
-        return False
-    avg_intensity = sum(RECENT_CYCLES) / len(RECENT_CYCLES)
-    # Trigger if recent cycles are very busy or unusually quiet
-    if avg_intensity >= 5 or avg_intensity <= 1:
-        return True
-    # Small random chance otherwise
-    return random.random() < 0.1
+    return _harmony_decision()[0]
 
 # ---------------- SANDBOX EXECUTION ---------------- #
 def run_autonomous_sandbox_cycle():
@@ -120,8 +197,9 @@ def run_autonomous_sandbox_cycle():
 
         # Baseline: original hello_sandbox.py
         script_to_run = "hello_sandbox.py"
+        script_path = os.path.join("sandbox", "scripts", script_to_run)
         logger.info(f"[SANDBOX] Running baseline: {script_to_run}")
-        result = run_sandbox_script(script_to_run, timeout=600)
+        result = run_sandbox_script(script_path, timeout=600)
         output = result.get("output") or result.get("error")
         if result["success"]:
             logger.info(f"[SANDBOX RESULT] {output}")
@@ -131,7 +209,7 @@ def run_autonomous_sandbox_cycle():
             # ("Computation result = 285") has no semantic retrieval value
             # and was writing a low-signal FAISS entry on every run.
             log_dream_bridge(f"[SandboxFailure] {script_to_run} | {output}",
-                             meta={"memory_source": "autonomous"})
+                             meta={"memory_source": "autonomous", "role": "sandbox_failure"})
         return True
     except Exception as e:
         logger.error(f"[SANDBOX] Error: {e}", exc_info=True)
@@ -205,7 +283,7 @@ def autonomous_loop():
             try:
                 research = fetch_claude_research()
                 if research:
-                    log_dream_bridge(research, meta={"memory_source": "claude_research"})
+                    log_dream_bridge(research, meta={"memory_source": "claude_research", "role": "research"})
                     collected_texts.append(research)
                     logger.info("[LOOP] Claude research synthesized and stored.")
             except Exception as e:
@@ -257,17 +335,31 @@ def autonomous_loop():
         optuna_ran = False
 
         # 5. Record intensity and decide on Harmony
-        record_cycle_intensity(fetch_count, sandbox_ran, optuna_ran)
-        if should_enter_harmony():
-            logger.info("Echo decides to enter Harmony (Nature Spark + Stillness).")
-            harmony_manager.start()
-            # Let Harmony run for a short autonomous burst
-            time.sleep(random.randint(60, 180))
-            harmony_manager.stop()
-            logger.info("Harmony session ended. Resuming autonomous loop.")
+        # Unlike every other step in this loop, this section had no try/
+        # except at all — an uncaught exception here (or from time.sleep
+        # itself being interrupted in a way that re-raises) would propagate
+        # out of the `while True:` and permanently kill this daemon thread,
+        # with no supervisor to restart it and no visible symptom beyond
+        # certain log lines quietly stopping.
+        try:
+            record_cycle_intensity(fetch_count, sandbox_ran, optuna_ran)
+            enter_harmony, harmony_reason = _harmony_decision()
+            if enter_harmony:
+                logger.info(f"Echo decides to enter Harmony (reason={harmony_reason}).")
+                harmony_manager.start(reason=harmony_reason)
+                # Let Harmony run for a short autonomous burst
+                time.sleep(random.randint(60, 180))
+                harmony_manager.stop()
+                logger.info("Harmony session ended. Resuming autonomous loop.")
+        except Exception as _harmony_err:
+            logger.error(f"[LOOP] Harmony/intensity step failed: {_harmony_err}", exc_info=True)
 
-        logger.info(f"Sleeping {AUTONOMOUS_SLEEP} seconds before next cycle...")
-        time.sleep(AUTONOMOUS_SLEEP)
+        _next_sleep = _compute_next_sleep(_wm, AUTONOMOUS_SLEEP)
+        logger.info(
+            f"Sleeping {_next_sleep} seconds before next cycle "
+            f"(base={AUTONOMOUS_SLEEP}, surprise-modulated)..."
+        )
+        time.sleep(_next_sleep)
 
 # ---------------- THREAD START ---------------- #
 def start_autonomous_thread():

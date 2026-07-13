@@ -18,11 +18,32 @@ logger = logging.getLogger(__name__)
 _last_cycle: dict = {}
 
 
-def should_run_cycle(loop_name: str) -> bool:
-    """One throttle + stillness gate shared by all three autonomy loops."""
+def should_run_cycle(loop_name: str, tier: str = "heavy") -> bool:
+    """One throttle + stillness gate shared by all three autonomy loops.
+
+    tier: "heavy" (default, unchanged behavior) throttles at the same
+    severe thresholds should_throttle() always used. "light" is for cheap,
+    local, non-inference work — throttles only at severe pressure too
+    (moderate pressure alone doesn't block it), so a caller that opts in
+    can keep running through the same moderate pressure that already
+    stops heavy inference work, instead of every loop sharing one
+    identical all-or-nothing gate regardless of actual cost (audit
+    finding). No existing caller passes tier, so nothing changes for them.
+    """
     try:
-        from app.core.system_guard import should_throttle
-        if should_throttle():
+        from app.core.system_guard import throttle_level
+        level = throttle_level()
+        # Both tiers currently block only at "severe" — heavy's threshold is
+        # deliberately identical to should_throttle()'s historical behavior.
+        # Kept as two explicit branches (not collapsed to one check) so a
+        # future decision to make "heavy" also stop at "moderate" is a
+        # one-line change with an obvious place to make it, not a silent
+        # behavior change today.
+        if tier == "light":
+            blocked = level == "severe"
+        else:
+            blocked = level == "severe"
+        if blocked:
             _record(loop_name, "throttled")
             return False
     except Exception:

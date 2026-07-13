@@ -3,11 +3,15 @@
 #         Model name now tracked through generation pipeline for accurate feedback.
 import ast
 import importlib.util
+import inspect
 import json
 import os
+import re
 import subprocess
 import sys
 import logging
+import threading
+import uuid
 from datetime import datetime
 from app.ollama_handler import generate_code, query_ollama
 from app.core.echo_model_orchestrator import echo_query
@@ -142,16 +146,53 @@ def _collect_var_strings(tree: ast.Module) -> dict:
     """
     One-pass scan: build {var_name: [string_literals_in_rhs]} for every
     simple assignment in the module.  Used to resolve path variables in open().
+
+    Uses _resolve_path_literal (strict), not _ast_strings (loose) — this map
+    feeds directly into _path_is_safe()'s safety check, so an assignment like
+    `path = some_unresolvable_var + "/looks_safe.txt"` must NOT populate
+    assigns['path'] with "/looks_safe.txt": that fragment being visible
+    anywhere inside the expression doesn't mean the real runtime value is
+    known. Passing {} for nested Name resolution means chained assignments
+    (`a = "x"; b = a + "y"`) don't resolve either — conservative, not a
+    regression, since this scanner never attempted multi-pass fixed-point
+    resolution in the first place.
     """
     assigns: dict = {}
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign):
             for target in node.targets:
                 if isinstance(target, ast.Name):
-                    strs = _ast_strings(node.value)
+                    strs = _resolve_path_literal(node.value, {})
                     if strs:
                         assigns[target.id] = strs
     return assigns
+
+
+def _resolve_path_literal(node: ast.AST, var_strings: dict) -> list:
+    """
+    Strict counterpart to _ast_strings(), used only for path-safety checks.
+
+    _ast_strings() walks the *entire* subtree and harvests every string
+    constant it finds anywhere inside an expression — useful for
+    _collect_var_strings()'s broader "what literals appear on this RHS"
+    purpose, but wrong for a safety gate: an expression like
+    `some_unresolvable_var + "/looks_safe.txt"` previously passed this
+    check, because ast.walk() found the literal fragment even though the
+    real runtime path (prefixed by an unknown variable) is completely
+    unknown. This only returns strings when the *whole* expression
+    resolves to a known value: a plain literal, a pure constant-
+    concatenation chain, or a Name resolvable via var_strings. Anything
+    else (an f-string, a call, a BinOp mixing a variable with a literal,
+    etc.) is treated as fully opaque.
+    """
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return [node.value]
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        assembled = _eval_str_concat(node)
+        return [assembled] if assembled is not None else []
+    if isinstance(node, ast.Name):
+        return var_strings.get(node.id, [])
+    return []
 
 
 def _path_is_safe(path_arg: ast.AST, var_strings: dict) -> tuple:
@@ -163,11 +204,7 @@ def _path_is_safe(path_arg: ast.AST, var_strings: dict) -> tuple:
       - any visible string component matches a forbidden target name
       - any visible string component contains ".." (traversal)
     """
-    strings = _ast_strings(path_arg)
-
-    # If the arg is a bare Name, try to resolve it from the assignment map
-    if not strings and isinstance(path_arg, ast.Name):
-        strings = var_strings.get(path_arg.id, [])
+    strings = _resolve_path_literal(path_arg, var_strings)
 
     if not strings:
         return False, "path argument is fully opaque — no resolvable string literals"
@@ -198,25 +235,34 @@ def _check_open_call(node: ast.Call, var_strings: dict) -> str | None:
     args = node.args
     kwargs = {kw.arg: kw.value for kw in node.keywords if kw.arg is not None}
 
+    if not args:
+        return None  # no positional path argument (e.g. all-keyword call) —
+        # same pre-existing gap as before this fix, not addressed here.
+
     # Determine mode
     if len(args) >= 2:
         mode_node = args[1]
     elif "mode" in kwargs:
         mode_node = kwargs["mode"]
     else:
-        return None  # no second arg → default "r" → safe
+        mode_node = None  # no second arg → default "r"
 
-    if isinstance(mode_node, ast.Constant) and isinstance(mode_node.value, str):
+    if mode_node is None:
+        mode = "r"
+    elif isinstance(mode_node, ast.Constant) and isinstance(mode_node.value, str):
         mode = mode_node.value
-        if mode not in _WRITE_OPEN_MODES:
-            return None  # confirmed read-only
     else:
-        mode = "?"  # non-literal mode → treat as write
+        mode = "?"  # non-literal mode → treat as unknown/write
 
-    # Write (or uncertain) mode confirmed — now vet the path
-    if not args:
-        return f"line {lineno}: open() with write mode but no path argument"
-
+    # Audit finding (Low severity): a default-mode read (no second arg) or a
+    # confirmed read-only literal mode previously returned "safe" here
+    # immediately, without ever checking the path argument at all — a fully
+    # dynamic/unresolvable path on a READ call passed completely unchecked,
+    # inconsistent with F1's "unknown = forbidden" philosophy applied
+    # everywhere else in this scanner (write-mode-uncertainty was always
+    # blocked; path-uncertainty-on-read never was). F2's kernel sandbox is
+    # still the real backstop for both reads and writes regardless — this
+    # makes F1 itself uniformly conservative rather than asymmetrically so.
     is_safe, reason = _path_is_safe(args[0], var_strings)
     if not is_safe:
         return f"line {lineno}: open(mode={mode!r}) blocked — {reason}"
@@ -369,6 +415,12 @@ CODE_OUTPUT_RULES = (
     "Every helper function you need must be defined inline in your output.\n"
     "9. Only import from modules listed in the FeralEcho module inventory above. "
     "Do NOT invent or guess module paths — if a name is not in the inventory, it does not exist.\n"
+    "10. If this task is about transforming or post-processing generated code text "
+    "(e.g. stripping prose, shortening output), expose your main function as a "
+    "top-level function named exactly `apply_to_code(code: str) -> str` that takes "
+    "the code string and returns the modified code string, NOT wrapped in a class. "
+    "This is the only function name the pipeline automatically invokes — other "
+    "helper names are never called automatically.\n"
 )
 
 PLAN_OUTPUT_RULES = (
@@ -526,14 +578,33 @@ def _strip_toplevel_self_calls(code: str) -> str:
     return "\n".join(cleaned)
 
 
+# Modules the generated code must never import, in either `import X` or
+# `from X import Y` form: self_edit_generated (circular — the existing
+# check, previously ImportFrom-only, so a bare `import
+# app.core.self_edit_generated` slipped through uncaught) plus the modules
+# that generate/deploy/tune it. "app" is a blanket entry in
+# _ALLOWED_TOP_LEVEL below (broad on purpose — generated code legitimately
+# needs various app.* modules), which means nothing previously stopped
+# generated code from importing self_edit_manager or echo_optuna
+# themselves. Confirmed real: found via a live symptom — self_edit_manager's
+# module-level backfill_convergence_from_log() call was firing dozens of
+# times per burst, traced to sandbox subprocesses re-executing
+# self_edit_manager.py's top-level code whenever staged candidate code
+# imported it (a real, non-hallucinated module name, so it passed the only
+# check that existed before this one).
+_SELF_REFERENTIAL_MODULES = ("self_edit_generated", "self_edit_manager", "echo_optuna")
+
+
 def _validate_imports(code: str) -> tuple[bool, str]:
     """
     Parse import statements in generated code and reject:
     1. Any module not in _ALLOWED_TOP_LEVEL (hallucinated imports).
-    2. Any import FROM app.core.self_edit_generated — self_edit_generated.py
-       must never import from itself. The staging test misses this because it
-       loads the code as '_staged_edit', so the circular reference resolves to
-       the production file during staging but blows up in production.
+    2. Any import of a module in _SELF_REFERENTIAL_MODULES, in either import
+       form — self_edit_generated.py must never import from itself (circular
+       at production time — the staging test misses this because it loads
+       the code as '_staged_edit', so the circular reference resolves to the
+       production file during staging but blows up in production), and must
+       never import the pipeline that generates/deploys/tunes it either.
     """
     try:
         tree = ast.parse(code)
@@ -543,37 +614,47 @@ def _validate_imports(code: str) -> tuple[bool, str]:
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
+                if any(m in alias.name for m in _SELF_REFERENTIAL_MODULES):
+                    return False, f"self-referential import: 'import {alias.name}'"
                 top = alias.name.split(".")[0]
                 if top not in _ALLOWED_TOP_LEVEL:
                     return False, f"hallucinated import: '{alias.name}'"
         elif isinstance(node, ast.ImportFrom):
             if node.module:
-                # Reject self-referential imports — circular at production time
-                if "self_edit_generated" in node.module:
-                    return False, f"circular self-import: 'from {node.module}' inside self_edit_generated.py"
+                if any(m in node.module for m in _SELF_REFERENTIAL_MODULES):
+                    return False, f"self-referential import: 'from {node.module}'"
                 top = node.module.split(".")[0]
                 if top not in _ALLOWED_TOP_LEVEL:
                     return False, f"hallucinated import: 'from {node.module}'"
     return True, ""
 
-def _stage_and_import_test(code: str) -> tuple[bool, str]:
+def _stage_and_import_test(code: str, staging_file: str = STAGING_FILE) -> tuple[bool, str]:
     """Write code to staging/ and run a subprocess import test before touching production.
 
     This is the gate between validate_code (AST-only) and save_code (production write).
     A module can pass AST parsing but fail on import due to bad top-level statements,
     circular imports, or missing runtime dependencies. If this test fails, production
     is untouched and the staging file is preserved for inspection.
+
+    staging_file: defaults to the shared STAGING_FILE constant for backward
+    compatibility (wolf_friction_bridge.py's dry-run-only simulate_self_edit()
+    still uses the default), but execute_self_edit() passes a per-call unique
+    path — without that, two concurrent real trials (the hourly AutonomousSelfEdit
+    loop and model_guided_autonomous_loop both call into this pipeline on
+    separate timers) could overwrite each other's staged file between one
+    trial's write and its subprocess actually reading it, so trial A's
+    pass/fail result could silently be computed against trial B's code.
     """
     import tempfile
     try:
         os.makedirs(STAGING_DIR, exist_ok=True)
-        with open(STAGING_FILE, "w") as f:
+        with open(staging_file, "w") as f:
             f.write(code)
         with tempfile.TemporaryDirectory(prefix="echo_stage_") as scratch:
             scratch_real = os.path.realpath(scratch)
             result = subprocess.run(
                 ["sandbox-exec", "-f", _SANDBOX_PROFILE, "-D", f"SCRATCH={scratch_real}",
-                 sys.executable, _SANDBOX_WRAPPER, scratch_real, STAGING_FILE],
+                 sys.executable, _SANDBOX_WRAPPER, scratch_real, staging_file],
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -586,6 +667,29 @@ def _stage_and_import_test(code: str) -> tuple[bool, str]:
         return False, "Staging import test timed out (30s)"
     except Exception as e:
         return False, str(e)
+
+# Same bounded-retention idea for the per-call-unique staging files above —
+# each real execute_self_edit() call (up to 10/hour via Optuna trials) now
+# creates its own self_edit_candidate_<uuid>.py rather than overwriting one
+# shared file, which would otherwise recreate the exact unbounded-growth
+# problem _MAX_SELF_EDIT_BACKUPS below already exists to prevent.
+_MAX_STAGING_FILES = 25
+
+
+def _prune_stale_staging_files():
+    if not os.path.isdir(STAGING_DIR):
+        return
+    candidates = sorted(
+        (f for f in os.listdir(STAGING_DIR) if f.startswith("self_edit_candidate_") and f.endswith(".py")),
+        key=lambda f: os.path.getmtime(os.path.join(STAGING_DIR, f)),
+        reverse=True,
+    )
+    for stale in candidates[_MAX_STAGING_FILES:]:
+        try:
+            os.remove(os.path.join(STAGING_DIR, stale))
+        except Exception as e:
+            logging.warning(f"[SELF-EDIT] Failed to prune stale staging file {stale}: {e}")
+
 
 # Retain at most this many backups — same bounded-retention idea as
 # snapshot_manager.py's _MAX_SNAPSHOTS. Before this, self_edit_backups/ grew
@@ -720,8 +824,8 @@ _CONVERGENCE_STATE_FILE = os.path.join(
 )
 _CONVERGENCE_FAMILIES = {
     "prose_stripping":    ("prose",),
-    "response_shortening": ("shorten", "length", "concise", "trim"),
-    "quality_scoring":     ("quality", "score"),
+    "response_shortening": ("shorten", "length", "concise", "trim", "truncat"),
+    "quality_scoring":     ("quality", "score", "eval"),
 }
 
 
@@ -740,19 +844,71 @@ def _record_convergence(callables: list) -> None:
     Ground truth is the callables actually defined on disk this cycle (from
     load_self_edit_module()'s own inspect.getmembers() audit), not the prompt that was
     used to generate them — this stays correct even if generation prompts change later.
+
+    The count-based convergence check below is identity-blind: it only compares how
+    many callables match a family's keywords cycle-to-cycle, so 34 different names all
+    targeting the same "strip prose from code" problem (confirmed directly in
+    memory/SELF_EDIT.log across 119 cycles) reads as "convergent" as long as the count
+    stays flat — it can't tell a genuinely new attempt from a renamed old one. This also
+    tracks the actual *set* of names ever seen per family (all_names_seen, capped at 50
+    to keep the state file bounded) and how many cycles have touched this family
+    (cycles_attempted), so a real history is available to feed back into planning
+    instead of being silently discarded after this cycle (see _build_convergence_note()).
     """
     state = _load_convergence_state()
     lower_names = [c.lower() for c in callables]
+    matched_this_cycle: set = set()
 
     for family, keywords in _CONVERGENCE_FAMILIES.items():
-        count = sum(1 for name in lower_names if any(kw in name for kw in keywords))
-        prev = state.get(family, {"count": 0, "non_convergent_streak": 0})
+        matching_names = [name for name in lower_names if any(kw in name for kw in keywords)]
+        matched_this_cycle.update(matching_names)
+        count = len(matching_names)
+        prev = state.get(family, {"count": 0, "non_convergent_streak": 0,
+                                    "all_names_seen": [], "cycles_attempted": 0})
         if count == 0:
             continue  # this family isn't present this cycle — nothing to evaluate
         convergent = count <= prev.get("count", 0) or prev.get("count", 0) == 0
         streak = 0 if convergent else prev.get("non_convergent_streak", 0) + 1
-        state[family] = {"count": count, "non_convergent_streak": streak}
 
+        names_seen = list(dict.fromkeys(prev.get("all_names_seen", []) + matching_names))[-50:]
+        cycles_attempted = prev.get("cycles_attempted", 0) + 1
+
+        state[family] = {
+            "count": count,
+            "non_convergent_streak": streak,
+            "all_names_seen": names_seen,
+            "cycles_attempted": cycles_attempted,
+        }
+
+        verdict = "convergent" if convergent else f"NON-CONVERGENT (streak={streak})"
+        msg = (
+            f"[CONVERGENCE] family={family} matching_callables={count} "
+            f"(prev={prev.get('count', 0)}) -> {verdict}"
+        )
+        append_to_journal("SELF_EDIT", msg)
+        logging.info("[SELF-EDIT]%s", msg)
+
+    # A callable whose name matches none of the fixed keyword families was
+    # previously completely invisible to convergence tracking — not even
+    # counted as non-convergent, just silently dropped. A single shared
+    # "unclassified" bucket at least gives a repeating pattern outside the
+    # 3 named families some signal, rather than zero signal anywhere.
+    unclassified = [name for name in lower_names if name not in matched_this_cycle]
+    if unclassified:
+        family = "unclassified"
+        prev = state.get(family, {"count": 0, "non_convergent_streak": 0,
+                                    "all_names_seen": [], "cycles_attempted": 0})
+        count = len(unclassified)
+        convergent = count <= prev.get("count", 0) or prev.get("count", 0) == 0
+        streak = 0 if convergent else prev.get("non_convergent_streak", 0) + 1
+        names_seen = list(dict.fromkeys(prev.get("all_names_seen", []) + unclassified))[-50:]
+        cycles_attempted = prev.get("cycles_attempted", 0) + 1
+        state[family] = {
+            "count": count,
+            "non_convergent_streak": streak,
+            "all_names_seen": names_seen,
+            "cycles_attempted": cycles_attempted,
+        }
         verdict = "convergent" if convergent else f"NON-CONVERGENT (streak={streak})"
         msg = (
             f"[CONVERGENCE] family={family} matching_callables={count} "
@@ -767,6 +923,120 @@ def _record_convergence(callables: list) -> None:
             f.write(json.dumps(state, indent=2))
     except Exception as e:
         logging.warning(f"[SELF-EDIT] Failed to persist convergence state: {e}")
+
+
+def _build_convergence_note(focus_text: str) -> str:
+    """
+    If the current cycle's Focus text maps to a family with real prior history,
+    return a short note telling the model exactly what's already been tried —
+    so it can extend/fix an existing helper or explicitly justify a new approach,
+    instead of silently reinventing the same thing under a new name (the pattern
+    that produced 34 distinct prose-stripping callables with zero convergence).
+    Returns "" for a family with no tracked history — no-op, no prompt change.
+    """
+    lower_focus = focus_text.lower()
+    state = _load_convergence_state()
+
+    for family, keywords in _CONVERGENCE_FAMILIES.items():
+        if not any(kw in lower_focus for kw in keywords):
+            continue
+        entry = state.get(family)
+        if not entry or entry.get("cycles_attempted", 0) < 2:
+            return ""  # fresh family, or only tried once — nothing to warn about yet
+        names = entry.get("all_names_seen", [])
+        cycles = entry.get("cycles_attempted", 0)
+        return (
+            f"\n\nCONVERGENCE NOTE: this exact problem has been attempted {cycles} times "
+            f"before, under these function names: {', '.join(names)}. Do not simply "
+            f"reimplement an equivalent function under a new name — either meaningfully "
+            f"extend or fix whichever of these already exists in the current file "
+            f"contents below, or clearly explain in your plan why a genuinely different "
+            f"approach is needed this time."
+        )
+    return ""
+
+
+_SELF_EDIT_LOG_FILE = os.path.join(_PROJECT_ROOT, "memory", "SELF_EDIT.log")
+_LOAD_AUDIT_RE = re.compile(
+    r"\[LOAD_AUDIT\] self_edit_generated defines \d+ callables: (\[.*\])\s*$"
+)
+
+
+def backfill_convergence_from_log(log_path: str | None = None) -> None:
+    """
+    Reconciles all_names_seen/cycles_attempted against the real historical
+    record in memory/SELF_EDIT.log, instead of only counting cycles that ran
+    since convergence tracking was added (confirmed at ~119+ real cycles for
+    prose_stripping alone vs. cycles_attempted=1 in the state file before this
+    backfill exists). Deterministic full replay every call — never increments
+    — so it is safe and idempotent to run on every process start, including
+    Flask's debug-mode double-spawn. Only all_names_seen/cycles_attempted are
+    replaced; count/non_convergent_streak are left untouched since
+    _record_convergence() already maintains those correctly from live data.
+    """
+    log_path = log_path or _SELF_EDIT_LOG_FILE
+    if not os.path.exists(log_path):
+        return
+
+    replayed: dict = {}
+    try:
+        with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                match = _LOAD_AUDIT_RE.search(line)
+                if not match:
+                    continue
+                try:
+                    callables = ast.literal_eval(match.group(1))
+                except (ValueError, SyntaxError):
+                    continue
+                if not isinstance(callables, list):
+                    continue
+                lower_names = [str(c).lower() for c in callables]
+                for family, keywords in _CONVERGENCE_FAMILIES.items():
+                    matching = [n for n in lower_names if any(kw in n for kw in keywords)]
+                    if not matching:
+                        continue
+                    entry = replayed.setdefault(family, {"all_names_seen": [], "cycles_attempted": 0})
+                    entry["all_names_seen"] = list(dict.fromkeys(entry["all_names_seen"] + matching))[-50:]
+                    entry["cycles_attempted"] += 1
+    except Exception as e:
+        logging.warning(f"[SELF-EDIT] Convergence backfill failed to read log: {e}")
+        return
+
+    if not replayed:
+        return
+
+    state = _load_convergence_state()
+    for family, backfilled in replayed.items():
+        current = state.get(family, {
+            "count": 0, "non_convergent_streak": 0,
+            "all_names_seen": [], "cycles_attempted": 0,
+        })
+        current["all_names_seen"] = backfilled["all_names_seen"]
+        current["cycles_attempted"] = backfilled["cycles_attempted"]
+        state[family] = current
+
+    try:
+        os.makedirs(os.path.dirname(_CONVERGENCE_STATE_FILE), exist_ok=True)
+        tmp_path = _CONVERGENCE_STATE_FILE + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            f.write(json.dumps(state, indent=2))
+        os.replace(tmp_path, _CONVERGENCE_STATE_FILE)
+        for family, backfilled in replayed.items():
+            append_to_journal(
+                "SELF_EDIT",
+                f"[CONVERGENCE_BACKFILL] family={family} "
+                f"cycles_attempted={backfilled['cycles_attempted']} "
+                f"names={backfilled['all_names_seen']}"
+            )
+    except Exception as e:
+        logging.warning(f"[SELF-EDIT] Failed to persist convergence backfill: {e}")
+
+
+try:
+    backfill_convergence_from_log()
+except Exception as _bfe:
+    logging.warning(f"[SELF-EDIT] Convergence backfill failed: {_bfe}")
 
 
 def save_plan(plan: str):
@@ -816,10 +1086,13 @@ def test_code_in_sandbox(script_content: str, script_name="temp_self_edit.py"):
             sandbox_log.warning(f"[SANDBOX] {script_name}: no valid Python found")
             return False, "prose_detected"
 
-    # Write to sandbox/scripts/ for inspection/archive
-    sandbox_path = os.path.join("sandbox", "scripts", script_name)
+    # Write to sandbox/scripts/ for inspection/archive — anchored via
+    # _PROJECT_ROOT like every other path constant in this file (see
+    # CLAUDE.md Finding 7); this was the one location that wasn't, still
+    # relative/cwd-dependent.
+    sandbox_path = os.path.join(_PROJECT_ROOT, "sandbox", "scripts", script_name)
     os.makedirs(os.path.dirname(sandbox_path), exist_ok=True)
-    archive_dir = os.path.join("sandbox", "scripts", "archive")
+    archive_dir = os.path.join(_PROJECT_ROOT, "sandbox", "scripts", "archive")
     os.makedirs(archive_dir, exist_ok=True)
     if os.path.exists(sandbox_path):
         ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
@@ -911,16 +1184,85 @@ def _build_module_inventory() -> str:
     return "\n".join(lines)
 
 
-def plan_code_logic(prompt: str) -> str:
+def _build_live_self_edit_inventory() -> str:
+    """
+    Cheap, always-current companion to _build_module_inventory()'s cache,
+    which is built from .echo_project_learner/feralecho_structure.json — a
+    project-wide scan regenerated on its own schedule (observed 7 days stale
+    against the current cycle) and therefore blind to same-day edits. This
+    parses only self_edit_generated.py itself — the one file whose current
+    contents actually matter for "what have I already built" — fresh on
+    every planning call, reusing project_learner's existing single-file AST
+    parser rather than a second walker or a full repo re-scan.
+    """
     try:
-        inventory = _build_module_inventory()
+        from app.core.project_learner import parse_file
+        _imports, symbols, _top_comments = parse_file(SELF_EDIT_FILE)
+    except Exception:
+        return ""
+    if not symbols:
+        return "CURRENT self_edit_generated.py: no functions currently defined."
+    lines = ["CURRENT self_edit_generated.py contents (ground truth — do not re-implement any of these):"]
+    for s in symbols:
+        doc = f" — {s.docstring.strip().splitlines()[0]}" if s.docstring else ""
+        lines.append(f"  {s.type} {s.name}{doc}")
+    return "\n".join(lines)
+
+
+def _recent_experiment_note() -> str:
+    """
+    Most recent sandbox/experiment_runner.py result, surfaced as context.
+    Audit finding: exploratory curiosity-experiment results were logged to
+    interaction_log.jsonl/FAISS but never reached self-edit's own
+    prompt-assembly at all — a second, entirely separate exploration
+    mechanism that never converged back into the one mechanism actually
+    capable of persisting a change. Recency-based (most recent entry),
+    reusing echo_ground_truth's existing tail-read helper rather than a
+    second implementation of the same pattern.
+    """
+    try:
+        from app.core.echo_ground_truth import _read_jsonl_tail
+        path = os.path.join(_PROJECT_ROOT, "memory", "interaction_log.jsonl")
+        tail = _read_jsonl_tail(path, 200)
+        for entry in reversed(tail):
+            if entry.get("task_type") != "autonomous_experiment":
+                continue
+            topic = str(entry.get("prompt", ""))[:100]
+            response = str(entry.get("response", ""))[:300]
+            outcome = "succeeded" if entry.get("quality_score") else "failed"
+            return f"Most recent curiosity experiment ({outcome}) — topic: {topic} — result: {response}"
+    except Exception:
+        pass
+    return ""
+
+
+def plan_code_logic(prompt: str, mastery_note: str = "") -> str:
+    """
+    mastery_note: optional excerpt from advise_before_edit()'s real
+    code-quality guidance (audit finding: previously computed and journaled
+    every cycle but never reached this prompt at all). Capped to keep the
+    planning call's token cost bounded — this is a nudge, not the full
+    review dump.
+    """
+    try:
+        inventory = _build_live_self_edit_inventory() + "\n\n" + _build_module_inventory()
+        convergence_note = _build_convergence_note(prompt)
+        mastery_block = (
+            f"\n\nGuidance from recent code-quality review:\n{mastery_note[:1500]}"
+            if mastery_note else ""
+        )
+        experiment_note = _recent_experiment_note()
+        experiment_block = f"\n\n{experiment_note}" if experiment_note else ""
         plan_prompt = (
             f"{PLAN_OUTPUT_RULES}\n\n"
             f"{inventory}\n\n"
             f"You are planning a Python code modification for an autonomous AI system called Echo. "
             f"Break down the following task into clear, sequential Python steps. "
             f"Each step must be specific, technical, and implementable without user interaction. "
-            f"Do not include steps involving input(), user prompts, or interactive elements.\n\n"
+            f"Do not include steps involving input(), user prompts, or interactive elements."
+            f"{convergence_note}"
+            f"{mastery_block}"
+            f"{experiment_block}\n\n"
             f"Task: {prompt}"
         )
         plan = echo_query(plan_prompt, task_type="coding")
@@ -934,6 +1276,98 @@ def plan_code_logic(prompt: str) -> str:
         logging.error(f"Failed to generate plan: {e}")
         append_to_journal("SELF_EDIT", f"Plan generation failed: {e}")
         return "1. Write stub to maintain continuity\nprint('Hello from self-edit stub')"
+
+# -----------------------------------------------------------------------
+# Real invocation point for self_edit_generated.py (Finding C1 / audit
+# "self-edit writes to a file nothing calls"). Deliberately narrow: this is
+# the ONLY place the deployed module is ever actually run, it only ever
+# post-processes code this same pipeline just generated (never user-facing
+# conversation), and any failure of any kind silently falls back to the
+# input unchanged — this can only ever help or no-op, never regress
+# generation. Separate from load_self_edit_module(), which is the
+# production-deploy loader and has journal/convergence side effects that
+# must fire once per real deploy cycle, not once per generation call.
+# -----------------------------------------------------------------------
+_self_edit_generated_cache: dict = {"mtime": None, "module": None}
+
+
+def _load_self_edit_generated_for_use():
+    """
+    Load self_edit_generated.py purely for invocation, cached by mtime since
+    this may be called on every self-edit generation cycle (not just real
+    deploys). Re-runs the same F1/F3 AST safety scan before ever importing —
+    this can never execute anything that wasn't already cleared to reach
+    production.
+    """
+    if not os.path.exists(SELF_EDIT_FILE):
+        return None
+    try:
+        mtime = os.path.getmtime(SELF_EDIT_FILE)
+    except OSError:
+        return None
+    if _self_edit_generated_cache["mtime"] == mtime:
+        return _self_edit_generated_cache["module"]
+    try:
+        with open(SELF_EDIT_FILE, "r", encoding="utf-8") as f:
+            on_disk = f.read()
+        scan_for_unsafe_operations(on_disk)
+    except (ValueError, OSError):
+        return None
+    try:
+        spec = importlib.util.spec_from_file_location("self_edit_generated_live", SELF_EDIT_FILE)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    except Exception as e:
+        logging.debug(f"[SELF-EDIT] self_edit_generated_live load failed: {e}")
+        return None
+    _self_edit_generated_cache["mtime"] = mtime
+    _self_edit_generated_cache["module"] = module
+    return module
+
+
+def _call_with_timeout(fn, arg, timeout: float = 2.0):
+    """Runs fn(arg) on a worker thread; abandons it (non-blocking) on timeout
+    rather than risking a hang in the calling thread."""
+    import concurrent.futures as _futures
+    ex = _futures.ThreadPoolExecutor(max_workers=1)
+    try:
+        future = ex.submit(fn, arg)
+        return future.result(timeout=timeout)
+    finally:
+        ex.shutdown(wait=False)
+
+
+def _apply_self_edit_output(code: str) -> str:
+    """
+    Best-effort post-processing pass over freshly-generated self-edit code,
+    using whatever self_edit_generated.py currently has deployed — the one
+    real behavioral consequence a self-edit cycle can have on this system,
+    gated entirely on the fixed `apply_to_code(code: str) -> str` contract
+    (CODE_OUTPUT_RULES rule 10). A deployed module that doesn't define this
+    (e.g. today's bootstrap content) is a pure no-op — zero behavior change
+    until a future cycle actually produces the contract.
+    """
+    module = _load_self_edit_generated_for_use()
+    if module is None:
+        return code
+    fn = getattr(module, "apply_to_code", None)
+    if not callable(fn):
+        return code
+    try:
+        sig = inspect.signature(fn)
+        if len(sig.parameters) != 1:
+            return code
+    except (TypeError, ValueError):
+        return code
+    try:
+        result = _call_with_timeout(fn, code, timeout=2.0)
+    except Exception as e:
+        logging.debug(f"[SELF-EDIT] apply_to_code raised/timed out, ignoring: {e}")
+        return code
+    if isinstance(result, str) and result.strip():
+        return result
+    return code
+
 
 def generate_code_from_plan(plan: str, temperature: float | None = None) -> tuple:
     """
@@ -971,6 +1405,8 @@ def generate_code_from_plan(plan: str, temperature: float | None = None) -> tupl
             logging.warning("[PROMPT GUARD] Code output failed prose check. Attempting extraction.")
             code = _extract_code_block(code)
 
+        code = _apply_self_edit_output(code)
+
         return code, model_name
     except Exception as e:
         logging.error(f"Code generation failed: {e}")
@@ -979,7 +1415,7 @@ def generate_code_from_plan(plan: str, temperature: float | None = None) -> tupl
 # -----------------------------
 # --- Core Self-Edit ----------
 # -----------------------------
-def execute_self_edit(prompt: str, intensity: float | None = None, **kwargs):
+def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool = False, **kwargs):
     """
     Perform full logic-guided self-edit.
 
@@ -993,6 +1429,15 @@ def execute_self_edit(prompt: str, intensity: float | None = None, **kwargs):
     System 3: intensity drives Ollama temperature (0.2–1.2 range).
     Low intensity = conservative syntax-focused edits.
     High intensity = exploratory restructuring.
+
+    dry_run: when True, every gate through staging (plan, codegen, import
+    pre-validation, AST safety scan, sandbox test, syntax validate, staging
+    import test) still runs for real — only the final backup/save/load into
+    production is skipped. Returns (True, STAGING_FILE) on a passing
+    candidate instead of (True, "Success"), so callers can inspect/score the
+    actual staged code. Previously accepted via **kwargs and silently
+    ignored everywhere; see perform_self_edit() and EchoOptuna.objective()
+    for why this matters (Optuna trial-waste fix).
     """
     # Map intensity 0.0–1.0 → temperature 0.2–1.2
     temperature: float | None = None
@@ -1020,6 +1465,14 @@ def execute_self_edit(prompt: str, intensity: float | None = None, **kwargs):
     }
     save_reflection(reflection_entry)
 
+    # Audit finding: mastery_advice was computed and journaled every cycle
+    # but never actually reached the generation prompt — real, genuine
+    # guidance (code_quality.py's live empty-file scan, etc.) sat in
+    # SELF_EDIT.log unread by the model actually writing the code. Now
+    # threaded into plan_code_logic() below. mastery_advice defaults to ""
+    # so a failure here degrades to "no extra guidance this cycle" rather
+    # than leaving the variable undefined for the reference below.
+    mastery_advice = ""
     try:
         mastery_advice = advise_before_edit()
         append_to_journal("SELF_EDIT[MASTERY]", mastery_advice)
@@ -1031,7 +1484,7 @@ def execute_self_edit(prompt: str, intensity: float | None = None, **kwargs):
     # Step 1: Logic plan (held in memory only — save_plan() was writing 10,333
     # plan files to self_edit_plans/ that were never read by any code path)
     try:
-        plan = plan_code_logic(prompt)
+        plan = plan_code_logic(prompt, mastery_note=mastery_advice)
     except Exception as _e:
         reflection_entry["result"] = "failed"
         save_reflection(reflection_entry)
@@ -1119,6 +1572,16 @@ def execute_self_edit(prompt: str, intensity: float | None = None, **kwargs):
                 logging.info("Retry succeeded after error feedback.")
                 code = retry_code
                 success = True
+                # The reflection saved just above (line ~1253) recorded this
+                # cycle as "failed" from the first sandbox attempt — nothing
+                # ever re-saved it after a successful retry, so the append-
+                # only log permanently misreported every retry-then-succeed
+                # cycle (a common path, not an edge case) as a failure.
+                reflection_entry["sandbox_feedback"] = "success_on_retry"
+                reflection_entry["result"] = "success"
+                reflection_entry["generated_code"] = code
+                reflection_entry["model_used"] = retry_model_name
+                save_reflection(reflection_entry)
             else:
                 river.learn_from_sandbox_outcome(retry_model_name, success=False, error=retry_error or "")
                 logging.warning(f"Retry also failed: {_sanitize_sandbox_error(retry_error)}. Keeping stub.")
@@ -1132,9 +1595,15 @@ def execute_self_edit(prompt: str, intensity: float | None = None, **kwargs):
         code = "# Self-edit stub — syntax validation failed\nprint('Hello from self-edit stub')"
 
     # Step 3.5: Staging import test — gate before production write
-    # Writes to staging/self_edit_candidate.py and does a full subprocess import.
-    # If this fails, production is untouched; staging file preserved for inspection.
-    staged_ok, stage_err = _stage_and_import_test(code)
+    # Writes to a per-call-unique staging file and does a full subprocess
+    # import. If this fails, production is untouched; staging file preserved
+    # for inspection. Per-call-unique (not the shared STAGING_FILE constant)
+    # because two concurrent real trials could otherwise overwrite each
+    # other's staged file between one trial's write and its subprocess
+    # actually reading it.
+    _prune_stale_staging_files()
+    call_staging_file = os.path.join(STAGING_DIR, f"self_edit_candidate_{uuid.uuid4().hex}.py")
+    staged_ok, stage_err = _stage_and_import_test(code, staging_file=call_staging_file)
     if not staged_ok:
         append_to_journal(
             "SELF_EDIT",
@@ -1146,40 +1615,361 @@ def execute_self_edit(prompt: str, intensity: float | None = None, **kwargs):
         return False, f"Staging import test failed: {stage_err}"
     logging.info("[STAGING] Import test passed — proceeding to production write.")
 
-    # Step 4: Backup + Step 5: Save to production
-    try:
-        backup_existing_code()
-        save_code(code)
-    except Exception as _e:
-        reflection_entry["result"] = "failed"
+    if dry_run:
+        reflection_entry["result"] = "success_dry_run"
+        reflection_entry["dry_run"] = True
         save_reflection(reflection_entry)
-        logging.error(f"[SELF-EDIT] File write failed: {_e}")
-        return False, f"File write failed: {_e}"
+        append_to_journal(
+            "SELF_EDIT",
+            f"prompt: {prompt[:80]} | result: dry_run_staged | path: {call_staging_file}"
+        )
+        logging.info(
+            "[SELF-EDIT] dry_run=True — staged candidate at %s, skipping production write.",
+            call_staging_file,
+        )
+        return True, call_staging_file
 
-    # Step 6: Load (should succeed — staging already validated this).
-    # Return value intentionally unused — no functions from the module are called
-    # by name anywhere in the production path.  See LOAD_AUDIT entries in SELF_EDIT.log.
+    # Step 3.7 through Step 6, all under one lock: previously this whole
+    # sequence (read current production code → compare quality → backup →
+    # save → load) ran with no lock at all. Two concurrent real self-edit
+    # attempts (confirmed real: the hourly AutonomousSelfEdit loop and
+    # model_guided_autonomous_loop both call into this pipeline on separate
+    # timers) could each read production at the same "current" quality,
+    # both pass the fitness gate, and the second writer's backup_existing_code()
+    # + save_code() would silently overwrite whatever the first writer just
+    # deployed — even if the first candidate scored higher. Locking the full
+    # compare-through-load sequence closes that TOCTOU window.
+    with _self_edit_deploy_lock:
+        # Step 3.7: Fitness gate — only deploy if this candidate is at least as
+        # good as what's currently in production. Reuses the same quality scorer
+        # now driving Optuna's hyperparameter selection (echo_optuna.py), so
+        # deployment and trial-selection are judged by the same standard.
+        # task_type is always "coding" here (not detect_task_type(prompt)) —
+        # self-edit always generates Python code regardless of which skill
+        # it's targeting, same reasoning as today's Optuna objective fix.
+        try:
+            from echo_quality_scorer import _score_response_quality
+            candidate_quality = _score_response_quality(code, task_type="coding")
+            current_code = ""
+            if os.path.isfile(SELF_EDIT_FILE):
+                with open(SELF_EDIT_FILE, "r", encoding="utf-8") as f:
+                    current_code = f.read()
+            # Nothing meaningfully deployed yet (bootstrap) — anything passes.
+            current_quality = (
+                _score_response_quality(current_code, task_type="coding")
+                if current_code.strip() else -1
+            )
+            if candidate_quality < current_quality:
+                reflection_entry["result"] = "rejected_not_improvement"
+                reflection_entry["candidate_quality"] = candidate_quality
+                reflection_entry["current_quality"] = current_quality
+                save_reflection(reflection_entry)
+                append_to_journal(
+                    "SELF_EDIT",
+                    f"prompt: {prompt[:80]} | result: rejected_not_improvement | "
+                    f"candidate_quality={candidate_quality} current_quality={current_quality}"
+                )
+                logging.info(
+                    "[SELF-EDIT] Candidate quality (%d) does not improve on current production (%d) — not deployed.",
+                    candidate_quality, current_quality,
+                )
+                return False, (
+                    f"Rejected: candidate quality ({candidate_quality}) does not improve "
+                    f"on current production ({current_quality})"
+                )
+        except Exception as _fe:
+            # Quality comparison is a heuristic, not a safety gate (those already
+            # passed above) — fail open on infrastructure errors rather than
+            # blocking a deploy over a scoring hiccup.
+            logging.warning(f"[SELF-EDIT] Fitness comparison failed, deploying anyway: {_fe}")
+
+        # Step 4: Backup + Step 5: Save to production
+        try:
+            backup_existing_code()
+            save_code(code)
+        except Exception as _e:
+            reflection_entry["result"] = "failed"
+            save_reflection(reflection_entry)
+            logging.error(f"[SELF-EDIT] File write failed: {_e}")
+            return False, f"File write failed: {_e}"
+
+        # Step 6: Load (should succeed — staging already validated this).
+        # Return value intentionally unused — no functions from the module are called
+        # by name anywhere in the production path.  See LOAD_AUDIT entries in SELF_EDIT.log.
+        try:
+            loaded_module = load_self_edit_module()
+            if loaded_module is None:
+                # load_self_edit_module() returns None both when F3's post-write
+                # scan trips (having already restored the prior backup) and when
+                # the file is unexpectedly missing — neither raises, so this
+                # branch previously fell straight through to "Success" below
+                # regardless of which one happened.
+                append_to_journal(
+                    "SELF_EDIT",
+                    f"prompt: {prompt} | result: load_blocked | reason: F3 scan failed or file missing, see prior log lines"
+                )
+                logging.error("[SELF-EDIT] load_self_edit_module() returned None — not a real success.")
+                reflection_entry["result"] = "load_blocked"
+                save_reflection(reflection_entry)
+                return False, "Load blocked: F3 post-write safety scan failed (backup restored) or file missing"
+            append_to_journal("SELF_EDIT", f"prompt: {prompt} | result: success | timestamp: {datetime.utcnow().isoformat()}")
+            logging.info("Self-edit loaded successfully.")
+            try:
+                from app.core.self_edit_outcome_tracker import record_pending_outcome
+                record_pending_outcome(task_type)
+            except Exception as _ote:
+                logging.debug(f"[SELF-EDIT-OUTCOME] record_pending_outcome failed: {_ote}")
+            try:
+                from app.core.snapshot_manager import take_snapshot as _snap
+                _snap("post_self_edit")
+            except Exception as _snap_err:
+                logging.warning("[SNAPSHOT] post_self_edit snapshot failed: %s", _snap_err)
+            return True, "Success"
+        except Exception as e:
+            append_to_journal("SELF_EDIT", f"prompt: {prompt} | result: load_failed | error: {traceback.format_exc()}")
+            logging.error(f"Failed to load self-edit: {e}")
+            reflection_entry["result"] = "failed"
+            save_reflection(reflection_entry)
+            return False, f"Load failed: {e}"
+
+# -----------------------------------------------------------------------
+# --- Protected-target escalation path (advisory only) ------------------
+# -----------------------------------------------------------------------
+# EDIT_FORBIDDEN_TARGETS remains an absolute, unconditional write
+# prohibition — save_code() is completely unchanged by anything below and
+# still raises PermissionError for any of these paths. Previously, that was
+# also the END of the story: a rejected candidate simply vanished with no
+# trace of what was attempted or why. This gives that dead-end a real, safe
+# next step — a human-reviewed proposal queue with a multi-model advisory
+# opinion attached — without granting any new autonomous write capability.
+# Nothing in this section is currently wired to any autonomous trigger; it
+# is a callable capability, not a new default behavior.
+_PROPOSALS_DIR = os.path.join(_PROJECT_ROOT, "self_edit_proposals")
+_MAX_PROPOSALS = 25
+
+
+def _prune_stale_proposals():
+    if not os.path.isdir(_PROPOSALS_DIR):
+        return
+    files = sorted(
+        (f for f in os.listdir(_PROPOSALS_DIR) if f.endswith(".patch")),
+        reverse=True,
+    )
+    for stale in files[_MAX_PROPOSALS:]:
+        try:
+            os.remove(os.path.join(_PROPOSALS_DIR, stale))
+        except Exception as e:
+            logging.warning(f"[SELF-EDIT] Failed to prune stale proposal {stale}: {e}")
+
+
+def _council_review_core_edit(target_file: str, candidate_code: str, reason: str) -> dict:
+    """
+    Advisory-only multi-model review of a proposed edit to a protected file.
+    This NEVER gates a write — protected-file writes are never made by this
+    module regardless of verdict — it exists purely so a human reading the
+    queued proposal has more than one model's opinion to weigh, using the
+    same council models self-edit already ranks for coding tasks.
+    """
     try:
-        load_self_edit_module()
-        append_to_journal("SELF_EDIT", f"prompt: {prompt} | result: success | timestamp: {datetime.utcnow().isoformat()}")
-        logging.info("Self-edit loaded successfully.")
+        models = rank_models(task_type="coding")[:3]
+    except Exception:
+        models = []
+    if not models:
+        return {"verdict": "NO_COUNCIL_AVAILABLE", "votes": []}
+
+    review_prompt = (
+        "You are reviewing a PROPOSED code change to a protected core file of "
+        "an autonomous AI system. This change has NOT been applied and cannot "
+        "be applied without explicit human approval. Assess correctness and "
+        "safety risk only, not style.\n\n"
+        f"Target file: {target_file}\n"
+        f"Stated reason for change: {reason}\n\n"
+        f"Proposed replacement content:\n```\n{candidate_code[:4000]}\n```\n\n"
+        "Respond with exactly one line: APPROVE or REJECT, followed by a dash "
+        "and one sentence why."
+    )
+
+    votes = []
+    for model in models:
         try:
-            from app.core.self_edit_outcome_tracker import record_pending_outcome
-            record_pending_outcome(task_type)
-        except Exception as _ote:
-            logging.debug(f"[SELF-EDIT-OUTCOME] record_pending_outcome failed: {_ote}")
-        try:
-            from app.core.snapshot_manager import take_snapshot as _snap
-            _snap("post_self_edit")
-        except Exception as _snap_err:
-            logging.warning("[SNAPSHOT] post_self_edit snapshot failed: %s", _snap_err)
-        return True, "Success"
+            resp = query_ollama(review_prompt, model=model) or ""
+            first_word = resp.strip().split()[0].upper().strip(".:-") if resp.strip() else "REJECT"
+            verdict = "APPROVE" if first_word.startswith("APPROVE") else "REJECT"
+            votes.append({"model": model, "verdict": verdict, "rationale": resp.strip()[:300]})
+        except Exception as e:
+            votes.append({"model": model, "verdict": "REJECT", "rationale": f"review call failed: {e}"})
+
+    approvals = sum(1 for v in votes if v["verdict"] == "APPROVE")
+    return {"verdict": f"{approvals}/{len(votes)} APPROVE", "votes": votes}
+
+
+def _extract_fenced_or_raw(text: str) -> str:
+    """
+    Models often wrap output as "Here is the diff:\\n```\\n...\\n```" even
+    when told not to — a shape _extract_code_block() (built for the short
+    self_edit_generated.py snippets execute_self_edit() generates) doesn't
+    handle: a trailing fence line breaks its ast.parse() check, so it gives
+    up and returns the whole prose-plus-fence text unchanged (confirmed live
+    during testing, before propose_core_edit() switched to requesting a
+    diff). Looks for the first fenced block anywhere in the text (any or no
+    language tag, e.g. ```diff / ```python / bare ```) and uses its content
+    if found; otherwise falls back to the existing behavior, unchanged.
+    """
+    match = re.search(r"```[a-zA-Z]*[ \t]*\n(.*?)\n```", text, re.DOTALL)
+    if match:
+        return match.group(1)
+    # No closed fence found — if generation was cut off mid-output before
+    # closing it (confirmed live: hit the 512-token ceiling mid-diff),
+    # everything after the opening fence is still the real content, and is
+    # a better result than falling through to _extract_code_block(), which
+    # is ast.parse()-based and not a good fit for diff text (diffs are not
+    # standalone valid Python).
+    open_match = re.search(r"```[a-zA-Z]*[ \t]*\n", text)
+    if open_match:
+        return text[open_match.end():]
+    stripped = _strip_markdown_fences(text)
+    if not _looks_like_python(stripped):
+        stripped = _extract_code_block(stripped)
+    return stripped
+
+
+_DIFF_RISK_MARKERS = (
+    "subprocess.", "os.system", "os.popen", "os.exec", "os.spawn",
+    "shutil.rmtree", "shutil.move", "shutil.copy",
+    "eval(", "exec(", "ctypes.CDLL", "importlib.reload",
+    ".write_text(", ".write_bytes(",
+)
+
+
+def _scan_diff_added_lines(diff_text: str) -> str:
+    """
+    Lightweight, best-effort heuristic scan of a diff's added (+) lines,
+    for the human reviewer's benefit only. Deliberately NOT
+    scan_for_unsafe_operations() (the real F1 AST gate) — that requires a
+    fully valid, standalone Python module and would report "failed to
+    parse" on nearly every real diff fragment, since added lines are rarely
+    valid Python in isolation (missing enclosing def/class, partial
+    indentation context). scan_for_unsafe_operations() itself is completely
+    untouched and still the only gate on the real self_edit_generated.py
+    deploy path — this function is not used anywhere near that path.
+    """
+    added_lines = [
+        line[1:] for line in diff_text.splitlines()
+        if line.startswith("+") and not line.startswith("+++")
+    ]
+    hits = sorted({
+        marker for marker in _DIFF_RISK_MARKERS
+        if any(marker in line for line in added_lines)
+    })
+    if hits:
+        return f"heuristic scan of added lines flagged: {', '.join(hits)} — review carefully"
+    return "heuristic scan of added lines found no obviously risky patterns (not a full AST parse)"
+
+
+def propose_core_edit(target_file: str, prompt: str, intensity: float | None = None) -> tuple[bool, str]:
+    """
+    Advisory-only path for a self-edit that would target a file in
+    EDIT_FORBIDDEN_TARGETS. save_code()'s write prohibition is completely
+    unchanged and unconditional — this function never calls save_code() and
+    never writes to target_file. It plans against target_file's real current
+    contents, generates a targeted diff (not a full-file replacement — see
+    the code_prompt comment below for why), attaches a multi-model advisory
+    council review, and writes the result to self_edit_proposals/*.patch for
+    a human to read and manually apply if they agree. Only accepts
+    target_file values already in EDIT_FORBIDDEN_TARGETS — this is not a
+    general-purpose second write path, it is specifically the escalation
+    route for the one case save_code() always refuses.
+    """
+    norm_target = os.path.normpath(target_file)
+    is_forbidden = any(norm_target == os.path.normpath(f) for f in EDIT_FORBIDDEN_TARGETS)
+    if not is_forbidden:
+        return False, f"{target_file} is not a protected target — use the normal self-edit path instead"
+
+    abs_target = os.path.join(_PROJECT_ROOT, target_file)
+    try:
+        with open(abs_target, "r", encoding="utf-8") as f:
+            current_contents = f.read()
     except Exception as e:
-        append_to_journal("SELF_EDIT", f"prompt: {prompt} | result: load_failed | error: {traceback.format_exc()}")
-        logging.error(f"Failed to load self-edit: {e}")
-        reflection_entry["result"] = "failed"
-        save_reflection(reflection_entry)
-        return False, f"Load failed: {e}"
+        return False, f"Could not read target file: {e}"
+
+    temperature = None
+    if intensity is not None:
+        temperature = max(0.2, min(1.2, round(0.2 + float(intensity) * 1.0, 3)))
+
+    plan_prompt = (
+        f"{PLAN_OUTPUT_RULES}\n\n"
+        f"You are proposing a targeted modification to a protected core file of an "
+        f"autonomous AI system — this will be reviewed by a human before ever being "
+        f"applied. Keep the change minimal and narrowly scoped to the stated goal.\n\n"
+        f"Target file ({target_file}) current contents:\n```\n{current_contents[:6000]}\n```\n\n"
+        f"Task: {prompt}"
+    )
+    try:
+        plan = echo_query(plan_prompt, task_type="coding")
+        if not plan or not plan.strip():
+            plan = f"1. Modify {target_file} to: {prompt[:200]}"
+    except Exception as e:
+        return False, f"Plan generation failed: {e}"
+
+    # Asks for a diff, not a full-file replacement: query_ollama()'s payload
+    # hardcodes num_predict=512 (confirmed live — generate_code()'s own
+    # max_tokens param is similarly dead, never forwarded), so a "complete
+    # new contents of the file" request against any real production file
+    # reliably truncates mid-file before ever closing its markdown fence.
+    # A small, targeted diff both fits the real budget and is what a human
+    # reviewer actually wants to read here.
+    code_prompt = (
+        f"You are proposing a minimal, targeted modification to a protected core "
+        f"file of an autonomous AI system, for human review only — it will not be "
+        f"applied automatically. Output ONLY a unified diff (--- a/... / +++ b/... / "
+        f"@@ ... @@ hunks) representing the smallest change that accomplishes the "
+        f"plan below. Do NOT output the complete file. No explanation, no markdown "
+        f"fences, no commentary — the diff text only.\n\n"
+        f"Current contents of {target_file}:\n```\n{current_contents}\n```\n\n"
+        f"Plan to implement:\n{plan}"
+    )
+    try:
+        candidate_diff = echo_query(code_prompt, task_type="coding", temperature=temperature)
+    except Exception as e:
+        return False, f"Code generation failed: {e}"
+    candidate_diff = _extract_fenced_or_raw(candidate_diff or "")
+    safety_note = _scan_diff_added_lines(candidate_diff)
+
+    council = _council_review_core_edit(target_file, candidate_diff, prompt)
+
+    os.makedirs(_PROPOSALS_DIR, exist_ok=True)
+    _prune_stale_proposals()
+    ts = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    safe_stub = re.sub(r"[^a-zA-Z0-9_]+", "_", target_file)
+    proposal_path = os.path.join(_PROPOSALS_DIR, f"{ts}_{safe_stub}.patch")
+
+    header_lines = [
+        f"# PROPOSED EDIT — target: {target_file}",
+        f"# NOT APPLIED. Never auto-applied. For human review only.",
+        f"# Generated: {datetime.utcnow().isoformat()}Z",
+        f"# Reason: {prompt}",
+        f"# Safety scan: {safety_note}",
+        f"# Council verdict: {council['verdict']}",
+    ]
+    for v in council["votes"]:
+        header_lines.append(f"#   {v['model']}: {v['verdict']} — {v['rationale']}")
+    header_lines.append("# ---- proposed diff below (apply manually if you agree) ----")
+    header = "\n".join(header_lines) + "\n\n"
+
+    with open(proposal_path, "w", encoding="utf-8") as f:
+        f.write(header + candidate_diff)
+
+    append_to_journal(
+        "SELF_EDIT",
+        f"prompt: {prompt[:80]} | result: proposed_core_edit_for_review | "
+        f"target: {target_file} | council: {council['verdict']} | proposal: {proposal_path}"
+    )
+    logging.info(
+        f"[SELF-EDIT] Core-file proposal for {target_file} written to {proposal_path} "
+        f"(council: {council['verdict']})"
+    )
+    return True, proposal_path
+
 
 # -----------------------------
 # --- Optuna Integration ------
@@ -1213,38 +2003,122 @@ def _persist_last_autonomous_edit(ts: float) -> None:
 
 _last_any_autonomous_edit: float = _load_last_autonomous_edit()
 
+# Guards the cooldown check-and-stamp (perform_self_edit) and the whole
+# fitness-gate-through-deploy critical section (execute_self_edit) — two
+# independent, unsynchronized threads (the hourly AutonomousSelfEdit loop
+# and model_guided_autonomous_loop, plus any human-triggered manual edit)
+# can genuinely call into this pipeline concurrently. Without this, a
+# worse candidate could read production as "current" before a better
+# candidate's concurrent write landed, then silently overwrite it after —
+# a real TOCTOU race in the fitness gate added earlier this pass. One lock
+# for both sections since they're the same real-write resource (production
+# self_edit_generated.py) — this is intentionally the one lock in this
+# effort allowed to be held across a comparatively slow section (plan/
+# codegen/sandbox already happened before this lock is ever acquired;
+# only the fitness-compare-through-load tail is inside it).
+_self_edit_deploy_lock = threading.Lock()
+
+# One static sentence per family describing what the problem domain *is* —
+# the minimal irreducible fixed text; everything else in the Focus prompt
+# below is now built from real convergence/outcome data instead of being
+# one of these three strings verbatim. (threshold, family, domain_sentence),
+# family keys map 1:1 onto _CONVERGENCE_FAMILIES.
+_FOCUS_FAMILY_BY_CREATIVITY = [
+    (0.33, "prose_stripping", (
+        "fix the most common sandbox failure (prose detected in code output) — "
+        "add or tighten a prose-detection guard that strips any leading "
+        "natural-language sentence before the first valid Python token. Expose "
+        "it as a top-level `apply_to_code(code: str) -> str` function per output "
+        "rule 10 so the pipeline actually invokes it automatically."
+    )),
+    (0.66, "response_shortening", (
+        "refactor the main code-generation function to reduce its average "
+        "response length by 20% without losing correctness — shorter code "
+        "compiles faster and has fewer syntax errors."
+    )),
+    (1.01, "quality_scoring", (
+        "add or improve a helper function that scores a candidate code string "
+        "on three dimensions: has_imports, has_function_def, no_prose_sentences. "
+        "Return a 0-3 int quality score, used to pre-filter LLM output before "
+        "sandbox testing."
+    )),
+]
+
+
+def _recent_outcome_note(task_type: str) -> str:
+    """
+    Surfaces the most recent evaluated self_edit_outcome_tracker delta for
+    this task type into the Focus-text — the first real consumer of that
+    data anywhere; it has been logged since Finding 8 but read by nobody
+    until now. Deliberately scoped honestly at task_type granularity (the
+    tracker's own granularity), not claimed to be family/creativity-specific.
+    """
+    try:
+        from app.core.self_edit_outcome_tracker import get_outcomes_summary
+        recent = [
+            e for e in get_outcomes_summary().get("recent", [])
+            if e.get("task_type") == task_type
+        ]
+        if not recent:
+            return ""
+        delta = recent[0].get("quality_score", {}).get("delta")
+        if delta is None:
+            return ""
+        if delta < -0.1:
+            return (
+                f" The last evaluated edit for '{task_type}' correlated with a "
+                f"quality drop ({delta:+.2f}) — be conservative this cycle."
+            )
+        if delta > 0.1:
+            return (
+                f" The last evaluated edit for '{task_type}' correlated with a "
+                f"quality gain ({delta:+.2f}) — continue in that direction."
+            )
+        return ""
+    except Exception:
+        return ""
+
+
 def _build_targeted_prompt(task_type: str, creativity: float) -> str:
     """
     Build a self-edit prompt that focuses on the weak task type.
     creativity 0.0–0.33: repair a known failure  (conservative)
     creativity 0.34–0.66: refactor a module function
     creativity 0.67–1.0: propose a new helper function
+
+    Previously 3 fixed "Focus:" strings keyed only by creativity bucket, with
+    no memory of what had already been tried — the pattern that produced 34+
+    distinct prose-stripping callables with zero convergence (see
+    _CONVERGENCE_FAMILIES / _build_convergence_note). The creativity buckets
+    still coarsely steer conservative-repair vs. refactor vs. new-helper, but
+    the Focus text itself is now assembled from real convergence status and
+    outcome-tracker history instead of a fixed string.
     """
     base = (
         f"Autonomous self-edit targeting '{task_type}' task performance. "
         "Modify app/core/self_edit_generated.py only. "
         "Output must be headless Python with no interactive elements."
     )
-    if creativity <= 0.33:
-        return (
-            base + " Focus: fix the most common sandbox failure "
-            "(prose detected in code output). Add a tighter prose-detection "
-            "guard that strips any leading natural-language sentence before "
-            "the first valid Python token."
+
+    family, domain_sentence = _FOCUS_FAMILY_BY_CREATIVITY[-1][1], _FOCUS_FAMILY_BY_CREATIVITY[-1][2]
+    for threshold, fam, sentence in _FOCUS_FAMILY_BY_CREATIVITY:
+        if creativity <= threshold:
+            family, domain_sentence = fam, sentence
+            break
+
+    convergence_sentence = ""
+    family_state = _load_convergence_state().get(family, {})
+    if family_state.get("non_convergent_streak", 0) >= 2:
+        convergence_sentence = (
+            " This family has failed to converge across multiple recent cycles — "
+            "do NOT add another standalone function; consolidate into or fix "
+            "whichever existing function already targets this, even if that means "
+            "a smaller change than a brand-new helper."
         )
-    elif creativity <= 0.66:
-        return (
-            base + " Focus: refactor the main code-generation function to "
-            "reduce its average response length by 20%% without losing "
-            "correctness — shorter code compiles faster and has fewer syntax errors."
-        )
-    else:
-        return (
-            base + " Focus: add a new helper function that scores a candidate "
-            "code string on three dimensions: has_imports, has_function_def, "
-            "no_prose_sentences. Return a 0–3 int quality score. "
-            "This will be used to pre-filter LLM output before sandbox testing."
-        )
+
+    outcome_sentence = _recent_outcome_note(task_type)
+
+    return f"{base} Focus: {domain_sentence}{convergence_sentence}{outcome_sentence}"
 
 
 def perform_self_edit(prompt=None, intensity=None, creativity=None, dry_run=None, target_task_type=None):
@@ -1254,6 +2128,7 @@ def perform_self_edit(prompt=None, intensity=None, creativity=None, dry_run=None
         logging.info("[SELF-EDIT] Echo is in stillness — self-edit deferred.")
         return False, "Deferred: Echo is in stillness"
     creativity = creativity if creativity is not None else 0.5
+    dry_run = bool(dry_run)
 
     if prompt is None:
         if target_task_type is None:
@@ -1282,18 +2157,33 @@ def perform_self_edit(prompt=None, intensity=None, creativity=None, dry_run=None
 
         prompt = _build_targeted_prompt(target_task_type, creativity)
 
-        # Global cooldown — any autonomous self-edit blocks all others for 60 min.
-        # Keyed per-prompt cooldowns were bypassed by varying creativity values.
+    # Global cooldown — any *real* autonomous self-edit blocks all others for
+    # 60 min. Dry runs (Optuna's trial evaluations) never touch production,
+    # so they must neither be blocked by nor consume this cooldown — otherwise
+    # a single trial exhausts it and the other 9 (plus the eventual real
+    # apply) silently no-op for the rest of the hour.
+    #
+    # Previously this whole block lived inside `if prompt is None:` above, so
+    # any caller passing an explicit prompt (terminal_client.py's manual
+    # `!edit` command, this function's own request_self_edit() wrapper)
+    # skipped the cooldown check entirely, regardless of dry_run. Moved out
+    # here so it applies to every real (non-dry-run) call uniformly. The
+    # check-and-stamp is also now inside a real lock — the old comment
+    # claimed "stamp immediately so concurrent calls are also blocked" but
+    # the two statements were unlocked, so two threads could both observe
+    # "cooldown expired" and both proceed to a real production write.
+    if not dry_run:
         global _last_any_autonomous_edit
-        now = time.time()
-        if now - _last_any_autonomous_edit < _TARGETED_PROMPT_COOLDOWN:
-            remaining = int(_TARGETED_PROMPT_COOLDOWN - (now - _last_any_autonomous_edit))
-            logging.info(f"[SELF-EDIT] Global cooldown active — skipping for {remaining}s")
-            return False, f"Cooldown active ({remaining}s remaining)"
-        _last_any_autonomous_edit = now  # stamp immediately so concurrent calls are also blocked
-        _persist_last_autonomous_edit(now)
+        with _self_edit_deploy_lock:
+            now = time.time()
+            if now - _last_any_autonomous_edit < _TARGETED_PROMPT_COOLDOWN:
+                remaining = int(_TARGETED_PROMPT_COOLDOWN - (now - _last_any_autonomous_edit))
+                logging.info(f"[SELF-EDIT] Global cooldown active — skipping for {remaining}s")
+                return False, f"Cooldown active ({remaining}s remaining)"
+            _last_any_autonomous_edit = now
+            _persist_last_autonomous_edit(now)
 
-    return execute_self_edit(prompt, intensity=intensity)
+    return execute_self_edit(prompt, intensity=intensity, dry_run=dry_run)
 
 def apply_self_edits(*args, **kwargs):
     logging.info(f"apply_self_edits called with args={args}, kwargs={kwargs}")
@@ -1303,6 +2193,12 @@ def schedule_self_edit(*args, **kwargs):
     logging.info(f"schedule_self_edit called with args={args}, kwargs={kwargs}")
     return None
 def request_self_edit(prompt: str):
-    """Entry point for friction-driven self-edit requests."""
+    """Entry point for friction-driven self-edit requests.
+
+    Routes through perform_self_edit() rather than calling execute_self_edit()
+    directly — the latter completely bypassed the 60-minute cooldown (dead
+    code today per CLAUDE.md's WOLF-retirement note, but fixed for
+    correctness in case this is ever reconnected).
+    """
     logging.info(f"[WOLF] request_self_edit called with friction prompt: {prompt[:80]}")
-    return execute_self_edit(prompt)
+    return perform_self_edit(prompt=prompt)

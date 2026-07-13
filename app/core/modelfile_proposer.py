@@ -33,6 +33,10 @@ _TUNABLE_PARAMS = {"num_ctx", "num_keep", "temperature", "repeat_penalty"}
 _WEAK_QUALITY = 2.0       # avg quality below this triggers num_ctx boost
 _HIGH_FRICTION = 0.3      # friction above this triggers persona-consistency note
 _POOR_SANDBOX = 0.15      # sandbox success below this triggers temperature reduction
+# Mirror thresholds for Rule 4 (loosening) — audit finding: every prior rule
+# could only ever make the system more conservative, never more exploratory.
+_STRONG_QUALITY = 3.3     # avg quality at/above this (mirrors _WEAK_QUALITY)
+_LOW_FRICTION = 0.05      # friction at/below this (mirrors _HIGH_FRICTION)
 
 # Context window options (only upward from current)
 _CTX_LADDER = [8192, 12288, 16384]
@@ -226,12 +230,49 @@ class ModelfileProposer:
                     "reason": (
                         f"Friction rate {friction_rate:.0%} exceeds threshold "
                         f"{_HIGH_FRICTION:.0%} over ≥200 observations. "
-                        "Adding a persona-consistency note to the SYSTEM block."
+                        "Adding a persona-consistency note to the SYSTEM block. "
+                        "NOTE FOR REVIEWER: this friction signal (ClaudeShard) includes "
+                        "a documented ~28% random-gating component in its scoring "
+                        "(random.random() < 0.28, not a network call to any model) — "
+                        "treat as directional, not a precise quantitative signal."
                     ),
                     "_system_addition": note_addition,
                 })
                 reasoning_parts.append(
                     f"friction_rate={friction_rate:.0%} above threshold {_HIGH_FRICTION:.0%}"
+                )
+
+        # ── Rule 4: Raise temperature if performance is consistently strong ──
+        # Mirrors Rule 2 in the opposite direction. Deliberately a smaller
+        # step than Rule 2's (-0.2) — loosening deserves more caution than
+        # tightening, but "more caution" should mean a smaller step, not a
+        # structural inability to ever propose loosening at all. Mutually
+        # exclusive with Rule 2 (never propose both directions for the same
+        # param in one cycle) via the temp_already_changed check.
+        temp_already_changed = any(c["param"] == "temperature" for c in changes)
+        if (
+            not temp_already_changed
+            and avg_quality >= _STRONG_QUALITY
+            and friction_rate <= _LOW_FRICTION
+            and total_obs >= 200
+        ):
+            current_temp = current_params.get("temperature", 0.8)
+            proposed_temp = min(1.2, round(current_temp + 0.1, 2))
+            if proposed_temp > current_temp:
+                changes.append({
+                    "param": "temperature",
+                    "from": current_temp,
+                    "to": proposed_temp,
+                    "reason": (
+                        f"Average quality is {avg_quality:.2f} (>= {_STRONG_QUALITY}) and "
+                        f"friction is {friction_rate:.0%} (<= {_LOW_FRICTION:.0%}) over "
+                        f"{total_obs} observations. A small temperature increase gives "
+                        f"more room for exploratory/creative output while performance "
+                        f"has been consistently strong."
+                    ),
+                })
+                reasoning_parts.append(
+                    f"avg_quality={avg_quality:.2f} strong, friction_rate={friction_rate:.0%} low"
                 )
 
         reason_summary = (
@@ -316,12 +357,25 @@ class ModelfileProposer:
 
             old_val = change["from"]
             if param in ("num_ctx", "num_keep"):
-                result = re.sub(
-                    rf"^(PARAMETER\s+{re.escape(param)}\s+){re.escape(str(old_val))}$",
-                    rf"\g<1>{to_val}",
-                    result,
-                    flags=re.MULTILINE,
-                )
+                # Unlike temperature below, this had no insert-if-absent
+                # fallback — if the parameter wasn't already present in the
+                # Modelfile, re.sub() found no match and silently left
+                # `result` unchanged. The proposal's own metadata still
+                # claimed success, so a human trusting that summary and
+                # running `ollama create` got a byte-identical Modelfile.
+                if re.search(rf"^PARAMETER\s+{re.escape(param)}\s+", result, flags=re.MULTILINE):
+                    result = re.sub(
+                        rf"^(PARAMETER\s+{re.escape(param)}\s+){re.escape(str(old_val))}$",
+                        rf"\g<1>{to_val}",
+                        result,
+                        flags=re.MULTILINE,
+                    )
+                else:
+                    result = result.replace(
+                        "SYSTEM ",
+                        f"PARAMETER {param} {to_val}\n\nSYSTEM ",
+                        1,
+                    )
             elif param == "temperature":
                 # temperature may not be in the current file at all
                 if "temperature" in result:

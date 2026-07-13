@@ -35,6 +35,7 @@ import pyttsx3
 
 from app.lib.vector_memory import VectorMemory, MemoryItem
 from app import ollama_handler
+from app.core import conversation_service
 
 from sentence_transformers import SentenceTransformer
 
@@ -46,17 +47,6 @@ console = Console()
 
 _SERVER_PID_FILE = Path("memory/echo_server.pid")
 
-
-def _server_is_running() -> bool:
-    """True if the Flask server process wrote a PID file and is still alive."""
-    if not _SERVER_PID_FILE.exists():
-        return False
-    try:
-        pid = int(_SERVER_PID_FILE.read_text().strip())
-        os.kill(pid, 0)  # signal 0: existence check only
-        return True
-    except (ValueError, OSError):
-        return False
 
 # ---------------------------------
 # --- FAISS Thread Safety ---------
@@ -192,96 +182,27 @@ def refresh_temporal_context(interval=600):
         time.sleep(interval)
 
 # ---------------------------------
-# --- Response Cleanup ------------
-# ---------------------------------
-def clean_response_text(raw_response: str) -> str:
-    """
-    Clean token spacing artifacts.
-    """
-
-    return (
-        raw_response
-        .replace(" .", ".")
-        .replace(" ,", ",")
-        .replace(" :", ":")
-        .replace(" ;", ";")
-        .replace(" ?", "?")
-        .replace(" !", "!")
-        .replace(" (", "(")
-        .replace("( ", "(")
-        .replace(" )", ")")
-        .replace(" _", "_")
-        .replace("_ ", "_")
-        .replace("  ", " ")
-        .strip()
-    )
-
-# ---------------------------------
 # --- Semantic Memory Search ------
 # ---------------------------------
-def retrieve_memory_context(msg: str, k=5) -> str:
-    """
-    Retrieve semantically relevant memories.
-    """
+def _vm_search(query: str, k: int) -> list:
+    """Adapter passed to conversation_service.retrieve_memory_context — searches
+    this process's local VectorMemory instance."""
     if vm is None:
-        return ""
+        return []
     try:
-        query_emb = embedding_fn(msg)
-
-        # Additional safety enforcement
-        query_emb = np.ascontiguousarray(
-            query_emb,
-            dtype=np.float32
-        )
-
-        # Fetch extra candidates so we can prefer user-conversation memories
-        raw_memories = vm.search(query_emb, k=k * 3)
-
-        if not raw_memories:
-            return ""
-
-        # Prefer user-conversation entries. When falling back (fewer than k match),
-        # never include autonomous-sourced entries (news feed, fetch cycle) — they
-        # are external observations, not history, and the model treats unlabeled
-        # retrieved text as first-person memory (Finding 14, 2026-07-02).
-        conv_memories = [
-            (text, score, meta) for text, score, meta in raw_memories
-            if meta.get("memory_source") == "user_conversation"
-        ]
-        non_autonomous = [
-            (text, score, meta) for text, score, meta in raw_memories
-            if meta.get("memory_source") != "autonomous"
-        ]
-        relevant_memories = (
-            conv_memories[:k]
-            if len(conv_memories) >= k
-            else non_autonomous[:k]
-        )
-
-        def _source_label(meta: dict) -> str:
-            src = meta.get("memory_source", "")
-            role = meta.get("role", "")
-            if src == "user_conversation" and role in ("user", "echo"):
-                return "[past interaction]"
-            elif src == "user_conversation":
-                return "[reference]"
-            else:
-                return "[system log]"
-
-        memory_context = "\n".join([
-            f"- {_source_label(meta)}: {text}"
-            for text, score, meta in relevant_memories
-        ])
-
-        return memory_context
-
+        query_emb = embedding_fn(query)
+        query_emb = np.ascontiguousarray(query_emb, dtype=np.float32)
+        return vm.search(query_emb, k=k)
     except Exception as e:
-
         console.print(
             f"[bold yellow]Memory Search Warning:[/bold yellow] {e}"
         )
+        return []
 
-        return ""
+
+def retrieve_memory_context(msg: str, k=5) -> str:
+    """Retrieve semantically relevant memories (delegates to conversation_service)."""
+    return conversation_service.retrieve_memory_context(msg, _vm_search, k=k)
 
 # ---------------------------------
 # --- Save Memory -----------------
@@ -292,7 +213,7 @@ def save_memory(user_msg: str, response_text: str):
     """
     if vm is None:
         return
-    if _server_is_running():
+    if conversation_service.server_is_running():
         return  # Server owns FAISS index; avoid concurrent writes
     try:
         _conv_meta = {"memory_source": "user_conversation"}
@@ -358,80 +279,53 @@ def _save_rating(rating: int, response_text: str) -> None:
 # ---------------------------------
 _conv_history: list = []       # [{ts, user, echo}] — turns in this session
 _history_summaries: list = []  # one-line compressed notes for turns that fell off the window
-_HISTORY_TOKEN_BUDGET = 4000   # ~4000 tokens; leaves room for response under num_ctx=8192
 
-def _est_tokens(text: str) -> int:
-    return max(1, len(text) // 4)
+# Audit finding: this buffer was purely in-memory — a client restart lost
+# it entirely, and retrieve_memory_context()'s own exclude_recent_minutes=30
+# deliberately excludes anything from the last 30 minutes from the memory
+# fallback (so session history doesn't double up with retrieval). The two
+# compose badly: the most recent ~30 minutes of a conversation could vanish
+# from context entirely across a restart, with no signal that it happened.
+# Persisted to a single-session file (this client is one CLI process, one
+# user, no multi-session concept) and reloaded at startup — but only if
+# recent enough to plausibly still be "the same conversation"; older state
+# is deliberately left unloaded rather than resuming a stale, confusing
+# context the user has long since moved on from.
+_SESSION_STATE_PATH = Path("memory/terminal_session.json")
+_SESSION_CONTINUITY_WINDOW = 4 * 3600  # 4 hours
 
-def _history_token_count() -> int:
-    turn_tokens = sum(
-        _est_tokens(t["user"]) + _est_tokens(t["echo"])
-        for t in _conv_history
-    )
-    summary_tokens = sum(_est_tokens(s) for s in _history_summaries)
-    return turn_tokens + summary_tokens + 50  # 50-token overhead for formatting
 
-def _format_history_block() -> str:
-    """Render session history for prompt injection. Returns '' if no history."""
-    if not _conv_history and not _history_summaries:
-        return ""
-
-    parts = []
-    n_compressed = len(_history_summaries)
-
-    if _history_summaries:
-        parts.append("[Earlier in this conversation — compressed:]")
-        for s in _history_summaries:
-            parts.append(f"  {s}")
-
-    turn_offset = n_compressed + 1
-    for i, turn in enumerate(_conv_history):
-        turn_num = turn_offset + i
-        ts_short = turn["ts"][:19].replace("T", " ")
-        parts.append(f"Turn {turn_num} [{ts_short} UTC]:")
-        parts.append(f"  You: {turn['user']}")
-        parts.append(f"  Echo: {turn['echo']}")
-
-    inner = "\n".join(parts)
-    return (
-        "[Conversation history — this session]\n"
-        + inner
-        + "\n[End of conversation history]"
-    )
-
-def _store_turn_in_history(user_msg: str, echo_response: str) -> None:
-    """Add a completed turn. If over budget, compress-and-drop the oldest turn."""
+def _load_session_state() -> None:
     global _conv_history, _history_summaries
-
-    _conv_history.append({
-        "ts": datetime.utcnow().isoformat(),
-        "user": user_msg,
-        "echo": echo_response,
-    })
-
-    while _history_token_count() > _HISTORY_TOKEN_BUDGET and len(_conv_history) > 1:
-        oldest = _conv_history.pop(0)
-        q = oldest["user"]
-        topic = q[:60] + ("..." if len(q) > 60 else "")
-        _history_summaries.append(f'You asked: "{topic}"')
-
-def _save_turn_to_server(user_msg: str, echo_response: str, task_type: str) -> None:
-    """POST conversation turn to the server for FAISS persistence (Piece B).
-    Silent on all errors — never blocks the conversation.
-    """
-    if not _server_is_running():
-        return
     try:
-        requests.post(
-            f"{SERVER_URL}/memory/conversation",
-            json={
-                "user_msg": user_msg,
-                "echo_response": echo_response,
-                "task_type": task_type,
-                "timestamp": datetime.utcnow().isoformat(),
-            },
-            timeout=3,
+        if not _SESSION_STATE_PATH.exists():
+            return
+        data = json.loads(_SESSION_STATE_PATH.read_text())
+        turns = data.get("conv_history", [])
+        if not turns:
+            return
+        last_ts = turns[-1].get("ts", "")
+        last_epoch = datetime.fromisoformat(str(last_ts).replace("Z", "+00:00")).timestamp()
+        if time.time() - last_epoch > _SESSION_CONTINUITY_WINDOW:
+            return  # too stale — start fresh rather than resuming old context
+        _conv_history = turns
+        _history_summaries = data.get("history_summaries", [])
+        console.print(
+            f"[dim]  (resumed {len(_conv_history)} turn(s) from before restart)[/dim]"
         )
+    except Exception:
+        pass  # never block startup over a missing/corrupt session file
+
+
+def _save_session_state() -> None:
+    try:
+        _SESSION_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        tmp_path = _SESSION_STATE_PATH.with_suffix(".tmp")
+        tmp_path.write_text(json.dumps({
+            "conv_history": _conv_history,
+            "history_summaries": _history_summaries,
+        }))
+        tmp_path.replace(_SESSION_STATE_PATH)
     except Exception:
         pass
 
@@ -446,7 +340,7 @@ def send_message_stream(
     Send message to Echo and stream response.
     """
 
-    global temporal_context
+    global temporal_context, _conv_history, _history_summaries
 
     # Capture raw user input before any context injection modifies msg
     original_msg = msg
@@ -471,56 +365,48 @@ def send_message_stream(
         )
 
     # ---------------------------------
-    # Retrieve memory context
+    # Retrieve memory context + session history — both are system-side
+    # context (not something the user said). Previously prepended directly
+    # into full_msg as a raw "Turn N: You: ... Echo: ..." transcript ahead
+    # of the real question, with no role boundary; confirmed live
+    # (2026-07-12, via Echo Studio, same code path) to cause local models
+    # to regurgitate the prior turn verbatim instead of answering the new
+    # one. See conversation_service.build_context_system_note()'s docstring.
     # ---------------------------------
     memory_context = retrieve_memory_context(msg)
+    history_block = conversation_service.format_history_block(_conv_history, _history_summaries)
+    context_note = conversation_service.build_context_system_note(history_block, memory_context)
+
+    full_msg = msg
 
     # ---------------------------------
-    # Build final prompt
+    # Ground-truth / tool-context injection, assembled consistently via
+    # prompt_workspace.assemble() rather than each block's own ad-hoc
+    # "+ \"\\n\" +" / "+ \"\\n\\n\" +" concatenation (previously inconsistent
+    # between this file and routes_echo_studio.py's mirrored version).
     # ---------------------------------
-    if memory_context:
-
-        full_msg = (
-            f"Context (past interactions and system logs — not assertions about identity):\n"
-            f"{memory_context}\n\n"
-            f"User: {msg}"
-        )
-
-    else:
-        full_msg = msg
-
-    # Prepend this session's conversation history so Echo has within-session continuity
-    history_block = _format_history_block()
-    if history_block:
-        full_msg = history_block + "\n\n" + full_msg
-
-    # ---------------------------------
-    # Ground-truth injection (introspective queries only)
-    # Mirrors TOOL_AWARE_TASKS gating in echo_model_orchestrator.py:
-    # only fires when the prompt is about Echo's own internal state,
-    # only injects the slice(s) relevant to what's being asked.
-    # ---------------------------------
+    ground_truth = ""
     try:
         from app.core.echo_ground_truth import _is_introspective, get_structural_self_facts
         if _is_introspective(msg):
-            ground_truth = get_structural_self_facts(msg)
-            if ground_truth:
-                full_msg = ground_truth + "\n" + full_msg
+            ground_truth = get_structural_self_facts(msg) or ""
     except Exception as _gt_err:
         pass  # never block a response over a diagnostic read
 
-    # ---------------------------------
-    # Tool context injection (file/directory queries only)
-    # Pre-executes the tool and injects the result before generation.
-    # ---------------------------------
+    tool_ctx = ""
     try:
         from app.core.echo_tool_context import _needs_tool_context, get_tool_context
         if _needs_tool_context(msg):
-            tool_ctx = get_tool_context(msg)
-            if tool_ctx:
-                full_msg = tool_ctx + "\n\n" + full_msg
+            tool_ctx = get_tool_context(msg) or ""
     except Exception as _tc_err:
         pass  # never block a response over a tool read
+
+    # tool_ctx/ground_truth are system-side context (not something the user
+    # said) — passed separately as echo_query()'s `system` param instead of
+    # flattened into full_msg, so they travel as a real system-role message
+    # once echo_query()/deliberate_and_learn() reach /api/chat, rather than
+    # string-concatenated prose ahead of the user's actual message.
+    _system_context = "\n\n".join(s for s in (tool_ctx, ground_truth, context_note) if s)
 
     # Resolve task type early — needed by both the echo_query call and memory tagging
     _task_type = "general"
@@ -556,7 +442,9 @@ def send_message_stream(
     else:
         try:
             from app.core.echo_model_orchestrator import echo_query
-            raw_response = echo_query(full_msg, task_type=_task_type, source="user_conversation")
+            raw_response = echo_query(
+                full_msg, task_type=_task_type, source="user_conversation", system=_system_context,
+            )
 
         except Exception as orch_err:
             import traceback
@@ -564,7 +452,7 @@ def send_message_stream(
             console.print(f"[bold red]FULL ERROR:[/bold red] {traceback.format_exc()}")
             try:
                 buffer = []
-                for token in ollama_handler.stream_query_ollama(full_msg):
+                for token in ollama_handler.stream_query_ollama(full_msg, system=_system_context):
                     buffer.append(token)
                 raw_response = "".join(buffer).strip()
 
@@ -572,11 +460,14 @@ def send_message_stream(
                 console.print(f"[bold red]Streaming Error:[/bold red] {e}")
                 raw_response = "Error: could not stream message."
 
-    response_text = clean_response_text(raw_response)
+    response_text = conversation_service.clean_response_text(raw_response)
 
     # Store in session history buffer and persist to server
-    _store_turn_in_history(original_msg, response_text)
-    _save_turn_to_server(original_msg, response_text, _task_type)
+    _conv_history, _history_summaries = conversation_service.store_turn_in_history(
+        _conv_history, _history_summaries, original_msg, response_text
+    )
+    _save_session_state()
+    conversation_service.save_turn_to_server(original_msg, response_text, _task_type, server_url=SERVER_URL)
 
     console.print(f"💬 Echo: {response_text}\n")
     console.print("[dim]  (type 1–5 at the next prompt to rate this response)[/dim]")
@@ -592,14 +483,20 @@ def send_message_stream(
 # ---------------------------------
 def request_self_edit(prompt: str) -> dict:
     """
-    Request self-editing code generation via WOLF pipeline.
-    Routes through execute_self_edit() — includes mastery review,
-    sandbox validation, friction events, and RiverBrain learning.
+    Request self-editing code generation via the manual !edit command.
+    Routes through perform_self_edit() (not execute_self_edit() directly)
+    so a manual edit respects the same 60-minute cooldown as autonomous
+    edits — the real corruption risk this closes is two real production
+    writes racing (this manual command landing while the hourly
+    AutonomousSelfEdit loop's own real apply is in progress), not just
+    "should a human wait." Still includes mastery review, sandbox
+    validation, and RiverBrain learning — perform_self_edit() calls
+    execute_self_edit() internally once past the cooldown gate.
     """
 
     try:
-        from app.core.self_edit_manager import execute_self_edit
-        success, result = execute_self_edit(prompt)
+        from app.core.self_edit_manager import perform_self_edit
+        success, result = perform_self_edit(prompt=prompt)
 
         return {
             "status": "success" if success else "failed",
@@ -625,6 +522,8 @@ def main():
     console.print(
         "[bold green]Echo Terminal Client Started[/bold green]"
     )
+
+    _load_session_state()
 
     first_message = True
     last_response: str = ""   # held for rating until replaced by the next response

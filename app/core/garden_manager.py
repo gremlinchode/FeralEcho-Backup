@@ -118,6 +118,43 @@ def initialize_garden():
 # Planting
 # ============================================================
 
+def _word_set(text: str) -> set:
+    return set(text.lower().split())
+
+
+def _is_near_duplicate(question: str, entries: list, threshold: float = 0.7) -> bool:
+    """
+    Jaccard word-overlap similarity against existing ACTIVE garden entries.
+
+    Audit finding (Low severity, corrected from original framing): the
+    selection-time B2 retry loop (emergent_scheduler._prompt_recently_reflected)
+    already does real embedding-based similarity checking against recently
+    reflected content — that part of the original finding overstated the
+    gap. The actual gap is upstream, here: harvest_question() previously
+    only deduplicated by exact text match, so a near-duplicate-but-
+    differently-worded question (e.g. "Who am I?" vs "Who am I, really?")
+    could sit alongside the original as a second active entry indefinitely,
+    diluting the garden without ever tripping the recency check (which only
+    compares against recently-*reflected* content, not against the
+    garden's own existing entries). Lightweight word-overlap rather than
+    embeddings — cheap enough to run against thousands of entries on every
+    harvest without adding a new embedding-index dependency to this module.
+    """
+    new_words = _word_set(question)
+    if not new_words:
+        return False
+    for e in entries:
+        if e.get("status") != "active":
+            continue
+        existing_words = _word_set(e["question"])
+        if not existing_words:
+            continue
+        overlap = len(new_words & existing_words) / len(new_words | existing_words)
+        if overlap >= threshold:
+            return True
+    return False
+
+
 def harvest_question(
     question: str,
     category: str = "general",
@@ -133,6 +170,10 @@ def harvest_question(
     }
 
     if question in existing_questions:
+        return False
+
+    if _is_near_duplicate(question, entries):
+        logging.debug(f"[GARDEN] Near-duplicate skipped: {question[:60]}")
         return False
 
     entry = {
@@ -202,6 +243,25 @@ def update_question_quality(
     _save_garden(entries)
 
 
+def mark_question_asked(question: str) -> None:
+    """Record that a question was picked/used, without the quality-scoring
+    side effects update_question_quality() bundles in (quality_scores
+    append, resolution_score nudge, resolved-status transition) — those are
+    specific to the reflection-and-score pipeline. Callers like
+    claude_research.py pick from the same "least-recently-asked third" pool
+    but via a different mechanism (external synthesis, not a scored
+    reflection); previously they never updated last_asked at all, so their
+    own picks never affected that bias — the same least-recent third could
+    be re-picked indefinitely regardless of how often this path used it."""
+    entries = _load_garden()
+    for entry in entries:
+        if entry["question"] == question:
+            entry["times_asked"] = entry.get("times_asked", 0) + 1
+            entry["last_asked"] = time.time()
+            break
+    _save_garden(entries)
+
+
 def update_resolution(
     question: str,
     resolution: float
@@ -232,8 +292,17 @@ def update_resolution(
 # ============================================================
 
 def _category_weights(entries):
-
-    scores = {c: [] for c in CATEGORIES}
+    # Pre-populating only from the fixed CATEGORIES list crashed with
+    # KeyError the moment any entry used a category outside that list —
+    # confirmed real and live: autonomous_awareness.py's dream cycle
+    # harvests questions with category="dream" (not in CATEGORIES), and
+    # curiosity_engine.py harvests under its own separate topic vocabulary
+    # (ai_tech, world_politics, etc.) — neither matches CATEGORIES' 8
+    # human-curated values. The caller (select_from_garden()) already
+    # tolerates a category missing from this dict via .get(category, 0.5),
+    # so building scores from whatever categories actually appear in the
+    # data is both correct and simpler than keeping two vocabularies synced.
+    scores: dict = {}
 
     for e in entries:
 
@@ -242,16 +311,12 @@ def _category_weights(entries):
         q = e.get("quality_scores", [])
 
         if q:
-            scores[category].append(sum(q) / len(q))
+            scores.setdefault(category, []).append(sum(q) / len(q))
 
     weights = {}
 
     for category, values in scores.items():
-
-        if values:
-            weights[category] = sum(values) / len(values)
-        else:
-            weights[category] = 0.5
+        weights[category] = sum(values) / len(values)
 
     return weights
 

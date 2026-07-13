@@ -17,17 +17,24 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "echo:latest")
 # Patched once on first query — safe because ollama_handler is imported
 # lazily (inside _ollama_query), so the app is fully initialized by then.
 _mlx_pool_patched = False
+_mlx_patch_lock = threading.Lock()
 
 def _patch_mlx_once() -> None:
     global _mlx_pool_patched
-    if _mlx_pool_patched:
-        return
-    _mlx_pool_patched = True
-    try:
-        from app.mlx_handler import patch_model_pool
-        patch_model_pool()
-    except Exception as e:
-        logging.warning(f"[MLX] Deferred MODEL_POOL patch failed: {e}")
+    # Two threads racing on the very first query each (e.g. a real request
+    # landing right as an autonomous loop also fires) could both pass the
+    # unlocked check-then-set below and both call MODEL_POOL.update()
+    # concurrently — a real RuntimeError risk for any third thread mid-
+    # iteration over MODEL_POOL.keys() at the same moment.
+    with _mlx_patch_lock:
+        if _mlx_pool_patched:
+            return
+        _mlx_pool_patched = True
+        try:
+            from app.mlx_handler import patch_model_pool
+            patch_model_pool()
+        except Exception as e:
+            logging.warning(f"[MLX] Deferred MODEL_POOL patch failed: {e}")
 
 def _get_mlx_path(model_name: str) -> Optional[str]:
     """Look up the HuggingFace path for an mlx:* model name."""
@@ -39,6 +46,7 @@ def _get_mlx_path(model_name: str) -> Optional[str]:
     except Exception:
         return None
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
+CHAT_URL = os.getenv("OLLAMA_CHAT_URL", "http://localhost:11434/api/chat")
 PERSONA_FILE = os.path.join(os.path.dirname(__file__), "persona.json")
 
 _ollama_process: Optional[subprocess.Popen] = None
@@ -48,6 +56,141 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(m
 
 
 # ---- Helper functions ----
+
+def _is_thinking_model(model: Optional[str]) -> bool:
+    """DeepSeek-R1 variants always emit a separate 'thinking' field, whether
+    called via /api/generate (top-level 'thinking' key) or /api/chat
+    ('message.thinking' key, confirmed live 2026-07-08 against a running
+    deepseek-r1:7b — see scripts/verify_chat_stream_shape.py). Shared by both
+    the generate-path and chat-path streaming functions so the check isn't
+    duplicated."""
+    return "deepseek" in (model or "").lower()
+
+
+def _build_chat_messages(prompt: str, system: Optional[str], messages: Optional[list]) -> list:
+    """Build a /api/chat messages array from either an explicit messages list
+    (used as-is) or a system + single-turn prompt (the common case for now —
+    callers don't yet track multi-turn history through this layer)."""
+    if messages is not None:
+        return messages
+    result = []
+    if system:
+        result.append({"role": "system", "content": system})
+    result.append({"role": "user", "content": prompt})
+    return result
+
+
+def _chat_ollama(messages: list, model: str, timeout: int = 1200, options: Optional[dict] = None) -> str:
+    """
+    Non-streaming /api/chat call. Same request/response shape and
+    never-raise error philosophy as app/core/echo_tool_dispatch.py's
+    _ollama_chat() (a working /api/chat precedent already in production for
+    tool-dispatch decisions) — this is a general-purpose counterpart with no
+    tools=/fixed-model baked in.
+    """
+    payload = {
+        "model": model,
+        "messages": messages,
+        "stream": False,
+        "options": options or {"num_ctx": 8192, "num_predict": 512},
+    }
+    try:
+        response = requests.post(CHAT_URL, json=payload, timeout=timeout)
+        response.raise_for_status()
+        data = response.json()
+        return (data.get("message") or {}).get("content", "").strip()
+    except Exception as e:
+        logging.error(f"Ollama chat query failed: {traceback.format_exc()}")
+        return f"[ERROR] Ollama chat query failed: {e}"
+
+
+def _stream_chat_ollama(
+    messages: list,
+    model: str,
+    max_tokens: int = 1024,
+    temperature: Optional[float] = None,
+    options: Optional[dict] = None,
+) -> Generator[str, None, None]:
+    """
+    Streaming /api/chat call. Confirmed live (2026-07-08, Ollama 0.30.10,
+    deepseek-r1:7b and llama3.2:3b — see scripts/verify_chat_stream_shape.py)
+    that /api/chat streams bare NDJSON per line identical in framing to
+    /api/generate, just with content nested under 'message.content' /
+    'message.thinking' (both incremental deltas needing concatenation, same
+    as /api/generate's top-level 'response'/'thinking') instead of top-level
+    'response'/'thinking'. Mirrors stream_query_ollama's thinking-buffer
+    assembly logic exactly, adjusted for the nested field names.
+    """
+    is_thinking_model = _is_thinking_model(model)
+    _options = dict(options or {})
+    _options.setdefault("num_ctx", 8192)
+    _options.setdefault("num_predict", max_tokens)
+    if temperature is not None:
+        _options["temperature"] = round(max(0.0, min(2.0, temperature)), 3)
+
+    payload = {
+        "model": model,
+        "messages": messages,
+        "stream": True,
+        "options": _options,
+    }
+
+    try:
+        with requests.post(CHAT_URL, json=payload, stream=True, timeout=1200) as resp:
+            resp.raise_for_status()
+
+            thinking_buffer: list[str] = []
+            response_buffer: list[str] = []
+
+            for line in resp.iter_lines():
+                if not line:
+                    continue
+                if isinstance(line, bytes):
+                    line = line.decode("utf-8")
+
+                try:
+                    data = json.loads(line)
+                except json.JSONDecodeError:
+                    logging.warning(f"Failed to decode JSON line from chat stream: {line}")
+                    continue
+
+                done = data.get("done", False)
+                msg = data.get("message") or {}
+
+                if is_thinking_model:
+                    thinking_chunk = msg.get("thinking")
+                    response_chunk = msg.get("content")
+
+                    if thinking_chunk:
+                        thinking_buffer.append(thinking_chunk)
+                    if response_chunk:
+                        response_buffer.append(response_chunk)
+
+                    if done:
+                        thinking_text = "".join(thinking_buffer).strip()
+                        response_text = "".join(response_buffer).strip()
+
+                        if thinking_text and response_text:
+                            yield (
+                                f"[Reasoning process]\n{thinking_text}\n\n"
+                                f"[Conclusion]\n{response_text}"
+                            )
+                        elif response_text:
+                            yield response_text
+                        elif thinking_text:
+                            yield thinking_text
+                else:
+                    content = msg.get("content")
+                    if content:
+                        yield content
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"RequestException during streaming Ollama chat query: {e}")
+        yield f"[ERROR] Ollama chat request failed: {e}"
+    except Exception as e:
+        logging.error(f"Unexpected error during streaming Ollama chat query: {traceback.format_exc()}")
+        yield f"[ERROR] Unexpected error during Ollama chat streaming: {e}"
+
 
 def is_ollama_running(host: str = "127.0.0.1", port: int = 11434) -> bool:
     try:
@@ -120,12 +263,25 @@ def stop_ollama_server():
 
 # ---- Query functions ----
 
-def query_ollama(prompt: str, persona: Optional[Dict] = None, model: Optional[str] = None, timeout: int = 1200) -> str:
+def query_ollama(
+    prompt: str,
+    persona: Optional[Dict] = None,
+    model: Optional[str] = None,
+    timeout: int = 1200,
+    system: Optional[str] = None,
+    messages: Optional[list] = None,
+) -> str:
     """
     Blocking Ollama query.
     Uses the model argument if provided, otherwise falls back to OLLAMA_MODEL env var.
     No traits injection — Echo's Modelfile identity is the authority.
     MLX routing: model names beginning with 'mlx:' are handled locally.
+
+    system / messages: optional, additive-only. When either is given, this
+    routes to /api/chat instead of /api/generate (see _chat_ollama()). When
+    both are omitted (the default, and every existing caller as of this
+    change), behavior and the request sent to Ollama are byte-identical to
+    before this parameter existed.
     """
     if model is None:
         model = OLLAMA_MODEL
@@ -137,10 +293,16 @@ def query_ollama(prompt: str, persona: Optional[Dict] = None, model: Optional[st
         if mlx_path:
             try:
                 from app.mlx_handler import stream_query_mlx
-                return "".join(stream_query_mlx(prompt=prompt, mlx_path=mlx_path, model_name=model))
+                return "".join(stream_query_mlx(
+                    prompt=prompt, mlx_path=mlx_path, model_name=model, system=system,
+                ))
             except Exception as e:
                 logging.error(f"[MLX] query_ollama MLX routing failed: {e}")
-                return "I'm having trouble thinking right now. Please try again later."
+                return f"[ERROR] MLX routing failed: {e}"
+
+    if messages is not None or system is not None:
+        chat_messages = _build_chat_messages(prompt, system, messages)
+        return _chat_ollama(chat_messages, model, timeout=timeout)
 
     logging.debug(f"Querying Ollama with prompt: {prompt}")
 
@@ -156,9 +318,9 @@ def query_ollama(prompt: str, persona: Optional[Dict] = None, model: Optional[st
         response.raise_for_status()
         data = response.json()
         return data.get("response", "").strip()
-    except Exception:
+    except Exception as e:
         logging.error(f"Ollama query failed: {traceback.format_exc()}")
-        return "I'm having trouble thinking right now. Please try again later."
+        return f"[ERROR] Ollama query failed: {e}"
 
 
 def generate_code(prompt: str, max_tokens: int = 500) -> str:
@@ -202,6 +364,8 @@ def stream_query_ollama(
     model: Optional[str] = None,
     max_tokens: int = 1024,
     temperature: Optional[float] = None,
+    system: Optional[str] = None,
+    messages: Optional[list] = None,
 ) -> Generator[str, None, None]:
     """
     Stream Ollama token by token with robust error handling.
@@ -218,6 +382,14 @@ def stream_query_ollama(
 
     MLX routing: model names beginning with 'mlx:' are routed directly to
     Apple Silicon inference via mlx-lm instead of the Ollama HTTP API.
+
+    system / messages: optional, additive-only. When either is given, this
+    routes to /api/chat instead of /api/generate (see _stream_chat_ollama(),
+    whose streaming shape was confirmed live 2026-07-08 against a running
+    deepseek-r1:7b and llama3.2:3b — see scripts/verify_chat_stream_shape.py).
+    When both are omitted (the default, and every existing caller as of this
+    change), behavior and the request sent to Ollama are byte-identical to
+    before this parameter existed.
     """
     if model is None:
         model = OLLAMA_MODEL
@@ -236,19 +408,28 @@ def stream_query_ollama(
                     mlx_path=mlx_path,
                     model_name=model,
                     max_tokens=max_tokens,
+                    system=system,
+                    temperature=temperature,
                 )
             except Exception as e:
                 logging.error(f"[MLX] stream_query_mlx raised: {e}")
-                yield "I'm having trouble thinking right now. Please try again later."
+                yield f"[ERROR] MLX routing failed: {e}"
             return
         else:
             logging.warning(f"[MLX] No mlx_path found for {model} — falling through to Ollama")
+
+    if messages is not None or system is not None:
+        chat_messages = _build_chat_messages(prompt, system, messages)
+        yield from _stream_chat_ollama(
+            chat_messages, model, max_tokens=max_tokens, temperature=temperature
+        )
+        return
 
     logging.debug(f"Streaming query to Ollama model={model} with prompt: {prompt}")
 
     # Detect whether this model emits thinking tokens so we know
     # whether to buffer or stream. DeepSeek-R1 variants always think.
-    is_thinking_model = "deepseek" in (model or "").lower()
+    is_thinking_model = _is_thinking_model(model)
 
     options: dict = {"num_ctx": 8192, "num_predict": max_tokens}
     if temperature is not None:
@@ -329,7 +510,7 @@ def stream_query_ollama(
 
     except requests.exceptions.RequestException as e:
         logging.error(f"RequestException during streaming Ollama query: {e}")
-        yield "I'm having trouble thinking right now. Please try again later."
-    except Exception:
+        yield f"[ERROR] Ollama request failed: {e}"
+    except Exception as e:
         logging.error(f"Unexpected error during streaming Ollama query: {traceback.format_exc()}")
-        yield "I'm having trouble thinking right now. Please try again later."
+        yield f"[ERROR] Unexpected error during Ollama streaming: {e}"

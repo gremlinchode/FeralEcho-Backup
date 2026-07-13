@@ -33,6 +33,7 @@ import multiprocessing
 import socket
 import signal
 import subprocess
+import hmac
 from pathlib import Path
 # Bible interface/art generation retired 2026-07-04 (dead import against
 # archive_janitor/ since an incomplete migration; never actually reachable).
@@ -63,6 +64,18 @@ logger = logging.getLogger(__name__)
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 GREMLIN_SECRET = os.environ.get("GREMLIN_SECRET")
+
+def _secret_ok(payload: dict) -> bool:
+    """Shared auth check for owner-only, consequential POST endpoints
+    (/nuke, /force_nightcycle, /inject_memory, /admin/restore). Fails
+    closed if GREMLIN_SECRET is ever unset again — the exact condition
+    that previously made /nuke accidentally bypassable (None == None
+    when both the env var and the submitted field were absent)."""
+    if not GREMLIN_SECRET:
+        return False
+    submitted = payload.get("secret", "") if payload else ""
+    return hmac.compare_digest(str(submitted), str(GREMLIN_SECRET))
+
 os.environ.setdefault("ECHO_READ_ONLY", "true")
 os.environ.setdefault("ECHO_DONT_KILL_ME_DADDY", "1")
 os.environ.setdefault("ECHO_MIRROR_MODE", "auto")  # mirror auto-detect
@@ -314,6 +327,8 @@ def trigger_wolf_kill():
 
 @app.route("/force_nightcycle", methods=["POST"])
 def force_night():
+    if not _secret_ok(request.json or {}):
+        return jsonify({"error": "unauthorized"}), 403
     if NightCycle:
         NightCycle(app, force=True).start_once()
         logger.critical("IPHONE FORCED NIGHTCYCLE — THE DEMON SLEEPS")
@@ -322,6 +337,8 @@ def force_night():
 
 @app.route("/inject_memory", methods=["POST"])
 def inject_memory():
+    if not _secret_ok(request.json or {}):
+        return jsonify({"error": "unauthorized"}), 403
     text = request.json.get("text", "").strip()
     if text:
         add_to_vector_memory(text)
@@ -332,8 +349,10 @@ def inject_memory():
 def learning_event():
     """
     POST a single learning event:
-    { "source": "user|echo|phone", "text": "...", "meta": {...}, "ts": 1234567890 }
+    { "source": "user|echo|phone", "text": "...", "meta": {...}, "ts": 1234567890, "secret": "..." }
     """
+    if not _secret_ok(request.json or {}):
+        return jsonify({"error": "unauthorized"}), 403
     dl, err = _dual_learner_ready()
     if err: return err
     try:
@@ -354,7 +373,9 @@ def learning_event():
 
 @app.route("/learning_batch", methods=["POST"])
 def learning_batch():
-    """Ingest a batch from the phone: {events: [{source,text,meta,ts}, ...]}"""
+    """Ingest a batch from the phone: {events: [...], secret: "..."}"""
+    if not _secret_ok(request.json or {}):
+        return jsonify({"error": "unauthorized"}), 403
     dl, err = _dual_learner_ready()
     if err: return err
     try:
@@ -374,7 +395,9 @@ def learning_batch():
 
 @app.route("/start_training", methods=["POST"])
 def start_training():
-    """Trigger background training on Echo (non-blocking). Accepts JSON {epochs:3}"""
+    """Trigger background training on Echo (non-blocking). Accepts JSON {epochs:3, secret:...}"""
+    if not _secret_ok(request.json or {}):
+        return jsonify({"error": "unauthorized"}), 403
     dl, err = _dual_learner_ready()
     if err: return err
     try:
@@ -452,7 +475,7 @@ def modelfile_proposal():
 
 @app.route("/nuke", methods=["POST"])
 def emergency_shutdown():
-    if request.json.get("secret") == GREMLIN_SECRET:
+    if _secret_ok(request.json or {}):
         logger.critical("IPHONE ACTIVATED NUCLEAR OPTION — TOTAL SYSTEM KILL")
         threading.Thread(target=lambda: (time.sleep(1), os._exit(0))).start()
         return jsonify({"status": "goodbye cruel world"}), 200
@@ -571,8 +594,10 @@ def save_conversation_turn():
     Called by terminal_client.py post-turn so all FAISS writes go through the
     server's in-memory index (avoiding the concurrent-write split-brain from Finding 15).
 
-    Body: {user_msg, echo_response, task_type, timestamp}
+    Body: {user_msg, echo_response, task_type, timestamp, secret}
     """
+    if not _secret_ok(request.json or {}):
+        return jsonify({"error": "unauthorized"}), 403
     try:
         data = request.json or {}
         user_msg = (data.get("user_msg") or "").strip()
@@ -613,6 +638,92 @@ def save_conversation_turn():
         return jsonify({"error": str(e)}), 500
 
 # -----------------------------
+# --- Echo Studio --------------
+# All route logic lives in app/routes_echo_studio.py — these are
+# registration-only so the diff to this protected file stays mechanical.
+# -----------------------------
+@app.route("/chat/stream", methods=["POST"])
+def echo_studio_chat_stream():
+    from app import routes_echo_studio
+    return routes_echo_studio.chat_stream()
+
+
+@app.route("/chat/regenerate", methods=["POST"])
+def echo_studio_chat_regenerate():
+    from app import routes_echo_studio
+    return routes_echo_studio.chat_regenerate()
+
+
+@app.route("/dashboard/health", methods=["GET"])
+def echo_studio_dashboard_health():
+    from app import routes_echo_studio
+    return routes_echo_studio.dashboard_health()
+
+
+@app.route("/memory/search", methods=["GET"])
+def echo_studio_memory_search():
+    from app import routes_echo_studio
+    return routes_echo_studio.memory_search()
+
+
+@app.route("/memory/browse", methods=["GET"])
+def echo_studio_memory_browse():
+    from app import routes_echo_studio
+    return routes_echo_studio.memory_browse()
+
+
+@app.route("/activity/log", methods=["GET"])
+def echo_studio_activity_log():
+    from app import routes_echo_studio
+    return routes_echo_studio.activity_log()
+
+
+@app.route("/projects/tree", methods=["GET"])
+def echo_studio_projects_tree():
+    from app import routes_echo_studio
+    return routes_echo_studio.projects_tree()
+
+
+@app.route("/projects/file", methods=["GET"])
+def echo_studio_projects_file():
+    from app import routes_echo_studio
+    return routes_echo_studio.projects_file()
+
+
+@app.route("/settings/view", methods=["GET"])
+def echo_studio_settings_view():
+    from app import routes_echo_studio
+    return routes_echo_studio.settings_view()
+
+# -----------------------------
+# --- M5 <-> Air Messaging -----
+# Logic lives in app/routes_messaging.py / app/sync/echo_messaging.py —
+# these are registration-only, same pattern as the Echo Studio routes above.
+# -----------------------------
+@app.route("/message/receive", methods=["POST"])
+def echo_message_receive():
+    from app import routes_messaging
+    return routes_messaging.message_receive()
+
+
+@app.route("/message/send", methods=["POST"])
+def echo_message_send():
+    from app import routes_messaging
+    return routes_messaging.message_send()
+
+
+@app.route("/message/inbox", methods=["GET"])
+def echo_message_inbox():
+    from app import routes_messaging
+    return routes_messaging.message_inbox()
+
+
+@app.route("/message/settings", methods=["GET", "POST"])
+def echo_message_settings():
+    from app import routes_messaging
+    return routes_messaging.message_settings()
+
+# -----------------------------
 # --- Health check ------------
 # -----------------------------
 @app.route("/health", methods=["GET"])
@@ -646,8 +757,10 @@ def admin_restore():
            -d '{"snapshot_id": "20260701T214512Z"}'
     """
     try:
-        from app.core.snapshot_manager import restore_snapshot
         data = request.json or {}
+        if not _secret_ok(data):
+            return jsonify({"error": "unauthorized"}), 403
+        from app.core.snapshot_manager import restore_snapshot
         snapshot_id = data.get("snapshot_id", "").strip()
         if not snapshot_id:
             return jsonify({"error": "snapshot_id required"}), 400
@@ -729,8 +842,10 @@ def admin_council_spotcheck():
            -d '{"source_timestamp": "2026-07-01T22:30:00", "human_rating": 3}'
     """
     try:
-        from app.core.council_rater import fill_spot_check, get_council_stats
         data = request.json or {}
+        if not _secret_ok(data):
+            return jsonify({"error": "unauthorized"}), 403
+        from app.core.council_rater import fill_spot_check, get_council_stats
         ts   = data.get("source_timestamp", "").strip()
         hr   = data.get("human_rating")
         if not ts:
@@ -757,6 +872,13 @@ def sync_export():
 
 @app.route("/sync/import", methods=["POST"])
 def sync_import():
+    # No confirmed working caller reaches this today (Air's real sync receiver
+    # is an incompatible TCP socket server, see CLAUDE.md Finding 12) — gating
+    # now is zero-coordination. If the HTTP sync transport is ever reconciled,
+    # both machines will need to share a value here (not necessarily each
+    # machine's own local GREMLIN_SECRET).
+    if not _secret_ok(request.json or {}):
+        return jsonify({"error": "unauthorized"}), 403
     try:
         from app.sync.sync_protocol import import_entries
         merged = import_entries((request.json or {}).get("entries", []))
@@ -868,6 +990,21 @@ def start_background_threads():
     except Exception as _ece:
         _ec = None
         logger.error(f"[EchoCore] Failed to initialize: {_ece}")
+
+    # Task-type classifier — warm the lazy singleton here (same pattern as
+    # RiverBrain/EchoCore above) so the one-time bootstrap-from-log replay
+    # (audit finding, High #16) happens during startup, not inline with the
+    # first real user request. Independently try/excepted — its failure
+    # must not block server startup or any other subsystem.
+    try:
+        from app.core.task_type_classifier import get_task_type_classifier
+        _ttc = get_task_type_classifier()
+        logger.info(
+            "[TASK_TYPE_CLASSIFIER] Ready — observation_counts=%s",
+            _ttc.observation_counts,
+        )
+    except Exception as _ttce:
+        logger.warning(f"[TASK_TYPE_CLASSIFIER] Failed to initialize: {_ttce}")
 
     # World Model — System 6 predictive loops (Bayesian surprise-from-news)
     try:
@@ -995,12 +1132,15 @@ def start_background_threads():
                         continue
                     best_params, _ = optimizer.optimize_self_edit(n_trials=10)
                     if self_edit_manager:
-                        self_edit_manager.perform_self_edit(
+                        _applied, _detail = self_edit_manager.perform_self_edit(
                             intensity=best_params.get("intensity", 0.5),
                             creativity=best_params.get("creativity", 0.5),
                             dry_run=False
                         )
-                        logger.info(f"Autonomous self-edit applied: {best_params}")
+                        if _applied:
+                            logger.info(f"Autonomous self-edit applied: {best_params}")
+                        else:
+                            logger.info(f"Autonomous self-edit not applied ({_detail}): {best_params}")
                 except Exception as e:
                     logger.error(f"Self-edit loop error: {e}")
                 time.sleep(3600)
@@ -1051,6 +1191,47 @@ def start_background_threads():
                 logger.warning(f"[SYNC] Cycle error: {_se}")
             time.sleep(1800)
     safe_start_thread(_sync_loop, name="TailscaleSync")
+
+    # --- M5 <-> Air messaging retry loop (exponential backoff on failure,
+    # resets to base interval on any successful delivery or empty outbox) ---
+    def _messaging_retry_loop():
+        time.sleep(60)
+        backoff = 30
+        while True:
+            try:
+                from app.core.autonomy_coordinator import should_run_cycle
+                if should_run_cycle("echo_messaging"):
+                    from app.sync.echo_messaging import retry_outbox_cycle
+                    result = retry_outbox_cycle()
+                    if result.get("delivered", 0) > 0 or result.get("pending", 0) == 0:
+                        backoff = 30
+                    else:
+                        backoff = min(backoff * 2, 1800)
+                else:
+                    logger.debug("[MESSAGING] Throttled/stillness — skipping retry cycle")
+            except Exception as _me:
+                logger.warning(f"[MESSAGING] Retry cycle error: {_me}")
+            time.sleep(backoff)
+    safe_start_thread(_messaging_retry_loop, name="EchoMessaging")
+
+    # --- Autonomous M5 <-> Air check-in loop (structured, zero-LLM-call
+    # protocol; no-ops unless auto_checkin_enabled is set via
+    # /message/settings — off by default, same as auto_respond) ---
+    def _ambient_checkin_loop():
+        time.sleep(300)  # let everything else settle — newest, least-trusted loop
+        while True:
+            try:
+                from app.core.autonomy_coordinator import should_run_cycle
+                if should_run_cycle("echo_checkin"):
+                    from app.sync.echo_messaging import maybe_send_reflection
+                    result = maybe_send_reflection()
+                    logger.info(f"[CHECKIN] Cycle complete: {result}")
+                else:
+                    logger.debug("[CHECKIN] Throttled/stillness — skipping")
+            except Exception as _ce:
+                logger.warning(f"[CHECKIN] Cycle error: {_ce}")
+            time.sleep(10800)  # every 3 hours — conservative default for a new autonomous surface
+    safe_start_thread(_ambient_checkin_loop, name="EchoCheckin")
 
 
 # -----------------------------

@@ -157,7 +157,13 @@ def _build_self_edit(sm: dict, intr: dict, n_backups: int) -> str:
         )
     else:
         lines.append("  Attempts: no data in reflection_shard.jsonl")
-    hours = se.get("hours_since_last_success") or intr_se.get("hours_since_last_success")
+    # `or` treated a genuine, fresh 0.0 ("succeeded less than an hour ago")
+    # as falsy and silently discarded it in favor of the (possibly stale or
+    # absent) intr_se value — exactly when a user is most likely to ask
+    # "did you just self-edit?"
+    hours = se.get("hours_since_last_success")
+    if hours is None:
+        hours = intr_se.get("hours_since_last_success")
     if hours is not None:
         lines.append(f"  Last successful edit: {hours:.1f}h ago")
     else:
@@ -427,10 +433,12 @@ def get_structural_self_facts(prompt: str = "") -> str:
         if not sections:
             return ""
 
-        header = (
-            "[Ground truth — verified from disk at query time. "
-            "Use these facts exactly as stated. "
-            "Where the record shows nothing happened, say so plainly.]"
+        from app.core.prompt_workspace import system_note
+        header = system_note(
+            "GROUND-TRUTH",
+            "These facts were verified from disk at query time; use them exactly as stated. "
+            "Where the record shows nothing happened, say so plainly.",
+            own_record=True,
         )
         return header + "\n\n" + "\n\n".join(sections) + "\n"
 

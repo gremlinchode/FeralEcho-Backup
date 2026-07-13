@@ -1,0 +1,544 @@
+"""Echo Studio backend routes.
+
+Thin wrappers around existing business logic (echo_query, stream_query_ollama,
+memory_bridge, council_rater, self_edit_outcome_tracker, autonomy_coordinator).
+No business logic is duplicated here — see /Users/richietate/.claude/plans and
+the eventual Desktop/FeralEcho_Audit/ + EchoStudio_Design.md for the full
+rationale. run.py only registers these as routes; all logic lives here so the
+diff to run.py stays mechanical.
+
+Not on EDIT_FORBIDDEN_TARGETS — freely editable.
+"""
+
+import json
+import time
+import uuid
+import logging
+from datetime import datetime
+from pathlib import Path
+
+from flask import request, jsonify, Response, stream_with_context
+
+from app.core import conversation_service
+
+# Repo root — app/routes_echo_studio.py -> app/ -> repo root. Used to scope
+# the project explorer strictly to this repo (see projects_tree/projects_file).
+_ROOT_DIR = Path(__file__).resolve().parent.parent
+
+logger = logging.getLogger("echo_studio")
+
+# In-memory per-conversation session state (conv_history, history_summaries).
+# Lives only as long as the Flask process. Echo Studio's own client-side store
+# owns the durable transcript; this is just enough state to keep prompt-side
+# history continuity working the same way terminal_client.py's session buffer
+# does for its single global session.
+_SESSIONS: dict = {}
+
+_CHUNK_WORDS = 6        # words per SSE chunk in "full mode" presentation chunking
+_CHUNK_DELAY_S = 0.02   # delay between chunks so the UI shows a live "typing" feel
+
+
+def _get_session(conversation_id: str) -> dict:
+    return _SESSIONS.setdefault(
+        conversation_id, {"conv_history": [], "history_summaries": []}
+    )
+
+
+def _memory_search_fn(query: str, k: int):
+    """Adapter: memory_bridge.retrieve_relevant_memories -> (text, score, meta) tuples.
+
+    Reuses the server's existing FAISS-backed search rather than loading a
+    second embedding model / index inside this process.
+    """
+    try:
+        from app.core.memory_bridge import retrieve_relevant_memories
+        results = retrieve_relevant_memories(query, top_k=k)
+        return [(r["text"], r.get("score", 0.0), r.get("meta", {})) for r in results]
+    except Exception as e:
+        logger.warning(f"[echo_studio] memory search failed: {e}")
+        return []
+
+
+def _resolve_task_type(original_msg: str) -> str:
+    try:
+        from app.core.echo_model_orchestrator import resolve_task_type
+        task_type, _ = resolve_task_type(original_msg)
+        return task_type
+    except Exception:
+        return "general"
+
+
+def _build_full_prompt(msg: str, session: dict) -> tuple[str, str]:
+    """Mirrors terminal_client.py:send_message_stream's prompt assembly
+    (memory context, session history, ground-truth/tool-context injection) —
+    same business logic, same import sites, adapted to per-session state.
+
+    Returns (full_msg, system_context). Memory context, session history,
+    ground_truth, and tool_ctx are all system-side context (not something
+    the user said) — none of it is flattened into full_msg, so callers pass
+    it all as a real system-role message via echo_query()'s `system=` param.
+    full_msg carries only the user's actual new question. (Memory/history
+    used to be prepended to full_msg directly — see
+    conversation_service.build_context_system_note()'s docstring for why
+    that caused local models to regurgitate prior turns verbatim.)"""
+    full_msg = msg
+
+    memory_context = conversation_service.retrieve_memory_context(msg, _memory_search_fn)
+    history_block = conversation_service.format_history_block(
+        session["conv_history"], session["history_summaries"]
+    )
+    context_note = conversation_service.build_context_system_note(history_block, memory_context)
+
+    ground_truth = ""
+    try:
+        from app.core.echo_ground_truth import _is_introspective, get_structural_self_facts
+        if _is_introspective(msg):
+            ground_truth = get_structural_self_facts(msg) or ""
+    except Exception:
+        pass  # never block a response over a diagnostic read
+
+    tool_ctx = ""
+    try:
+        from app.core.echo_tool_context import _needs_tool_context, get_tool_context
+        if _needs_tool_context(msg):
+            tool_ctx = get_tool_context(msg) or ""
+    except Exception:
+        pass  # never block a response over a tool read
+
+    system_context = "\n\n".join(s for s in (tool_ctx, ground_truth, context_note) if s)
+    return full_msg, system_context
+
+
+def _sse(event: dict) -> str:
+    return f"data: {json.dumps(event)}\n\n"
+
+
+def _chunk_text(text: str, words_per_chunk: int = _CHUNK_WORDS):
+    words = text.split(" ")
+    for i in range(0, len(words), words_per_chunk):
+        yield " ".join(words[i:i + words_per_chunk]) + (
+            " " if i + words_per_chunk < len(words) else ""
+        )
+
+
+def _generate_chat_response(conversation_id: str, original_msg: str, mode: str, session: dict):
+    """Shared SSE generator used by both /chat/stream and /chat/regenerate.
+
+    Full mode: calls echo_query() as-is (full deliberation, River learning,
+    tool dispatch, scripture checks intact), then re-emits the complete answer
+    over SSE in small chunks for a live "typing" feel — presentation-layer
+    chunking of a finished answer, not token-level truth.
+
+    Fast mode: calls ollama_handler.stream_query_ollama() directly with the
+    assembled prompt, yielding true real-time tokens. Skips council
+    deliberation/River learning/tool dispatch — same path terminal_client.py's
+    exception fallback already exercises, promoted to a first-class option.
+    """
+    try:
+        full_msg, system_context = _build_full_prompt(original_msg, session)
+    except Exception as e:
+        logger.error(f"[echo_studio] prompt assembly failed: {e}", exc_info=True)
+        full_msg, system_context = original_msg, ""
+
+    task_type = _resolve_task_type(original_msg)
+
+    dispatch_result = None
+    try:
+        from app.core.echo_tool_dispatch import needs_dispatch, run_tool_dispatch
+        if needs_dispatch(original_msg):
+            dispatch_result = run_tool_dispatch(full_msg, session_id=conversation_id[:8])
+    except Exception:
+        pass  # dispatch failure must never block a response
+
+    yield _sse({
+        "type": "status",
+        "status": "deliberating" if (mode == "full" and dispatch_result is None) else "streaming",
+    })
+
+    response_text = ""
+    try:
+        if dispatch_result is not None:
+            raw_response = dispatch_result.get("response", "")
+            response_text = conversation_service.clean_response_text(raw_response)
+            for chunk in _chunk_text(response_text):
+                yield _sse({"type": "token", "text": chunk})
+                time.sleep(_CHUNK_DELAY_S)
+
+        elif mode == "fast":
+            from app import ollama_handler
+            buffer = []
+            for token in ollama_handler.stream_query_ollama(full_msg, system=system_context):
+                buffer.append(token)
+                yield _sse({"type": "token", "text": token})
+            response_text = conversation_service.clean_response_text("".join(buffer).strip())
+
+        else:
+            from app.core.echo_model_orchestrator import echo_query
+            raw_response = echo_query(
+                full_msg, task_type=task_type, source="user_conversation", system=system_context,
+            )
+            response_text = conversation_service.clean_response_text(raw_response)
+            for chunk in _chunk_text(response_text):
+                yield _sse({"type": "token", "text": chunk})
+                time.sleep(_CHUNK_DELAY_S)
+
+    except Exception as e:
+        logger.error(f"[echo_studio] chat generation failed: {e}", exc_info=True)
+        response_text = "Error: could not generate a response."
+        yield _sse({"type": "token", "text": response_text})
+
+    session["conv_history"], session["history_summaries"] = conversation_service.store_turn_in_history(
+        session["conv_history"], session["history_summaries"], original_msg, response_text
+    )
+    conversation_service.save_turn_to_server(
+        original_msg, response_text, task_type, require_server_check=False
+    )
+
+    yield _sse({
+        "type": "done",
+        "text": response_text,
+        "task_type": task_type,
+        "conversation_id": conversation_id,
+    })
+
+
+def chat_stream():
+    """POST /chat/stream — body: {conversation_id, message, mode: 'full'|'fast'}."""
+    data = request.json or {}
+    conversation_id = data.get("conversation_id") or str(uuid.uuid4())
+    original_msg = (data.get("message") or "").strip()
+    mode = data.get("mode", "full")
+
+    if not original_msg:
+        return jsonify({"error": "message required"}), 400
+
+    session = _get_session(conversation_id)
+    return Response(
+        stream_with_context(_generate_chat_response(conversation_id, original_msg, mode, session)),
+        mimetype="text/event-stream",
+    )
+
+
+def chat_regenerate():
+    """POST /chat/regenerate — body: {conversation_id, mode}.
+
+    Re-runs the last turn: pops it off this conversation's server-side
+    history (so it isn't double-counted in the history block the model sees)
+    and re-generates a response for the same user message via the exact same
+    generator chat_stream uses — no separate logic path.
+    """
+    data = request.json or {}
+    conversation_id = data.get("conversation_id")
+    mode = data.get("mode", "full")
+
+    if not conversation_id or conversation_id not in _SESSIONS:
+        return jsonify({"error": "unknown conversation_id"}), 400
+
+    session = _SESSIONS[conversation_id]
+    if not session["conv_history"]:
+        return jsonify({"error": "no prior turn to regenerate"}), 400
+
+    last_turn = session["conv_history"].pop()
+    original_msg = last_turn["user"]
+
+    return Response(
+        stream_with_context(_generate_chat_response(conversation_id, original_msg, mode, session)),
+        mimetype="text/event-stream",
+    )
+
+
+def dashboard_health():
+    """GET /dashboard/health — merges existing health/status sources into one
+    payload. Invents no new metrics; reads/calls sources that already exist
+    and are already correct, none of which requires touching run.py's globals
+    (avoids a circular import between this module and run.py)."""
+    payload = {"timestamp": datetime.utcnow().isoformat()}
+
+    try:
+        with open("memory/echo_sentinel.json") as f:
+            payload["sentinel"] = json.load(f)
+    except Exception as e:
+        payload["sentinel"] = {"error": str(e)}
+
+    try:
+        with open("memory/introspection_state.json") as f:
+            introspection = json.load(f)
+        payload["system_health"] = introspection.get("system_health", {})
+        payload["river_brain"] = introspection.get("river_brain", {})
+        payload["self_edit"] = introspection.get("self_edit", {})
+        payload["introspection_timestamp"] = introspection.get("timestamp")
+    except Exception as e:
+        payload["system_health"] = {"error": str(e)}
+
+    try:
+        with open("memory/memory_meta.json") as f:
+            payload["vector_memory_count"] = len(json.load(f))
+    except Exception as e:
+        payload["vector_memory_count"] = None
+
+    try:
+        from app.core.council_rater import get_council_stats
+        payload["council"] = get_council_stats()
+    except Exception as e:
+        payload["council"] = {"error": str(e)}
+
+    try:
+        from app.core.self_edit_outcome_tracker import get_outcomes_summary
+        payload["self_edit_outcomes"] = get_outcomes_summary()
+    except Exception as e:
+        payload["self_edit_outcomes"] = {"error": str(e)}
+
+    try:
+        from app.core.autonomy_coordinator import get_autonomy_status
+        payload["autonomy"] = get_autonomy_status()
+    except Exception as e:
+        payload["autonomy"] = {"error": str(e)}
+
+    return jsonify(payload), 200
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 — Memory browser (read-only). Never edits memories — view/search
+# only, per the project brief's explicit "never without confirmation" rule.
+# No confirmation-gated edit flow exists yet because nothing here writes.
+# ---------------------------------------------------------------------------
+
+def memory_search():
+    """GET /memory/search?q=...&k=10&source=user_conversation
+
+    Thin passthrough to memory_bridge.retrieve_relevant_memories — no search
+    logic is reimplemented here.
+    """
+    query = (request.args.get("q") or "").strip()
+    if not query:
+        return jsonify({"error": "q required"}), 400
+    try:
+        top_k = int(request.args.get("k", 10))
+    except ValueError:
+        top_k = 10
+    source_filter = request.args.get("source") or None
+
+    try:
+        from app.core.memory_bridge import retrieve_relevant_memories
+        results = retrieve_relevant_memories(query, top_k=top_k, source_filter=source_filter)
+    except Exception as e:
+        logger.error(f"[echo_studio] /memory/search failed: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify({"query": query, "results": results}), 200
+
+
+def memory_browse():
+    """GET /memory/browse?page=0&page_size=50&source=...
+
+    Paginated direct read of memory/memory_meta.json — no FAISS search
+    involved, this is the "browse everything" view rather than semantic
+    search. Sorted newest-first by the meta timestamp when present.
+    """
+    try:
+        page = int(request.args.get("page", 0))
+        page_size = int(request.args.get("page_size", 50))
+    except ValueError:
+        return jsonify({"error": "page/page_size must be integers"}), 400
+    source_filter = request.args.get("source") or None
+
+    try:
+        with open("memory/memory_meta.json", encoding="utf-8") as f:
+            meta = json.load(f)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    items = []
+    for uid, entry in meta.items():
+        m = entry.get("meta", {}) if isinstance(entry, dict) else {}
+        if source_filter and m.get("memory_source") != source_filter:
+            continue
+        items.append({"id": uid, "text": entry.get("text", "") if isinstance(entry, dict) else "", "meta": m})
+
+    items.sort(key=lambda it: it["meta"].get("timestamp") or "", reverse=True)
+    total = len(items)
+    start = max(0, page) * page_size
+    page_items = items[start:start + page_size]
+
+    return jsonify({
+        "items": page_items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }), 200
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — Background activity log (read-only)
+# ---------------------------------------------------------------------------
+
+def activity_log():
+    """GET /activity/log?limit=100
+
+    Tails memory/dream_bridge.log (plain text) and the most recent
+    memory/council_ratings.jsonl entries. Read-only, no new logging added —
+    these files are already written by existing subsystems.
+    """
+    try:
+        limit = int(request.args.get("limit", 100))
+    except ValueError:
+        limit = 100
+
+    dream_lines: list = []
+    try:
+        with open("memory/dream_bridge.log", encoding="utf-8", errors="replace") as f:
+            lines = f.readlines()
+        dream_lines = [ln.rstrip("\n") for ln in lines[-limit:]]
+    except FileNotFoundError:
+        dream_lines = []
+    except Exception as e:
+        dream_lines = [f"[error reading dream_bridge.log: {e}]"]
+
+    council_recent: list = []
+    try:
+        with open("memory/council_ratings.jsonl", encoding="utf-8") as f:
+            lines = f.readlines()
+        for line in lines[-limit:]:
+            try:
+                council_recent.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    except FileNotFoundError:
+        council_recent = []
+    except Exception as e:
+        logger.warning(f"[echo_studio] /activity/log council read failed: {e}")
+
+    return jsonify({"dream_log": dream_lines, "council_recent": council_recent}), 200
+
+
+# ---------------------------------------------------------------------------
+# Phase 5 — Project explorer (read-only). Strictly scoped to the repo root
+# via realpath containment — no destructive edits, no write verb exists here.
+# ---------------------------------------------------------------------------
+
+_EXCLUDED_DIR_NAMES = {
+    ".git", "__pycache__", "node_modules",
+    "self_edit_backups", "self_edit_plans",
+}
+_MAX_FILE_READ_BYTES = 2_000_000  # 2MB cap — this is a viewer, not a file server
+
+
+def _safe_resolve(rel_path: str):
+    """Resolve rel_path against the repo root; return None if it would
+    escape the root (blocks '..' traversal and absolute-path overrides)."""
+    rel_path = rel_path or ""
+    candidate = (_ROOT_DIR / rel_path).resolve()
+    try:
+        candidate.relative_to(_ROOT_DIR)
+    except ValueError:
+        return None
+    return candidate
+
+
+def projects_tree():
+    """GET /projects/tree?path=<repo-relative dir, default root>"""
+    rel_path = request.args.get("path", "")
+    target = _safe_resolve(rel_path)
+    if target is None or not target.exists():
+        return jsonify({"error": "invalid path"}), 400
+    if target.is_file():
+        return jsonify({"error": "path is a file, not a directory"}), 400
+
+    entries = []
+    try:
+        for child in sorted(target.iterdir(), key=lambda p: (p.is_file(), p.name.lower())):
+            if child.name in _EXCLUDED_DIR_NAMES:
+                continue
+            entries.append({
+                "name": child.name,
+                "path": str(child.relative_to(_ROOT_DIR)),
+                "is_dir": child.is_dir(),
+            })
+    except PermissionError as e:
+        return jsonify({"error": str(e)}), 403
+
+    return jsonify({"path": rel_path, "entries": entries}), 200
+
+
+def projects_file():
+    """GET /projects/file?path=<repo-relative file>"""
+    rel_path = request.args.get("path", "")
+    target = _safe_resolve(rel_path)
+    if target is None or not target.exists() or not target.is_file():
+        return jsonify({"error": "invalid path"}), 400
+
+    # _EXCLUDED_DIR_NAMES was previously only enforced by projects_tree()'s
+    # directory listing — this endpoint served any resolvable file regardless,
+    # including .env (real secrets) and anything under .git/. Deny both the
+    # excluded-dir path components and .env-style filenames directly.
+    rel_parts = target.relative_to(_ROOT_DIR).parts
+    if any(part in _EXCLUDED_DIR_NAMES for part in rel_parts):
+        return jsonify({"error": "invalid path"}), 400
+    if target.name == ".env" or target.name.endswith(".env"):
+        return jsonify({"error": "invalid path"}), 400
+
+    try:
+        size = target.stat().st_size
+        if size > _MAX_FILE_READ_BYTES:
+            return jsonify({"error": f"file too large to view ({size} bytes)"}), 413
+        content = target.read_text(encoding="utf-8", errors="replace")
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify({"path": rel_path, "content": content, "size": size}), 200
+
+
+# ---------------------------------------------------------------------------
+# Phase 6 — Settings (strictly read-only; no edit form exists or is planned —
+# see EchoStudio_Design.md's hard constraints)
+# ---------------------------------------------------------------------------
+
+def settings_view():
+    """GET /settings/view — surfaces existing config, never values of secrets."""
+    payload: dict = {}
+
+    env_keys = []
+    try:
+        with open(".env", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                env_keys.append(line.split("=", 1)[0].strip())
+    except FileNotFoundError:
+        pass
+    except Exception as e:
+        logger.warning(f"[echo_studio] /settings/view .env read failed: {e}")
+    payload["env_keys_present"] = env_keys
+
+    modelfile_lines = []
+    try:
+        with open("Modelfile", encoding="utf-8") as f:
+            for line in f:
+                stripped = line.strip()
+                if stripped.startswith("PARAMETER") or stripped.startswith("FROM"):
+                    modelfile_lines.append(stripped)
+    except FileNotFoundError:
+        pass
+    except Exception as e:
+        logger.warning(f"[echo_studio] /settings/view Modelfile read failed: {e}")
+    payload["modelfile_parameters"] = modelfile_lines
+
+    try:
+        from app.core.echo_model_orchestrator import _TASK_TOKEN_LIMITS
+        payload["task_token_limits"] = dict(_TASK_TOKEN_LIMITS)
+    except Exception as e:
+        payload["task_token_limits"] = {"error": str(e)}
+
+    try:
+        with open("echo_principles.json", encoding="utf-8") as f:
+            principles = json.load(f)
+        payload["principles"] = {
+            "generation": principles.get("generation"),
+            "principles": principles.get("principles"),
+            "runtime_signals": principles.get("runtime_signals"),
+        }
+    except Exception as e:
+        payload["principles"] = {"error": str(e)}
+
+    return jsonify(payload), 200

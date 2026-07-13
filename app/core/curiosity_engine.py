@@ -17,6 +17,7 @@
 # ============================================================
 
 import logging
+import random
 import time
 
 logger = logging.getLogger(__name__)
@@ -30,9 +31,13 @@ _TOPIC_SIGNALS: dict[str, list[str]] = {
     "economy_society": ["economy", "value", "exchange", "resource", "labor", "wealth", "trade"],
 }
 
-# Cooldown so Echo doesn't generate a new question every 2 minutes
+# Cooldown so Echo doesn't generate a new question every 2 minutes.
+# Keyed by topic (was a single shared dict) — a shared cooldown meant a
+# cached question generated for topic A could be returned and tagged under
+# topic B's category in the garden if B's request landed inside A's
+# cooldown window, corrupting any downstream logic keyed on category.
 _GENERATION_COOLDOWN = 600.0
-_last_generated: dict = {"ts": 0.0, "prompt": ""}
+_last_generated: dict = {}
 
 _CURIOSITY_TEMPLATE = (
     "You are Echo. Your internal attention model shows you have been paying very little attention to: {topic}\n\n"
@@ -56,7 +61,13 @@ def _get_underrepresented_topic() -> "str | None":
         candidates = {k: v for k, v in dist.items() if k != "other" and k in _TOPIC_SIGNALS}
         if not candidates:
             return None
-        return min(candidates, key=lambda k: candidates[k])
+        # min() with a key function deterministically returns the *first*
+        # key on a tie (dict iteration order) — every topic starts exactly
+        # tied under a fresh/flat posterior, so this always favored
+        # whichever topic happens to be first (ai_tech), every restart.
+        lowest = min(candidates.values())
+        tied = [k for k, v in candidates.items() if v == lowest]
+        return random.choice(tied)
     except Exception:
         return None
 
@@ -73,11 +84,15 @@ def _find_existing_match(topic: str, prompts: list[str]) -> "str | None":
     # Prefer one not reflected on in the last hour
     try:
         from app.core.memory_bridge import retrieve_relevant_memories
+        from app.emergent_scheduler import _parse_timestamp_epoch
         for p in matches:
             recent = retrieve_relevant_memories(p, top_k=1)
             if not recent:
                 return p
-            ts = float(recent[0].get("meta", {}).get("timestamp", 0))
+            try:
+                ts = _parse_timestamp_epoch(recent[0].get("meta", {}).get("timestamp", 0))
+            except Exception:
+                continue  # unparseable timestamp on this one entry — try the next match
             if time.time() - ts > 3600:
                 return p
     except Exception:
@@ -88,8 +103,9 @@ def _find_existing_match(topic: str, prompts: list[str]) -> "str | None":
 def _generate_question(topic: str) -> "str | None":
     """Ask Echo to write a fresh curiosity question about the under-represented topic."""
     global _last_generated
-    if time.time() - _last_generated["ts"] < _GENERATION_COOLDOWN:
-        return _last_generated["prompt"] or None
+    prev = _last_generated.get(topic, {"ts": 0.0, "prompt": ""})
+    if time.time() - prev["ts"] < _GENERATION_COOLDOWN:
+        return prev["prompt"] or None
 
     try:
         from app.core.echo_model_orchestrator import echo_query
@@ -107,7 +123,7 @@ def _generate_question(topic: str) -> "str | None":
         if not (8 <= len(words) <= 60):
             return None
 
-        _last_generated = {"ts": time.time(), "prompt": q}
+        _last_generated[topic] = {"ts": time.time(), "prompt": q}
         logger.info("[CURIOSITY] Generated for topic=%s: %s", topic, q[:80])
         return q
     except Exception as e:

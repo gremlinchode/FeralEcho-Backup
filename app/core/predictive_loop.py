@@ -25,6 +25,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import random
 import threading
 import time
 from collections import deque
@@ -338,8 +339,15 @@ class WorldModel:
     def _assign_topic(self, text: str) -> int:
         words = set(text.lower().split())
         scores = [len(words & kws) for kws in TOPIC_KEYWORDS]
-        best = int(np.argmax(scores))
-        return best if scores[best] > 0 else 5  # 5 = "other"
+        top = max(scores)
+        if top == 0:
+            return 5  # "other" — no keyword matched any topic
+        # np.argmax() always returns the *first* index on a tie — a
+        # deterministic bias toward topic 0 ("ai_tech") every time two or
+        # more topics matched the same number of keywords. Break ties
+        # randomly among whichever topics are actually tied for the max.
+        tied = [i for i, s in enumerate(scores) if s == top]
+        return random.choice(tied)
 
     # ── KL divergences (closed-form, no sampling) ─────────────────────────────
 
@@ -391,12 +399,26 @@ class WorldModel:
             logger.warning("[WorldModel] Log write failed: %s", e)
 
     def _load_history(self):
-        """Restore surprise and observation history from disk on startup."""
+        """Restore surprise and observation history from disk on startup.
+
+        Also replays observations into the live Bayesian posterior
+        (_sent_alpha/_sent_beta/_topic_alpha) — previously this only
+        restored _obs_history/_surprise_history, which feed the slow daily
+        PyMC diagnostic path, while predict()/update()'s actual fast-path
+        posterior always reset to the flat prior on every restart, silently
+        discarding however much real accumulated belief existed before.
+        Conjugate Beta/Dirichlet updates are purely additive, so replaying
+        the summed totals is exactly equivalent to replaying each
+        observation individually in original order.
+        """
         if not self._log_path.exists():
             return
         try:
             with open(self._log_path, "r", encoding="utf-8") as f:
                 lines = f.readlines()[-200:]
+            total_pos = 0
+            total_neg = 0
+            total_topics = np.zeros(self._N_TOPICS, dtype=int)
             for line in lines:
                 try:
                     rec = json.loads(line)
@@ -406,8 +428,20 @@ class WorldModel:
                         "neg": rec["neg"],
                         "topics": rec["topics"],
                     })
+                    total_pos += int(rec["pos"])
+                    total_neg += int(rec["neg"])
+                    total_topics += np.array(rec["topics"], dtype=int)
                 except Exception:
                     pass
+            if self._obs_history:
+                self._sent_alpha = self._SENT_ALPHA0 + total_pos
+                self._sent_beta = self._SENT_BETA0 + total_neg
+                self._topic_alpha = self._TOPIC_ALPHA0 + total_topics
+                logger.info(
+                    "[WorldModel] Restored live posterior from %d cycles of history "
+                    "(sent_alpha=%.1f sent_beta=%.1f)",
+                    len(self._obs_history), self._sent_alpha, self._sent_beta,
+                )
         except Exception as e:
             logger.warning("[WorldModel] History load failed: %s", e)
 

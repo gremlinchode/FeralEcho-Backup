@@ -22,7 +22,7 @@ from app.core.memory_tools import log_memory_event
 from app.core.awareness_tools_integration import discover_and_register_tools
 from app.core.memory_bridge import log_dream_bridge
 from app.autonomous_harmony_manager import HarmonyManager
-from sandbox.runner import run_sandbox_script
+from sandbox.run_script import run_sandbox_script_isolated as run_sandbox_script
 
 import os
 
@@ -52,14 +52,16 @@ def _run_sandbox_cycle():
     try:
         sandbox_scripts = ["hello_sandbox.py"]
         script_to_run = random.choice(sandbox_scripts)
+        script_path = os.path.join("sandbox", "scripts", script_to_run)
         logger.info(f"[SANDBOX] Running sandbox: {script_to_run}")
-        result = run_sandbox_script(script_to_run, timeout=600)
+        result = run_sandbox_script(script_path, timeout=600)
         output = result.get("output") or result.get("error")
         if result["success"]:
             logger.info(f"[SANDBOX RESULT] {output}")
         else:
             logger.warning(f"[SANDBOX ERROR] {output}")
-        log_dream_bridge(f"Sandbox run: {script_to_run} | Result: {output}")
+        log_dream_bridge(f"Sandbox run: {script_to_run} | Result: {output}",
+                         meta={"role": "sandbox_run", "memory_source": "autonomous"})
         return True
     except Exception as e:
         logger.error(f"[SANDBOX] Error: {e}", exc_info=True)

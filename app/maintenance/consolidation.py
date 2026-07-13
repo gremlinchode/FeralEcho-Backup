@@ -36,6 +36,7 @@ class ConsolidationRunner:
         memory_dir: str | None = None,
         top_keep: float = 0.2,
         cutoff_days: int = 180,
+        min_interval_hours: float = 1.0,
     ):
         try:
             from app.core import config
@@ -45,10 +46,30 @@ class ConsolidationRunner:
 
         self._top_keep = top_keep
         self._cutoff_days = cutoff_days
+        self._min_interval_hours = min_interval_hours
         self._log_path = os.path.join(self._memory_dir, "consolidation_log.jsonl")
         self._model_path = os.path.join(self._memory_dir, "self_model.json")
 
     # ── Public API ──────────────────────────────────────────────────────
+
+    def _should_run(self) -> bool:
+        """No frequency gate previously existed here at all — this class is
+        invoked every 300s by NightCycle, so every tick ran a full trim +
+        semantic prune (apricot facility-location selection over the whole
+        journal) + FAISS rebuild, unconditionally, forever."""
+        try:
+            with open(self._model_path, "r", encoding="utf-8") as f:
+                model = json.load(f)
+            last = model.get("memory_health", {}).get("last_consolidation")
+            if not last:
+                return True
+            last_dt = datetime.fromisoformat(last)
+            if last_dt.tzinfo is None:
+                last_dt = last_dt.replace(tzinfo=timezone.utc)
+            elapsed_hours = (datetime.now(timezone.utc) - last_dt).total_seconds() / 3600.0
+            return elapsed_hours >= self._min_interval_hours
+        except Exception:
+            return True
 
     def run(self) -> dict:
         """
@@ -56,6 +77,26 @@ class ConsolidationRunner:
         Returns a summary dict of what happened (pruned, kept, etc.).
         Never raises — logs errors and returns partial result.
         """
+        if not self._should_run():
+            logger.debug("[Consolidation] Skipped — last cycle within %.1fh window.", self._min_interval_hours)
+            # Same key shape as a real run's summary (below) — night_cycle.py's
+            # caller does summary['entries_before'] etc. as a direct subscript,
+            # not .get(), so a skip-only dict missing those keys raised
+            # KeyError here on every skipped tick (i.e. most ticks, since this
+            # gate now allows a real run only once an hour against NightCycle's
+            # 300s cadence) — caught by the caller's own try/except, but logged
+            # a misleading "Consolidation failed" every time.
+            return {
+                "skipped": True,
+                "reason": "min_interval_not_elapsed",
+                "started_at": datetime.now(timezone.utc).isoformat(),
+                "entries_before": 0,
+                "entries_after": 0,
+                "pruned_count": 0,
+                "faiss_vectors_after": 0,
+                "error": None,
+            }
+
         started_at = datetime.now(timezone.utc).isoformat()
         summary = {
             "started_at": started_at,

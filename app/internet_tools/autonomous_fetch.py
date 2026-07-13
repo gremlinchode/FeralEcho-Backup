@@ -34,6 +34,12 @@ MAX_ITEMS = 3           # max items per source
 MAX_TEXT_LEN = 500      # max snippet length
 HEADERS = {"User-Agent": "FeralEcho/1.0"}
 
+# Sources that returned 401/403 this run — skipped without retrying rather
+# than re-attempting and re-logging the same failure every hourly cycle
+# forever. In-memory only (resets on restart); some sources (e.g. Reddit)
+# have no key concept at all, so there's nothing to fix by retrying.
+_DISABLED_SOURCES: set[str] = set()
+
 # --- API Keys ---
 NEWSAPI_KEY = os.getenv("NEWSAPI_KEY")
 NASA_API_KEY = os.getenv("NASA_API_KEY")
@@ -92,7 +98,7 @@ def _is_duplicate(snippet: str) -> bool:
         pass
     return False
 
-_FETCH_META = {"memory_source": "autonomous"}
+_FETCH_META = {"memory_source": "autonomous", "role": "fetch"}
 
 
 def _is_error_response(data) -> bool:
@@ -120,6 +126,10 @@ def fetch_and_log(name, url, max_retries=3, temporal_context=None) -> list[str]:
     API calls when iterating over multiple sources in a single cycle.
     """
     WEATHER_KEY = os.environ.get("OPENWEATHER_API_KEY")
+
+    if name in _DISABLED_SOURCES:
+        logging.debug(f"{name}: previously failed auth/access this run — skipping without retrying.")
+        return []
 
     for attempt in range(1, max_retries + 1):
         try:
@@ -229,7 +239,8 @@ def fetch_and_log(name, url, max_retries=3, temporal_context=None) -> list[str]:
 
         except requests.HTTPError as he:
             if response.status_code in (401, 403):
-                logging.error(f"{name}: Unauthorized or forbidden (check API key). Skipping.")
+                logging.error(f"{name}: Unauthorized or forbidden (check API key). Disabling for the rest of this run.")
+                _DISABLED_SOURCES.add(name)
                 break
             if response.status_code == 429:
                 logging.warning(f"{name}: Rate limited (429) — aborting retries to avoid burning quota.")

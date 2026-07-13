@@ -1,5 +1,6 @@
 import optuna
 import logging
+import os
 import random
 from typing import Any, Dict, Optional, Tuple, List
 
@@ -89,7 +90,8 @@ class EchoOptuna:
         Lower = better. Returns inf for hard failures.
 
         Scoring rules:
-        - (True, _) tuple → radon structural score 0.0–0.5 (sandbox passed)
+        - (True, _) tuple → echo_quality_scorer's coding-quality signal 0.0–1.0
+          (sandbox passed), radon structural score as a fallback only
         - (False, _) tuple → 1.0 (sandbox failed; still informative for Optuna)
         - string → quality scorer (0–4 int) normalized to 0.0–1.0 (inverted)
         - dict with explicit metrics → 1 - avg(metrics)
@@ -99,14 +101,41 @@ class EchoOptuna:
             if result is None:
                 return float("inf")
 
-            # (success, detail) tuple from execute_self_edit
+            # (success, detail) tuple from execute_self_edit / perform_self_edit
             if isinstance(result, tuple) and len(result) == 2:
-                success, _ = result
+                success, detail = result
                 if not success:
                     return 1.0
-                # Score the generated code structurally — good self-edits
-                # produce clean, low-complexity, maintainable code.
-                return self._score_code_structure(self_edit_manager.SELF_EDIT_FILE)
+                # Score the actual candidate this trial produced. dry_run=True
+                # calls return the staged candidate's path in `detail`; fall
+                # back to the production file only for non-dry-run callers
+                # (or older/other callers still returning "Success" as detail) —
+                # previously this always scored production regardless of which
+                # candidate was being evaluated, so every dry-run trial was
+                # scoring whatever happened to already be deployed, not itself.
+                code_path = (
+                    detail if isinstance(detail, str) and os.path.isfile(detail)
+                    else self_edit_manager.SELF_EDIT_FILE
+                )
+                # EMERGENCE_ROADMAP.md System 3: Optuna's objective was designed to
+                # use the real quality signal RiverBrain trains on elsewhere in this
+                # codebase (echo_quality_scorer._score_response_quality), not a
+                # disconnected radon-only structural heuristic. task_type is always
+                # "coding" here regardless of which skill Optuna's trial is targeting
+                # (target_task_type) — self-edit always generates Python code, and
+                # _score_response_quality's non-coding branches (substance/
+                # confabulation/scripture-integrity) would be nonsensical applied to
+                # a raw Python file. radon remains a fallback only, for when the
+                # quality scorer itself errors — never the primary signal.
+                try:
+                    with open(code_path, "r", encoding="utf-8") as f:
+                        code_text = f.read()
+                    from echo_quality_scorer import _score_response_quality
+                    quality = _score_response_quality(code_text, task_type="coding")  # 0-4 int
+                    return max(0.0, 1.0 - (quality / 4.0))
+                except Exception as e:
+                    self.logger.debug(f"[EchoOptuna] quality-scorer failed, falling back to radon: {e}")
+                    return self._score_code_structure(code_path)
 
             # String response — use quality scorer
             if isinstance(result, str):
@@ -114,8 +143,8 @@ class EchoOptuna:
                 if not r or r == prompt.strip():
                     return float("inf")
                 try:
-                    from app.core.echo_quality_scorer import score_response
-                    raw = score_response(r, task_type)  # 0–4 int
+                    from echo_quality_scorer import _score_response_quality
+                    raw = _score_response_quality(r, task_type)  # 0–4 int
                     # Invert and normalize: quality=4 → score=0.0, quality=0 → score=1.0
                     return max(0.0, 1.0 - (float(raw) / 4.0))
                 except Exception:
@@ -165,7 +194,9 @@ class EchoOptuna:
             self.logger.warning(f"[EchoOptuna] evaluate_params failed: {e}")
             return float("inf")
 
-    def optimize_self_edit(self, n_trials: int = 10) -> Tuple[Dict[str, float], float]:
+    def optimize_self_edit(
+        self, n_trials: int = 10, param_hints: Optional[Dict[str, float]] = None
+    ) -> Tuple[Dict[str, float], float]:
         """
         Run Optuna to find the best self-edit parameters.
         Each trial samples a prompt from memory and runs a dry self-edit.
@@ -173,6 +204,15 @@ class EchoOptuna:
 
         System 3: reads the weak task type from the living self-model so
         every trial targets the area where Echo's performance is poorest.
+
+        param_hints: optional model-suggested starting values for
+        "intensity"/"creativity" (0.0-1.0). Previously accepted by callers
+        but silently unimplemented here, causing a TypeError on every call
+        (272 occurrences since 2026-07-02) — the hint-generation LLM call
+        ran every cycle for no effect. Valid hints are queued as the first
+        trial via study.enqueue_trial(); the rest of n_trials proceeds with
+        Optuna's normal search, same as before. Anything not a valid float
+        in [0, 1] for these two keys is ignored rather than trusted blindly.
         """
         target_task_type = "coding"
         try:
@@ -187,10 +227,21 @@ class EchoOptuna:
             creativity = trial.suggest_float("creativity", 0.0, 1.0)
 
             try:
+                # dry_run=True: every trial runs the real plan/codegen/sandbox/
+                # staging pipeline and gets scored on its own merits, but never
+                # writes to production and never stamps/consumes the 60-minute
+                # cooldown. Previously this was dry_run=False (unset, defaulted
+                # to None/False) on every trial, so whichever trial got through
+                # first stamped the cooldown for the whole hour and the other 9
+                # (plus run.py's own "apply best params" call afterward) always
+                # short-circuited on "Cooldown active" — Optuna's search never
+                # actually got to compare trials, and its winning params were
+                # silently discarded.
                 result = self_edit_manager.perform_self_edit(
                     intensity=intensity,
                     creativity=creativity,
                     target_task_type=target_task_type,
+                    dry_run=True,
                 )
                 score = self._score_result(result, "", task_type=target_task_type)
             except Exception as e:
@@ -218,8 +269,49 @@ class EchoOptuna:
                 direction="minimize",
             )
 
+        if param_hints:
+            sanitized = {}
+            for key in ("intensity", "creativity"):
+                value = param_hints.get(key)
+                if isinstance(value, (int, float)) and 0.0 <= value <= 1.0:
+                    sanitized[key] = float(value)
+            if sanitized:
+                study.enqueue_trial(sanitized)
+                self.logger.info(f"[EchoOptuna] Queued model-suggested hint trial: {sanitized}")
+
+        trials_before = len(study.trials)
         study.optimize(objective, n_trials=n_trials)
 
-        self.logger.info(f"[EchoOptuna] Best trial: {study.best_trial.params} with value {study.best_value}")
+        # Select "best" from THIS call's own trials, not study.best_trial (all-time
+        # history). study.best_trial uses strict `<` when updating, so once any
+        # trial anywhere in the persistent study's history hits the score floor
+        # (0.0 — a perfect quality=4/4), no future trial can ever be recognized as
+        # "better" even if it also hits that same floor. Confirmed live: a trial
+        # from 2026-06-26 (weeks before real dry_run scoring existed, back when
+        # trials were mostly wasted on the cooldown bug) permanently pinned
+        # study.best_trial, so run.py's deploy step kept reapplying those
+        # two-week-old params every hour regardless of what today's real quality-
+        # scored trials found. The persistent study/sampler is still valuable —
+        # TPE benefits from historical trials for guiding exploration — this only
+        # changes what "best" means for the *deployment* decision.
+        new_trials = [
+            t for t in study.trials[trials_before:]
+            if t.state == optuna.trial.TrialState.COMPLETE and t.value is not None
+        ]
+        if new_trials:
+            best_new = min(new_trials, key=lambda t: (t.value, -t.number))
+            self.logger.info(
+                f"[EchoOptuna] Best trial this cycle: {best_new.params} with value {best_new.value} "
+                f"(trial #{best_new.number} of {len(new_trials)} completed this cycle)"
+            )
+            return best_new.params, best_new.value
+
+        # No trial from this cycle completed successfully (all failed/inf) — fall
+        # back to the historical best rather than returning nothing, but log it
+        # clearly as a fallback so it isn't mistaken for real progress this cycle.
+        self.logger.warning(
+            "[EchoOptuna] No trial completed successfully this cycle — "
+            f"falling back to all-time best: {study.best_trial.params} with value {study.best_value}"
+        )
         return study.best_trial.params, study.best_value
 

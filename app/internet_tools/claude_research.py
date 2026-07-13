@@ -123,6 +123,19 @@ def fetch_claude_research(topic: str = None) -> str:
         _record_attempt("skipped_no_question")
         return ""
 
+    # _pick_question()'s "least-recently-asked third" selection never had
+    # its own picks reflected back into the garden — only a completely
+    # separate pipeline (emergent_scheduler's reflect-and-score cycle) ever
+    # wrote last_asked, so this bias never actually accounted for its own
+    # usage. Skipped for explicit topic= callers (not drawn from the garden
+    # pool this bias applies to).
+    if not topic:
+        try:
+            from app.core.garden_manager import mark_question_asked
+            mark_question_asked(question)
+        except Exception as e:
+            logger.debug(f"[ClaudeResearch] mark_question_asked failed: {e}")
+
     try:
         import anthropic
         client = anthropic.Anthropic(api_key=api_key)

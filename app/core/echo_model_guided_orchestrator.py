@@ -4,6 +4,22 @@ import threading
 import time
 import logging
 import ast
+import re
+
+
+def _extract_dict_literal(text: str) -> str:
+    """Extract the first {...} block from free-form model output, tolerating
+    markdown fences and conversational preamble/postamble text around it.
+    ast.literal_eval() requires the *entire* string to be a valid literal,
+    but echo_query() returns Echo's own reflective voice, not raw structured
+    output — a full-string literal_eval was near-guaranteed to fail on any
+    real response with a preamble sentence or code fence around the dict."""
+    if not text:
+        return ""
+    fence = re.search(r"```(?:json|python)?\s*\n?(.*?)\n?```", text, re.DOTALL)
+    candidate = fence.group(1) if fence else text
+    brace = re.search(r"\{.*\}", candidate, re.DOTALL)
+    return brace.group(0) if brace else ""
 
 from app.autonomous_awareness import awareness_loop, AWARENESS_SLEEP, start_awareness_thread
 from app.core.autonomous_loop_with_optuna import autonomous_loop, autonomous_loop_iteration, AUTONOMOUS_SLEEP, OPTUNA_SLEEP, optimizer
@@ -71,13 +87,17 @@ def model_guided_autonomous_loop():
                 # Convert string to dict safely
                 param_hints = {}
                 if param_hints_str:
-                    try:
-                        param_hints = ast.literal_eval(param_hints_str)
-                        if not isinstance(param_hints, dict):
-                            raise ValueError("Parsed hints are not a dict")
-                    except Exception:
-                        logger.warning("[ParameterHints] Failed to parse model output, using empty hints.")
-                        param_hints = {}
+                    extracted = _extract_dict_literal(param_hints_str)
+                    if extracted:
+                        try:
+                            param_hints = ast.literal_eval(extracted)
+                            if not isinstance(param_hints, dict):
+                                raise ValueError("Parsed hints are not a dict")
+                        except Exception:
+                            logger.warning("[ParameterHints] Failed to parse model output, using empty hints.")
+                            param_hints = {}
+                    else:
+                        logger.warning("[ParameterHints] No dict-like block found in model output, using empty hints.")
                 
                 # Run Optuna self-edit with hints
                 log_memory_event(event_type="info", content="Autonomous Optuna self-edit triggered")

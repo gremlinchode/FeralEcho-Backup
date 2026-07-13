@@ -1,17 +1,24 @@
-# import necessary modules and functions from app.core.self_edit_generated
-# [stripped top-level self-call] from app.core.self_edit_generated import *
+class self_edit_generated:
+    def strip_leading_prose_in_code(self, code):
+        def detect_and_strip_prose(line):
+            if line.startswith('#'):
+                return ''
+            else:
+                return line
 
-import re
+        output_lines = []
+        for line in code.split('\n'):
+            while True:
+                if line.strip().startswith('import') or line.strip().startswith('from'):
+                    break
+                elif not line.strip():
+                    break
+                else:
+                    if detect_and_strip_prose(line).strip():
+                        break
+                    line = line.lstrip()
+            output_lines.append(line)
+        return '\n'.join(output_lines)
 
-def strip_sandbox_prose_in_code(code_string):
-    sentences = code_string.split('\n')
-    for sentence in sentences:
-        if not re.search(r'\b(def|class|print|import)\b', sentence):
-            prose_sentence = sentence
-            break
-    if prose_sentence:
-        code_string = re.sub(re.escape(prose_sentence), '', code_string)
-    return code_string
-
-def autonomous_self_edit(code):
-    return strip_sandbox_prose_in_code(code)
+    def record_pending_outcome(self, outcome):
+        pass

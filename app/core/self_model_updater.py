@@ -309,7 +309,20 @@ class SelfModelUpdater:
         for task, perf in performance.items():
             obs = obs_counts.get(task, 0)
             avg = perf.get("avg_quality_score", 0.0)
-            if obs >= _MIN_OBS_FOR_TARGETING and avg < _WEAK_QUALITY_THRESHOLD:
+            # avg_quality_score defaults to 0.0 (via _compute_task_performance's
+            # `if scores else 0.0`) both for a genuinely terrible recent average
+            # AND for zero recent samples — those are not the same thing. obs
+            # here is River's *all-time* observation count, a different data
+            # source on a different time horizon; a task type with a real
+            # historical obs count but zero appearances in the current recency
+            # window previously looked like the worst possible performer
+            # (trivially 0.0 < any positive threshold) with no real signal
+            # behind it. Require real recent samples too.
+            if (
+                obs >= _MIN_OBS_FOR_TARGETING
+                and perf.get("sample_count", 0) > 0
+                and avg < _WEAK_QUALITY_THRESHOLD
+            ):
                 candidates.append((avg, task))
 
         if candidates:
@@ -322,11 +335,14 @@ class SelfModelUpdater:
             )
         else:
             # Fall back: pick the task with most observations and worst quality
-            # among all task types (even under-observed ones)
+            # among all task types (even under-observed ones). Same
+            # sample_count guard as above — otherwise a task with real
+            # historical obs but zero recent samples wins this tie-break
+            # trivially via the same 0.0-default ambiguity.
             scored = [
                 (perf.get("avg_quality_score", 2.5), task)
                 for task, perf in performance.items()
-                if obs_counts.get(task, 0) > 0
+                if obs_counts.get(task, 0) > 0 and perf.get("sample_count", 0) > 0
             ]
             if scored:
                 scored.sort()
@@ -495,14 +511,47 @@ class SelfModelUpdater:
         return result
 
     def _compute_weekly_delta(self, current_performance: dict) -> dict:
-        """C1: Compare current quality scores to the oldest available snapshot."""
+        """C1: Compare current quality scores to the snapshot from ~1 week ago.
+
+        Previously always used snapshots[0] — the *oldest* snapshot ever
+        taken, forever, not a sliding week-over-week baseline the "weekly"
+        name implies. Parses the date from each snapshot's own filename
+        (self_model_YYYYMMDD.json, written by night_cycle.py) rather than
+        file mtime, since mtime is copied from the live self_model.json's
+        own last-modified time via shutil.copy2, not the snapshot time.
+        """
         try:
             from pathlib import Path
+            from datetime import datetime, timezone
             history_dir = Path(self._memory_dir) / "history"
             snapshots = sorted(history_dir.glob("self_model_*.json"))
             if not snapshots:
                 return {"status": "no_snapshots_yet"}
-            with open(snapshots[0], "r", encoding="utf-8") as fh:
+
+            dated: list[tuple[datetime, Path]] = []
+            for p in snapshots:
+                try:
+                    stamp = p.stem.replace("self_model_", "")
+                    dated.append((datetime.strptime(stamp, "%Y%m%d").replace(tzinfo=timezone.utc), p))
+                except ValueError:
+                    continue  # unparseable filename — skip rather than crash the whole computation
+            if not dated:
+                return {"status": "no_snapshots_yet"}
+            dated.sort(key=lambda t: t[0])
+
+            now = datetime.now(timezone.utc)
+            # Most recent snapshot that's at least ~7 days old — a sliding
+            # baseline, not a fixed one. Falls back to the oldest available
+            # (dated[0]) if nothing qualifies yet (e.g. history is younger
+            # than a week), matching the original bootstrap behavior.
+            baseline = dated[0]
+            for ts, path in dated:
+                if (now - ts).days >= 7:
+                    baseline = (ts, path)
+                else:
+                    break
+
+            with open(baseline[1], "r", encoding="utf-8") as fh:
                 old = json.load(fh)
             old_perf = old.get("performance", {}).get("by_task_type", {})
             delta: dict = {}
@@ -512,7 +561,7 @@ class SelfModelUpdater:
                 raw = cur_q - old_q
                 delta[task] = round(max(-1.0, min(1.0, raw)), 4)
             return {
-                "compared_to": snapshots[0].name,
+                "compared_to": baseline[1].name,
                 "quality_delta_by_task": delta,
             }
         except Exception as e:

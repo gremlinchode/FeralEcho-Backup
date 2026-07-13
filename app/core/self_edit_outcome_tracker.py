@@ -20,7 +20,14 @@ _OUTCOMES_PATH = Path("memory/self_edit_outcomes.jsonl")
 _INTERACTION_LOG = Path("memory/interaction_log.jsonl")
 _COUNCIL_LOG = Path("memory/council_ratings.jsonl")
 
-_EVAL_WINDOW_MINUTES = 90
+# Each edit's own pre/post window spans 2x this value (edit_ts - window to
+# edit_ts + window). Previously 90 minutes, so a 180-minute total span —
+# but consecutive real edits land at minimum 60 minutes apart (self_edit_
+# manager.py's _TARGETED_PROMPT_COOLDOWN), guaranteeing every edit's "post"
+# window overlapped the next edit's "pre" window (and its own next post
+# window), contaminating every measurement. 25 minutes keeps the full
+# 50-minute span comfortably inside the 60-minute floor with margin.
+_EVAL_WINDOW_MINUTES = 25
 
 
 def _parse_ts(s: str) -> "datetime | None":

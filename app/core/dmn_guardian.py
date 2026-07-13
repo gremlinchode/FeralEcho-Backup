@@ -145,6 +145,15 @@ def start_guardian_loop(echo_core=None, interval=120):
                 except Exception as _oee:
                     logging.debug("[GUARDIAN] self-edit outcome evaluation error: %s", _oee)
 
+                # Self-report verification — log-only, does not correct
+                # self_model.json or feed any decision path. Same restraint
+                # as the self-edit outcome tracker above.
+                try:
+                    from app.core.self_report_verifier import verify_memory_health
+                    verify_memory_health()
+                except Exception as _srve:
+                    logging.debug("[GUARDIAN] self-report verification error: %s", _srve)
+
                 # Crash sentinel heartbeat — keeps last_heartbeat_utc current
                 try:
                     import json as _json_s

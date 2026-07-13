@@ -58,10 +58,18 @@ class NightCycle:
         if self.start_delay:
             time.sleep(self.start_delay)
         while self.running:
-            try:
-                self._perform_reflection()
-            except Exception as e:
-                logging.error(f"[NightCycle] Error during cycle: {e}")
+            # Shared throttle/stillness gate (autonomy_coordinator) — every
+            # other autonomous loop already checks this; NightCycle's own
+            # tick was the one that didn't, so it kept running full
+            # consolidation cycles regardless of RAM pressure or stillness.
+            from app.core.autonomy_coordinator import should_run_cycle
+            if should_run_cycle("night_cycle"):
+                try:
+                    self._perform_reflection()
+                except Exception as e:
+                    logging.error(f"[NightCycle] Error during cycle: {e}")
+            else:
+                logging.info("[NightCycle] Skipping cycle — system under pressure or in stillness")
             time.sleep(self.interval)
 
     def _perform_reflection(self):
@@ -72,12 +80,17 @@ class NightCycle:
         try:
             from app.maintenance.consolidation import ConsolidationRunner
             summary = ConsolidationRunner().run()
-            logging.info(
-                f"[NightCycle] Consolidation complete | "
-                f"before={summary['entries_before']} "
-                f"after={summary['entries_after']} "
-                f"pruned={summary['pruned_count']}"
-            )
+            if summary.get("skipped"):
+                logging.debug(
+                    "[NightCycle] Consolidation skipped (%s).", summary.get("reason")
+                )
+            else:
+                logging.info(
+                    f"[NightCycle] Consolidation complete | "
+                    f"before={summary['entries_before']} "
+                    f"after={summary['entries_after']} "
+                    f"pruned={summary['pruned_count']}"
+                )
         except Exception as e:
             logging.error(f"[NightCycle] Consolidation failed: {e}")
 

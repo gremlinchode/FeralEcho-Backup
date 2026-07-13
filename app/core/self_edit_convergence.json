@@ -1,6 +1,66 @@
 {
   "prose_stripping": {
     "count": 1,
-    "non_convergent_streak": 0
+    "non_convergent_streak": 0,
+    "all_names_seen": [
+      "strip_sandbox_prose_in_code",
+      "guard_against_prose_detection",
+      "enhanced_strip_sandbox_prose",
+      "test_strip_sandbox_prose_in_code",
+      "prose_stripping_guard",
+      "remove_leading_prose",
+      "prose_sentence_count",
+      "prose_pattern",
+      "strip_leading_prose",
+      "modified_strip_sandbox_prose_in_code",
+      "strip_sandbox_prose",
+      "strip_leading_prose_in_code",
+      "strip_prose",
+      "strip_sandbox_prose_in_code_new",
+      "new_strip_sandbox_prose_in_code",
+      "detect_prose",
+      "remove_unwanted_prose",
+      "strip_sandbox_prose_recursive",
+      "detect_and_strip_prose",
+      "remove_prose",
+      "prose_detector_guard",
+      "strip_prose_in_code",
+      "strip_sandbox_prose_and_check_python_tokens",
+      "strip_leading_prose_from_code",
+      "modify_strip_sandbox_prose_in_code",
+      "refine_code_with_prose_removal",
+      "tighten_prose_detection_guard",
+      "strip_prose_and_tokenize",
+      "strip_sandbox_prose_in_new_code",
+      "remove_leading_prose_in_output"
+    ],
+    "cycles_attempted": 91
+  },
+  "response_shortening": {
+    "count": 1,
+    "non_convergent_streak": 0,
+    "all_names_seen": [
+      "shorten_code",
+      "shorten_code_generation",
+      "shorten_coding",
+      "shorten_response_length"
+    ],
+    "cycles_attempted": 11
+  },
+  "quality_scoring": {
+    "count": 0,
+    "non_convergent_streak": 0,
+    "all_names_seen": [
+      "score_candidate_code"
+    ],
+    "cycles_attempted": 1
+  },
+  "unclassified": {
+    "count": 1,
+    "non_convergent_streak": 0,
+    "all_names_seen": [
+      "self_edit_generated"
+    ],
+    "cycles_attempted": 2
   }
 }

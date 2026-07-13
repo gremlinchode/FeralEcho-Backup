@@ -12,12 +12,14 @@ Run from the project root:
     python spot_check.py
 """
 
+import ast
 import json
 import sys
 from pathlib import Path
 
-COUNCIL_LOG     = Path("memory/council_ratings.jsonl")
-INTERACTION_LOG = Path("memory/interaction_log.jsonl")
+COUNCIL_LOG       = Path("memory/council_ratings.jsonl")
+INTERACTION_LOG   = Path("memory/interaction_log.jsonl")
+CONVERGENCE_STATE = Path("app/core/self_edit_convergence.json")
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -97,16 +99,171 @@ def _page_text(label: str, text: str, width: int = 72, page_lines: int = 40) -> 
                 return
 
 
-def _write_back(line_index: int, rating: int) -> None:
-    """Atomically rewrite council_ratings.jsonl with one entry updated."""
+def _write_back(line_index: int, rating: int, expected_source_ts: str) -> bool:
+    """Atomically rewrite council_ratings.jsonl with one entry updated.
+
+    Verifies the line at line_index still matches the entry the user was
+    actually looking at (by source_timestamp) before writing — the raw
+    index was captured once at the start of the run, and nothing
+    previously re-checked it against the current file state. Today's real
+    writers (the background rating thread only appends; fill_spot_check()
+    mutates one line in place without reordering) happen to keep indices
+    stable, but a future writer that inserts or reorders lines would
+    otherwise silently write the rating onto the wrong record. Falls back
+    to a full scan by source_timestamp if the index has drifted. Returns
+    False (and writes nothing) if the entry can't be found at all.
+    """
     with open(COUNCIL_LOG, encoding="utf-8") as f:
         lines = f.readlines()
-    entry = json.loads(lines[line_index])
+
+    target_idx = line_index
+    if not (0 <= target_idx < len(lines)):
+        target_idx = -1
+    else:
+        try:
+            candidate = json.loads(lines[target_idx])
+        except json.JSONDecodeError:
+            candidate = {}
+        if candidate.get("source_timestamp") != expected_source_ts:
+            target_idx = -1
+
+    if target_idx == -1:
+        for i, raw in enumerate(lines):
+            try:
+                if json.loads(raw).get("source_timestamp") == expected_source_ts:
+                    target_idx = i
+                    break
+            except json.JSONDecodeError:
+                continue
+
+    if target_idx == -1:
+        return False
+
+    entry = json.loads(lines[target_idx])
+    if entry.get("human_spot_check_rating") is not None:
+        # Already rated by someone/something else since this run's pending
+        # list was computed (e.g. the admin API) — unlike
+        # council_rater.py's own fill_spot_check(), which already guards
+        # this, this call site previously had no such check and would
+        # silently overwrite a real concurrent rating.
+        return False
     entry["human_spot_check_rating"] = rating
-    lines[line_index] = json.dumps(entry) + "\n"
+    lines[target_idx] = json.dumps(entry) + "\n"
     tmp = COUNCIL_LOG.with_suffix(".tmp")
     tmp.write_text("".join(lines), encoding="utf-8")
     tmp.replace(COUNCIL_LOG)
+    return True
+
+
+# ── coding-task plain-English review ────────────────────────────────────────
+# Rating self-edit code candidates by eye requires reading Python — not
+# something every human rater can do. These helpers turn a code snippet into
+# things a non-programmer can actually judge: does it even parse, has this
+# exact idea already been tried dozens of times before, and what does it
+# claim to do in plain language.
+
+def _ast_check(code: str) -> tuple[bool, str]:
+    """Does this parse as valid Python at all? Deterministic, no model needed."""
+    try:
+        ast.parse(code)
+        return True, "Parses as valid Python."
+    except SyntaxError as e:
+        return False, f"Does NOT parse as valid Python — {e}"
+
+
+def _extract_def_names(code: str) -> list[str]:
+    """Function/method/class names defined in this candidate, via AST walk."""
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return []
+    names = []
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            names.append(node.name)
+    return names
+
+
+def _convergence_context(def_names: list[str]) -> str:
+    """How many times has this specific idea already been attempted?
+
+    Cross-references the self-edit convergence tracker's per-family
+    all_names_seen list — the same repetition pattern a technical reviewer
+    would use to judge "is this actually new" without reading the code.
+    """
+    if not def_names or not CONVERGENCE_STATE.exists():
+        return ""
+    try:
+        state = json.loads(CONVERGENCE_STATE.read_text(encoding="utf-8"))
+    except Exception:
+        return ""
+    hits = []
+    for family, data in state.items():
+        seen = set(data.get("all_names_seen") or [])
+        matched = [n for n in def_names if n in seen]
+        if matched:
+            hits.append((family, matched, data.get("cycles_attempted", "?")))
+    if not hits:
+        return "  Novelty check: none of these names appear in prior self-edit history — looks like a new idea."
+    lines = ["  Novelty check:"]
+    for family, matched, attempted in hits:
+        lines.append(
+            f"    - {', '.join(matched)} already appears in the '{family}' family's history "
+            f"({attempted} cycles attempted on this family so far)."
+        )
+    return "\n".join(lines)
+
+
+def _plain_english_summary(code: str, prompt_hint: str) -> str | None:
+    """Ask a local model to explain the code in plain English, no code-reading required.
+
+    Returns None on any failure — callers must fall back to showing raw text,
+    never block the rating flow on this.
+    """
+    try:
+        from app.ollama_handler import query_ollama
+    except Exception:
+        return None
+
+    ask = (
+        "Explain what this Python code does in 2-3 plain-English sentences. "
+        "Assume the reader cannot read Python at all — do not quote or reference "
+        "any code syntax, variable names, or function names in your answer. "
+        "Just describe the behavior in everyday language. "
+        "If the code looks incomplete or cut off, say so explicitly.\n\n"
+    )
+    if prompt_hint and prompt_hint.strip() not in ("[SANDBOX]", ""):
+        ask += f"Context for what it was supposed to do: {prompt_hint.strip()[:300]}\n\n"
+    ask += f"Code:\n{code[:3000]}"
+
+    try:
+        result = query_ollama(ask, timeout=90)
+    except Exception:
+        return None
+    if not result or result.startswith("[ERROR]"):
+        return None
+    return result.strip()
+
+
+def _review_coding_candidate(code: str, prompt_hint: str) -> None:
+    """Print the plain-English review block for a coding-task spot-check entry."""
+    valid, ast_msg = _ast_check(code)
+    print(f"  {ast_msg}")
+    if valid:
+        names = _extract_def_names(code)
+        conv = _convergence_context(names)
+        if conv:
+            print(conv)
+        print("  Generating plain-English summary...")
+        summary = _plain_english_summary(code, prompt_hint)
+        if summary:
+            print("  What this code does (plain English):")
+            for line in summary.splitlines():
+                print(f"    {line}")
+        else:
+            print("  [Could not generate a plain-English summary — Ollama unavailable or errored.")
+            print("   Rate based on the novelty check above, or skip this entry.]")
+    print()
 
 
 def _divider(label: str = "") -> None:
@@ -164,6 +321,12 @@ def main() -> None:
         if interaction:
             prompt_text   = interaction.get("prompt")   or interaction.get("prompt_preview",   "")
             response_text = interaction.get("response") or interaction.get("response_preview", "")
+
+            if task == "coding" and response_text:
+                _divider("plain-English review")
+                _review_coding_candidate(response_text, prompt_text)
+                _divider()
+
             if prompt_text:
                 _page_text("Prompt", prompt_text)
             if response_text:
@@ -190,7 +353,10 @@ def main() -> None:
                 print("  Skipped.\n")
                 break
             if raw in {"1", "2", "3", "4", "5"}:
-                _write_back(line_idx, int(raw))
+                ok = _write_back(line_idx, int(raw), src_ts)
+                if not ok:
+                    print("  Not saved — entry was already rated or could not be found (log may have changed).\n")
+                    break
                 suffix = f"{remaining_after} remaining after this." if remaining_after else "All done."
                 print(f"  Rating {raw} saved. {suffix}\n")
                 break

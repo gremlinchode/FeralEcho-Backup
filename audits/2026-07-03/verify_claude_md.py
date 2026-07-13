@@ -122,14 +122,26 @@ else:
     genesis_in_startup = bool(re.search(r"genesis_hash", run_src))
     if genesis_in_startup:
         # check if it's in a startup function vs an endpoint
-        lines = [(i, l) for i, l in enumerate(run_src.splitlines(), 1)
-                 if "genesis_hash" in l]
-        in_startup = any("start_background" in run_src[max(0, run_src.find(l)):
-                                                         run_src.find(l)+500]
-                         for _, l in lines)
+        raw_lines = run_src.splitlines(keepends=True)
+        # Track each line's real character offset instead of re-searching
+        # run_src.find(l) from scratch — that always finds the *first*
+        # occurrence of a matching line's text anywhere in the file, which
+        # is wrong the moment any matching line's text repeats.
+        offsets = []
+        pos = 0
+        for l in raw_lines:
+            offsets.append(pos)
+            pos += len(l)
+        lines = [(i, raw_lines[i - 1]) for i in range(1, len(raw_lines) + 1)
+                 if "genesis_hash" in raw_lines[i - 1]]
+        in_startup = any(
+            "start_background" in run_src[offsets[i - 1]:offsets[i - 1] + 500]
+            for i, _ in lines
+        )
         results.append(check(
             "genesis_hash checked before server starts (not just in an HTTP endpoint)",
-            False,
+            in_startup,
+            "" if in_startup else
             f"genesis_hash found at lines {[ln for ln, _ in lines]} but only in HTTP endpoint, not startup path"
         ))
     else:
@@ -225,8 +237,13 @@ expected_targets = {
 if sm_src is None:
     check("EDIT_FORBIDDEN_TARGETS defined", False)
 else:
-    all_present = all(t.replace("/", r"[/\\]").replace(".", r"\.") in
-                      sm_src or t in sm_src for t in expected_targets)
+    # Previously also tried matching a regex-escaped form of each path
+    # (e.g. "app[/\\]core[/\\]river_deliberation\.py") against the raw source
+    # text — that string never appears literally in Python source, so that
+    # branch was always False and did nothing; the plain substring check
+    # below is what's actually been carrying this (EDIT_FORBIDDEN_TARGETS
+    # uses forward-slash literals throughout).
+    all_present = all(t in sm_src for t in expected_targets)
     results.append(check(
         "All 10 CLAUDE.md-listed protected files found in EDIT_FORBIDDEN_TARGETS",
         all_present,
@@ -275,7 +292,10 @@ for label, path in [("memory/memory_meta.json", mem_meta),
         try:
             with open(path) as f:
                 meta = json.load(f)
-            count = len(meta.get("texts", []))
+            # meta is a dict keyed by UUID, not {"texts": [...]} — the old
+            # .get("texts", []) form always read 0 regardless of true health
+            # (see CLAUDE.md's Monitoring section for the same fix applied there).
+            count = len(meta)
             results.append(check(
                 f"{label} readable, vector count = {count}",
                 True,
@@ -293,8 +313,12 @@ print()
 # ─────────────────────────────────────────────────────────────────
 print("── CLAIM: self_heal.py has no live callers ─────────────────────")
 
-heal_callers = grep_dir("app", r"(from app.core.self_heal|import self_heal)")
-heal_callers_root = grep_dir(".", r"(from app.core.self_heal|import self_heal)",
+# Also match the bare dotted-path style ("import app.core.self_heal"),
+# which the previous pattern missed entirely — it only caught
+# "from app.core.self_heal import ..." and unqualified "import self_heal".
+_HEAL_CALLER_RE = r"(from app\.core\.self_heal import|import app\.core\.self_heal\b|import self_heal\b)"
+heal_callers = grep_dir("app", _HEAL_CALLER_RE)
+heal_callers_root = grep_dir(".", _HEAL_CALLER_RE,
                              exclude_dirs=["audits", "archive_janitor"])
 all_heal = {**heal_callers, **heal_callers_root}
 # filter out self_heal.py itself and archive scripts
@@ -361,12 +385,18 @@ tc_src = read_file("terminal_client.py")
 if tc_src is None:
     check("terminal_client.py exists", False)
 else:
+    # Previously `if.*\bin\b.*rating` — loose enough to match unrelated code
+    # containing the words "if"/"in"/"rating" anywhere on a line, so it would
+    # still report PASS even if the real trigger were removed. Tightened to
+    # require both the specific digit-set membership check AND a real call
+    # to _save_rating(.
     rating_trigger = grep("terminal_client.py",
-                          r'msg in \{.*"1".*"5".*\}|if.*\bin\b.*rating')
+                          r'msg in \{"1",\s*"2",\s*"3",\s*"4",\s*"5"\}')
+    save_rating_called = grep("terminal_client.py", r'_save_rating\(')
     results.append(check(
         "Bare digit 1-5 triggers _save_rating() in terminal_client.py",
-        len(rating_trigger) > 0,
-        f"Found at: {rating_trigger}" if rating_trigger else
+        len(rating_trigger) > 0 and len(save_rating_called) > 0,
+        f"Found at: {rating_trigger}" if rating_trigger and save_rating_called else
         "Rating trigger not found — check terminal_client.py manually"
     ))
 

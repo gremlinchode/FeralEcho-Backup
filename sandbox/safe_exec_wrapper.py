@@ -6,7 +6,20 @@ operation targeting a path outside SCRATCH_DIR raises PermissionError.
 The subprocess exits non-zero; the caller treats that as a sandbox failure.
 
 Usage (called by self_edit_manager.py):
-    python3 sandbox/safe_exec_wrapper.py <SCRATCH_DIR> <MODULE_PATH>
+    python3 sandbox/safe_exec_wrapper.py <SCRATCH_DIR> <MODULE_PATH> [--mode=import|script]
+
+--mode=import (default, unchanged): loads MODULE_PATH via spec_from_file_location
+with a synthetic module name — used to *test whether code is importable*
+without treating it as a runnable script. This is what self_edit_manager.py's
+two call sites use and their behavior is untouched by this flag's addition.
+
+--mode=script: loads MODULE_PATH with module name "__main__" instead, so a
+target script's own `if __name__ == "__main__":` guard actually fires — used
+by sandbox/run_script.py's run_sandbox_script_isolated() to run arbitrary
+scripts (autonomous-loop baselines, LLM-generated experiments) the same way
+`python script.py` would, but under this file's write-blocking patches plus
+the kernel-level Seatbelt profile (echo_sandbox.sb) the caller wraps this
+process in.
 
 Patches applied before exec_module():
   builtins.open / io.open / _io.open   — all Python-level open() entry points
@@ -232,16 +245,59 @@ def _install_patches(scratch: str) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: safe_exec_wrapper.py <SCRATCH_DIR> <MODULE_PATH>", file=sys.stderr)
+        print("Usage: safe_exec_wrapper.py <SCRATCH_DIR> <MODULE_PATH> [--mode=import|script]", file=sys.stderr)
         sys.exit(1)
 
     scratch_dir = sys.argv[1]
     module_path = sys.argv[2]
 
+    # Optional --mode= flag anywhere after the two positional args, plus
+    # everything after a bare "--" is passed through as the target script's
+    # own sys.argv (only meaningful in --mode=script).
+    _mode = "import"
+    _extra_argv: list = []
+    _rest = sys.argv[3:]
+    if "--" in _rest:
+        _split = _rest.index("--")
+        _flags, _extra_argv = _rest[:_split], _rest[_split + 1:]
+    else:
+        _flags = _rest
+    for _flag in _flags:
+        if _flag.startswith("--mode="):
+            _mode = _flag.split("=", 1)[1]
+    if _mode not in ("import", "script"):
+        print(f"Unknown --mode={_mode!r}, expected 'import' or 'script'", file=sys.stderr)
+        sys.exit(1)
+
+    # This script is invoked directly (`sys.executable safe_exec_wrapper.py
+    # ...`), not via `python -m`, so Python's default sys.path[0] is this
+    # file's own directory (sandbox/), not the project root — any candidate
+    # that imports a real project module (`import app.core.memory_bridge`,
+    # `import app.mlx_handler`, etc., all legitimately allowed by
+    # self_edit_manager.py's _ALLOWED_TOP_LEVEL) failed here with
+    # ModuleNotFoundError: No module named 'app', regardless of whether the
+    # code was otherwise correct. Adding the real project root fixes that.
+    # Not a new safety gap: self_edit_manager.py's _validate_imports() (F1,
+    # runs before this sandbox stage) already blocks the dangerous
+    # self-referential imports (self_edit_manager, echo_optuna,
+    # self_edit_generated) regardless of what's importable here, and the
+    # write-blocking patches installed below are unaffected by sys.path.
+    _project_root = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    if _project_root not in sys.path:
+        sys.path.insert(0, _project_root)
+
     _install_patches(scratch_dir)
 
     import importlib.util
-    spec = importlib.util.spec_from_file_location("_sandbox_test", module_path)
+    if _mode == "script":
+        # Real module name "__main__" so `if __name__ == "__main__":` guards
+        # in the target script fire, matching real `python script.py`
+        # semantics (confirmed necessary: sandbox/scripts/hello_sandbox.py
+        # gates its actual work behind exactly that guard).
+        sys.argv = [module_path] + _extra_argv
+        spec = importlib.util.spec_from_file_location("__main__", module_path)
+    else:
+        spec = importlib.util.spec_from_file_location("_sandbox_test", module_path)
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     print("SANDBOX_OK")

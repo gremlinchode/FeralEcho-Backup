@@ -1,17 +1,15 @@
-# import necessary modules and functions from app.core.self_edit_generated
-# [stripped top-level self-call] from app.core.self_edit_generated import *
-
+from app.core.memory_write_validator import detect_and_strip_prose, run_tool_dispatch
 import re
 
-def strip_sandbox_prose_in_code(code_string):
-    sentences = code_string.split('\n')
-    for sentence in sentences:
-        if not re.search(r'\b(def|class|print|import)\b', sentence):
-            prose_sentence = sentence
-            break
-    if prose_sentence:
-        code_string = re.sub(re.escape(prose_sentence), '', code_string)
-    return code_string
-
-def autonomous_self_edit(code):
-    return strip_sandbox_prose_in_code(code)
+class self_edit_generated:
+    def strip_leading_prose_in_code(self, code_output):
+        while True:
+            if not re.match(r'^[a-zA-Z0-9_]+:', code_output):
+                prose_detected = True
+                break
+            else:
+                break
+        
+        if prose_detected:
+            code_output = detect_and_strip_prose(code_output)
+            run_tool_dispatch(code_output)

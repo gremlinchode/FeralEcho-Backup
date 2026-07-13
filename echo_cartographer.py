@@ -33,6 +33,7 @@ Echo query interface (call from other modules):
 
 import ast
 import json
+import os
 import sqlite3
 import argparse
 from pathlib import Path
@@ -108,18 +109,28 @@ def extract_module_info(py_file: Path) -> dict:
         # Normalize module name for reverse-dep matching
         module_name = py_file.stem  # e.g. "memory_bridge"
 
-        # Filter imports to local-looking names (no stdlib noise)
+        # Filter imports to local-looking names (no stdlib noise).
+        # Previously a string-prefix check (startswith), which drops real
+        # local modules that merely start with the same letters as a
+        # stdlib/third-party name — confirmed real hits in this exact repo:
+        # reflection_shard (starts with "re"), system_guard (starts with
+        # "sys"), sentence_transformer_singleton (starts with "sentence_"),
+        # logging_setup (starts with "logging"). Match the first dotted
+        # component exactly instead.
+        _NOISE_PREFIXES = {
+            "os", "sys", "re", "json", "time",
+            "threading", "pathlib", "datetime",
+            "collections", "functools", "typing",
+            "abc", "math", "random", "logging",
+            "subprocess", "shutil", "copy", "io",
+            "hashlib", "traceback", "inspect",
+            "ast", "sqlite3", "argparse",
+            "numpy", "sklearn", "sentence_transformers",
+            "flask", "requests", "aiohttp",
+        }
         local_imports = [
             i for i in imports
-            if not i.startswith(("os", "sys", "re", "json", "time",
-                                 "threading", "pathlib", "datetime",
-                                 "collections", "functools", "typing",
-                                 "abc", "math", "random", "logging",
-                                 "subprocess", "shutil", "copy", "io",
-                                 "hashlib", "traceback", "inspect",
-                                 "ast", "sqlite3", "argparse",
-                                 "numpy", "sklearn", "sentence_",
-                                 "flask", "requests", "aiohttp"))
+            if i.split(".")[0] not in _NOISE_PREFIXES
         ]
 
         return {
@@ -187,7 +198,23 @@ def build_map(project_root: Path = PROJECT_ROOT) -> dict:
     print(f"Scanning {project_root.resolve()} ...")
 
     files = {}
-    for py_file in sorted(project_root.rglob("*.py")):
+    # os.walk (not Path.rglob) so a permission-denied subdirectory doesn't
+    # abort the entire scan before it even starts — rglob() is a generator
+    # that sorted() eagerly and fully materializes up front, so one
+    # unreadable directory anywhere in the tree raised before the loop body
+    # ever ran, discarding every already-parsed result too. followlinks=False
+    # (os.walk's default) also means a self-referential or outward-pointing
+    # symlink under the tree is never followed, avoiding unbounded or very
+    # slow recursion — Path.rglob() has no equivalent guard on this Python
+    # version (the follow_symlinks parameter only exists from 3.13).
+    py_files: list[Path] = []
+    for dirpath, dirnames, filenames in os.walk(project_root, onerror=lambda e: None):
+        dirnames[:] = [d for d in dirnames if d not in IGNORE_DIRS]
+        for fn in filenames:
+            if fn.endswith(".py"):
+                py_files.append(Path(dirpath) / fn)
+
+    for py_file in sorted(py_files):
         if should_skip(py_file):
             continue
         rel = py_file.relative_to(project_root)
@@ -256,8 +283,8 @@ def write_sqlite(codebase_map: dict, output: Path = OUTPUT_DB):
         DROP TABLE IF EXISTS reverse_deps;
 
         CREATE TABLE modules (
-            module_name      TEXT PRIMARY KEY,
-            path             TEXT,
+            path             TEXT PRIMARY KEY,
+            module_name      TEXT,
             role             TEXT,
             criticality      INTEGER DEFAULT 0,
             runtime_hits     INTEGER DEFAULT 0,
@@ -289,6 +316,7 @@ def write_sqlite(codebase_map: dict, output: Path = OUTPUT_DB):
             imported_by TEXT
         );
 
+        CREATE INDEX IF NOT EXISTS idx_modules_name       ON modules(module_name);
         CREATE INDEX IF NOT EXISTS idx_imports_importer  ON imports(importer);
         CREATE INDEX IF NOT EXISTS idx_imports_imported  ON imports(imported);
         CREATE INDEX IF NOT EXISTS idx_revdeps_module    ON reverse_deps(module);
@@ -298,14 +326,19 @@ def write_sqlite(codebase_map: dict, output: Path = OUTPUT_DB):
 
     for rel_path, info in codebase_map["files"].items():
         mn = info.get("module_name", rel_path)
+        # path (not module_name/stem) is the primary key — module_name was
+        # a bare filename stem, so a dead/archived file sharing a stem with
+        # a live protected one (e.g. archive_janitor/bible_injection.py vs
+        # app/core/bible_injection.py) silently overwrote the live file's
+        # row via INSERT OR REPLACE, since they collided on the same key.
         c.execute("""
             INSERT OR REPLACE INTO modules
-            (module_name, path, role, criticality, runtime_hits,
+            (path, module_name, role, criticality, runtime_hits,
              line_count, size_bytes, docstring, modified, error)
             VALUES (?,?,?,?,?,?,?,?,?,?)
         """, (
-            mn,
             info.get("path", rel_path),
+            mn,
             info.get("role", "misc"),
             info.get("criticality_score", 0),
             info.get("runtime_hits", 0),
@@ -377,9 +410,18 @@ class CartographerDB:
         return [r["imported"] for r in rows]
 
     def module_info(self, module_name: str) -> dict | None:
-        """Full info for a module."""
+        """Full info for a module.
+
+        module_name (a bare filename stem) is no longer the modules table's
+        primary key — a real, confirmed collision exists between live and
+        dead/archived files sharing a stem (e.g. bible_injection.py in both
+        app/core/ and archive_janitor/). When more than one file matches,
+        prefer the one with the highest criticality score (most imported,
+        most functions) as the more likely "real" one, rather than
+        whichever row SQLite happens to return first with no ORDER BY.
+        """
         row = self.conn.execute(
-            "SELECT * FROM modules WHERE module_name = ?",
+            "SELECT * FROM modules WHERE module_name = ? ORDER BY criticality DESC LIMIT 1",
             (module_name,)
         ).fetchone()
         if not row:
@@ -437,14 +479,19 @@ class CartographerDB:
         return "\n".join(lines)
 
     def update_runtime_hits(self, module_name: str, hits: int):
-        """Called by runtime_tracer.py to populate Tier 3."""
+        """Called by runtime_tracer.py to populate Tier 3.
+
+        Previously invalid SQL — `SELECT x FROM (SELECT COUNT(*) AS x FROM
+        ...) * 3` tries to multiply a FROM-clause subquery by 3, which
+        SQLite (and standard SQL) can't parse; confirmed to raise on
+        execution. A scalar subquery multiplied directly by its weight,
+        with no FROM-clause wrapper, is both valid and simpler.
+        """
         self.conn.execute(
             "UPDATE modules SET runtime_hits = ?, "
-            "criticality = (SELECT imported_by_count FROM ("
-            "  SELECT COUNT(*) AS imported_by_count FROM reverse_deps WHERE module = ?"
-            ") * 3) + (SELECT fn_count FROM ("
-            "  SELECT COUNT(*) AS fn_count FROM functions WHERE module_name = ?"
-            ") * 2) + ? "
+            "criticality = (SELECT COUNT(*) FROM reverse_deps WHERE module = ?) * 3 "
+            "+ (SELECT COUNT(*) FROM functions WHERE module_name = ?) * 2 "
+            "+ ? "
             "WHERE module_name = ?",
             (hits, module_name, module_name, hits, module_name)
         )

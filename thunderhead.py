@@ -61,6 +61,12 @@ except Exception:
 MACBOOK_IP   = "100.82.172.4"
 MACBOOK_PORT = 5000
 
+# GREMLIN_SECRET gates /learning_event and /learning_batch as of the 2026-07-11
+# bug-hunt security fixes — copy the same value from the Mac's .env (GREMLIN_SECRET=...)
+# here. Phone environments don't inherit that .env, so this can't be read from
+# os.environ like the server side does; fill in the literal value.
+THUNDERHEAD_SECRET = ""
+
 EVENT_LOG    = os.path.join(_DOCS, "symbiote_events.jsonl")
 CONTEXT_FILE = os.path.join(_DOCS, "symbiote_context.json")
 CMD_FILE     = os.path.join(_DOCS, "symbiote_cmd.txt")
@@ -537,7 +543,7 @@ def flush_bundle() -> int:
             return 0
         r = requests.post(
             f"http://{MACBOOK_IP}:{MACBOOK_PORT}/learning_batch",
-            json={"events": events},
+            json={"events": events, "secret": THUNDERHEAD_SECRET},
             timeout=5,
         )
         if r.ok:
@@ -584,6 +590,7 @@ def send_event(source, text, meta=None) -> bool:
             "context":  STATE.context,
             "activity": STATE.activity,
             "entropy":  round(STATE.entropy, 4),
+            "secret":   THUNDERHEAD_SECRET,
         }
 
         if HAS_REQUESTS:

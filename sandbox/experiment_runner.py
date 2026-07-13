@@ -12,10 +12,7 @@
 
 import json
 import logging
-import os
 import re
-import subprocess
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -92,35 +89,32 @@ def write_experiment(name: str, code: str) -> Path:
 
 
 def run_experiment(name: str, timeout: int = 60) -> dict:
-    """Execute a named experiment. Returns structured result dict."""
+    """Execute a named experiment. Returns structured result dict.
+
+    Runs under real kernel-level isolation (sandbox-exec + echo_sandbox.sb
+    Seatbelt profile + safe_exec_wrapper.py) instead of a bare subprocess
+    with full host filesystem/network access — this is genuinely
+    LLM-generated code, the highest-risk of this codebase's script-execution
+    paths, previously "protected" only by _SAFETY_HEADER's prompt-level
+    convention with zero technical enforcement. _SAFETY_HEADER stays as
+    defense-in-depth (faster, clearer failures) but is no longer the only
+    thing enforcing the write/network restriction.
+    """
     path = EXPERIMENTS_DIR / f"{name}.py"
     if not path.exists():
         return {"success": False, "output": "", "error": "Script not found", "duration": 0.0, "name": name}
 
-    start = time.time()
-    try:
-        proc = subprocess.run(
-            [sys.executable, str(path)],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            cwd=os.getcwd(),
-            env={**os.environ, "TOKENIZERS_PARALLELISM": "false"},
-        )
-        duration = round(time.time() - start, 2)
-        if proc.returncode == 0:
-            output = proc.stdout.strip()
-            result_line = next((l for l in output.splitlines() if l.startswith("RESULT:")), output[:200])
-            logger.info("[EXPERIMENT] %s succeeded in %.1fs | %s", name, duration, result_line[:80])
-            return {"success": True, "output": output[:1000], "result": result_line, "error": None, "duration": duration, "name": name}
-        else:
-            logger.warning("[EXPERIMENT] %s failed (exit=%d)", name, proc.returncode)
-            return {"success": False, "output": proc.stdout.strip()[:300], "error": proc.stderr.strip()[:300], "duration": duration, "name": name}
-    except subprocess.TimeoutExpired:
-        logger.warning("[EXPERIMENT] %s timed out after %ds", name, timeout)
-        return {"success": False, "output": "", "error": f"Timeout after {timeout}s", "duration": float(timeout), "name": name}
-    except Exception as e:
-        return {"success": False, "output": "", "error": str(e), "duration": round(time.time() - start, 2), "name": name}
+    from sandbox.run_script import run_sandbox_script_isolated
+    r = run_sandbox_script_isolated(str(path), timeout=timeout)
+
+    output = r["output"][:1000]
+    result_line = next((l for l in output.splitlines() if l.startswith("RESULT:")), output[:200])
+    if r["success"]:
+        logger.info("[EXPERIMENT] %s succeeded in %.1fs | %s", name, r["duration"], result_line[:80])
+        return {"success": True, "output": output, "result": result_line, "error": None, "duration": r["duration"], "name": name}
+    else:
+        logger.warning("[EXPERIMENT] %s failed | %s", name, r["error"])
+        return {"success": False, "output": output[:300], "error": (r["error"] or "")[:300], "duration": r["duration"], "name": name}
 
 
 def generate_and_run(topic: str | None = None, timeout: int = 60) -> dict:
@@ -176,6 +170,6 @@ def log_experiment_result(result: dict) -> None:
             f"Success: {result.get('success')} | "
             f"Result: {result.get('result') or result.get('error', '')}"
         )
-        log_dream_bridge(summary, meta={"memory_source": "autonomous", "type": "experiment"})
+        log_dream_bridge(summary, meta={"memory_source": "autonomous", "type": "experiment", "role": "experiment"})
     except Exception as e:
         logger.debug("[EXPERIMENT] log_dream_bridge failed: %s", e)

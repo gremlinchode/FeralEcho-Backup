@@ -829,6 +829,27 @@ def admin_autonomy_status():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/admin/liveness-status", methods=["GET"])
+def admin_liveness_status():
+    """
+    Liveness ledger (Core Operating Principle mechanism) — for each of nine
+    named self-governing subsystems that have already fooled a prior audit,
+    fix, or session by looking wired while being dead or fake, answers
+    "did this have a genuine, externally-observable effect recently, through
+    a path independent of its own self-report?" Read-only; recomputed every
+    120s by introspection_channel.py, not on-demand here.
+
+    Example:
+      curl http://localhost:5000/admin/liveness-status
+    """
+    try:
+        from app.core.liveness_ledger import get_liveness_status
+        return jsonify(get_liveness_status())
+    except Exception as e:
+        logger.error("[Liveness] /admin/liveness-status error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/admin/council-spotcheck", methods=["POST"])
 def admin_council_spotcheck():
     """

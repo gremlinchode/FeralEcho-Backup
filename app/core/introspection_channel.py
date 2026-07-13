@@ -182,6 +182,12 @@ class IntrospectionChannel:
             "system_health": self._collect_system_health(),
             "predictive_loops": self._collect_predictive_loops(),
         }
+        # Liveness ledger runs last so it can reuse this cycle's own fresh
+        # "memory" reading (self_model_drift compares self_model.json against
+        # it) instead of taking a second, possibly-inconsistent read. See
+        # liveness_ledger.py's module docstring — this is the mechanism named
+        # in GREMLIN_ROLE.md's Core Operating Principle, not another audit.
+        state["liveness_ledger"] = self._collect_liveness_ledger(state.get("memory", {}))
         self._write(state)
         self._save_drift_detectors()
         try:
@@ -599,6 +605,31 @@ class IntrospectionChannel:
             # reading exists to feed), which previously meant a real
             # fail-open on the one signal a safety throttle depends on.
             result["ram_pressure_pct"] = None
+        return result
+
+    # ── Collector: Liveness ledger ─────────────────────────────────────
+
+    def _collect_liveness_ledger(self, live_memory: dict) -> dict:
+        """
+        Runs the nine ground-truth liveness checks (see liveness_ledger.py)
+        and writes memory/liveness_ledger.json. Returns a compact summary
+        for inclusion in introspection_state.json itself, not the full
+        ledger (that would duplicate liveness_ledger.json) — just enough
+        that a caller reading only introspection_state.json still sees
+        whether anything is failing, without a second file read.
+        """
+        result = {"all_passing": None, "failing_subsystems": []}
+        try:
+            from app.core.liveness_ledger import run_liveness_checks
+            ledger = run_liveness_checks(live_memory)
+            failing = [
+                name for name, entry in ledger.items()
+                if isinstance(entry, dict) and "pass" in entry and not entry["pass"]
+            ]
+            result["all_passing"] = not failing
+            result["failing_subsystems"] = failing
+        except Exception as e:
+            logger.warning("[Introspection] liveness_ledger collect failed: %s", e)
         return result
 
     # ── Internal helpers ───────────────────────────────────────────────

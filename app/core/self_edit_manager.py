@@ -1337,6 +1337,36 @@ def _call_with_timeout(fn, arg, timeout: float = 2.0):
         ex.shutdown(wait=False)
 
 
+_APPLY_TO_CODE_LOG = os.path.join(_PROJECT_ROOT, "memory", "apply_to_code_invocations.jsonl")
+
+
+def _log_apply_to_code_invocation(changed: bool, before_len: int, after_len: "int | None", error: "str | None" = None) -> None:
+    """
+    Ground-truth evidence for liveness_ledger.py's apply_to_code check —
+    written here, by this protected wrapper, not by the generated hook
+    itself. The hook (app.core.self_edit_generated.apply_to_code) is
+    LLM-generated and untrusted; its own claim to have done something
+    useful is exactly the kind of self-report GREMLIN_ROLE.md's Core
+    Operating Principle says must not be trusted without an independent
+    observer. This is that observer: it records what actually happened
+    to the code (did the string change, by how much) regardless of what
+    the hook itself believes it did.
+    """
+    try:
+        os.makedirs(os.path.dirname(_APPLY_TO_CODE_LOG), exist_ok=True)
+        entry = {
+            "ts": datetime.now().astimezone().isoformat(),
+            "changed": bool(changed),
+            "before_len": before_len,
+            "after_len": after_len,
+            "error": error,
+        }
+        with open(_APPLY_TO_CODE_LOG, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception as e:
+        logging.debug(f"[SELF-EDIT] apply_to_code invocation logging failed: {e}")
+
+
 def _apply_self_edit_output(code: str) -> str:
     """
     Best-effort post-processing pass over freshly-generated self-edit code,
@@ -1363,9 +1393,12 @@ def _apply_self_edit_output(code: str) -> str:
         result = _call_with_timeout(fn, code, timeout=2.0)
     except Exception as e:
         logging.debug(f"[SELF-EDIT] apply_to_code raised/timed out, ignoring: {e}")
+        _log_apply_to_code_invocation(changed=False, before_len=len(code), after_len=None, error=str(e))
         return code
-    if isinstance(result, str) and result.strip():
+    if isinstance(result, str) and result.strip() and result != code:
+        _log_apply_to_code_invocation(changed=True, before_len=len(code), after_len=len(result))
         return result
+    _log_apply_to_code_invocation(changed=False, before_len=len(code), after_len=len(code))
     return code
 
 

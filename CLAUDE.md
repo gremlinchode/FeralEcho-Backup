@@ -4,6 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## Working Tree State (snapshot, will drift — re-check with `git status`)
+
+As of 2026-07-13, after committing the liveness-ledger work (`b99788a`), the working tree still carries **39 modified tracked files and 37 untracked files/directories** predating that commit — this is the accumulation pattern GREMLIN_ROLE.md already documents ("The working tree can accumulate a large amount of real, safety-relevant uncommitted work across many sessions... check `git status` early rather than assuming recent CLAUDE.md narration reflects what's actually committed"). Not evaluated for safety or correctness here — just recorded so a session doesn't mistake CLAUDE.md's own narration for "this is what's committed." Roughly:
+
+- **Modified tracked files (39)** span core self-edit/autonomy/memory/sandbox subsystems (`app/core/self_edit_generated.py`, `self_edit_convergence.json`, `self_model_updater.py`, `memory_bridge.py`, `memory_write_validator.py`, `predictive_loop.py`, `dmn_guardian.py`, `claude_shard.py`, `curiosity_engine.py`, `echo_state.py`, and more) plus several sandbox/CLI entry points (`echo_cartographer.py`, `spot_check.py`, `thunderhead.py`, `echo_json_server.py`).
+- **Untracked (37)**: 4 root-level markdown docs (`EchoStudio_Design.md`, `HYBRID_MIGRATION_RESEARCH.md`, `SIBLING_BRIEFING_FROM_ARK.MD`, `SIBLING_BRIEFING_FROM_PRIMARY.md`), 4 new app modules (`app/core/conversation_service.py`, `app/core/self_report_verifier.py`, `app/routes_echo_studio.py`, `app/routes_messaging.py`), 2 new directories (`claude_relay/`, `echo_studio/`), `scripts/verify_chat_stream_shape.py` (already referenced by Finding 17 above), and 25 `staging/self_edit_candidate_<uuid>.py` files from real hourly self-edit cycles.
+- **Discrepancy worth flagging, not fixed here:** GREMLIN_ROLE.md describes "hourly self-edit snapshots" as gitignored under the repo's "DISPOSABLE TEST/PENTEST ARTIFACTS" section. The actual `.gitignore` pattern is `staging/_*.py` (leading underscore) — the real generated filenames are `staging/self_edit_candidate_<uuid>.py` (no leading underscore), so they don't match and are piling up untracked instead. Not corrected here — pattern vs. generator naming mismatch is a small fix but changes tracked repo behavior, and per this doc's own working norms that's a diff to show and confirm, not something to silently patch in passing.
+
+This note itself will go stale the moment the tree changes further — treat the counts/lists above as a 2026-07-13 photograph, not a live signal.
+
+---
+
 ## Starting the System
 
 ```bash

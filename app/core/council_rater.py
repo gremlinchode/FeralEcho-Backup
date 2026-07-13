@@ -33,6 +33,12 @@ _COUNCIL_LOG     = os.path.join(_PROJECT_ROOT, "memory", "council_ratings.jsonl"
 _BASELINE_META   = os.path.join(_PROJECT_ROOT, "memory", "snapshot_baseline.json")
 _CURSOR_PATH     = os.path.join(_PROJECT_ROOT, "memory", "council_cursor.json")
 
+# Guards _COUNCIL_LOG against the background rating thread's plain append
+# (_append_council_log) racing fill_spot_check()'s read-then-os.replace()
+# rewrite — without this, a rating appended in that window was silently
+# lost when the rewrite's stale snapshot overwrote the file.
+_council_log_lock = threading.Lock()
+
 _OLLAMA_URL      = "http://localhost:11434/api/generate"
 _OLLAMA_TAGS_URL = "http://localhost:11434/api/tags"
 
@@ -162,9 +168,10 @@ def _init_cursor_if_absent() -> None:
 # ─── Council log helpers ──────────────────────────────────────────────────────
 
 def _append_council_log(entry: dict) -> None:
-    os.makedirs(os.path.dirname(_COUNCIL_LOG), exist_ok=True)
-    with open(_COUNCIL_LOG, "a", encoding="utf-8") as f:
-        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    with _council_log_lock:
+        os.makedirs(os.path.dirname(_COUNCIL_LOG), exist_ok=True)
+        with open(_COUNCIL_LOG, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
 def _count_actual_ratings() -> int:
@@ -414,30 +421,33 @@ def fill_spot_check(source_timestamp: str, human_rating: int) -> bool:
         return False
 
     lines, found = [], False
-    try:
-        with open(_COUNCIL_LOG, encoding="utf-8") as f:
-            for raw in f:
-                try:
-                    e = json.loads(raw)
-                    if (
-                        e.get("source_timestamp") == source_timestamp
-                        and e.get("human_spot_check_rating") is None
-                        and not e.get("skipped")
-                    ):
-                        e["human_spot_check_rating"] = human_rating
-                        found = True
-                    lines.append(json.dumps(e, ensure_ascii=False))
-                except Exception:
-                    lines.append(raw.rstrip())
-    except Exception as e:
-        logger.warning("[Council] fill_spot_check read error: %s", e)
-        return False
+    with _council_log_lock:
+        try:
+            with open(_COUNCIL_LOG, encoding="utf-8") as f:
+                for raw in f:
+                    try:
+                        e = json.loads(raw)
+                        if (
+                            e.get("source_timestamp") == source_timestamp
+                            and e.get("human_spot_check_rating") is None
+                            and not e.get("skipped")
+                        ):
+                            e["human_spot_check_rating"] = human_rating
+                            found = True
+                        lines.append(json.dumps(e, ensure_ascii=False))
+                    except Exception:
+                        lines.append(raw.rstrip())
+        except Exception as e:
+            logger.warning("[Council] fill_spot_check read error: %s", e)
+            return False
+
+        if found:
+            tmp = _COUNCIL_LOG + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines) + "\n")
+            os.replace(tmp, _COUNCIL_LOG)
 
     if found:
-        tmp = _COUNCIL_LOG + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            f.write("\n".join(lines) + "\n")
-        os.replace(tmp, _COUNCIL_LOG)
         _check_and_set_trust()
 
     return found
@@ -513,8 +523,12 @@ def _poll_and_rate() -> int:
         new_lines = lines[cursor:]
         if not new_lines:
             return 0
-        _save_cursor(len(lines))
 
+        # Cursor advance moved to after the loop — previously this fired
+        # before any entry in the batch was actually processed, so a
+        # mid-batch failure (rate_one_entry() raising, caught below)
+        # permanently skipped every remaining entry in that batch; they
+        # were never retried since the cursor had already passed them.
         sample_counter = 0
         for raw in new_lines:
             raw = raw.strip()
@@ -540,6 +554,8 @@ def _poll_and_rate() -> int:
             result = rate_one_entry(entry)
             if result and not result.get("skipped"):
                 rated += 1
+
+        _save_cursor(len(lines))
 
     except Exception as e:
         logger.warning("[Council] _poll_and_rate error: %s", e)

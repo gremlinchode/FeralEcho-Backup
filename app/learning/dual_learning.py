@@ -2,6 +2,7 @@
 import os
 import json
 import time
+import logging
 from datetime import datetime
 from threading import Lock, Thread
 from pathlib import Path
@@ -72,7 +73,6 @@ EVENT_LOG = BASE / "learning_events.jsonl"
 MODEL_DIR = BASE / "models"
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
 MODEL_PATH = MODEL_DIR / "dual_model.pt"
-INDEX_PATH = BASE / "dual_faiss.index"
 META_PATH = BASE / "dual_meta.json"
 
 _lock = Lock()
@@ -82,11 +82,11 @@ class DualLearner:
         self.emb_dim = emb_dim
         self.events_path = EVENT_LOG
         self.model_path = MODEL_PATH
-        self.index_path = INDEX_PATH
         self.meta_path = META_PATH
         self._load_meta()
         self._ensure_files()
         self._training_thread = None
+        self._training_lock = Lock()
 
         # If torch available, instantiate model
         if TORCH_AVAILABLE:
@@ -129,7 +129,8 @@ class DualLearner:
 
     def list_recent(self, limit=1000):
         with _lock:
-            lines = open(self.events_path, "r", encoding="utf8").read().strip().splitlines()[-limit:]
+            with open(self.events_path, "r", encoding="utf8") as f:
+                lines = f.read().strip().splitlines()[-limit:]
         return [json.loads(l) for l in lines if l.strip()]
 
     def build_dataset(self, max_events=2000):
@@ -146,44 +147,61 @@ class DualLearner:
         if not TORCH_AVAILABLE:
             print("Torch not available on this machine; training disabled.")
             return False
-        if self._training_thread and self._training_thread.is_alive():
-            print("Training already running.")
-            return False
-        self._training_thread = Thread(target=self._train_loop, args=(epochs,batch_size,lr), daemon=True)
-        self._training_thread.start()
+        # Previously an unlocked read-then-launch — two near-simultaneous
+        # /start_training POSTs (the route has no auth, see Batch 0 notes on
+        # this same endpoint) could both pass the "already running?" check
+        # before either set self._training_thread, launching two training
+        # loops against the same shared self.model concurrently.
+        with self._training_lock:
+            if self._training_thread and self._training_thread.is_alive():
+                print("Training already running.")
+                return False
+            self._training_thread = Thread(target=self._train_loop, args=(epochs, batch_size, lr), daemon=True)
+            self._training_thread.start()
         return True
 
     def _train_loop(self, epochs, batch_size, lr):
         """Simple self-supervised reconstruction objective on embeddings"""
-        data = self.build_dataset()
-        if data is None or data[1] is None or len(data[1])==0:
-            print("No events to train on.")
-            return
-        events, vectors, texts = data
-        import torch
-        X = torch.from_numpy(vectors).float()
-        dataset = torch.utils.data.TensorDataset(X)
-        loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-        model = self.model
-        opt = torch.optim.Adam(model.parameters(), lr=lr)
-        loss_fn = torch.nn.MSELoss()
-        model.train()
-        for ep in range(epochs):
-            total = 0.0
-            for (batch,) in loader:
-                opt.zero_grad()
-                out = model(batch)
-                # reconstruction target: project back to smaller dim (simple trick)
-                # try to make out match batch[:, :out.shape[1]]
-                target = batch[:, :out.shape[1]]
-                loss = loss_fn(out, target)
-                loss.backward()
-                opt.step()
-                total += loss.item() * batch.size(0)
-            print(f"DualLearner train epoch {ep+1}/{epochs} loss={total/len(loader.dataset):.5f}")
-        # save model
-        torch.save(model.state_dict(), str(self.model_path))
-        print(f"Saved dual model → {self.model_path}")
+        try:
+            data = self.build_dataset()
+            if data is None or data[1] is None or len(data[1])==0:
+                print("No events to train on.")
+                return
+            events, vectors, texts = data
+            import torch
+            X = torch.from_numpy(vectors).float()
+            dataset = torch.utils.data.TensorDataset(X)
+            loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+            model = self.model
+            opt = torch.optim.Adam(model.parameters(), lr=lr)
+            loss_fn = torch.nn.MSELoss()
+            model.train()
+            for ep in range(epochs):
+                total = 0.0
+                for (batch,) in loader:
+                    opt.zero_grad()
+                    out = model(batch)
+                    # reconstruction target: project back to smaller dim (simple trick)
+                    # try to make out match batch[:, :out.shape[1]]
+                    target = batch[:, :out.shape[1]]
+                    loss = loss_fn(out, target)
+                    loss.backward()
+                    opt.step()
+                    total += loss.item() * batch.size(0)
+                print(f"DualLearner train epoch {ep+1}/{epochs} loss={total/len(loader.dataset):.5f}")
+            # save model
+            torch.save(model.state_dict(), str(self.model_path))
+            print(f"Saved dual model → {self.model_path}")
+        except Exception as e:
+            # Previously no try/except at all — a real failure mode exists:
+            # the TF-IDF/hash embedding fallbacks can produce a different
+            # dimensionality than TinyModel(emb_dim) was constructed with
+            # (e.g. 1024-dim TF-IDF vectors vs. a 384-dim model), which
+            # raises a shape-mismatch error on the very first batch. That
+            # silently killed this daemon thread with no trace — the
+            # caller already received {"started": true} and never learned
+            # training had died.
+            logging.error(f"[DualLearner] Training failed: {e}", exc_info=True)
 
     def export_model(self):
         return str(self.model_path) if self.model_path.exists() else None

@@ -126,17 +126,30 @@ def safe_wrapper(func: Callable, func_name: str) -> Callable:
             logger.debug("[ToolManager] '%s' called args=%r kwargs=%r", func_name, args, kwargs)
             return result
         except Exception as exc:
-            log_dream_bridge(f"[ToolManager] Error in '{func_name}': {exc}")
+            log_dream_bridge(f"[ToolManager] Error in '{func_name}': {exc}",
+                             meta={"role": "tool_error", "memory_source": "tool_manager"})
             logger.debug(f"Tool '{func_name}' raised: {exc}", exc_info=True)
             return None
     wrapped.__name__ = func_name
     return wrapped
 
 
-def _load_function_from_file(file_path: str, func_name: str) -> Optional[Callable]:
+def _load_module_from_file(file_path: str):
     """
-    Dynamically imports a single function from an arbitrary .py file.
+    Dynamically imports an arbitrary .py file as a throwaway module object.
     Returns None (and logs) on any failure rather than raising.
+
+    Callers must load each file at most once and read every candidate
+    attribute off the same returned module — previously this exec_module()
+    ran once per *candidate function name* discovered in the file (see the
+    old _load_function_from_file(), which took file_path AND func_name and
+    was called in a loop over every top-level function name), so a file
+    defining N public functions had its entire top-level code — imports,
+    module-level side effects, singleton instantiation, everything —
+    genuinely re-executed N times per scan, on every server startup.
+    Confirmed via a live stack-trace diagnostic: self_edit_manager.py's own
+    module-level backfill_convergence_from_log() call was firing in tight
+    repeated bursts, traced directly to this call site.
     """
     try:
         spec = importlib.util.spec_from_file_location("_echo_dynamic_module", file_path)
@@ -144,13 +157,9 @@ def _load_function_from_file(file_path: str, func_name: str) -> Optional[Callabl
             return None
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        attr = getattr(module, func_name, None)
-        if callable(attr):
-            return attr
-        logger.debug(f"'{func_name}' in {file_path} is not callable after import.")
-        return None
+        return module
     except Exception as exc:
-        logger.debug(f"Could not load '{func_name}' from {file_path}: {exc}")
+        logger.debug(f"Could not load module from {file_path}: {exc}")
         return None
 
 
@@ -231,10 +240,20 @@ def discover_and_register_tools(path: str = ".") -> int:
                 and not node.name.startswith("_")
                 and node.name != "wrapped"
             ]
+            if not top_level_funcs:
+                continue
+
+            # Load the file's module ONCE and read every candidate function
+            # off the same module object — not once per function name (see
+            # _load_module_from_file()'s docstring for why that mattered).
+            module = _load_module_from_file(full_path)
+            if module is None:
+                continue
 
             for func_name in top_level_funcs:
-                real_func = _load_function_from_file(full_path, func_name)
-                if real_func is None:
+                real_func = getattr(module, func_name, None)
+                if not callable(real_func):
+                    logger.debug(f"'{func_name}' in {full_path} is not callable after import.")
                     continue
 
                 desc = _extract_description(
@@ -259,7 +278,8 @@ def register_package_functions(package_name: str) -> int:
         package = importlib.import_module(package_name)
     except Exception as exc:
         log_dream_bridge(
-            f"[AwarenessIntegration] Cannot import '{package_name}': {exc}"
+            f"[AwarenessIntegration] Cannot import '{package_name}': {exc}",
+            meta={"role": "tool_error", "memory_source": "tool_manager"},
         )
         logger.debug(f"Skipping package '{package_name}': {exc}")
         return 0
@@ -351,7 +371,8 @@ def bootstrap_all(project_root: str = ".") -> dict:
         "package_tools_registered": package_count,
         "total_tools_available":    total,
     }
-    log_dream_bridge(f"[AwarenessIntegration] Bootstrap complete: {summary}")
+    log_dream_bridge(f"[AwarenessIntegration] Bootstrap complete: {summary}",
+                     meta={"role": "tool_bootstrap", "memory_source": "tool_manager"})
     return summary
 
 

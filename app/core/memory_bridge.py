@@ -170,20 +170,27 @@ def trim_memory_journal(cutoff_days=180):
     archive_file = os.path.join(ARCHIVE_DIR, f"memory_journal_archive_{cutoff_date.date()}.log.gz")
     new_lines = []
 
-    with open(ACTIVE_JOURNAL, "r", encoding="utf-8") as src, gzip.open(archive_file, "wt", encoding="utf-8") as dst:
-        for line in src:
-            try:
-                timestamp_str = line.split("]")[0].lstrip("[")
-                entry_date = datetime.fromisoformat(timestamp_str)
-            except Exception:
-                entry_date = datetime.now(timezone.utc)
-            if entry_date < cutoff_date:
-                dst.write(line + "\n")
-            else:
-                new_lines.append(line)
+    # Unlike every real writer in this file, this read-then-overwrite
+    # sequence previously ran with no lock — a journal entry written by
+    # log_interaction()/append_to_journal() at the exact moment this was
+    # mid-read (embedding-scale journals can make this a slow operation)
+    # could be silently erased when new_lines (captured before the write)
+    # overwrote the file.
+    with memory_lock:
+        with open(ACTIVE_JOURNAL, "r", encoding="utf-8") as src, gzip.open(archive_file, "wt", encoding="utf-8") as dst:
+            for line in src:
+                try:
+                    timestamp_str = line.split("]")[0].lstrip("[")
+                    entry_date = datetime.fromisoformat(timestamp_str)
+                except Exception:
+                    entry_date = datetime.now(timezone.utc)
+                if entry_date < cutoff_date:
+                    dst.write(line + "\n")
+                else:
+                    new_lines.append(line)
 
-    with open(ACTIVE_JOURNAL, "w", encoding="utf-8") as f:
-        f.writelines(new_lines)
+        with open(ACTIVE_JOURNAL, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
 
 # -----------------------------
 # --- Embedding Utilities -----
@@ -201,11 +208,37 @@ def embed_text(texts: str | List[str]) -> np.ndarray:
         return np.empty((0, 384), dtype=np.float32)
 
 def rebuild_vector_memory():
-    """Rebuild vector memory from active journal safely in chunks."""
+    """Rebuild vector memory from active journal safely in chunks.
+
+    Dedups against what's already indexed by content hash — previously this
+    re-embedded and re-added every line still in the active journal with a
+    fresh UUID on every call, no dedup at all, confirmed to duplicate the
+    FAISS index without bound (this runs every NightCycle consolidation
+    tick, see consolidation.py).
+    """
+    with memory_lock:
+        existing_hashes = {
+            hashlib.sha256(v.get("text", "").strip().encode()).hexdigest()
+            for v in vector_memory.meta.values()
+        }
+
     for batch in stream_memory_entries(ACTIVE_JOURNAL, chunk_size=100):
-        embeddings = embed_text(batch)
-        items = [MemoryItem(str(uuid.uuid4()), text, {}) for text in batch]
-        vector_memory.add(items, embeddings)
+        new_batch = []
+        for text in batch:
+            h = hashlib.sha256(text.strip().encode()).hexdigest()
+            if h in existing_hashes:
+                continue
+            existing_hashes.add(h)
+            new_batch.append(text)
+        if not new_batch:
+            continue
+        embeddings = embed_text(new_batch)
+        items = [MemoryItem(str(uuid.uuid4()), text, {}) for text in new_batch]
+        # Every other real writer in this file mutates vector_memory under
+        # memory_lock — this call site didn't, racing concurrent _persist()
+        # calls into interleaved writes to the same temp filename.
+        with memory_lock:
+            vector_memory.add(items, embeddings)
 
 # -----------------------------
 # --- Interaction Logging -----
@@ -356,8 +389,14 @@ def retrieve_relevant_memories(
         records = [{"text": r[0], "score": r[1], "meta": r[2]} for r in results]
         if source_filter:
             filtered = [r for r in records if r["meta"].get("memory_source") == source_filter]
-            if len(filtered) >= top_k:
-                return filtered[:top_k]
+            # Previously fell through to the *unfiltered* top_k when fewer
+            # than top_k tagged entries existed — a caller explicitly
+            # filtering to exclude autonomous self-talk (or any other
+            # source) could still get exactly what it filtered out mixed
+            # back in, silently, whenever the tagged pool was thin. Return
+            # whatever matches, even if that's fewer than top_k, rather
+            # than padding with entries the filter was there to exclude.
+            return filtered[:top_k]
         return records[:top_k]
     except Exception as e:
         logging.error(f"Failed to retrieve memories: {e}")
@@ -379,55 +418,62 @@ def autonomous_prune_journal(top_percent_to_keep=0.2, chunk_size=100):
 
     Falls back to centroid approach if apricot is unavailable.
     """
-    all_entries = []
-    all_embeddings_list = []
+    # Like trim_memory_journal(), this reads the full journal, does a slow
+    # embedding + selection pass, then overwrites the file with only what
+    # was captured at read time — previously with no lock, so a real
+    # concurrent write (log_interaction(), a dream, a reflection) landing
+    # anywhere in that window was silently discarded when this function's
+    # stale kept_entries overwrote the file at the end.
+    with memory_lock:
+        all_entries = []
+        all_embeddings_list = []
 
-    for batch in stream_memory_entries(ACTIVE_JOURNAL, chunk_size=chunk_size):
-        embeddings = embed_text(batch)
-        if embeddings.shape[0] != len(batch):
-            continue
-        all_entries.extend(batch)
-        all_embeddings_list.append(embeddings)
+        for batch in stream_memory_entries(ACTIVE_JOURNAL, chunk_size=chunk_size):
+            embeddings = embed_text(batch)
+            if embeddings.shape[0] != len(batch):
+                continue
+            all_entries.extend(batch)
+            all_embeddings_list.append(embeddings)
 
-    if not all_entries:
-        logging.info("Autonomous prune: journal is empty — nothing to prune.")
-        return
+        if not all_entries:
+            logging.info("Autonomous prune: journal is empty — nothing to prune.")
+            return
 
-    all_embeddings = np.vstack(all_embeddings_list)
-    keep_count = max(1, int(len(all_entries) * top_percent_to_keep))
+        all_embeddings = np.vstack(all_embeddings_list)
+        keep_count = max(1, int(len(all_entries) * top_percent_to_keep))
 
-    try:
-        from apricot import FacilityLocationSelection
-        sel = FacilityLocationSelection(
-            n_samples=keep_count, metric='cosine', verbose=False
-        )
-        sel.fit(all_embeddings)
-        kept_idx = set(sel.ranking[:keep_count].tolist())
-        kept_entries    = [all_entries[i] for i in range(len(all_entries)) if i in kept_idx]
-        removed_entries = [all_entries[i] for i in range(len(all_entries)) if i not in kept_idx]
-        logging.info("Autonomous prune: FacilityLocationSelection (diversity-preserving)")
-    except Exception as _fl_err:
-        logging.warning(
-            f"apricot FacilityLocationSelection failed ({_fl_err}) — falling back to centroid"
-        )
-        centroid = all_embeddings.mean(axis=0)
-        norm = np.linalg.norm(centroid)
-        if norm > 0:
-            centroid /= norm
-        scores = all_embeddings @ centroid
-        order = np.argsort(scores)[::-1]
-        kept_entries    = [all_entries[i] for i in order[:keep_count]]
-        removed_entries = [all_entries[i] for i in order[keep_count:]]
+        try:
+            from apricot import FacilityLocationSelection
+            sel = FacilityLocationSelection(
+                n_samples=keep_count, metric='cosine', verbose=False
+            )
+            sel.fit(all_embeddings)
+            kept_idx = set(sel.ranking[:keep_count].tolist())
+            kept_entries    = [all_entries[i] for i in range(len(all_entries)) if i in kept_idx]
+            removed_entries = [all_entries[i] for i in range(len(all_entries)) if i not in kept_idx]
+            logging.info("Autonomous prune: FacilityLocationSelection (diversity-preserving)")
+        except Exception as _fl_err:
+            logging.warning(
+                f"apricot FacilityLocationSelection failed ({_fl_err}) — falling back to centroid"
+            )
+            centroid = all_embeddings.mean(axis=0)
+            norm = np.linalg.norm(centroid)
+            if norm > 0:
+                centroid /= norm
+            scores = all_embeddings @ centroid
+            order = np.argsort(scores)[::-1]
+            kept_entries    = [all_entries[i] for i in order[:keep_count]]
+            removed_entries = [all_entries[i] for i in order[keep_count:]]
 
-    archive_file = os.path.join(ARCHIVE_DIR, f"memory_journal_auto_{datetime.now().date()}.log.gz")
-    with gzip.open(archive_file, "wt", encoding="utf-8") as dst:
-        for line in removed_entries:
-            dst.write(line + "\n")
+        archive_file = os.path.join(ARCHIVE_DIR, f"memory_journal_auto_{datetime.now().date()}.log.gz")
+        with gzip.open(archive_file, "wt", encoding="utf-8") as dst:
+            for line in removed_entries:
+                dst.write(line + "\n")
 
-    with open(ACTIVE_JOURNAL, "w", encoding="utf-8") as f:
-        f.writelines([line + "\n" for line in kept_entries])
+        with open(ACTIVE_JOURNAL, "w", encoding="utf-8") as f:
+            f.writelines([line + "\n" for line in kept_entries])
 
-    logging.info(f"Autonomous prune complete: kept {len(kept_entries)}, archived {len(removed_entries)}")
+        logging.info(f"Autonomous prune complete: kept {len(kept_entries)}, archived {len(removed_entries)}")
 
 # -----------------------------
 # --- Quick Test if Standalone

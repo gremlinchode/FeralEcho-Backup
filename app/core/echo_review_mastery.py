@@ -24,19 +24,25 @@ def review_mastery():
             module = importlib.import_module(full_module_name)
             importlib.reload(module)
 
-            # Prefer get_tips() — returns full actionable content
-            if hasattr(module, "get_tips") and callable(module.get_tips):
+            # Prefer _get_tips() — returns full actionable content. All
+            # echo_python_mastery modules name this function privately
+            # (_get_tips, not get_tips — only teach_X() functions are
+            # public/registered as tools, per CLAUDE.md); this previously
+            # checked the public name, which no module has, so every
+            # module silently fell through to the docstring fallback below
+            # despite the v2.0 header comment claiming real content is read.
+            if hasattr(module, "_get_tips") and callable(module._get_tips):
                 try:
-                    content = module.get_tips()
+                    content = module._get_tips()
                     mastery_summary[module_name] = content
                 except Exception as e:
                     logging.warning(
-                        f"[MasteryReview] get_tips() failed for {module_name}: {e}. "
+                        f"[MasteryReview] _get_tips() failed for {module_name}: {e}. "
                         f"Falling back to docstrings."
                     )
                     mastery_summary[module_name] = _collect_docstrings(module)
             else:
-                # Fall back to docstring collection for modules without get_tips()
+                # Fall back to docstring collection for modules without _get_tips()
                 mastery_summary[module_name] = _collect_docstrings(module)
 
         except Exception as e:

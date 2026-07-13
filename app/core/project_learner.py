@@ -10,6 +10,7 @@ import os
 import ast
 import json
 import re
+import logging
 from typing import Dict, List, Tuple, Any, Optional
 from dataclasses import dataclass, asdict
 from datetime import datetime
@@ -39,7 +40,12 @@ class FileInfo:
 # Utility helpers
 # ----------------------------
 def read_text(path: str) -> str:
-    with open(path, "r", encoding="utf-8", errors="ignore") as f:
+    # "replace" (not "ignore") so non-UTF8 bytes are visible as U+FFFD
+    # rather than silently dropped — this feeds directly into the "ground
+    # truth" text shown to the self-edit planning model, where silently
+    # missing bytes (not just substituted ones) could shift or hide content
+    # in a way that's misleading rather than merely lossy.
+    with open(path, "r", encoding="utf-8", errors="replace") as f:
         return f.read()
 
 def extract_top_comments(source: str, max_lines: int = 30) -> Optional[str]:
@@ -84,7 +90,9 @@ def parse_file(path: str) -> Tuple[List[str], List[SymbolInfo], Optional[str]]:
     try:
         tree = ast.parse(source)
     except Exception as e:
-        # return minimal info on parse failure
+        # Previously unlogged — a systematically unparseable file contributed
+        # empty data with zero diagnostic trail pointing at why.
+        logging.debug(f"[ProjectLearner] AST parse failed for {path}: {e}")
         return imports, symbols, extract_top_comments(source)
 
     # gather imports
@@ -137,21 +145,32 @@ class ProjectLearner:
     def analyze(self):
         py_files = self.discover_py_files()
         for p in py_files:
-            rel = os.path.relpath(p, self.root_path)
-            module_name = safe_module_name_from_path(self.root_path, p)
-            imports, symbols, top_comments = parse_file(p)
-            st = os.stat(p)
-            fi = FileInfo(
-                path=p,
-                relpath=rel,
-                module_name=module_name,
-                imports=imports,
-                symbols=symbols,
-                top_comments=top_comments,
-                size_bytes=st.st_size,
-                mtime_iso=datetime.utcfromtimestamp(st.st_mtime).isoformat() + "Z",
-            )
-            self.files[module_name] = fi
+            # parse_file()'s read_text() had no exception isolation at this
+            # call site (only ast.parse() inside it was defended) — a file
+            # deleted or made unreadable between discover_py_files()'s
+            # listing and this read (plausible: this same tree includes
+            # actively-churning self-edit staging/backup files) propagated
+            # uncaught, zeroing out every already-parsed file's results for
+            # the whole cycle with no indication of which file caused it.
+            try:
+                rel = os.path.relpath(p, self.root_path)
+                module_name = safe_module_name_from_path(self.root_path, p)
+                imports, symbols, top_comments = parse_file(p)
+                st = os.stat(p)
+                fi = FileInfo(
+                    path=p,
+                    relpath=rel,
+                    module_name=module_name,
+                    imports=imports,
+                    symbols=symbols,
+                    top_comments=top_comments,
+                    size_bytes=st.st_size,
+                    mtime_iso=datetime.utcfromtimestamp(st.st_mtime).isoformat() + "Z",
+                )
+                self.files[module_name] = fi
+            except Exception as e:
+                logging.warning(f"[ProjectLearner] Skipping {p} — read/parse failed: {e}")
+                continue
 
         # build simple dependency edges
         self.build_edges_from_imports()

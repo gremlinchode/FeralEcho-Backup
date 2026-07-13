@@ -135,7 +135,14 @@ def inject_scripture(prompt: str) -> str:
     if not citations:
         return prompt
 
-    scripture_block = "\n[INSTRUCTION: The following is the ACTUAL scripture text from the Bible database. You MUST quote directly from these verses when discussing them. Do NOT paraphrase from memory or training data. Use only what is written below.]\n"
+    from app.core.prompt_workspace import system_note
+    scripture_block = "\n" + system_note(
+        "SCRIPTURE-INTEGRITY",
+        "This is a verified-verse lookup attached automatically whenever a Bible citation is "
+        "detected. The text below is pulled directly from the source database; render it "
+        "verbatim rather than reconstructing it from memory, since paraphrased scripture is "
+        "how citation errors happen.",
+    ) + "\n"
     for ref, verses in citations.items():
         scripture_block += f"\n{ref}:\n"
         for v_num, text in verses:

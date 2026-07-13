@@ -86,8 +86,15 @@ def compute(introspection_state: dict) -> np.ndarray:
     except Exception:
         vec[2] = 0.0
 
-    # [3] system_vitality — inverse RAM pressure
-    vec[3] = 1.0 - min(float(sh.get("ram_pressure_pct", 50.0)) / 100.0, 1.0)
+    # [3] system_vitality — inverse RAM pressure. ram_pressure_pct can now
+    # be an explicit None (introspection_channel.py's psutil-failure
+    # sentinel, see system_guard.py) rather than merely absent — .get()'s
+    # default only applies when the key is missing, so float(None) would
+    # otherwise raise here uncaught. Treat unknown the same as the
+    # pre-existing missing-key default (neutral 50% pressure).
+    ram_pct_raw = sh.get("ram_pressure_pct", 50.0)
+    ram_pct = 50.0 if ram_pct_raw is None else float(ram_pct_raw)
+    vec[3] = 1.0 - min(ram_pct / 100.0, 1.0)
 
     # [4] curiosity_index — recent surprise vs rolling baseline
     s_last = float(pl.get("surprise_last", 0.0))

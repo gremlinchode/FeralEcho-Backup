@@ -170,7 +170,8 @@ class ClaudeShard:
     def _surface_to_dream_bridge(self, message):
         try:
             from app.core.memory_bridge import log_dream_bridge
-            log_dream_bridge(f"[ClaudeShard] {message}")
+            log_dream_bridge(f"[ClaudeShard] {message}",
+                             meta={"role": "friction", "memory_source": "claude_shard"})
         except Exception:
             pass
 

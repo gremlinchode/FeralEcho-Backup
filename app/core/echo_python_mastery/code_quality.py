@@ -2,6 +2,13 @@
 import os
 import time
 
+# Anchored via __file__, not cwd — same fix already applied to every path
+# constant in self_edit_manager.py (CLAUDE.md Finding 7). This scan runs on
+# every self-edit planning cycle; if the process cwd ever differs from the
+# project root, the old root="." default silently fed wrong or empty
+# guidance into the prompt instead of a real project-wide scan.
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 _SCAN_CACHE: tuple[float, str] | None = None
 _SCAN_TTL = 600  # re-scan at most every 10 minutes
 
@@ -38,7 +45,7 @@ def _get_tips():
     return tips
 
 
-def _scan_for_empty_files(root=".", max_report=10):
+def _scan_for_empty_files(root=_PROJECT_ROOT, max_report=10):
     """
     Walk the project directory and return a report of empty .py files.
     Skips hidden directories and __pycache__. Result cached for 10 minutes.

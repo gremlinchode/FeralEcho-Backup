@@ -115,7 +115,11 @@ def _extract_target_path(prompt: str) -> tuple[str, bool]:
             traversal_attempted = True
             continue
         full = os.path.realpath(os.path.join(_PROJECT_ROOT, candidate))
-        if not full.startswith(_PROJECT_ROOT):
+        # Bare startswith(_PROJECT_ROOT), with no trailing separator, would
+        # also pass a same-prefix sibling directory (e.g. _PROJECT_ROOT
+        # "/x/FeralEcho" matching "/x/FeralEcho-evil") — echo_tool_dispatch.py
+        # already has the correct form of this exact check.
+        if full != _PROJECT_ROOT and not full.startswith(_PROJECT_ROOT + os.sep):
             # realpath resolved outside root — traversal via symlink or odd path
             traversal_attempted = True
             continue
@@ -160,7 +164,7 @@ def _safe_listdir(rel_path: str) -> tuple[str, list[str], list[str], str]:
         os.path.join(_PROJECT_ROOT, rel_path) if rel_path else _PROJECT_ROOT
     )
 
-    if not target.startswith(_PROJECT_ROOT):
+    if target != _PROJECT_ROOT and not target.startswith(_PROJECT_ROOT + os.sep):
         return rel_path, [], [], "path would escape project root — refused"
 
     if not os.path.isdir(target):
@@ -204,8 +208,9 @@ def _build_listing(prompt: str) -> str:
     total = len(dirs) + len(files)
     truncated = total >= _MAX_ENTRIES
 
+    from app.core.prompt_workspace import system_note
     lines = [
-        f"[Tool result — directory listing read from disk at query time]",
+        system_note("TOOL-CONTEXT", "This is a directory listing read from disk at query time."),
         f"Path: {rel_label}  ({total}{'+ ' if truncated else ' '}items{', truncated at ' + str(_MAX_ENTRIES) if truncated else ''})",
     ]
     if dirs:

@@ -10,9 +10,17 @@ import os
 import re
 import hashlib
 import logging
+import threading
 from datetime import datetime, timezone
 from typing import Optional
 from difflib import SequenceMatcher
+
+# Guards the signal-hash cache's read-modify-write sequence in
+# validate_memory_entry() — a user turn and an autonomous dream landing
+# near-simultaneously could each save a cache snapshot missing the other's
+# addition, silently letting a near-duplicate entry through the exact check
+# this cache exists to enforce.
+_hash_cache_lock = threading.Lock()
 
 # -------------------------
 # --- Configuration -------
@@ -116,8 +124,10 @@ def _save_hash_cache(cache: list):
     try:
         os.makedirs(os.path.dirname(SIGNAL_HASH_CACHE_PATH), exist_ok=True)
         trimmed = cache[-DEDUP_WINDOW:]
-        with open(SIGNAL_HASH_CACHE_PATH, "w") as f:
+        tmp = SIGNAL_HASH_CACHE_PATH + ".tmp"
+        with open(tmp, "w") as f:
             json.dump(trimmed, f)
+        os.replace(tmp, SIGNAL_HASH_CACHE_PATH)
     except IOError as e:
         log.warning(f"Could not save hash cache: {e}")
 
@@ -332,7 +342,13 @@ def check_empty_or_trivial(entry: dict, result: ValidationResult):
         result.flag("EMPTY_SIGNAL", "Signal is empty or whitespace only.", severity="block")
 
     if not reflection:
-        result.flag("EMPTY_REFLECTION", "Reflection is empty or whitespace only.", severity="warn")
+        # Was "warn" — this function's own docstring says "Block entries
+        # with no meaningful content," but warn-only doesn't set
+        # result.passed=False, so a generation failure producing empty
+        # output still got journaled and vector-committed as a real memory
+        # (later surfaced as a blank "[past interaction]:" line to whatever
+        # retrieves it) instead of being quarantined like EMPTY_SIGNAL is.
+        result.flag("EMPTY_REFLECTION", "Reflection is empty or whitespace only.", severity="block")
 
     # Trivial reflections that add no information
     trivial_patterns = [
@@ -414,14 +430,15 @@ def validate_memory_entry(entry: dict) -> tuple:
     # Update hash cache regardless of outcome (to track what was attempted)
     signal = entry.get("signal", "").strip()
     if signal:
-        cache = _load_hash_cache()
-        cache_entry = {
-            "hash": _signal_hash(signal),
-            "snippet": signal[:200],
-            "ts": datetime.now(timezone.utc).isoformat()
-        }
-        cache.append(cache_entry)
-        _save_hash_cache(cache)
+        with _hash_cache_lock:
+            cache = _load_hash_cache()
+            cache_entry = {
+                "hash": _signal_hash(signal),
+                "snippet": signal[:200],
+                "ts": datetime.now(timezone.utc).isoformat()
+            }
+            cache.append(cache_entry)
+            _save_hash_cache(cache)
 
     if not result.passed:
         _quarantine_entry(entry, result)

@@ -462,10 +462,26 @@ def _evaluate_self_model_drift(self_model: "dict | None", live_memory: dict, sta
     live_journal = live_memory.get("journal_line_count")
     faiss_diff = abs((reported_faiss or 0) - (live_faiss or 0))
     journal_diff = abs((reported_journal or 0) - (live_journal or 0))
-    # Small tolerance for the ~2 collector cycles' worth of natural lag
-    # between self_model_updater's 130s loop and introspection's 120s one,
-    # not a license to silently drift.
-    tolerant = faiss_diff <= max(5, 0.02 * (live_faiss or 1)) and journal_diff <= max(5, 0.02 * (live_journal or 1))
+    # Asymmetric tolerance, absorbed from self_report_verifier.py's
+    # verify_memory_health() (2026-07-13 consolidation — that module ran
+    # nearly the identical check on its own 60s cadence via dmn_guardian.py;
+    # retired in favor of this one, but its better-reasoned tolerances were
+    # kept rather than this check's original flat 2%-of-current-value rule
+    # for both fields). faiss and journal have very different natural
+    # growth rates — confirmed live: FAISS can grow by hundreds of vectors
+    # in the couple of minutes between self_model_updater refresh cycles
+    # from autonomous loops constantly writing memory, while journal growth
+    # tracks much slower real journaling activity. A single flat tolerance
+    # either fires constantly on FAISS's expected drift or is too loose for
+    # the journal. faiss keeps a relative (5%, floor 50) tolerance for this
+    # reason; journal uses a tight absolute one (5 lines) since any real
+    # gap there likely means a genuine bug — the original motivating case
+    # for this whole check was exactly a journal-count bug (introspection
+    # reading the wrong file), not benign lag.
+    tolerant = (
+        faiss_diff <= max(50, 0.05 * (reported_faiss or 0))
+        and journal_diff <= 5
+    )
     if tolerant:
         return _result(
             True,

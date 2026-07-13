@@ -145,14 +145,21 @@ def start_guardian_loop(echo_core=None, interval=120):
                 except Exception as _oee:
                     logging.debug("[GUARDIAN] self-edit outcome evaluation error: %s", _oee)
 
-                # Self-report verification — log-only, does not correct
-                # self_model.json or feed any decision path. Same restraint
-                # as the self-edit outcome tracker above.
-                try:
-                    from app.core.self_report_verifier import verify_memory_health
-                    verify_memory_health()
-                except Exception as _srve:
-                    logging.debug("[GUARDIAN] self-report verification error: %s", _srve)
+                # Self-report verification of self_model.json's memory_health
+                # used to run here too (self_report_verifier.verify_memory_health(),
+                # every 60s). Retired 2026-07-13: it was checking the exact
+                # same thing as liveness_ledger.py's self_model_drift check
+                # (introspection_channel.py, every 120s) — same self_model.json
+                # claim, same FAISS/journal ground truth — just via two
+                # independently-maintained comparisons that could (and did)
+                # drift apart in tolerance logic. The ledger's version now
+                # carries the better-reasoned tolerances this module
+                # originated, plus a staleness check this one never had, and
+                # surfaces through /admin/liveness-status instead of a
+                # separate log file. self_report_verifier.py's functions are
+                # left in place, not deleted, in case they're wanted for
+                # something else later — this is the only live call site
+                # that's being removed.
 
                 # Crash sentinel heartbeat — keeps last_heartbeat_utc current
                 try:

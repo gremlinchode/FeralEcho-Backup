@@ -81,6 +81,14 @@ richietate.txt
 sandbox/experiments/exp_*.py
 sandbox/scripts/archive/
 staging/_*.py
+# self_edit_manager.py's real per-call-unique staging filename (Finding 22
+# Batch 4: "staging files are now per-call-unique... f'self_edit_candidate_
+# {uuid.uuid4().hex}.py'") never matched staging/_*.py above (no leading
+# underscore) — 25+ of these were accumulating as untracked cruft instead
+# of being gitignored as intended (found 2026-07-13). Deliberately does
+# NOT match staging/self_edit_candidate.py itself (no trailing underscore
+# before the extension) — that's STAGING_FILE, a real tracked fixture.
+staging/self_edit_candidate_*.py
 sandbox/scripts/test_broken.py
 sandbox/scripts/test_fixed.py
 sandbox/scripts/test_future.py

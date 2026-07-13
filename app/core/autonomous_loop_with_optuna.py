@@ -21,7 +21,7 @@ from app.core.echo_optuna import EchoOptuna
 from app.core.memory_tools import log_memory_event
 from app.core.awareness_tools_integration import discover_and_register_tools
 from app.core.memory_bridge import log_dream_bridge
-from app.autonomous_harmony_manager import HarmonyManager
+from app.autonomous_harmony_manager import get_harmony_manager
 from sandbox.run_script import run_sandbox_script_isolated as run_sandbox_script
 
 import os
@@ -38,7 +38,9 @@ logger = logging.getLogger(__name__)
 # ---------------- SHARED STATE ---------------- #
 # Single instances shared across iteration calls
 optimizer = EchoOptuna()
-harmony_manager = HarmonyManager()
+# Process-wide singleton, shared with app/autonomous_loop.py — see
+# get_harmony_manager()'s docstring in autonomous_harmony_manager.py.
+harmony_manager = get_harmony_manager()
 
 # Cycle counter persists across iteration calls
 _cycle_state = {

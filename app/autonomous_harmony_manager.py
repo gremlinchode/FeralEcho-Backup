@@ -9,12 +9,15 @@ Echo Autonomous Harmony System
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import logging
 import random
 import threading
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 # ——— Internal Modules ———
 from app.stillness import Stillness
@@ -119,8 +122,27 @@ def _generate_nature_insight(pattern: str, seed_lines: list, reason: str = "") -
         ).strip()
         if result and "[ERROR]" not in result:
             return result
+        # liveness_ledger.py's nature_spark check (2026-07-13) found this
+        # falling back ~2/3 of the time in live production, but neither
+        # logging path that existed could say why: an empty/[ERROR] result
+        # (this branch) previously fell through with NO log line at all —
+        # not even the print() below, since no exception was raised — and
+        # stream_query_mlx() itself catches its own exceptions internally,
+        # so they never reached the `except Exception as e` clause either.
+        # Logging the actual result string here (it already contains
+        # mlx_handler's own "[ERROR] MLX generation failed: <exception>"
+        # text when that's what happened) makes the next failure
+        # diagnosable from one log line instead of invisible.
+        logger.warning(
+            "[HARMONY] Nature Spark generation returned no usable text "
+            "(result=%r) — falling back to a seed line.",
+            result[:200],
+        )
     except Exception as e:
-        print(f"[HARMONY] Nature Spark generation failed, using seed line: {e}")
+        logger.warning(
+            "[HARMONY] Nature Spark generation failed, using seed line: %s",
+            e, exc_info=True,
+        )
     return random.choice(seed_lines)
 
 
@@ -227,6 +249,34 @@ class HarmonyManager:
         state = "running" if self.running else "idle"
         print(f"Echo: Harmony loop status → {state}")
         return state
+
+
+# ——— Process-wide singleton ———
+# app/autonomous_loop.py and app/core/autonomous_loop_with_optuna.py each
+# used to instantiate their own `harmony_manager = HarmonyManager()` at
+# module level — two entirely separate objects. Since start()'s only
+# re-entrancy guard is `self.running` on its OWN instance, this let both
+# loops start a genuinely concurrent Harmony session with no awareness of
+# each other. Confirmed live, 2026-07-13: two sessions starting 26s apart
+# (Thread-3/autonomous_loop and Thread-4/model_guided_autonomous_loop),
+# both calling into mlx_handler.py's shared, previously-unlocked
+# `_model_cache` from different threads at the same time — the root cause
+# behind liveness_ledger.py's nature_spark check failing in production.
+# A single shared instance makes the existing self.running guard actually
+# mean something across both callers instead of only guarding against a
+# loop overlapping with itself.
+_shared_harmony_manager: "HarmonyManager | None" = None
+_shared_harmony_manager_lock = threading.Lock()
+
+
+def get_harmony_manager() -> "HarmonyManager":
+    """Process-wide HarmonyManager singleton. See comment above."""
+    global _shared_harmony_manager
+    with _shared_harmony_manager_lock:
+        if _shared_harmony_manager is None:
+            _shared_harmony_manager = HarmonyManager()
+        return _shared_harmony_manager
+
 
 # ——— EXECUTION ENTRY POINT ———
 if __name__ == "__main__":

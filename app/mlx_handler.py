@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import re
+import threading
 from typing import Generator
 
 _MLX_AVAILABLE = False
@@ -29,6 +30,22 @@ MLX_MODELS_CONFIG = os.path.join(_PROJECT_ROOT, "mlx_models.json")
 
 # (model, tokenizer) pairs keyed by mlx_path — loading is expensive (~10s)
 _model_cache: dict = {}
+
+# Guards both the cache check-and-set below and the generate() call itself.
+# Neither was locked before 2026-07-13: two independent HarmonyManager
+# instances (see autonomous_harmony_manager.py's get_harmony_manager(),
+# fixed the same day) started concurrent Nature Spark sessions that both
+# called _mlx_generate() on the same cached model object from different
+# threads at once — MLX's Metal-backed generation isn't designed for
+# concurrent calls sharing one model instance. This lock is deliberately
+# global rather than per-mlx_path: a real council cycle can also select
+# an mlx:* model as a councillor while Harmony is separately active, and
+# whether two *different* MLX models can safely run concurrently on the
+# same Metal device wasn't verified either — serializing all MLX
+# inference through one lock is the smaller, more conservative claim.
+# MLX calls are single-shot response generations (not long-running), so
+# queuing behind this lock is a short wait, not a functional block.
+_generate_lock = threading.Lock()
 
 # Strip Qwen3 chain-of-thought tags before handing text to the council
 _THINK_TAG_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
@@ -96,20 +113,22 @@ def stream_query_mlx(
         yield "[ERROR] MLX backend is not available."
         return
     try:
-        model, tokenizer = _load_mlx_model(mlx_path)
-        formatted = _format_prompt(tokenizer, prompt, model_name or mlx_path, system=system)
-        _gen_kwargs = {}
-        if temperature is not None:
-            _gen_kwargs["sampler"] = _mlx_make_sampler(temp=max(0.0, min(2.0, temperature)))
-        response = _mlx_generate(
-            model,
-            tokenizer,
-            prompt=formatted,
-            max_tokens=max_tokens,
-            verbose=False,
-            **_gen_kwargs,
-        )
-        # Strip any residual thinking tags (Qwen3 safety net)
+        with _generate_lock:
+            model, tokenizer = _load_mlx_model(mlx_path)
+            formatted = _format_prompt(tokenizer, prompt, model_name or mlx_path, system=system)
+            _gen_kwargs = {}
+            if temperature is not None:
+                _gen_kwargs["sampler"] = _mlx_make_sampler(temp=max(0.0, min(2.0, temperature)))
+            response = _mlx_generate(
+                model,
+                tokenizer,
+                prompt=formatted,
+                max_tokens=max_tokens,
+                verbose=False,
+                **_gen_kwargs,
+            )
+        # Strip any residual thinking tags (Qwen3 safety net) — pure string
+        # work, done outside the lock so it doesn't hold up the next caller.
         response = _THINK_TAG_RE.sub("", response).strip()
         yield response
     except Exception as e:

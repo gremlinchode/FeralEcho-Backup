@@ -64,7 +64,7 @@ from app.core.awareness_tools_integration import discover_and_register_tools
 from sandbox.run_script import run_sandbox_script_isolated as run_sandbox_script
 from app.core.memory_bridge import log_dream_bridge
 from app.core.stillness_state import wait_for_activity
-from app.autonomous_harmony_manager import HarmonyManager
+from app.autonomous_harmony_manager import get_harmony_manager
 
 # ---------------- CONFIG ---------------- #
 AUTONOMOUS_SLEEP = 3600
@@ -105,7 +105,11 @@ def _compute_next_sleep(wm, base_sleep: int) -> int:
     return int(base_sleep * multiplier)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-harmony_manager = HarmonyManager()
+# Process-wide singleton, shared with app/core/autonomous_loop_with_optuna.py
+# (see get_harmony_manager()'s docstring — two independently-instantiated
+# managers previously let both loops run Harmony concurrently, unaware of
+# each other).
+harmony_manager = get_harmony_manager()
 
 # ---------------- CYCLE HISTORY ---------------- #
 # Audit finding: this was purely in-memory — a restart silently discarded

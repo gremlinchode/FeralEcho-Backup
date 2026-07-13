@@ -1,3 +1,6 @@
+# === RELAY BOOKKEEPING (not project content) ===
+claude_relay/.last_seen_from_air.marker
+
 # === MEMORY & INDEX ===
 *.index
 *.faiss

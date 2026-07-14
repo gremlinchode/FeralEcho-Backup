@@ -662,7 +662,15 @@ def _stage_and_import_test(code: str, staging_file: str = STAGING_FILE) -> tuple
             )
         if result.returncode == 0 and "SANDBOX_OK" in result.stdout:
             return True, ""
-        return False, (result.stderr or result.stdout).strip()[:400]
+        # Same blind-front-truncation bug as test_code_in_sandbox() (see
+        # _extract_sandbox_failure_text()'s docstring) — this is a separate
+        # call site with the identical shape, missed in the original fix.
+        # Found via independent cross-check on the Ark fork (claude_relay/
+        # from_air.md, 2026-07-14): same bug, confirmed there too, under
+        # _stage_and_import_test()'s equivalent. This is the function that
+        # actually produces the "staging_import_failed" journal result —
+        # the more common of the two truncation sites in practice.
+        return False, _extract_sandbox_failure_text((result.stderr or result.stdout).strip())
     except subprocess.TimeoutExpired:
         return False, "Staging import test timed out (30s)"
     except Exception as e:
@@ -1060,7 +1068,12 @@ def _is_meaningful_prompt(prompt: str) -> bool:
 # --- SANDBOX INTEGRATION ----
 # -----------------------------
 
-_MAX_SANDBOX_ERROR_LEN = 1500  # generous cap once we've found real signal, not noise
+_MAX_SANDBOX_ERROR_LEN = 3000  # was 1500 — a real live traceback captured during this
+# fix's own verification (candidate -> memory_bridge -> memory_write_validator ->
+# logging.FileHandler -> blocked by sandbox) measured 1529 chars from the marker to
+# the actual final exception line, meaning the original cap would have cut off
+# right at (or just before) the single most useful line — the real exception
+# type/message. Doubled with real headroom based on that measurement, not a guess.
 _FALLBACK_SANDBOX_ERROR_LEN = 400  # unchanged from the old blind-truncation length
 
 _TRACEBACK_MARKER = "Traceback (most recent call last):"

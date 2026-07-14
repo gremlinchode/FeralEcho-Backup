@@ -1059,6 +1059,49 @@ def _is_meaningful_prompt(prompt: str) -> bool:
 # -----------------------------
 # --- SANDBOX INTEGRATION ----
 # -----------------------------
+
+_MAX_SANDBOX_ERROR_LEN = 1500  # generous cap once we've found real signal, not noise
+_FALLBACK_SANDBOX_ERROR_LEN = 400  # unchanged from the old blind-truncation length
+
+_TRACEBACK_MARKER = "Traceback (most recent call last):"
+
+
+def _extract_sandbox_failure_text(raw: str) -> str:
+    """
+    Root-cause fix (2026-07-14 forensic investigation, see
+    .claude/plans/groovy-cuddling-brooks.md): the previous version of this
+    logic was `(result.stderr or result.stdout).strip()[:400]` — a blind
+    slice of the FIRST 400 characters of combined output. Any candidate
+    that imports something pulling in numpy/faiss/sentence-transformers
+    (most commonly via `import app.core.memory_bridge`, confirmed common
+    in real generated candidates) triggers a non-fatal but real
+    "OMP: Warning #179: Function Can't set size of /tmp file failed" during
+    library init — OpenMP's duplicate-library-registration mechanism
+    getting its own /tmp lock-file write blocked by the sandbox's
+    SCRATCH-only write policy. That warning prints FIRST, before the
+    candidate's own code ever runs, so it reliably occupied the front of
+    the old 400-char window — meaning the retry-feedback prompt was often
+    handed OMP noise instead of the real exception, making the retry
+    "fail identically" not because the underlying problem was unfixable,
+    but because the model was never told what was actually wrong.
+
+    Fix: search the *untruncated* text for a real traceback marker first.
+    If found, return from that marker to the end (capped generously —
+    this is real signal, not noise, and it's worth keeping most of it for
+    the retry-feedback prompt to actually act on). If no traceback marker
+    exists (e.g. a non-Python failure, a permission error with no
+    traceback), fall back to the *last* N characters rather than the
+    first — the terminal/final output is far more likely to contain the
+    actual failure than whatever printed during early library init.
+    """
+    if not raw:
+        return raw
+    idx = raw.find(_TRACEBACK_MARKER)
+    if idx != -1:
+        return raw[idx:idx + _MAX_SANDBOX_ERROR_LEN].strip()
+    return raw[-_FALLBACK_SANDBOX_ERROR_LEN:].strip()
+
+
 def test_code_in_sandbox(script_content: str, script_name="temp_self_edit.py"):
     """
     Gate 1: verify the generated code is valid importable Python.
@@ -1119,7 +1162,8 @@ def test_code_in_sandbox(script_content: str, script_name="temp_self_edit.py"):
         if result.returncode == 0 and "SANDBOX_OK" in result.stdout:
             sandbox_log.info(f"[SANDBOX] {script_name}: import test passed")
             return True, None
-        err = (result.stderr or result.stdout).strip()[:400]
+        raw = (result.stderr or result.stdout).strip()
+        err = _extract_sandbox_failure_text(raw)
         sandbox_log.warning(f"[SANDBOX] {script_name}: import failed — {err[:120]}")
         return False, err
     except subprocess.TimeoutExpired:

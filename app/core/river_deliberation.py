@@ -34,6 +34,7 @@
 # ============================================================
 
 import logging
+import random
 import subprocess
 from typing import Optional
 import re
@@ -330,6 +331,7 @@ def _select_council(
     river_brain,
     model_pool: dict,
     council_size: int = DEFAULT_COUNCIL_SIZE,
+    exploration_bias: float = 0.0,
 ) -> list[str]:
     """
     Return an ordered list of councillor model names.
@@ -347,6 +349,17 @@ def _select_council(
       if it is installed — Echo's self-opinion is valuable context
       for its own synthesis step.
     - If pool is smaller than council_size, use the whole pool.
+
+    exploration_bias (Emergence roadmap Phase 2b, default 0.0 — preserves
+    this function's exact prior output for any caller that doesn't opt in):
+    probability that ONE council slot, never more regardless of how high
+    this gets, is filled by a random pick from the broader scored_rest pool
+    instead of strictly the next-highest-ranked model. Fed by real-time
+    world-surprise from deliberate_and_learn() — when the world looks
+    unfamiliar, occasionally let a not-top-ranked-but-still-observed model
+    into the room, without abandoning the ranking wholesale. Never touches
+    under_sampled's cold-start slots below, which already exist to
+    guarantee every model eventually earns real observations.
     """
     available = list(model_pool.keys())
     if not available:
@@ -375,6 +388,35 @@ def _select_council(
         if len(council) >= council_size:
             break
         council.append(model)
+
+    # Bounded exploration bump (Emergence roadmap Phase 2b) — at most one
+    # slot, chosen from scored_rest positions only (never under_sampled's
+    # cold-start slots). Swaps the LOWEST-ranked scored slot currently in
+    # council, so the top pick is always preserved — this widens exploration,
+    # it doesn't override the ranking.
+    if exploration_bias > 0.0 and random.random() < exploration_bias:
+        # Excludes ECHO_SYNTHESIS_MODEL positions deliberately — the
+        # "ensure Echo is present" step below re-inserts Echo at council[-1]
+        # if it's ever missing, which would silently undo a swap landing on
+        # Echo's slot (found live during verification: Echo's boosted score
+        # very often puts it in the last included position, exactly where
+        # this swap would otherwise target first).
+        council_scored_positions = [
+            i for i, m in enumerate(council)
+            if m in scored_rest and m != ECHO_SYNTHESIS_MODEL
+        ]
+        unused_scored = [
+            m for m in scored_rest
+            if m not in council and m != ECHO_SYNTHESIS_MODEL
+        ]
+        if council_scored_positions and unused_scored:
+            swap_idx = council_scored_positions[-1]
+            replacement = random.choice(unused_scored)
+            logging.info(
+                f"[DELIBERATION] Exploration bump (bias={exploration_bias:.3f}): "
+                f"{council[swap_idx]} -> {replacement}"
+            )
+            council[swap_idx] = replacement
 
     # Ensure Echo is in the council if installed and not already present.
     if ECHO_SYNTHESIS_MODEL in available and ECHO_SYNTHESIS_MODEL not in council:
@@ -479,7 +521,22 @@ def deliberate_and_learn(
     _warm_up_echo(synth_model)
 
     # ── 2. Select council ─────────────────────────────────────
-    council = _select_council(task_type, river_brain, model_pool, council_size)
+    # Emergence roadmap Phase 2b: real-time world-surprise, normalized with
+    # the exact same min(surprise_F/5.0, 1.0) formula Phase 2a's Global
+    # Workspace publisher already uses (consistency, not a new number
+    # invented for this), feeds the bounded exploration bump in
+    # _select_council(). Best-effort — a missing/uninitialized WorldModel
+    # falls back to 0.0, the exact prior behavior.
+    exploration_bias = 0.0
+    try:
+        from app.core.predictive_loop import get_world_model
+        wm = get_world_model()
+        if wm:
+            _last, rolling_10, _rolling_50 = wm.get_surprise()
+            exploration_bias = min(rolling_10 / 5.0, 1.0)
+    except Exception:
+        pass
+    council = _select_council(task_type, river_brain, model_pool, council_size, exploration_bias)
 
     if not council:
         logging.warning("[DELIBERATION] Empty council — falling back to direct Echo query")

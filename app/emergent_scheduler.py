@@ -292,6 +292,15 @@ def _get_weak_task_focus() -> str:
 
 _CONSISTENCY_SIGNALS = ["inconsistenc", "contradict", "pattern", "self-evaluat", "evaluat", "identit", "memory"]
 
+# Emergence roadmap Phase 2b — deliberately a separate list from
+# _CONSISTENCY_SIGNALS above, not merged into it: uncertainty about the
+# external world (this list) and incoherence within the self (that one)
+# are different things, and conflating them loses information. Chosen
+# against the real BASE_THOUGHT_CHEST entries above (e.g. "What patterns
+# in my reflections surprise me?", "...experience something for the first
+# time?").
+_NOVELTY_SIGNALS = ["surprise", "first time", "learn", "uncertain", "understand", "experience"]
+
 def weighted_prompt_selection():
     """
     Selects a prompt weighted by:
@@ -303,6 +312,10 @@ def weighted_prompt_selection():
     - B4: 2x boost for prompts matching the current weak task type
     - Coherence tension: when River disagrees across task types (tension > 0.6),
       boost prompts about self-evaluation and identity to resolve the tension
+    - World surprise (Emergence roadmap Phase 2b): when WorldModel's real
+      surprise signal is high, boost prompts about novelty/learning/first-
+      time-experience — a distinct signal from coherence tension above, not
+      folded into it
     """
     weak_focus = _get_weak_task_focus()
     weak_keywords = _WEAK_TASK_KEYWORDS.get(weak_focus, [])
@@ -315,6 +328,20 @@ def weighted_prompt_selection():
                 coherence_tension = float(vec[1])
         except Exception:
             pass
+
+    # Same normalization formula Phase 2a's Global Workspace publisher and
+    # Phase 2b's council-exploration bump both already use (consistency,
+    # not a new number invented for this). Fails closed to 0.0 — no
+    # WorldModel, no boost, same as coherence_tension's own guard above.
+    world_surprise = 0.0
+    try:
+        from app.core.predictive_loop import get_world_model
+        wm = get_world_model()
+        if wm:
+            _last, rolling_10, _rolling_50 = wm.get_surprise()
+            world_surprise = min(rolling_10 / 5.0, 1.0)
+    except Exception:
+        pass
 
     weights = []
     for prompt in BASE_THOUGHT_CHEST:
@@ -353,6 +380,13 @@ def weighted_prompt_selection():
             pl = prompt.lower()
             if any(sig in pl for sig in _CONSISTENCY_SIGNALS):
                 weight *= (1.0 + coherence_tension)
+        # World surprise (Emergence roadmap Phase 2b): same threshold and
+        # multiplier shape as coherence tension above, applied independently
+        # — this is a signal about the world, not about the self.
+        if world_surprise > 0.6:
+            pl = prompt.lower()
+            if any(sig in pl for sig in _NOVELTY_SIGNALS):
+                weight *= (1.0 + world_surprise)
         weights.append(weight)
 
     total = sum(weights)

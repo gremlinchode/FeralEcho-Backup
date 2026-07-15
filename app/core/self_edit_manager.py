@@ -2,10 +2,14 @@
 # v2.2 — Wired sandbox outcomes into river brain via learn_from_sandbox_outcome()
 #         Model name now tracked through generation pipeline for accurate feedback.
 import ast
+import builtins
+import contextlib
 import importlib.util
 import inspect
+import io
 import json
 import os
+import pathlib
 import re
 import subprocess
 import sys
@@ -1397,6 +1401,84 @@ def _call_with_timeout(fn, arg, timeout: float = 2.0):
 _APPLY_TO_CODE_LOG = os.path.join(_PROJECT_ROOT, "memory", "apply_to_code_invocations.jsonl")
 
 
+# Guards the temporary process-wide write-block below so two concurrent
+# apply_to_code invocations can't race each other's patch/restore.
+_apply_to_code_write_block_lock = threading.Lock()
+
+
+@contextlib.contextmanager
+def _block_writes_for_apply_to_code():
+    """Enforces apply_to_code()'s documented pure (code: str) -> str contract
+    (CODE_OUTPUT_RULES rule 10) at call time, not just in prose — CLAUDE.md
+    Finding 31: a real staged candidate called app.core.memory_tools
+    functions that write to memory/*.log as a side effect. Neither F1 (only
+    scans the candidate's own top-level code, not inside already-approved
+    imports like memory_tools) nor an exception-based catch would have
+    caught this — memory_tools.py's own functions wrap their write in a
+    bare try/except that silently swallows the error rather than
+    re-raising it. Denies all filesystem writes for the duration of the
+    real invocation and flags the attempt (via the yielded dict) even when
+    the callee swallows the resulting exception itself.
+
+    Deliberately process-wide, not scoped to self_edit_generated's own
+    module globals: the vulnerable write happens inside memory_tools.py's
+    namespace, not the hook's own, so a per-module patch wouldn't reach it
+    without maintaining a fragile, silently-decaying allowlist of every
+    module a hook might legitimately import. Known, accepted residual: for
+    the brief window this is active, an unrelated thread doing a genuinely
+    legitimate write could theoretically collide and be blocked too — this
+    path fires infrequently with a timeout-bounded window, judged an
+    acceptable trade-off against that added complexity. Also known and
+    accepted, same posture as the F1/F2 sandbox: C extensions and os.open-
+    level writes bypass a Python-level patch like this one.
+    """
+    attempted = {"write": False, "site": None}
+    real_open = builtins.open
+    real_io_open = io.open
+    real_path_open = pathlib.Path.open
+
+    def _deny_if_write(file, mode: str) -> None:
+        """Raises PermissionError for a write-mode open(); no-op (returns
+        normally) for a read-mode one, letting the real open() proceed."""
+        if any(c in str(mode) for c in "wxa+"):
+            if attempted["site"] is None:
+                # Strip this frame (_deny_if_write) and the immediate
+                # _guarded_* wrapper frame that called it, landing on the
+                # real call site inside whatever function actually called
+                # open() — the hook's own code, or an imported helper like
+                # memory_tools.append_memory_entry.
+                stack = traceback.extract_stack()[:-2]
+                site = stack[-1] if stack else None
+                attempted["site"] = (
+                    f"{site.filename}:{site.lineno} in {site.name}" if site else "unknown"
+                )
+            attempted["write"] = True
+            raise PermissionError(f"[APPLY_TO_CODE] write blocked — hook must be a pure function: {file!r}")
+
+    def _guarded_open(file, mode="r", *a, **kw):
+        _deny_if_write(file, mode)
+        return real_open(file, mode, *a, **kw)
+
+    def _guarded_io_open(file, mode="r", *a, **kw):
+        _deny_if_write(file, mode)
+        return real_io_open(file, mode, *a, **kw)
+
+    def _guarded_path_open(self, mode="r", *a, **kw):
+        _deny_if_write(self, mode)
+        return real_path_open(self, mode, *a, **kw)
+
+    with _apply_to_code_write_block_lock:
+        builtins.open = _guarded_open
+        io.open = _guarded_io_open
+        pathlib.Path.open = _guarded_path_open
+        try:
+            yield attempted
+        finally:
+            builtins.open = real_open
+            io.open = real_io_open
+            pathlib.Path.open = real_path_open
+
+
 def _log_apply_to_code_invocation(changed: bool, before_len: int, after_len: "int | None", error: "str | None" = None) -> None:
     """
     Ground-truth evidence for liveness_ledger.py's apply_to_code check —
@@ -1447,10 +1529,27 @@ def _apply_self_edit_output(code: str) -> str:
     except (TypeError, ValueError):
         return code
     try:
-        result = _call_with_timeout(fn, code, timeout=2.0)
+        with _block_writes_for_apply_to_code() as attempted:
+            result = _call_with_timeout(fn, code, timeout=2.0)
     except Exception as e:
         logging.debug(f"[SELF-EDIT] apply_to_code raised/timed out, ignoring: {e}")
         _log_apply_to_code_invocation(changed=False, before_len=len(code), after_len=None, error=str(e))
+        return code
+    if attempted["write"]:
+        # Finding 31: a candidate caught attempting a real filesystem write
+        # mid-call has broken its documented pure-function contract — don't
+        # trust its returned transformation either, even though the write
+        # itself was blocked and memory_tools.py's own try/except may have
+        # swallowed the resulting exception without the hook itself raising.
+        logging.warning(
+            "[SELF-EDIT] apply_to_code attempted a filesystem write during "
+            "invocation — rejecting output, hook violates its pure-function "
+            "contract (Finding 31). Site: %s", attempted["site"],
+        )
+        _log_apply_to_code_invocation(
+            changed=False, before_len=len(code), after_len=None,
+            error=f"blocked_write_attempt: {attempted['site']}",
+        )
         return code
     if isinstance(result, str) and result.strip() and result != code:
         _log_apply_to_code_invocation(changed=True, before_len=len(code), after_len=len(result))

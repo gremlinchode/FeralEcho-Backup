@@ -93,14 +93,26 @@ ORIENTATION_DATA_PATTERNS = [
 # -------------------------
 
 def _get_validator_logger():
+    """Lazy, failure-tolerant (CLAUDE.md Finding 27, fixed 2026-07-15): this
+    used to open VALIDATOR_LOG_PATH unconditionally, with no try/except.
+    Any self-edit candidate importing memory_bridge (which imports this
+    module) hit the F2/staging sandbox's write-block on that FileHandler
+    open before the candidate's own code ever ran — deterministic, not
+    racy, since every sandboxed test is a fresh process. Falls back to a
+    NullHandler on any open failure instead of propagating the exception;
+    normal (non-sandboxed) operation is unaffected, since the real file
+    write already succeeds there."""
     logger = logging.getLogger("memory_write_validator")
     if not logger.handlers:
-        os.makedirs(os.path.dirname(VALIDATOR_LOG_PATH), exist_ok=True)
-        handler = logging.FileHandler(VALIDATOR_LOG_PATH)
-        handler.setFormatter(logging.Formatter(
-            "%(asctime)s | %(levelname)s | %(message)s"
-        ))
-        logger.addHandler(handler)
+        try:
+            os.makedirs(os.path.dirname(VALIDATOR_LOG_PATH), exist_ok=True)
+            handler = logging.FileHandler(VALIDATOR_LOG_PATH)
+            handler.setFormatter(logging.Formatter(
+                "%(asctime)s | %(levelname)s | %(message)s"
+            ))
+            logger.addHandler(handler)
+        except Exception:
+            logger.addHandler(logging.NullHandler())
         logger.setLevel(logging.INFO)
     return logger
 

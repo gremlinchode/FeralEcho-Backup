@@ -109,6 +109,25 @@ def _blocked(*args, **kwargs):
 def _install_patches(scratch: str) -> None:
     scratch_abs = _os.path.abspath(scratch)
 
+    # ── GUI/display isolation (CLAUDE.md Finding 24, fixed 2026-07-15) ────────
+    # Neither this wrapper nor echo_sandbox.sb previously scoped GUI/display
+    # access — a real generated experiment (sandbox/experiments/exp_20260706_
+    # 004311.py) called matplotlib.pyplot.show(), which opened a real
+    # on-screen window (matplotlib here defaults to the interactive macosx
+    # backend). echo_sandbox.sb's (allow mach-lookup) is required for normal
+    # Python/objc runtime internals and is the same Mach IPC channel that
+    # reaches the WindowServer, so it can't be narrowed without an unreliable
+    # per-service allowlist — the reliable fix is at the Python layer, same
+    # pattern as the network-module stubs below. MPLBACKEND is read by
+    # matplotlib at import time, before any of its own code runs, so setting
+    # it here (not matplotlib.use(), which only works if called before
+    # matplotlib.pyplot is imported by the *candidate*, not guaranteed) covers
+    # every import order. GUI toolkits are stubbed the same way _SAFETY_HEADER
+    # already stubs network modules.
+    _os.environ["MPLBACKEND"] = "Agg"
+    for _gui_mod in ("tkinter", "_tkinter", "PyQt5", "PyQt6", "PySide2", "PySide6", "wx"):
+        sys.modules.setdefault(_gui_mod, None)
+
     # ── Phase 1: pre-import all stdlib modules we'll patch ────────────────────
     # Some modules run C-level initialization (ctypes builds pythonapi via
     # _ctypes.dlopen, shutil uses io.RawIOBase, etc.) that must complete
@@ -300,4 +319,17 @@ if __name__ == "__main__":
         spec = importlib.util.spec_from_file_location("_sandbox_test", module_path)
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
+
+    # Smoke-test apply_to_code() with real input, not just verify the module
+    # imports (CLAUDE.md Finding 28): three successive broken versions of
+    # this hook reached production because this test only checked import,
+    # never invocation — a function that threw on every real call (missing
+    # `import re`, then `regex_pattern`, then `is_prose` NameErrors) kept
+    # passing. A raise here fails the test the same way an import failure
+    # already does. Covers both call sites that use this wrapper in
+    # --mode=import (F2's test_code_in_sandbox() and the staging import
+    # test), since both load self_edit_generated.py-shaped candidates.
+    if hasattr(m, "apply_to_code") and callable(m.apply_to_code):
+        m.apply_to_code("def _sandbox_probe():\n    return 1\n")
+
     print("SANDBOX_OK")

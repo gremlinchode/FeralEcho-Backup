@@ -76,7 +76,6 @@ def _secret_ok(payload: dict) -> bool:
     submitted = payload.get("secret", "") if payload else ""
     return hmac.compare_digest(str(submitted), str(GREMLIN_SECRET))
 
-os.environ.setdefault("ECHO_READ_ONLY", "true")
 os.environ.setdefault("ECHO_DONT_KILL_ME_DADDY", "1")
 os.environ.setdefault("ECHO_MIRROR_MODE", "auto")  # mirror auto-detect
 

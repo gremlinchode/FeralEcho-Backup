@@ -161,6 +161,9 @@ APPLY_TO_CODE_LOG = os.path.join(_MEMORY_DIR, "apply_to_code_invocations.jsonl")
 _SELF_EDIT_GENERATED_PATH = os.path.join(_PROJECT_ROOT, "app", "core", "self_edit_generated.py")
 
 
+_APPLY_TO_CODE_RECENT_N = 20  # how many of the most recent invocations to weigh for error rate
+
+
 def _evaluate_apply_to_code(defines_hook: bool, invocations: list, window_days: int) -> dict:
     if not defines_hook:
         return _result(
@@ -169,6 +172,38 @@ def _evaluate_apply_to_code(defines_hook: bool, invocations: list, window_days: 
             "hook is honestly inert, nothing claims it is live.",
             {"status": "not_deployed"},
         )
+    if not invocations:
+        return _result(
+            False,
+            "apply_to_code IS defined in the deployed self_edit_generated.py, but "
+            "zero invocations have ever been logged — deployed but dead.",
+            {"status": "deployed_but_dead"},
+        )
+
+    # Recent-error-rate check (added 2026-07-15, Finding 28): the original
+    # version of this evaluator only asked "did ANY invocation succeed within
+    # window_days" — which kept reporting pass:true while 253 of the last 254
+    # real invocations were raising a NameError, because one stale success
+    # (itself a destructive 2173->47 char truncation, not a real improvement)
+    # sat inside the 7-day window. Weighing the most recent invocations catches
+    # a hook that used to work and no longer does, not just one that never
+    # worked at all — a ground-truth check can still mislead if its evaluation
+    # criteria are too coarse, even when every piece of evidence it reads is
+    # genuine.
+    recent = sorted(invocations, key=lambda e: _parse_ts(e.get("ts")) or 0, reverse=True)[:_APPLY_TO_CODE_RECENT_N]
+    error_count = sum(1 for e in recent if e.get("error"))
+    error_rate = error_count / len(recent) if recent else 0.0
+    if error_rate > 0.5:
+        last = recent[0]
+        return _result(
+            False,
+            f"apply_to_code is deployed but erroring on most recent invocations: "
+            f"{error_count}/{len(recent)} of the last {len(recent)} logged calls raised "
+            f"an error (most recent: {last.get('error')!r} at {last.get('ts')}) — "
+            f"deployed but broken, regardless of any older success in the {window_days}d window.",
+            {"status": "deployed_but_erroring", "recent_error_rate": round(error_rate, 3)},
+        )
+
     cutoff = _now() - window_days * 86400
     recent_changed = [
         e for e in invocations
@@ -180,14 +215,16 @@ def _evaluate_apply_to_code(defines_hook: bool, invocations: list, window_days: 
             True,
             f"apply_to_code is deployed and produced {len(recent_changed)} real code "
             f"transformation(s) in the last {window_days}d; most recent at "
-            f"{last.get('ts')} ({last.get('before_len')}→{last.get('after_len')} chars).",
+            f"{last.get('ts')} ({last.get('before_len')}→{last.get('after_len')} chars); "
+            f"recent error rate {error_count}/{len(recent)}.",
             {"status": "deployed_and_live", "recent_count": len(recent_changed)},
         )
     return _result(
         False,
-        f"apply_to_code IS defined in the deployed self_edit_generated.py, but no "
-        f"invocation actually changed the generated code in the last {window_days}d "
-        f"(checked {len(invocations)} logged invocation(s) total) — deployed but dead.",
+        f"apply_to_code IS defined in the deployed self_edit_generated.py, and recent "
+        f"calls aren't erroring, but no invocation actually changed the generated code "
+        f"in the last {window_days}d (checked {len(invocations)} logged invocation(s) "
+        f"total) — deployed but dead.",
         {"status": "deployed_but_dead"},
     )
 

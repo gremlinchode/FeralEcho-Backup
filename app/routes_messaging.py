@@ -74,8 +74,14 @@ def message_receive():
 
 
 def message_send():
-    """POST /message/send — local-only: ask this machine to send to the
-    partner. Body: {text, message_type}."""
+    """POST /message/send — ask this machine to send a message to the partner
+    Echo instance. Body: {text, message_type}.
+
+    Intentionally unauthenticated: Gremlin confirmed 2026-07-15 (CLAUDE.md
+    Finding 29) that Echo-to-Echo communication over Tailscale should be
+    open, not gated by GREMLIN_SECRET. The Tailscale network boundary is
+    the access control here, same as the read-only /admin/* surface — this
+    route was never actually "local-only", that was a stale docstring."""
     try:
         data = request.json or {}
         text = data.get("text", "")

@@ -63,6 +63,24 @@ check("apply_to_code: deployed, real recent change recorded", r["pass"], True, r
 r = ll._evaluate_apply_to_code(defines_hook=False, invocations=[], window_days=7)
 check("apply_to_code: not deployed at all (honestly inert)", r["pass"], True, r["evidence"])
 
+# Historical fake, real not synthetic (found live 2026-07-15, CLAUDE.md
+# Finding 28): a hook that had exactly one real success sitting inside the
+# window, then broke and stayed broken — 253 of its next 254 invocations
+# raised a NameError. The original evaluator only asked "any success in the
+# window?" and kept reporting pass:true through the entire failure streak.
+_old_success = [{"ts": now - 6 * 86400, "changed": True, "before_len": 2173, "after_len": 47, "error": None}]
+_recent_failures = [
+    {"ts": now - (300 - i * 10), "changed": False, "before_len": 400, "after_len": None,
+     "error": "name 're' is not defined"}
+    for i in range(20)
+]
+r = ll._evaluate_apply_to_code(
+    defines_hook=True,
+    invocations=_old_success + _recent_failures,
+    window_days=7,
+)
+check("apply_to_code: one stale success 6d ago, 20/20 recent invocations erroring", r["pass"], False, r["evidence"])
+
 
 # ── 2. curiosity_engine ─────────────────────────────────────────────────
 # Historical fake: harvest_question(source="curiosity_engine") wired in

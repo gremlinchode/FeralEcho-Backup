@@ -12,6 +12,7 @@ model routing and ML learning.
 import time
 import logging
 import random
+import threading
 
 # Re-export autonomous_loop so echo_model_guided_orchestrator can import it
 from app.autonomous_loop import autonomous_loop
@@ -47,6 +48,36 @@ _cycle_state = {
     "count": 0,
     "last_optuna_run": 0,
 }
+
+# Guards _cycle_state["last_optuna_run"] and the optimize_self_edit() call
+# below (CLAUDE.md Finding 28, 2026-07-15): autonomous_loop_iteration() and
+# echo_model_guided_orchestrator.model_guided_autonomous_loop() used to each
+# keep their own independent OPTUNA_SLEEP timer against this same optimizer
+# singleton, both seeded at 0 — they could both evaluate true in the same
+# outer pass and fire two separate 10-trial Optuna batches back to back,
+# with no lock between them. try_run_optuna() below is now the single gated
+# entry point both callers use instead.
+_optuna_gate_lock = threading.Lock()
+
+
+def try_run_optuna(param_hints: dict | None = None):
+    """Atomically check-and-fire the shared OPTUNA_SLEEP gate, then run
+    optimize_self_edit() if allowed. Returns (ran: bool, best_params, best_score).
+    Both autonomous_loop_iteration() and model_guided_autonomous_loop() call
+    this instead of each maintaining their own independent timer."""
+    with _optuna_gate_lock:
+        now = time.time()
+        if now - _cycle_state["last_optuna_run"] <= OPTUNA_SLEEP:
+            return False, None, None
+        _cycle_state["last_optuna_run"] = now
+    try:
+        best_params, best_score = optimizer.optimize_self_edit(n_trials=10, param_hints=param_hints)
+        return True, best_params, best_score
+    except Exception:
+        # Don't let a failed trial silently re-block the gate for another
+        # full OPTUNA_SLEEP — a caller-side try/except already logs the
+        # real error; re-raise so that logging still happens at the call site.
+        raise
 
 # ---------------- SANDBOX ---------------- #
 def _run_sandbox_cycle():
@@ -124,21 +155,20 @@ def autonomous_loop_iteration():
     if cycle_count % SANDBOX_INTERVAL == 0:
         sandbox_ran = _run_sandbox_cycle()
 
-    # 4. Optuna self-edit (rate limited by OPTUNA_SLEEP)
-    now = time.time()
+    # 4. Optuna self-edit — gated through the shared try_run_optuna() lock
+    # (CLAUDE.md Finding 28) rather than this function's own timer, since
+    # model_guided_autonomous_loop() also calls into the same optimizer.
     optuna_ran = False
-    if now - _cycle_state["last_optuna_run"] > OPTUNA_SLEEP:
-        try:
-            log_memory_event("info", "Optuna self-edit triggered")
-            best_params, best_score = optimizer.optimize_self_edit(n_trials=10)
+    try:
+        log_memory_event("info", "Optuna self-edit triggered")
+        optuna_ran, best_params, best_score = try_run_optuna()
+        if optuna_ran:
             log_memory_event(
                 "info",
                 f"Self-edit finished: best_params={best_params}, best_score={best_score}"
             )
-            _cycle_state["last_optuna_run"] = now
-            optuna_ran = True
-        except Exception as e:
-            logger.error(f"[OPTUNA] Error: {e}", exc_info=True)
+    except Exception as e:
+        logger.error(f"[OPTUNA] Error: {e}", exc_info=True)
 
     # 5. Harmony check
     _maybe_run_harmony(fetch_count, sandbox_ran, optuna_ran)

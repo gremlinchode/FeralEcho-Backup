@@ -1,24 +1,7 @@
-class self_edit_generated:
-    def strip_leading_prose_in_code(self, code):
-        def detect_and_strip_prose(line):
-            if line.startswith('#'):
-                return ''
-            else:
-                return line
-
-        output_lines = []
-        for line in code.split('\n'):
-            while True:
-                if line.strip().startswith('import') or line.strip().startswith('from'):
-                    break
-                elif not line.strip():
-                    break
-                else:
-                    if detect_and_strip_prose(line).strip():
-                        break
-                    line = line.lstrip()
-            output_lines.append(line)
-        return '\n'.join(output_lines)
-
-    def record_pending_outcome(self, outcome):
-        pass
+# app/core/self_edit_generated.py
+# Reset 2026-07-15 (CLAUDE.md Finding 28): the previously-deployed
+# apply_to_code() hook here threw a NameError (missing `import re`) on
+# 253 of its last 254 invocations, and its one recorded success shrank a
+# candidate from 2173 to 47 characters — corruption, not an improvement.
+# Reset to an honestly-inert state rather than hand-patched, since this
+# file is autonomous self-edit's own output, not hand-authored code.

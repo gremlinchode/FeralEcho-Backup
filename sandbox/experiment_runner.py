@@ -21,7 +21,13 @@ logger = logging.getLogger(__name__)
 
 EXPERIMENTS_DIR = Path("sandbox/experiments")
 
-# Prepended to every generated experiment — locks down writes and network
+# Prepended to every generated experiment — locks down writes, network, and
+# (added 2026-07-15, CLAUDE.md Finding 24) GUI/display access. Defense-in-
+# depth only, per run_experiment()'s docstring below — the real enforcement
+# for this is now sandbox/safe_exec_wrapper.py's _install_patches(), which
+# every experiment runs under via run_sandbox_script_isolated(). Kept in
+# sync with that fix so a candidate that somehow bypasses the isolated
+# runner still hits the same restriction here.
 _SAFETY_HEADER = '''\
 import sys as _sys, os as _os
 _ALLOWED_PREFIX = _os.path.abspath("sandbox")
@@ -34,7 +40,10 @@ def _safe_open(file, mode="r", **kw):
 open = _safe_open
 for _m in ("socket", "urllib", "requests", "httpx", "ftplib", "smtplib"):
     _sys.modules.setdefault(_m, None)
-del _sys, _os, _real_open, _m
+_os.environ["MPLBACKEND"] = "Agg"
+for _gui_m in ("tkinter", "_tkinter", "PyQt5", "PyQt6", "PySide2", "PySide6", "wx"):
+    _sys.modules.setdefault(_gui_m, None)
+del _sys, _os, _real_open, _m, _gui_m
 '''
 
 _EXPERIMENT_PROMPT = (

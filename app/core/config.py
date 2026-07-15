@@ -4,7 +4,6 @@ import os
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 
-MIN_HEALTH_SCORE_TO_EDIT = int(os.getenv("MIN_HEALTH_SCORE_TO_EDIT", 80))
 IDLE_DREAM_INTERVAL_RANGE = (240, 360)  # seconds; randomized interval
 
 # --- Paths ---

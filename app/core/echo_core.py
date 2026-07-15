@@ -428,3 +428,116 @@ class EchoCore:
                 t.join(timeout=2)
         logger.info("[EchoCore] Stop complete.")
 
+
+# ============================================================
+# Shared Salience (Emergence roadmap Phase 2c)
+# ============================================================
+# "How salient is this right now" — architecturally distinct from Phase
+# 2b's surprise-routing: 2b weighted WHICH model/prompt gets picked once a
+# loop has already decided to act; this is a pre-action signal about
+# WHETHER the loop's next action deserves the normal cadence, sooner, or
+# later. A module-level function, not an EchoCore method — pure
+# computation, doesn't touch the bus's internal state.
+
+_SALIENCE_URGENCY_WINDOW_HOURS = 2.0
+_SALIENCE_STREAK_NORMALIZER = 10.0
+_SALIENCE_CONVERGENCE_PATH = os.path.join("app", "core", "self_edit_convergence.json")
+_SALIENCE_GARDEN_PATH = os.path.join("data", "question_garden.jsonl")
+
+
+def _salience_world_surprise() -> float:
+    """Same min(rolling_10/5.0, 1.0) formula Phase 2a/2b already use."""
+    try:
+        from app.core.predictive_loop import get_world_model
+        wm = get_world_model()
+        if wm:
+            _last, rolling_10, _rolling_50 = wm.get_surprise()
+            return min(rolling_10 / 5.0, 1.0)
+    except Exception:
+        pass
+    return 0.0
+
+
+def _salience_coherence_tension() -> float:
+    """Same echo_state.npy dim [1] source emergent_scheduler.py's Phase 2b
+    coherence_tension boost already reads."""
+    try:
+        from app.core.echo_state import load as echo_state_load
+        vec = echo_state_load()
+        if vec is not None:
+            return max(0.0, min(float(vec[1]), 1.0))
+    except Exception:
+        pass
+    return 0.0
+
+
+def _salience_curiosity_urgency() -> float:
+    """Hours since the most recent harvested question, not the
+    active/total ratio — checked against real data before choosing this:
+    the ratio is 99.4% on live data (4475/4502), because very few
+    questions ever reach the 4.5 resolution-score threshold to be marked
+    resolved. That's a nearly-constant, non-discriminating signal.
+    Recency of the last harvest is genuinely time-varying instead."""
+    try:
+        last_ts = None
+        with open(_SALIENCE_GARDEN_PATH, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except Exception:
+                    continue
+                ts = entry.get("planted")
+                if ts is not None:
+                    ts = float(ts)
+                    if last_ts is None or ts > last_ts:
+                        last_ts = ts
+        if last_ts is None:
+            return 0.0
+        hours_since = max(0.0, (datetime.now(timezone.utc).timestamp() - last_ts) / 3600)
+        return max(0.0, 1.0 - hours_since / _SALIENCE_URGENCY_WINDOW_HOURS)
+    except Exception:
+        return 0.0
+
+
+def _salience_self_edit_streak() -> float:
+    """Same min(streak/10.0, 1.0) normalization Phase 2a's
+    self_edit.non_convergent publisher already uses. Reads the JSON file
+    directly rather than importing self_edit_manager.py — that module is
+    heavy (ollama/memory_bridge/river dependencies) and unnecessary just
+    to read a small state file."""
+    try:
+        with open(_SALIENCE_CONVERGENCE_PATH, "r", encoding="utf-8") as f:
+            state = json.load(f)
+        max_streak = max(
+            (v.get("non_convergent_streak", 0) for v in state.values() if isinstance(v, dict)),
+            default=0,
+        )
+        return min(max_streak / _SALIENCE_STREAK_NORMALIZER, 1.0)
+    except Exception:
+        return 0.0
+
+
+def compute_salience() -> dict:
+    """
+    A shared "how salient is this right now" score any loop can voluntarily
+    consult before deciding whether its next candidate action deserves the
+    normal cadence, sooner, or later — not a new central scheduler seizing
+    control from the existing independent loops, an additive signal they
+    opt into. Returns a transparent breakdown, not a magic number: every
+    component is independently fail-closed (a missing WorldModel or a
+    renamed state file degrades that one component to 0.0, never raises).
+    Combined via simple equal-weighted average — no evidence yet that any
+    one component deserves more weight than another.
+    """
+    components = {
+        "world_surprise": _salience_world_surprise(),
+        "coherence_tension": _salience_coherence_tension(),
+        "curiosity_urgency": _salience_curiosity_urgency(),
+        "self_edit_streak": _salience_self_edit_streak(),
+    }
+    score = sum(components.values()) / len(components)
+    return {"score": score, "components": components}
+

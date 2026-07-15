@@ -747,8 +747,38 @@ def emergent_loop():
             # --- Idle Python Practice (stubbed if missing) ---
             echo_python_mastery.practice_idle()
 
+            # Shared salience consultation (Emergence roadmap Phase 2c) —
+            # AUTONOMOUS_INTERVAL was, until this, the only loop cadence in
+            # this codebase with zero modulation of any kind (confirmed
+            # during research). Publishes to the Global Workspace so the
+            # consultation is externally observable, not an opaque internal
+            # read, and modulates the next sleep the same bounded way
+            # autonomous_loop.py's _compute_next_sleep() already does for
+            # raw WorldModel surprise — [0.5x, 1.5x] of the base interval,
+            # linearly mapped from compute_salience()'s 0.0-1.0 score
+            # (score=0 -> 1.5x/longest wait, score=1 -> 0.5x/shortest,
+            # score=0.5 -> unchanged) since this is a direct score, not a
+            # ratio-to-baseline like that function's input.
+            next_sleep = AUTONOMOUS_INTERVAL
+            try:
+                from app.core.echo_core import compute_salience, get_echo_core
+                salience = compute_salience()
+                core = get_echo_core()
+                if core:
+                    core.publish_salience(
+                        source="emergent_loop",
+                        kind="emergent_loop.salience",
+                        summary=f"score={salience['score']:.3f}",
+                        detail=salience["components"],
+                        salience=salience["score"],
+                    )
+                multiplier = 1.5 - salience["score"]  # bounded to [0.5, 1.5] since score is [0.0, 1.0]
+                next_sleep = int(AUTONOMOUS_INTERVAL * multiplier)
+            except Exception as _se2:
+                logging.debug(f"[SCHEDULER] Salience consultation failed, using base interval: {_se2}")
+
             # Sleep before next emergent cycle
-            time.sleep(AUTONOMOUS_INTERVAL)
+            time.sleep(next_sleep)
 
         except Exception as e:
             _consecutive_errors += 1

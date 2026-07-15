@@ -2234,12 +2234,32 @@ _self_edit_deploy_lock = threading.Lock()
 # one of these three strings verbatim. (threshold, family, domain_sentence),
 # family keys map 1:1 onto _CONVERGENCE_FAMILIES.
 _FOCUS_FAMILY_BY_CREATIVITY = [
+    # Rewritten 2026-07-15 (Emergence roadmap Phase 3) after reading the
+    # actual generated candidates across 93+ real cycles: the previous
+    # version of this sentence was a pure natural-language description with
+    # zero concrete example, so the model reinvented the transformation
+    # from scratch every cycle instead of converging (30+ distinct
+    # implementations, zero of them consistent with each other). Missing
+    # `import re` alone caused three separate historical versions to fail
+    # on every real invocation. This is a well-evidenced hypothesis, not a
+    # guaranteed fix — only real subsequent cycles will show whether it
+    # actually improves convergence.
     (0.33, "prose_stripping", (
         "fix the most common sandbox failure (prose detected in code output) — "
         "add or tighten a prose-detection guard that strips any leading "
-        "natural-language sentence before the first valid Python token. Expose "
-        "it as a top-level `apply_to_code(code: str) -> str` function per output "
-        "rule 10 so the pipeline actually invokes it automatically."
+        "natural-language sentence before the first valid Python token. "
+        "Concrete example — input: "
+        "'Here is the function you requested:\\ndef add(a, b):\\n    return a + b' "
+        "should become output: 'def add(a, b):\\n    return a + b' (the prose "
+        "line removed entirely, the real code unchanged). Expose it as a "
+        "top-level `apply_to_code(code: str) -> str` function per output rule "
+        "10 so the pipeline actually invokes it automatically. Import every "
+        "module you use (e.g. `import re` if using regular expressions) — "
+        "missing imports have caused this exact function to fail on every "
+        "real invocation multiple times before. The function must be a pure "
+        "string transformation: no file I/O, and no calling any function "
+        "that performs file I/O (e.g. logging or memory-write helpers) — it "
+        "runs under a write-block that rejects the whole candidate if it tries."
     )),
     (0.66, "response_shortening", (
         "refactor the main code-generation function to reduce its average "

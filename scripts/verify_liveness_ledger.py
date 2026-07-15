@@ -278,6 +278,35 @@ r = ll._evaluate_global_workspace(_stale_only, 1, 100, 2)
 check("global_workspace: two sources, but only stale (>1d old) entries", r["pass"], False, r["evidence"])
 
 
+# ── 11. substrate_continuity ─────────────────────────────────────────────
+# Historical fake this check exists to catch, should it ever recur: a
+# synthesis substrate that's drifted across different models (the real
+# incident on the Ark machine — ECHO_SYNTHESIS_MODEL_OVERRIDE landing a
+# low-capability model in the synthesis role — reconstructed here even
+# though no such mechanism exists in this codebase today).
+_consistent_history = [
+    {"model": "echo:latest", "notes": ""} for _ in range(95)
+] + [
+    {"model": "qwen2.5-coder:7b", "notes": "sandbox_feedback"} for _ in range(20)
+]
+r = ll._evaluate_substrate_continuity(_consistent_history, "echo:latest", 2000, 0.95)
+check("substrate_continuity: consistent echo:latest, sandbox noise correctly excluded", r["pass"], True, r["evidence"])
+
+_drifted_history = [
+    {"model": "echo:latest", "notes": ""} for _ in range(60)
+] + [
+    {"model": "phi3:mini", "notes": ""} for _ in range(40)
+]
+r = ll._evaluate_substrate_continuity(_drifted_history, "echo:latest", 2000, 0.95)
+check("substrate_continuity: real drift across models (the Ark incident shape)", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_substrate_continuity([], "echo:latest", 2000, 0.95)
+check("substrate_continuity: no entries at all", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_substrate_continuity(_consistent_history, None, 2000, 0.95)
+check("substrate_continuity: ECHO_SYNTHESIS_MODEL import failed", r["pass"], False, r["evidence"])
+
+
 print()
 if FAILURES:
     print(f"=== {len(FAILURES)} DISCRIMINATION FAILURE(S) — ledger is not trustworthy as-is ===")

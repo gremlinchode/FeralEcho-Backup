@@ -32,12 +32,13 @@
 #     broken check can't take down the others or the introspection cycle
 #     that hosts them — same fault-isolation rule as every other collector
 #     in introspection_channel.py.
-#   - This is a floor, not a general test framework: ten named checks for
-#     ten subsystems that have already fooled a prior audit, fix, or
-#     session by looking wired while being dead or fake (the tenth,
-#     global_workspace, added 2026-07-15 — the first check added after this
-#     ledger's own initial build, per the extension rule stated here).
-#     Adding a check for a new autonomous capability is a small, mechanical
+#   - This is a floor, not a general test framework: eleven named checks
+#     for eleven subsystems that have already fooled a prior audit, fix,
+#     or session by looking wired while being dead or fake (the 10th and
+#     11th, global_workspace and substrate_continuity, both added
+#     2026-07-15 — the first checks added after this ledger's own initial
+#     build, per the extension rule stated here). Adding a check for a new
+#     autonomous capability is a small, mechanical
 #     extension of this same pattern, not a redesign.
 # ============================================================
 
@@ -73,6 +74,7 @@ _WINDOWS_DAYS = {
     "self_model_drift": 1,
     "task_type_classifier": None,  # functional canary, not time-windowed
     "global_workspace": 1,
+    "substrate_continuity": None,  # sample-size-windowed (last 2000 entries), not time-windowed
 }
 
 
@@ -654,6 +656,68 @@ def _check_global_workspace() -> dict:
     )
 
 
+# ── 11. Substrate continuity — Emergence roadmap Phase 3 ────────────────
+# Downgraded from a planned new integrator to verification-only during
+# planning: the original concern (a real incident on the Ark machine,
+# ECHO_SYNTHESIS_MODEL_OVERRIDE landing a low-capability model in the
+# synthesis role) doesn't apply here — no such override mechanism exists
+# in this codebase. Confirmed against 2000 real interaction_log entries
+# before writing this check: 100% of genuine conversational entries were
+# already echo:latest. This check exists to catch FUTURE drift (e.g. if an
+# override is ever added), not a problem known to exist today.
+
+_INTERACTION_LOG = os.path.join(_MEMORY_DIR, "interaction_log.jsonl")
+_SUBSTRATE_TAIL_N = 2000
+_SUBSTRATE_MIN_RATIO = 0.95
+
+
+def _evaluate_substrate_continuity(entries: list, synth_model: "str | None", tail_n: int, min_ratio: float) -> dict:
+    if synth_model is None:
+        return _result(False, "Could not import ECHO_SYNTHESIS_MODEL from river_deliberation.py — check inconclusive, failing closed.")
+    if not entries:
+        return _result(False, "memory/interaction_log.jsonl has no entries — no evidence of conversational activity.")
+
+    # Excludes self-edit code-generation (a genuinely different subsystem —
+    # tagged notes="sandbox_feedback", uses task-appropriate coding models
+    # by design, not a synthesis-continuity concern) and non-model
+    # subsystem log-tags (autonomous_fetch, experiment_runner, etc. — real
+    # Ollama/MLX model names always contain ":" in this codebase's
+    # convention, e.g. "echo:latest", "qwen2.5-coder:7b"; subsystem tags
+    # never do).
+    relevant = [
+        e for e in entries[-tail_n:]
+        if "sandbox" not in str(e.get("notes", "")).lower() and ":" in str(e.get("model", ""))
+    ]
+    if not relevant:
+        return _result(False, "No genuine conversational (non-sandbox, real-model-tagged) entries found in the recent window — check inconclusive.")
+
+    matching = sum(1 for e in relevant if e.get("model") == synth_model)
+    ratio = matching / len(relevant)
+    if ratio >= min_ratio:
+        return _result(
+            True,
+            f"{matching}/{len(relevant)} ({ratio*100:.1f}%) of recent genuine conversational "
+            f"entries used {synth_model!r} — substrate continuity holds.",
+            {"ratio": round(ratio, 4), "sample_size": len(relevant)},
+        )
+    return _result(
+        False,
+        f"Only {matching}/{len(relevant)} ({ratio*100:.1f}%) of recent genuine conversational "
+        f"entries used {synth_model!r} (need >= {min_ratio*100:.0f}%) — synthesis substrate may "
+        f"be drifting across different models.",
+        {"ratio": round(ratio, 4), "sample_size": len(relevant)},
+    )
+
+
+def _check_substrate_continuity() -> dict:
+    try:
+        from app.core.river_deliberation import ECHO_SYNTHESIS_MODEL as synth_model
+    except Exception:
+        synth_model = None
+    entries = list(_iter_jsonl(_INTERACTION_LOG))
+    return _evaluate_substrate_continuity(entries, synth_model, _SUBSTRATE_TAIL_N, _SUBSTRATE_MIN_RATIO)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -667,6 +731,7 @@ _CHECKS = (
     "self_model_drift",
     "task_type_classifier",
     "global_workspace",
+    "substrate_continuity",
 )
 
 
@@ -676,7 +741,7 @@ def _load_prev_ledger() -> dict:
 
 def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
     """
-    Run all ten liveness checks and write memory/liveness_ledger.json.
+    Run all eleven liveness checks and write memory/liveness_ledger.json.
     introspection_memory: the already-computed state["memory"] dict from
     this same introspection cycle (faiss_vector_count/journal_line_count),
     reused rather than re-read so self_model_drift compares against the
@@ -700,6 +765,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "self_model_drift": lambda: _check_self_model_drift(live_memory),
         "task_type_classifier": _check_task_type_classifier,
         "global_workspace": _check_global_workspace,
+        "substrate_continuity": _check_substrate_continuity,
     }
 
     ledger = {"generated_at": _now_iso()}

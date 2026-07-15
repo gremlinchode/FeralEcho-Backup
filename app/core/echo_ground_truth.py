@@ -69,6 +69,11 @@ _SLICE_SIGNALS: dict[str, frozenset] = {
         "from memory", "previous discussion", "what have you stored",
         "what do you remember", "your memory of",
     ]),
+    "capabilities": frozenset([
+        "can you", "are you able", "capable of", "capability", "capabilities",
+        "able to edit", "able to modify", "self-aware", "what can you do",
+        "do you have the ability", "is it true that you",
+    ]),
 }
 
 # Broad self-knowledge prompts get all slices
@@ -389,6 +394,34 @@ def _build_curiosity(garden_tail: list) -> str:
     return "\n".join(lines)
 
 
+def _build_capabilities(sm: dict) -> str:
+    """
+    Emergence roadmap, Area 3 (HOT/metacognition): grounds a question like
+    "can you edit your own code" in liveness_ledger.py's actual current
+    finding (folded into self_model.json's verified_capabilities block by
+    self_model_updater.py) rather than an ungrounded guess. Deliberately
+    plain-language, not the raw per-check JSON — this is prompt content,
+    not a debugging dump.
+    """
+    vc = sm.get("verified_capabilities", {})
+    lines = ["Verified capabilities (source: liveness_ledger.json, via self_model.json):"]
+    if vc.get("status") != "computed":
+        lines.append(f"  Not yet available ({vc.get('reason', vc.get('status', 'unknown'))}).")
+        return "\n".join(lines)
+
+    checks = vc.get("checks", {})
+    live = sorted(name for name, c in checks.items() if c.get("status") == "verified_live")
+    failing = sorted(name for name, c in checks.items() if c.get("status") == "verified_failing")
+
+    if live:
+        lines.append(f"  Currently verified working: {', '.join(live)}.")
+    if failing:
+        lines.append(f"  Currently verified NOT working (checked directly, not self-reported): {', '.join(failing)}.")
+    if vc.get("ledger_stale"):
+        lines.append("  Note: this verification data is stale — the checking process itself may be delayed.")
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -429,6 +462,9 @@ def get_structural_self_facts(prompt: str = "") -> str:
 
         if "memory" in slices:
             sections.append(_build_memory(prompt))
+
+        if "capabilities" in slices:
+            sections.append(_build_capabilities(sm))
 
         if not sections:
             return ""

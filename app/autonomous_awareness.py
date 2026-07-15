@@ -10,7 +10,7 @@ Autonomous Awareness for FeralEcho – Upgraded
 
 import ast
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import platform
 import importlib.metadata
 import os
@@ -190,26 +190,43 @@ def _count_new_memories(waking: list, since_ts: float) -> int:
     return sum(1 for e in waking if _entry_timestamp(e) > since_ts)
 
 
-def _sample_diverse_pair(candidates: list) -> tuple:
-    """Pick 2 entries from different memory_source buckets when possible."""
+def _sample_diverse_set(candidates: list, n: int = 5) -> list:
+    """Pick up to n entries spread across as many distinct memory_source
+    buckets as available. Generalizes the original 2-memory/2-bucket
+    sampling (Emergence roadmap, Area 5 — DMN-style consolidation needs
+    more raw material to find a real pattern in, not just two things to
+    juxtapose). Degrades gracefully: with fewer than n distinct buckets,
+    takes one from each bucket first, then fills remaining slots from the
+    full pool so a small memory store still returns as many as it can."""
     buckets: dict = {}
     for entry in candidates:
         key = entry["meta"].get("memory_source") or "untagged"
         buckets.setdefault(key, []).append(entry)
 
     keys = list(buckets.keys())
-    if len(keys) >= 2:
-        k1, k2 = random.sample(keys, 2)
-        return random.choice(buckets[k1]), random.choice(buckets[k2])
-    return tuple(random.sample(candidates, 2))
+    if len(keys) >= n:
+        chosen_keys = random.sample(keys, n)
+        return [random.choice(buckets[k]) for k in chosen_keys]
+
+    picks = [random.choice(buckets[k]) for k in keys]
+    picked_ids = {p["id"] for p in picks}
+    remaining_pool = [e for e in candidates if e["id"] not in picked_ids]
+    random.shuffle(remaining_pool)
+    picks.extend(remaining_pool[: max(0, n - len(picks))])
+    return picks[:n]
 
 
 def dream_cycle():
     """
-    Sample two unrelated waking memories, generate a free-associative
-    connection between them via MLX, log it, then seed one real curiosity
-    question from what came out. Throttled by accumulated new experience
-    rather than firing unconditionally every cycle.
+    Sample several unrelated waking memories (spread across as many
+    memory_source buckets as available), generate a free-associative
+    connection via MLX, then a second, explicit synthesis pass asking what
+    pattern actually connects them — real cross-memory integration, not
+    just juxtaposition (Emergence roadmap, Area 5: DMN-style consolidation
+    is supposed to reorganize recent experience, not just retrieve it) —
+    then seed one real curiosity question from the synthesis. Throttled by
+    accumulated new experience rather than firing unconditionally every
+    cycle.
     """
     state = _load_dream_state()
     last_dream_time = float(state.get("last_dream_time", 0.0))
@@ -222,7 +239,7 @@ def dream_cycle():
         logger.debug("[Dream] Not enough new memories since last dream — skipping this cycle.")
         return
 
-    mem_a, mem_b = _sample_diverse_pair(candidates)
+    memories = _sample_diverse_set(candidates, n=5)
 
     mlx_pool = list_mlx_models()
     mlx_path = mlx_pool.get(DREAM_MODEL_NAME, {}).get("mlx_path")
@@ -230,10 +247,12 @@ def dream_cycle():
         logger.debug(f"[Dream] {DREAM_MODEL_NAME} not configured — skipping this cycle.")
         return
 
+    numbered = "\n".join(f"{i}. {m['text'][:300]}" for i, m in enumerate(memories, 1))
+    seed_ids = [m["id"] for m in memories]
+
     dream_prompt = (
-        f"Here are two things you've encountered, unrelated to each other:\n"
-        f"1. {mem_a['text'][:300]}\n"
-        f"2. {mem_b['text'][:300]}\n\n"
+        f"Here are {len(memories)} things you've encountered, unrelated to each other:\n"
+        f"{numbered}\n\n"
         f"Follow whatever connection or image arises between them — this doesn't "
         f"need to resolve or make complete sense. This is a dream, not an answer."
     )
@@ -246,13 +265,40 @@ def dream_cycle():
         dream_text,
         meta={
             "memory_source": "dream_v2",
-            "seed_ids": [mem_a["id"], mem_b["id"]],
+            "seed_ids": seed_ids,
         },
     )
 
+    # Synthesis pass, distinct in purpose from the free association above:
+    # not evocative, actually analytical — "is there a real pattern here,"
+    # explicitly allowed to say no rather than forcing a connection.
+    synthesis_prompt = (
+        f"Setting aside free association — here are the same {len(memories)} things "
+        f"again:\n{numbered}\n\n"
+        f"Is there a real pattern that connects them? Answer in 1-2 sentences. "
+        f"If nothing genuinely connects them, say so plainly rather than forcing it."
+    )
+    synthesis_text = "".join(
+        stream_query_mlx(synthesis_prompt, mlx_path, model_name=DREAM_MODEL_NAME, max_tokens=200)
+    ).strip()
+
+    if synthesis_text:
+        log_dream_bridge(
+            synthesis_text,
+            meta={
+                "memory_source": "dream_v2",
+                "role": "synthesis",
+                "seed_ids": seed_ids,
+            },
+        )
+
+    # Harvest the follow-up question from the synthesis (the analytically-
+    # grounded output) rather than the free-association text — the question
+    # should follow from what was actually concluded, not the evocative pass.
+    question_source = synthesis_text or dream_text
     question_prompt = (
-        f"{dream_text}\n\nIn one sentence, what open question does that connection "
-        f"raise for you? Respond with only the question itself, nothing else."
+        f"{question_source}\n\nIn one sentence, what open question does that raise "
+        f"for you? Respond with only the question itself, nothing else."
     )
     question_text = "".join(
         stream_query_mlx(question_prompt, mlx_path, model_name=DREAM_MODEL_NAME, max_tokens=200)
@@ -262,7 +308,13 @@ def dream_cycle():
     else:
         logger.debug("[Dream] Follow-up didn't come back question-shaped — not harvesting.")
 
-    _save_dream_state({"last_dream_time": time.time()})
+    _save_dream_state({
+        "last_dream_time": time.time(),
+        "last_synthesis": synthesis_text[:800] if synthesis_text else None,
+        "last_synthesis_ts": (
+            datetime.now(timezone.utc).isoformat() if synthesis_text else None
+        ),
+    })
     logger.info("[Dream] Dream cycle complete.")
 
 

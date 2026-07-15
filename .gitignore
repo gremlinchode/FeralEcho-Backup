@@ -47,9 +47,14 @@ trash_autonomous/
 self_heal/
 root:xnu-*/
 
-# === BACKUPS & SELF-EDIT PLANS ===  
+# === BACKUPS & SELF-EDIT PLANS ===
 app/core/self_edit_backups/
 app/core/self_edit_plans/
+
+# propose_core_edit() proposals (Finding 26 / Emergence roadmap Area 6) —
+# advisory .patch files for human review, never auto-applied. Same
+# disposable-generated-artifact treatment as the two directories above.
+self_edit_proposals/*.patch
 
 # === PYTHON & OS NOISE ===
 __pycache__/

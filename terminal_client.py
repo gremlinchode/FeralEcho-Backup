@@ -514,6 +514,39 @@ def request_self_edit(prompt: str) -> dict:
             "error": str(e)
         }
 
+def request_core_edit_proposal(target_file: str, prompt: str) -> dict:
+    """
+    Request a reviewable diff proposal for a protected core file via the
+    manual !propose command (Emergence roadmap, Area 6 / CLAUDE.md Finding
+    26). Routes through propose_core_edit() — this never writes to
+    target_file; it writes a reviewable .patch to self_edit_proposals/
+    with multi-model council review attached, for a human to read and
+    manually apply if they agree. Deliberately manual-only: this command
+    makes the mechanism reachable, it does not make it autonomous — no
+    trigger was added anywhere that fires this without a human typing the
+    command with a specific file and goal already in mind.
+    """
+
+    try:
+        from app.core.self_edit_manager import propose_core_edit
+        success, result = propose_core_edit(target_file, prompt)
+
+        return {
+            "status": "success" if success else "failed",
+            "result": result
+        }
+
+    except Exception as e:
+
+        console.print(
+            f"[bold red]Propose Edit Error:[/bold red] {e}"
+        )
+
+        return {
+            "status": "failed",
+            "error": str(e)
+        }
+
 # ---------------------------------
 # --- Main Loop -------------------
 # ---------------------------------
@@ -598,6 +631,47 @@ def main():
                         "[bold yellow]"
                         "Please provide a prompt "
                         "after '!edit'."
+                        "[/bold yellow]"
+                    )
+
+            # -----------------------------
+            # Propose core edit mode (manual-only — Emergence roadmap Area 6)
+            # -----------------------------
+            elif msg.startswith("!propose "):
+
+                rest = (
+                    msg[len("!propose "):]
+                    .strip()
+                )
+                parts = rest.split(None, 1)
+
+                if len(parts) == 2:
+
+                    target_file, edit_prompt = parts
+
+                    result = request_core_edit_proposal(
+                        target_file, edit_prompt
+                    )
+
+                    console.print(
+                        f"[bold magenta]"
+                        f"Propose Edit Result:"
+                        f"[/bold magenta] "
+                        f"{result.get('status', 'unknown')} "
+                        f"— {result.get('result', result.get('error', ''))}"
+                    )
+
+                    speak_async(
+                        f"Propose edit result: "
+                        f"{result.get('status', 'unknown')}"
+                    )
+
+                else:
+
+                    console.print(
+                        "[bold yellow]"
+                        "Usage: !propose <target_file> <prompt> "
+                        "— target_file must be one of EDIT_FORBIDDEN_TARGETS."
                         "[/bold yellow]"
                     )
 

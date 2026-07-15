@@ -65,6 +65,9 @@ class SelfModelUpdater:
         self._principles_path = os.path.join(
             os.path.dirname(self._memory_dir), "echo_principles.json"
         )
+        self._dream_state_path = os.path.join(
+            self._memory_dir, "dream_state.json"
+        )
 
         self._interval = interval
         self._stop_event = threading.Event()
@@ -128,6 +131,8 @@ class SelfModelUpdater:
             "world_model": self._compute_world_model(introspection),
             "weekly_delta": self._compute_weekly_delta(performance),
             "targets": targets,
+            "verified_capabilities": self._compute_verified_capabilities(),
+            "recent_dream_synthesis": self._compute_recent_dream_synthesis(),
         }
 
         self._write(model)
@@ -509,6 +514,72 @@ class SelfModelUpdater:
                 pass
 
         return result
+
+    def _compute_verified_capabilities(self) -> dict:
+        """
+        Fold liveness_ledger.py's ground-truth checks into self_model.json
+        (Emergence roadmap, Area 3 / HOT-metacognition): self_model.json was
+        previously a system-health dashboard about Echo — FAISS counts,
+        journal lines, drift metrics — not something her own self-model
+        actually consulted about which of her own capabilities are real.
+        liveness_ledger.py already independently verifies 9 named subsystems
+        against ground truth, every 120s, via introspection_channel.py — but
+        that verification lived only in memory/liveness_ledger.json, read by
+        a human via GET /admin/liveness-status. This closes the loop: the
+        same ground truth now becomes part of what the system represents
+        about itself. Fails closed if the ledger hasn't run yet or is
+        unreadable — matches every other block in this file's posture on
+        missing upstream data.
+        """
+        try:
+            from app.core.liveness_ledger import get_liveness_status
+            status = get_liveness_status()
+        except Exception as e:
+            return {"status": "unavailable", "reason": str(e)}
+
+        if not status.get("ledger_exists"):
+            return {"status": "unavailable", "reason": status.get("note", "no ledger yet")}
+
+        checks: dict[str, dict] = {}
+        for name, entry in status.items():
+            if not isinstance(entry, dict) or "pass" not in entry:
+                continue  # generated_at, all_passing, stale, failing_subsystems, etc. — not a check
+            checks[name] = {
+                "status": "verified_live" if entry.get("pass") else "verified_failing",
+                "evidence": entry.get("evidence", ""),
+            }
+
+        return {
+            "status": "computed",
+            "checked_at": status.get("generated_at"),
+            "all_verified": bool(status.get("all_passing", False)),
+            "ledger_stale": bool(status.get("stale", False)),
+            "checks": checks,
+        }
+
+    def _compute_recent_dream_synthesis(self) -> dict:
+        """
+        Fold autonomous_awareness.py's dream_cycle() synthesis output into
+        self_model.json (Emergence roadmap, Area 5 / DMN consolidation) —
+        same read-and-fold shape as _compute_verified_capabilities() just
+        above, deliberately reused rather than a bespoke pattern, so the
+        self-model has one consistent way of absorbing ground truth from a
+        sibling process rather than a different shape per subsystem.
+        """
+        try:
+            with open(self._dream_state_path, "r", encoding="utf-8") as f:
+                state = json.load(f)
+        except Exception as e:
+            return {"status": "unavailable", "reason": str(e)}
+
+        synthesis = state.get("last_synthesis")
+        if not synthesis:
+            return {"status": "no_synthesis_yet"}
+        return {
+            "status": "computed",
+            "text": synthesis,
+            "ts": state.get("last_synthesis_ts"),
+        }
 
     def _compute_weekly_delta(self, current_performance: dict) -> dict:
         """C1: Compare current quality scores to the snapshot from ~1 week ago.

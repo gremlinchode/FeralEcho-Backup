@@ -291,6 +291,22 @@ def dream_cycle():
                 "seed_ids": seed_ids,
             },
         )
+        # Global Workspace publish (Emergence roadmap Phase 2a) — a genuine
+        # cross-memory synthesis is exactly the kind of salient content GWT
+        # says should become available beyond the module that produced it,
+        # not stay local to dream_cycle(). None-safe, best-effort.
+        try:
+            from app.core.echo_core import get_echo_core
+            core = get_echo_core()
+            if core:
+                core.publish_salience(
+                    source="dream_cycle",
+                    kind="dream.synthesis",
+                    summary=synthesis_text[:200],
+                    detail={"seed_ids": seed_ids},
+                )
+        except Exception:
+            pass
 
     # Harvest the follow-up question from the synthesis (the analytically-
     # grounded output) rather than the free-association text — the question

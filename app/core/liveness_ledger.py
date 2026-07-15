@@ -32,11 +32,13 @@
 #     broken check can't take down the others or the introspection cycle
 #     that hosts them — same fault-isolation rule as every other collector
 #     in introspection_channel.py.
-#   - This is a floor, not a general test framework: nine named checks for
-#     nine subsystems that have already fooled a prior audit, fix, or
-#     session by looking wired while being dead or fake. Adding a check
-#     for a new autonomous capability is a small, mechanical extension of
-#     this same pattern, not a redesign.
+#   - This is a floor, not a general test framework: ten named checks for
+#     ten subsystems that have already fooled a prior audit, fix, or
+#     session by looking wired while being dead or fake (the tenth,
+#     global_workspace, added 2026-07-15 — the first check added after this
+#     ledger's own initial build, per the extension rule stated here).
+#     Adding a check for a new autonomous capability is a small, mechanical
+#     extension of this same pattern, not a redesign.
 # ============================================================
 
 import json
@@ -70,6 +72,7 @@ _WINDOWS_DAYS = {
     "claude_research": 2,
     "self_model_drift": 1,
     "task_type_classifier": None,  # functional canary, not time-windowed
+    "global_workspace": 1,
 }
 
 
@@ -591,6 +594,66 @@ def _check_task_type_classifier() -> dict:
     return _evaluate_task_type_classifier(filter_fn)
 
 
+# ── 10. Global Workspace — genuine multi-subsystem integration, not one ──
+# publisher talking to itself (Emergence roadmap Phase 2a). EchoCoreBus's
+# publish()/subscribe() were 100% dormant before this — zero callers
+# anywhere outside echo_core.py itself. The point of a Global Workspace
+# (GWT) is specifically that multiple otherwise-encapsulated processes'
+# output becomes available together — so "some events exist" is a much
+# weaker and less honest claim than "events from more than one real
+# subsystem exist," which is what this check actually verifies.
+
+_WORKSPACE_LOG = os.path.join(_MEMORY_DIR, "workspace_log.jsonl")
+_GLOBAL_WORKSPACE_TAIL_N = 100
+_GLOBAL_WORKSPACE_MIN_DISTINCT_SOURCES = 2
+
+
+def _evaluate_global_workspace(entries: list, window_days: float, tail_n: int, min_sources: int) -> dict:
+    if not entries:
+        return _result(
+            False,
+            "memory/workspace_log.jsonl has no entries — the workspace has never carried "
+            "a single event.",
+            {"distinct_sources": 0},
+        )
+    cutoff = _now() - window_days * 86400
+    recent = [
+        e for e in entries[-tail_n:]
+        if (_parse_ts(e.get("ts")) or 0) >= cutoff
+    ]
+    if not recent:
+        return _result(
+            False,
+            f"workspace_log.jsonl has {len(entries)} entries all-time, but none in the "
+            f"last {window_days}d — the workspace may have gone quiet.",
+            {"distinct_sources": 0},
+        )
+    sources = {e.get("source") for e in recent if e.get("source")}
+    if len(sources) >= min_sources:
+        return _result(
+            True,
+            f"{len(recent)} event(s) in the last {window_days}d from {len(sources)} "
+            f"distinct source(s): {sorted(sources)} — genuine multi-subsystem integration, "
+            f"not one publisher talking to itself.",
+            {"distinct_sources": len(sources), "recent_count": len(recent)},
+        )
+    return _result(
+        False,
+        f"{len(recent)} event(s) in the last {window_days}d, but from only "
+        f"{len(sources)} distinct source(s) ({sorted(sources)}) — needs >= {min_sources} "
+        f"to count as genuine integration rather than one lonely publisher.",
+        {"distinct_sources": len(sources), "recent_count": len(recent)},
+    )
+
+
+def _check_global_workspace() -> dict:
+    entries = list(_iter_jsonl(_WORKSPACE_LOG))
+    return _evaluate_global_workspace(
+        entries, _WINDOWS_DAYS["global_workspace"],
+        _GLOBAL_WORKSPACE_TAIL_N, _GLOBAL_WORKSPACE_MIN_DISTINCT_SOURCES,
+    )
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -603,6 +666,7 @@ _CHECKS = (
     "claude_research",
     "self_model_drift",
     "task_type_classifier",
+    "global_workspace",
 )
 
 
@@ -612,7 +676,7 @@ def _load_prev_ledger() -> dict:
 
 def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
     """
-    Run all nine liveness checks and write memory/liveness_ledger.json.
+    Run all ten liveness checks and write memory/liveness_ledger.json.
     introspection_memory: the already-computed state["memory"] dict from
     this same introspection cycle (faiss_vector_count/journal_line_count),
     reused rather than re-read so self_model_drift compares against the
@@ -635,6 +699,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "claude_research": _check_claude_research,
         "self_model_drift": lambda: _check_self_model_drift(live_memory),
         "task_type_classifier": _check_task_type_classifier,
+        "global_workspace": _check_global_workspace,
     }
 
     ledger = {"generated_at": _now_iso()}

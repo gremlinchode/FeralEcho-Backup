@@ -246,6 +246,38 @@ r = ll._evaluate_task_type_classifier(None)
 check("task_type_classifier: filter function missing entirely", r["pass"], False, r["evidence"])
 
 
+# ── 10. global_workspace ────────────────────────────────────────────────
+# Historical fake this check exists specifically to distinguish from real
+# integration: a bus with real, recent events — but every one of them from
+# the SAME publisher. That's a lonely publisher talking to itself, not
+# GWT-style multi-subsystem integration, even though "some events exist"
+# would be true.
+_now_ws = time.time()
+
+r = ll._evaluate_global_workspace([], 1, 100, 2)
+check("global_workspace: no entries ever", r["pass"], False, r["evidence"])
+
+_single_source = [
+    {"ts": _now_ws - 60 * i, "type": "dream.synthesis", "source": "dream_cycle", "summary": "x"}
+    for i in range(10)
+]
+r = ll._evaluate_global_workspace(_single_source, 1, 100, 2)
+check("global_workspace: real recent events, but all from one source", r["pass"], False, r["evidence"])
+
+_two_sources = _single_source + [
+    {"ts": _now_ws - 30, "type": "world_model.surprise", "source": "world_model", "summary": "y"}
+]
+r = ll._evaluate_global_workspace(_two_sources, 1, 100, 2)
+check("global_workspace: real recent events from two distinct sources", r["pass"], True, r["evidence"])
+
+_stale_only = [
+    {"ts": _now_ws - 10 * 86400, "type": "dream.synthesis", "source": "dream_cycle", "summary": "old"},
+    {"ts": _now_ws - 10 * 86400, "type": "world_model.surprise", "source": "world_model", "summary": "old"},
+]
+r = ll._evaluate_global_workspace(_stale_only, 1, 100, 2)
+check("global_workspace: two sources, but only stale (>1d old) entries", r["pass"], False, r["evidence"])
+
+
 print()
 if FAILURES:
     print(f"=== {len(FAILURES)} DISCRIMINATION FAILURE(S) — ledger is not trustworthy as-is ===")

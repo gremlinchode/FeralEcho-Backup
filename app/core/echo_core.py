@@ -10,6 +10,7 @@ EchoCore vNext – Autonomous dominion and observability.
 
 from __future__ import annotations
 import os
+import json
 import threading
 import logging
 import time
@@ -17,7 +18,10 @@ import importlib
 import traceback
 import queue
 from collections import defaultdict
+from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
+
+_WORKSPACE_LOG_PATH = os.path.join("memory", "workspace_log.jsonl")
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -69,12 +73,24 @@ class EchoCore:
         self._commands: Dict[str, Callable[..., Any]] = {}
         self._experimental_zones: set[str] = set()
 
-        # Event bus
+        # Event bus (Global Workspace, Emergence roadmap Phase 2a) — was
+        # 100% dormant infrastructure before this: zero publishers or
+        # subscribers existed anywhere in the codebase outside this file.
         self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
         self._event_queue: queue.Queue = queue.Queue(maxsize=500)
         t = threading.Thread(target=self._dispatch_loop, daemon=True, name="EchoCoreBus")
         t.start()
         self._threads["event_bus"] = t
+
+        # Built-in observational subscriber — deliberately the ONLY
+        # subscriber wired in this pass, and deliberately pure logging with
+        # no other side effect (Phase 2a's read-only/observational-only
+        # safety posture: nothing published on the workspace may trigger a
+        # privileged action yet). Also the ground-truth evidence source for
+        # liveness_ledger.py's global_workspace check — the workspace's
+        # aliveness is externally verifiable, not just "publish() didn't
+        # raise."
+        self.subscribe("*", self._log_workspace_event)
 
         # Initialize core subsystems
         self._init_memory_bridge(memory_bridge)
@@ -189,11 +205,59 @@ class EchoCore:
         try:
             self._event_queue.put_nowait({"type": event_type, "payload": payload})
         except queue.Full:
+            # Real backpressure, not just a comment — maxsize=500 above is
+            # the workspace's actual capacity limit (Emergence roadmap
+            # Area 1: "cap bandwidth deliberately... this isn't incidental,
+            # it's what makes it a workspace rather than an ordinary
+            # message bus"). Drops silently past capacity rather than
+            # blocking the publisher.
             logger.debug("[EchoCore] Event bus full — dropping '%s'.", event_type)
 
+    def publish_salience(
+        self, source: str, kind: str, summary: str,
+        detail: dict | None = None, salience: float | None = None,
+    ) -> None:
+        """
+        Convenience wrapper so every publisher builds the same payload
+        shape instead of hand-rolling one per call site (Emergence roadmap
+        Phase 2a). source: the publishing subsystem's own name, e.g.
+        "world_model", "dream_cycle", "self_edit_convergence" — this is
+        what liveness_ledger.py's global_workspace check counts distinct
+        values of to verify genuine multi-subsystem integration, not one
+        publisher talking to itself.
+        """
+        self.publish(kind, {
+            "source": source,
+            "summary": summary,
+            "detail": detail or {},
+            "salience": salience,
+            "ts": datetime.now(timezone.utc).isoformat(),
+        })
+
     def subscribe(self, event_type: str, callback: Callable) -> None:
+        """event_type="*" subscribes to every event regardless of type —
+        used by the built-in observational logger below. Per-type
+        subscribers are unaffected; both lists are dispatched to."""
         self._subscribers[event_type].append(callback)
         logger.debug("[EchoCore] Subscribed to '%s'.", event_type)
+
+    def _log_workspace_event(self, event_type: str, payload: dict) -> None:
+        """The one subscriber wired in Phase 2a — pure logging, no other
+        side effect. Ground-truth evidence for liveness_ledger.py's
+        global_workspace check."""
+        try:
+            os.makedirs(os.path.dirname(_WORKSPACE_LOG_PATH), exist_ok=True)
+            entry = {
+                "ts": payload.get("ts") or datetime.now(timezone.utc).isoformat(),
+                "type": event_type,
+                "source": payload.get("source"),
+                "summary": payload.get("summary"),
+                "salience": payload.get("salience"),
+            }
+            with open(_WORKSPACE_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        except Exception as e:
+            logger.debug("[EchoCore] workspace log write failed: %s", e)
 
     def _dispatch_loop(self) -> None:
         while not self._stop_event.is_set():
@@ -201,9 +265,13 @@ class EchoCore:
                 event = self._event_queue.get(timeout=1.0)
             except queue.Empty:
                 continue
-            for cb in list(self._subscribers.get(event["type"], [])):
+            subscribers = (
+                list(self._subscribers.get(event["type"], []))
+                + list(self._subscribers.get("*", []))
+            )
+            for cb in subscribers:
                 try:
-                    cb(event["payload"])
+                    cb(event["type"], event["payload"])
                 except Exception as e:
                     logger.warning("[EchoCore] Subscriber for '%s' raised: %s", event["type"], e)
 

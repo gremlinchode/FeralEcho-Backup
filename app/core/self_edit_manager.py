@@ -900,6 +900,27 @@ def _record_convergence(callables: list) -> None:
         append_to_journal("SELF_EDIT", msg)
         logging.info("[SELF-EDIT]%s", msg)
 
+        # Global Workspace publish (Emergence roadmap Phase 2a), gated on
+        # the same non_convergent_streak >= 2 threshold _build_targeted_
+        # prompt() already treats as meaningful — not a new number invented
+        # for this. A self-edit family stuck for multiple cycles is exactly
+        # the kind of salient signal that should be visible outside this
+        # module, not just sitting in self_edit_convergence.json.
+        if streak >= 2:
+            try:
+                from app.core.echo_core import get_echo_core
+                core = get_echo_core()
+                if core:
+                    core.publish_salience(
+                        source="self_edit_convergence",
+                        kind="self_edit.non_convergent",
+                        summary=f"family={family} stuck for {streak} cycles",
+                        detail={"family": family, "streak": streak, "count": count},
+                        salience=min(streak / 10.0, 1.0),
+                    )
+            except Exception:
+                pass
+
     # A callable whose name matches none of the fixed keyword families was
     # previously completely invisible to convergence tracking — not even
     # counted as non-convergent, just silently dropped. A single shared

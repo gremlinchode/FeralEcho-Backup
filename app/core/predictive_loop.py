@@ -209,6 +209,26 @@ class WorldModel:
 
         logger.info("[WorldModel] surprise_F=%.4f | sent=+%d/-%d | topics=%s",
                     surprise_F, pos, neg, topic_counts.tolist())
+
+        # Global Workspace publish (Emergence roadmap Phase 2a) — makes the
+        # real surprise signal available to whatever eventually subscribes
+        # to it, instead of it only ever reaching sleep-timing and topic
+        # selection inside this same class. None-safe: EchoCore may not be
+        # initialized in a standalone/test context.
+        try:
+            from app.core.echo_core import get_echo_core
+            core = get_echo_core()
+            if core:
+                core.publish_salience(
+                    source="world_model",
+                    kind="world_model.surprise",
+                    summary=f"surprise_F={surprise_F:.4f}",
+                    detail={"pos": int(pos), "neg": int(neg), "topics": topic_counts.tolist()},
+                    salience=min(surprise_F / 5.0, 1.0),
+                )
+        except Exception:
+            pass  # workspace publish is best-effort, never blocks the real computation above
+
         return surprise_F
 
     def get_surprise(self) -> tuple[float, float, float]:

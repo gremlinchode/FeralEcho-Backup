@@ -547,6 +547,65 @@ def request_core_edit_proposal(target_file: str, prompt: str) -> dict:
             "error": str(e)
         }
 
+def request_status_report() -> None:
+    """
+    !status — on-demand liveness + Global Workspace snapshot, mirroring the
+    !edit/!propose pattern: direct in-process import (terminal_client.py runs
+    in the same Python environment as the Flask app, no HTTP round-trip or
+    GREMLIN_SECRET needed), printed straight to the console rather than
+    returned, since there's no follow-on caller the way !edit's result feeds
+    speak_async().
+
+    get_liveness_status() is the same read-only accessor GET
+    /admin/liveness-status and Echo Studio's /dashboard/health both call —
+    this reads the last-written ledger, it does not recompute checks.
+    """
+    try:
+        from app.core.liveness_ledger import get_liveness_status, _CHECKS
+        status = get_liveness_status()
+    except Exception as e:
+        console.print(f"[bold red]Liveness check failed:[/bold red] {e}")
+        return
+
+    if not status.get("ledger_exists", True):
+        console.print(f"[bold yellow]{status.get('note', 'No liveness ledger yet.')}[/bold yellow]")
+        return
+
+    stale = status.get("stale")
+    console.print(
+        f"[bold]Liveness ledger[/bold] — "
+        f"generated {status.get('generated_at', '?')} "
+        f"({status.get('age_seconds', '?')}s ago)"
+        + (" [bold red][STALE][/bold red]" if stale else "")
+    )
+
+    for name in _CHECKS:
+        entry = status.get(name) or {}
+        ok = entry.get("pass", False)
+        tag = "[green]PASS[/green]" if ok else "[bold red]FAIL[/bold red]"
+        console.print(f"  {tag}  {name} — {entry.get('evidence', '')}")
+
+    console.print("\n[bold]Recent Global Workspace events:[/bold]")
+    try:
+        with open("memory/workspace_log.jsonl", encoding="utf-8") as f:
+            lines = f.readlines()[-5:]
+        if not lines:
+            console.print("  [dim](none yet)[/dim]")
+        for line in lines:
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            console.print(
+                f"  [{entry.get('ts', '')[:19]}] {entry.get('type', '?')} "
+                f"<- {entry.get('source', '?')}: {entry.get('summary', '')}"
+            )
+    except FileNotFoundError:
+        console.print("  [dim](workspace_log.jsonl does not exist yet)[/dim]")
+    except Exception as e:
+        console.print(f"  [dim](error reading workspace log: {e})[/dim]")
+
+
 # ---------------------------------
 # --- Main Loop -------------------
 # ---------------------------------
@@ -674,6 +733,14 @@ def main():
                         "— target_file must be one of EDIT_FORBIDDEN_TARGETS."
                         "[/bold yellow]"
                     )
+
+            # -----------------------------
+            # Liveness / Global Workspace status (Emergence roadmap Echo
+            # Studio integration pass)
+            # -----------------------------
+            elif msg.strip() == "!status":
+
+                request_status_report()
 
             # -----------------------------
             # Normal conversation

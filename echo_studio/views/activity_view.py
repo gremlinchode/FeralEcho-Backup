@@ -77,6 +77,13 @@ class ActivityView(QWidget):
         council_layout.addWidget(self._council_list)
         splitter.addWidget(council_panel)
 
+        workspace_panel = QWidget()
+        workspace_layout = QVBoxLayout(workspace_panel)
+        workspace_layout.addWidget(QLabel("Global Workspace events (world model, dreams, self-edit, scheduler)"))
+        self._workspace_list = QListWidget()
+        workspace_layout.addWidget(self._workspace_list)
+        splitter.addWidget(workspace_panel)
+
         selfedit_panel = QWidget()
         selfedit_layout = QVBoxLayout(selfedit_panel)
         selfedit_layout.addWidget(QLabel("Self-edit / autonomy status"))
@@ -129,6 +136,17 @@ class ActivityView(QWidget):
                 f"quality={entry.get('quality_score')} human={entry.get('human_spot_check_rating')}"
             )
             self._council_list.addItem(QListWidgetItem(label))
+
+        self._workspace_list.clear()
+        for entry in reversed(activity.get("workspace_events", [])[-100:]):
+            salience = entry.get("salience")
+            salience_str = f"{salience:.2f}" if isinstance(salience, (int, float)) else "—"
+            label = (
+                f"[{(entry.get('ts') or '')[:19]}] "
+                f"{entry.get('type', '?')} <- {entry.get('source', '?')} "
+                f"(salience={salience_str}) {entry.get('summary', '')}"
+            )
+            self._workspace_list.addItem(QListWidgetItem(label))
 
         self_edit = health.get("self_edit", {})
         outcomes = health.get("self_edit_outcomes", {})

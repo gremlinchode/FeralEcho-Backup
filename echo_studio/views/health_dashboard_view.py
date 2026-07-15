@@ -55,6 +55,7 @@ class HealthDashboardView(QWidget):
         self._vector_lbl = _tile("vectors: —")
         self._council_lbl = _tile("council: —")
         self._selfedit_lbl = _tile("self-edit: —")
+        self._liveness_lbl = _tile("liveness: —")
 
         for w in (
             self._model_lbl,
@@ -63,6 +64,7 @@ class HealthDashboardView(QWidget):
             self._vector_lbl,
             self._council_lbl,
             self._selfedit_lbl,
+            self._liveness_lbl,
         ):
             layout.addWidget(w)
         layout.addStretch(1)
@@ -130,6 +132,47 @@ class HealthDashboardView(QWidget):
             self._selfedit_lbl.setText(f"self-edit: {evaluated_count} eval / {pending_count} pending")
         else:
             self._selfedit_lbl.setText("self-edit: —")
+
+        self._update_liveness_tile(payload.get("liveness", {}) or {})
+
+    def _update_liveness_tile(self, liveness: dict):
+        # liveness_ledger._CHECKS as of this writing — kept as a plain literal
+        # here (not imported) since this view has no other app.core import and
+        # the count only needs to be roughly right for display; get_liveness_status()
+        # itself is the ground truth this tile reflects, this is just the label.
+        known_checks = [
+            "self_edit_apply_to_code", "curiosity_engine", "nature_spark",
+            "wolf_friction_bridge", "claude_shard", "question_garden_lineage",
+            "claude_research", "self_model_drift", "task_type_classifier",
+            "global_workspace", "substrate_continuity",
+        ]
+        if not liveness.get("ledger_exists", True) or "error" in liveness:
+            self._liveness_lbl.setText("liveness: —")
+            self._liveness_lbl.setStyleSheet(
+                "padding: 4px 10px; border-right: 1px solid palette(mid); color: palette(mid);"
+            )
+            self._liveness_lbl.setToolTip(liveness.get("note") or liveness.get("error") or "")
+            return
+
+        failing = [name for name in known_checks if not (liveness.get(name) or {}).get("pass", False)]
+        total = len(known_checks)
+        passing = total - len(failing)
+        stale = bool(liveness.get("stale"))
+
+        self._liveness_lbl.setText(f"liveness: {passing}/{total}{' (stale)' if stale else ''}")
+        if failing or stale:
+            self._liveness_lbl.setStyleSheet(
+                "padding: 4px 10px; border-right: 1px solid palette(mid); color: #c0392b; font-weight: bold;"
+            )
+            tooltip_lines = [f"FAILING: {name}" for name in failing]
+            if stale:
+                tooltip_lines.append("Ledger is stale — introspection_channel collector may have stopped.")
+            self._liveness_lbl.setToolTip("\n".join(tooltip_lines))
+        else:
+            self._liveness_lbl.setStyleSheet(
+                "padding: 4px 10px; border-right: 1px solid palette(mid);"
+            )
+            self._liveness_lbl.setToolTip("All liveness checks passing.")
 
     def _on_error(self, _message: str):
         self._model_lbl.setText("model: unreachable")

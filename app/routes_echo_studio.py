@@ -294,6 +294,15 @@ def dashboard_health():
     except Exception as e:
         payload["autonomy"] = {"error": str(e)}
 
+    try:
+        # Read-only accessor — reads the already-written ledger, does not
+        # recompute. No auth needed here (unlike GET /admin/liveness-status,
+        # this is an in-process call, not an HTTP route).
+        from app.core.liveness_ledger import get_liveness_status
+        payload["liveness"] = get_liveness_status()
+    except Exception as e:
+        payload["liveness"] = {"error": str(e)}
+
     return jsonify(payload), 200
 
 
@@ -408,7 +417,25 @@ def activity_log():
     except Exception as e:
         logger.warning(f"[echo_studio] /activity/log council read failed: {e}")
 
-    return jsonify({"dream_log": dream_lines, "council_recent": council_recent}), 200
+    workspace_events: list = []
+    try:
+        with open("memory/workspace_log.jsonl", encoding="utf-8") as f:
+            lines = f.readlines()
+        for line in lines[-limit:]:
+            try:
+                workspace_events.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    except FileNotFoundError:
+        workspace_events = []
+    except Exception as e:
+        logger.warning(f"[echo_studio] /activity/log workspace_log read failed: {e}")
+
+    return jsonify({
+        "dream_log": dream_lines,
+        "council_recent": council_recent,
+        "workspace_events": workspace_events,
+    }), 200
 
 
 # ---------------------------------------------------------------------------

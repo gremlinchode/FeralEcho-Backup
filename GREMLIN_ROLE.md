@@ -25,6 +25,8 @@ The following require explicit approval from Gremlin before any action is taken.
 - **Any reconnection of `self_heal.py` to a live caller.** The module is fixed and disconnected by design. Reconnecting requires review — even to a test path.
 - **Any modification of `echo_principles.json` or its genesis hash.** Hash-verified at startup. Do not modify.
 
+The list above is standing policy — permanent rules, not open questions. For **specific, currently-open items** that have been flagged and are waiting on Gremlin's actual call (not a category, a concrete pending decision), see `PENDING_DECISIONS.md` at the repo root. Any session that flags a new "Gremlin's call" item anywhere in this project should add a row there in the same change, not leave it as a paragraph buried in CLAUDE.md for someone to rediscover later.
+
 ---
 
 ## What Does Not Require Him

@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**Before starting work, check `PENDING_DECISIONS.md`** — a short, separately-maintained list of specific items currently awaiting Gremlin's own call (not bugs, not standing policy — see GREMLIN_ROLE.md for that). It exists because this file's own Findings section grew past the point where "flagged, not fixed" items could be found again by scrolling. Add a row there, not just a paragraph here, whenever a new one comes up.
+
 ---
 
 ## Working Tree State (snapshot, will drift — re-check with `git status`)

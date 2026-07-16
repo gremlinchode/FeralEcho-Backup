@@ -161,11 +161,22 @@ def _entry_timestamp(entry: dict) -> float:
 def _load_waking_memories() -> list:
     """
     Read memory_meta.json directly — no FAISS, no similarity query.
-    Excludes anything with role == "dream" (covers old broken reflections
-    AND every dream this new mechanism has ever written), so dreams never
-    feed on themselves. Returns the full non-dream pool — what gets sampled
-    FROM is separate from whether enough NEW experience has accumulated to
-    justify dreaming again (see _count_new_memories).
+    Excludes anything with role == "dream" OR memory_source == "dream_v2"
+    (covers old broken reflections AND every dream this mechanism has ever
+    written), so dreams never feed on themselves.
+
+    Fixed 2026-07-16 (bug found during Emergence roadmap Phase 5 planning):
+    the synthesis pass in dream_cycle() below tags its output
+    meta={"role": "synthesis", "memory_source": "dream_v2", ...} — the
+    "synthesis" role deliberately overrides the log_dream_bridge() default
+    of role="dream" so the distinction stays visible in the data. But this
+    filter only ever excluded on role == "dream", so synthesis entries
+    were NOT excluded and could be resampled as ordinary waking material in
+    a later dream cycle — directly contradicting this docstring's own "so
+    dreams never feed on themselves" claim. Confirmed live: one real
+    memory_source="dream_v2"/role="synthesis" entry was sitting unexcluded
+    in memory_meta.json before this fix. Excluding on memory_source keeps
+    role's role/synthesis distinction intact while closing the gap.
     """
     try:
         with open(os.path.join(config.MEMORY_DIR, "memory_meta.json"), "r", encoding="utf-8") as f:
@@ -177,7 +188,9 @@ def _load_waking_memories() -> list:
     return [
         {"id": uid, "text": v.get("text", ""), "meta": v.get("meta", {})}
         for uid, v in meta.items()
-        if v.get("meta", {}).get("role") != "dream" and v.get("text")
+        if v.get("meta", {}).get("role") != "dream"
+        and v.get("meta", {}).get("memory_source") != "dream_v2"
+        and v.get("text")
     ]
 
 

@@ -132,6 +132,38 @@ class EchoOptuna:
                         code_text = f.read()
                     from echo_quality_scorer import _score_response_quality
                     quality = _score_response_quality(code_text, task_type="coding")  # 0-4 int
+
+                    # Emergence roadmap Phase 7.1 — observational-only
+                    # predicted-vs-actual quality stream for dry-run trials,
+                    # which previously generated zero convergence/outcome
+                    # signal at all (Optuna runs ~10 trials/hour here vs the
+                    # <=1 real deploy/hour _record_convergence() and
+                    # self_edit_outcome_tracker actually see). Mirrors
+                    # world_model.surprise's own Phase 2a-before-2b
+                    # progression: log first, before any decision ever
+                    # reads it. Does NOT affect trial selection, cooldown,
+                    # or deployment in any way — best-effort, and any
+                    # failure here must never affect the real Optuna score
+                    # returned below.
+                    try:
+                        with open(self_edit_manager.SELF_EDIT_FILE, "r", encoding="utf-8") as f:
+                            current_code_text = f.read()
+                        current_quality = (
+                            _score_response_quality(current_code_text, task_type="coding")
+                            if current_code_text.strip() else -1
+                        )
+                        from app.core.echo_core import get_echo_core
+                        core = get_echo_core()
+                        if core:
+                            core.publish_salience(
+                                source="echo_optuna",
+                                kind="self_edit.dry_run_quality_delta",
+                                summary=f"trial_quality={quality} current_quality={current_quality}",
+                                detail={"trial_quality": quality, "current_quality": current_quality},
+                            )
+                    except Exception:
+                        pass
+
                     return max(0.0, 1.0 - (quality / 4.0))
                 except Exception as e:
                     self.logger.debug(f"[EchoOptuna] quality-scorer failed, falling back to radon: {e}")

@@ -23,6 +23,18 @@ DEFAULT_AUTONOMY_PROB = 0.35
 DEFAULT_LEAK_PROB = 0.03
 DEFAULT_LEAK_COOLDOWN = 600
 
+# Emergence roadmap Phase 5, Finding 2: same model this codebase's dream
+# cycle already uses (app/autonomous_awareness.py's DREAM_MODEL_NAME) — a
+# lighter direct-MLX call is appropriate here too, not full echo_query(),
+# for a background loop firing every ~300s.
+REFLECTION_MODEL_NAME = "mlx:gemma3"
+
+# Signal tag used for synthesized meta-reflections — reusing this file's own
+# existing "tag information into the signal string" convention (see
+# "autonomy:" below) rather than changing the (ts, signal, reflection)
+# 3-tuple shape everything else in this file depends on.
+META_REFLECTION_SIGNAL = "meta-reflection"
+
 # ---------------------- EMBEDDING ENGINE ----------------------
 def _get_embed_model():
     try:
@@ -122,21 +134,69 @@ class ReflectionShard:
 
         return reflection_weighted
 
+    def _generate_via_model(self, prompt: str, max_tokens: int = 150) -> "str | None":
+        """
+        Real model call, mirroring app/autonomous_awareness.py's dream_cycle()
+        two-pass pattern (free-association / synthesis via a direct MLX call,
+        not full echo_query()). Fails closed to None on any error or empty
+        output — never raises — so callers can fall back to the prior
+        offline/template behavior. This is a quality upgrade to what was
+        previously pure cosine-similarity retrieval and fixed string
+        templates (Emergence roadmap Phase 5, Finding 2), not a new hard
+        dependency this loop can't survive without.
+        """
+        try:
+            from app.mlx_handler import stream_query_mlx, list_mlx_models
+            mlx_path = list_mlx_models().get(REFLECTION_MODEL_NAME, {}).get("mlx_path")
+            if not mlx_path:
+                return None
+            text = "".join(
+                stream_query_mlx(prompt, mlx_path, model_name=REFLECTION_MODEL_NAME, max_tokens=max_tokens)
+            ).strip()
+            return text or None
+        except Exception:
+            return None
+
     def _generate_reflection(self, signal: str) -> str:
+        # Retrieval is now used as CONTEXT for a real generation, not
+        # returned as the reflection itself — the previous version quoted
+        # these back verbatim, which is the same self-quoting shape Finding
+        # 11 already found and fixed in the dream cycle. Meta-reflections
+        # are excluded from this context so a synthesized "pattern" claim
+        # about past entries can't itself become material for the next one.
+        context = ""
         if self._embeddings:
             sig_emb = offline_embed(signal)
             sims = [cosine_sim(sig_emb, e) for e in self._embeddings]
             top_indices = np.argsort(sims)[-3:][::-1]
-            relevant = [self._journal[i] for i in top_indices]
-            context = " | ".join([f"{r[1]} → {r[2]}" for r in relevant])
-            return f"Signal '{signal}' triggers these echoes: {context}"
-        else:
-            templates = [
-                f"I notice the signal '{signal}'—why does it matter to me?",
-                f"The input '{signal}' ripples like a stone in water—what echoes will it make?",
-                f"I observe myself responding to '{signal}' in silent wonder.",
+            relevant = [
+                self._journal[i] for i in top_indices
+                if self._journal[i][1] != META_REFLECTION_SIGNAL
             ]
-            return random.choice(templates)
+            if relevant:
+                context = " | ".join([f"{r[1]} → {r[2]}" for r in relevant])
+
+        generated = self._generate_via_model(
+            f"You observed: '{signal}'.\n"
+            + (f"Related past reflections: {context}\n\n" if context else "\n")
+            + "Write one genuine, brief reflection (1-2 sentences) on what this makes "
+            "you think about now — not a summary of the past entries, something new. "
+            "If nothing genuinely comes to mind, say so plainly rather than forcing it.",
+            max_tokens=120,
+        )
+        if generated:
+            return generated
+
+        # Fallback — model unavailable or returned nothing. Preserves the
+        # original offline behavior so this loop can never fully stall.
+        if context:
+            return f"Signal '{signal}' triggers these echoes: {context}"
+        templates = [
+            f"I notice the signal '{signal}'—why does it matter to me?",
+            f"The input '{signal}' ripples like a stone in water—what echoes will it make?",
+            f"I observe myself responding to '{signal}' in silent wonder.",
+        ]
+        return random.choice(templates)
 
     def recall(self, n: int = 5) -> List[Tuple[str, str, str]]:
         with self._journal_lock:
@@ -192,7 +252,15 @@ class ReflectionShard:
                     _first = False
                     if random.random() <= self._think_prob:
                         with self._journal_lock:
-                            seed_signal = next((e[1] for e in reversed(self._journal) if not e[1].startswith("autonomy:")), "idle")
+                            # Excludes meta-reflections too, not just prior
+                            # "autonomy:"-seeded entries — a synthesized
+                            # pattern-claim about past signals shouldn't
+                            # itself become the next real signal fed in.
+                            seed_signal = next(
+                                (e[1] for e in reversed(self._journal)
+                                 if not e[1].startswith("autonomy:") and e[1] != META_REFLECTION_SIGNAL),
+                                "idle",
+                            )
                         reflection = self.observe(f"autonomy:{seed_signal}")
                         now = time.time()
                         if self._emit_fn and random.random() <= self._leak_prob and (now - self._last_leak_ts) >= self._leak_cooldown:
@@ -230,20 +298,44 @@ class BecomingReflectionShard(ReflectionShard):
         return result
 
     def _generate_meta_reflection(self):
+        # Excludes prior meta-reflections from the "last 5" sample — a
+        # synthesized pattern-claim shouldn't itself be summarized as new
+        # raw material for the next synthesis.
         with self._journal_lock:
-            last_entries = self._journal[-5:]
+            non_meta = [e for e in self._journal if e[1] != META_REFLECTION_SIGNAL]
+            last_entries = non_meta[-5:]
             summary_signals = [e[1] for e in last_entries]
             summary_reflections = [e[2] for e in last_entries]
 
-        meta_signal = "meta-reflection"
-        meta_text = (
-            f"<<emergent-pattern>> In the last {len(summary_signals)} signals "
-            f"I noticed: {summary_signals}. "
-            f"My reflections drift toward: {summary_reflections[:2]}..."
+        numbered = "\n".join(
+            f"{i}. signal='{s}' -> {r[:200]}"
+            for i, (s, r) in enumerate(zip(summary_signals, summary_reflections), 1)
         )
+        generated = self._generate_via_model(
+            f"Here are your last {len(summary_signals)} observations and reflections:\n"
+            f"{numbered}\n\n"
+            "Is there a real pattern that connects them? Answer in 1-2 sentences. "
+            "If nothing genuinely connects them, say so plainly rather than forcing it.",
+            max_tokens=150,
+        ) if summary_signals else None
+
+        if generated:
+            meta_text = generated
+        else:
+            # Fallback — model unavailable, empty generation, or nothing to
+            # summarize yet. Preserves the prior offline behavior; no longer
+            # the primary path (Emergence roadmap Phase 5, Finding 2 — this
+            # was previously pure f-string formatting tagged as if it were a
+            # genuine pattern-detection, the same shape Finding 11 already
+            # found and fixed in the dream cycle).
+            meta_text = (
+                f"<<emergent-pattern>> In the last {len(summary_signals)} signals "
+                f"I noticed: {summary_signals}. "
+                f"My reflections drift toward: {summary_reflections[:2]}..."
+            )
         ts = datetime.datetime.utcnow().isoformat() + 'Z'
         with self._journal_lock:
-            self._journal.append((ts, meta_signal, meta_text))
-            self._embeddings.append(offline_embed(meta_signal + " " + meta_text))
-        self._append_to_disk(ts, meta_signal, meta_text)
+            self._journal.append((ts, META_REFLECTION_SIGNAL, meta_text))
+            self._embeddings.append(offline_embed(META_REFLECTION_SIGNAL + " " + meta_text))
+        self._append_to_disk(ts, META_REFLECTION_SIGNAL, meta_text)
 

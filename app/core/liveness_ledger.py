@@ -32,14 +32,17 @@
 #     broken check can't take down the others or the introspection cycle
 #     that hosts them — same fault-isolation rule as every other collector
 #     in introspection_channel.py.
-#   - This is a floor, not a general test framework: eleven named checks
-#     for eleven subsystems that have already fooled a prior audit, fix,
-#     or session by looking wired while being dead or fake (the 10th and
-#     11th, global_workspace and substrate_continuity, both added
-#     2026-07-15 — the first checks added after this ledger's own initial
-#     build, per the extension rule stated here). Adding a check for a new
-#     autonomous capability is a small, mechanical
-#     extension of this same pattern, not a redesign.
+#   - This is a floor, not a general test framework: 14 named checks for
+#     14 subsystems that have already fooled a prior audit, fix, or session
+#     by looking wired while being dead or fake. The original nine were the
+#     initial build; global_workspace, substrate_continuity,
+#     global_workspace_consumption, valence_self_report, and
+#     reflection_shard_generation were each added afterward, per the
+#     extension rule stated here — most recently 2026-07-16, Emergence
+#     roadmap Phase 5/6. Adding a check for a new autonomous capability is a
+#     small, mechanical extension of this same pattern, not a redesign.
+#     (This count drifts every time a check is added — verify against the
+#     real length of _CHECKS below before trusting this comment's number.)
 # ============================================================
 
 import json
@@ -76,6 +79,8 @@ _WINDOWS_DAYS = {
     "global_workspace": 1,
     "substrate_continuity": None,  # sample-size-windowed (last 2000 entries), not time-windowed
     "global_workspace_consumption": 1,
+    "valence_self_report": None,  # point-in-time consistency check, not time-windowed
+    "reflection_shard_generation": 1,
 }
 
 
@@ -789,6 +794,125 @@ def _check_substrate_continuity() -> dict:
     return _evaluate_substrate_continuity(entries, synth_model, _SUBSTRATE_TAIL_N, _SUBSTRATE_MIN_RATIO)
 
 
+# ── 13. Valence self-report — rendered affect text matches real dim[8] sign ──
+# Emergence roadmap Phase 5, Finding 1: echo_ground_truth.py's _build_affect()
+# now surfaces echo_state.py's real signed valence dimension (dim[8]) in
+# prompts answering "how are you feeling." This check verifies the rendered
+# text's own directional language ("positive"/"negative"/"neutral") actually
+# matches the real sign of dim[8] at the same moment a fresh read produces —
+# the same discipline self_model_drift already applies to memory_health, so a
+# future prompt-assembly edit can't quietly start confabulating mood instead
+# of reporting it.
+
+_VALENCE_NEUTRAL_BAND = 0.15
+
+
+def _evaluate_valence_self_report(dim8_value: "float | None", rendered_text: str) -> dict:
+    if dim8_value is None:
+        return _result(
+            False,
+            "echo_state.npy could not be read — no ground truth available to check "
+            "the rendered affect text against. Failing closed.",
+        )
+    if not rendered_text:
+        return _result(False, "_build_affect() returned no text at all — the slice may be broken.")
+
+    says_positive = "positive" in rendered_text
+    says_negative = "negative" in rendered_text
+    says_neutral = "neutral" in rendered_text
+
+    if dim8_value > _VALENCE_NEUTRAL_BAND:
+        matches = says_positive and not says_negative
+    elif dim8_value < -_VALENCE_NEUTRAL_BAND:
+        matches = says_negative and not says_positive
+    else:
+        matches = says_neutral or (not says_positive and not says_negative)
+
+    if matches:
+        return _result(
+            True,
+            f"Rendered affect text's directional language matches real dim[8]={dim8_value:+.3f}.",
+            {"dim8_value": round(dim8_value, 4)},
+        )
+    return _result(
+        False,
+        f"Rendered affect text does not match real dim[8]={dim8_value:+.3f} "
+        f"(rendered: {rendered_text[:200]!r}) — self-report may be confabulating a "
+        f"mood the real signal doesn't support.",
+        {"dim8_value": round(dim8_value, 4)},
+    )
+
+
+def _check_valence_self_report() -> dict:
+    try:
+        from app.core import echo_state
+        from app.core.echo_ground_truth import _build_affect
+    except Exception as e:
+        return _result(False, f"Could not import echo_state/_build_affect: {e!r} — failing closed.")
+    vec = echo_state.load()
+    dim8_value = float(vec[8]) if vec is not None else None
+    self_model = _read_json(_SELF_MODEL_PATH)
+    rendered_text = _build_affect(self_model or {})
+    return _evaluate_valence_self_report(dim8_value, rendered_text)
+
+
+# ── 14. reflection_shard_generation — real text, not templates ──────────
+# Emergence roadmap Phase 5, Finding 2: reflection_shard.py's _generate_
+# reflection()/_generate_meta_reflection() now route through a real model
+# call, mirroring nature_spark's own discrimination shape — recent
+# reflection_journal.jsonl entries should NOT be near-duplicates of the
+# three retired fixed templates, the old verbatim cosine-similarity quoting
+# shape, or the old fixed "<<emergent-pattern>>" meta fallback string. Any
+# of those firing means the model call is silently failing and this loop
+# has fallen back to its pre-fix behavior, the same class of gap
+# nature_spark's own check exists to catch.
+
+_REFLECTION_JOURNAL = os.path.join(_MEMORY_DIR, "reflection_journal.jsonl")
+_REFLECTION_SHARD_TAIL_N = 20
+_REFLECTION_SHARD_MIN_DISTINCT_RATIO = 0.5
+
+_REFLECTION_FALLBACK_PATTERNS = [
+    re.compile(r"^I notice the signal '.*'—why does it matter to me\?$"),
+    re.compile(r"^The input '.*' ripples like a stone in water—what echoes will it make\?$"),
+    re.compile(r"^I observe myself responding to '.*' in silent wonder\.$"),
+    re.compile(r"^Signal '.*' triggers these echoes: .*$"),
+    re.compile(r"^<<emergent-pattern>> In the last \d+ signals"),
+]
+
+
+def _evaluate_reflection_shard_generation(reflections: list, tail_n: int, min_ratio: float) -> dict:
+    if not reflections:
+        return _result(False, "memory/reflection_journal.jsonl has no entries — no evidence of activity.",
+                        {"distinct_ratio": 0.0})
+    tail = reflections[-tail_n:]
+    fallback = sum(
+        1 for text in tail
+        if any(p.search(text) for p in _REFLECTION_FALLBACK_PATTERNS)
+    )
+    distinct = len(tail) - fallback
+    ratio = distinct / len(tail)
+    passed = ratio >= min_ratio
+    detail = (
+        f"{distinct}/{len(tail)} of the last {len(tail)} reflection_journal.jsonl entries are "
+        f"genuinely generated text ({fallback}/{len(tail)} match the retired fixed-template/"
+        f"verbatim-quote fallback shapes)."
+    )
+    if not passed:
+        detail += (
+            " This means reflection_shard is silently falling back to its pre-fix "
+            "template/similarity-quoting behavior most cycles, not genuinely generating."
+        )
+    return _result(passed, detail, {"distinct_ratio": round(ratio, 3), "fallback_count": fallback, "distinct_count": distinct})
+
+
+def _check_reflection_shard_generation() -> dict:
+    entries = list(_iter_jsonl(_REFLECTION_JOURNAL))
+    reflections = [e.get("reflection", "") for e in entries if e.get("reflection")]
+    return _evaluate_reflection_shard_generation(
+        reflections, _REFLECTION_SHARD_TAIL_N, _REFLECTION_SHARD_MIN_DISTINCT_RATIO,
+    )
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -804,6 +928,8 @@ _CHECKS = (
     "global_workspace",
     "substrate_continuity",
     "global_workspace_consumption",
+    "valence_self_report",
+    "reflection_shard_generation",
 )
 
 
@@ -813,7 +939,8 @@ def _load_prev_ledger() -> dict:
 
 def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
     """
-    Run all eleven liveness checks and write memory/liveness_ledger.json.
+    Run all checks in _CHECKS (14 as of 2026-07-16) and write
+    memory/liveness_ledger.json.
     introspection_memory: the already-computed state["memory"] dict from
     this same introspection cycle (faiss_vector_count/journal_line_count),
     reused rather than re-read so self_model_drift compares against the
@@ -839,6 +966,8 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "global_workspace": _check_global_workspace,
         "substrate_continuity": _check_substrate_continuity,
         "global_workspace_consumption": _check_global_workspace_consumption,
+        "valence_self_report": _check_valence_self_report,
+        "reflection_shard_generation": _check_reflection_shard_generation,
     }
 
     ledger = {"generated_at": _now_iso()}

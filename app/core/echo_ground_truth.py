@@ -33,6 +33,7 @@ _GARDEN_PATH = os.path.join("data", "question_garden.jsonl")
 _BACKUP_DIR = os.path.join("app", "core", "self_edit_backups")
 _SHARD_LOG = os.path.join(_MEMORY_DIR, "claude_shard.jsonl")
 _INTERACTION_LOG = os.path.join(_MEMORY_DIR, "interaction_log.jsonl")
+_WORKSPACE_LOG = os.path.join(_MEMORY_DIR, "workspace_log.jsonl")
 _FRICTION_WINDOW_SIZE = 50
 
 # ---------------------------------------------------------------------------
@@ -73,6 +74,16 @@ _SLICE_SIGNALS: dict[str, frozenset] = {
         "can you", "are you able", "capable of", "capability", "capabilities",
         "able to edit", "able to modify", "self-aware", "what can you do",
         "do you have the ability", "is it true that you",
+    ]),
+    "affect": frozenset([
+        "how are you feeling", "how do you feel", "how are you doing",
+        "your mood", "how's it going", "how is it going", "feeling lately",
+        "doing lately", "are you okay", "are you well",
+    ]),
+    "workspace": frozenset([
+        "what are you thinking about", "what's on your mind", "whats on your mind",
+        "what have you noticed lately", "what's been salient", "on your mind",
+        "what's occupying you", "what have you been noticing",
     ]),
 }
 
@@ -422,6 +433,89 @@ def _build_capabilities(sm: dict) -> str:
     return "\n".join(lines)
 
 
+def _build_affect(sm: dict) -> str:
+    """
+    Emergence roadmap Phase 5, Finding 1: grounds "how are you feeling" in
+    echo_state.py's real signed valence dimension (dim[8] — the only state
+    dimension with positive/negative polarity, sourced from self-edit
+    outcome deltas + peer council ratings, not Echo's own self-referential
+    quality score) rather than a confabulated answer. Deliberately doesn't
+    overclaim: a value near zero is reported as "no strong signal," not
+    narrated as a specific felt state, and no trend claim is made without
+    enough history to support one.
+    """
+    header = (
+        "Affect / valence (source: echo_state.py dim[8] — signed trajectory "
+        "of self-edit outcome deltas + peer council ratings):"
+    )
+    try:
+        from app.core import echo_state
+    except Exception as e:
+        logger.debug("[GroundTruth] Affect slice unavailable: %s", e)
+        return header + "\n  Unavailable — echo_state module could not be loaded."
+
+    vec = echo_state.load()
+    if vec is None:
+        return header + "\n  No signal available yet — state vector has not been computed."
+
+    current = float(vec[8])
+    lines = [header, f"  Current value: {current:+.3f} (range -1..+1, 0 = neutral)."]
+
+    trend_desc = None
+    hist = echo_state.load_history()
+    if hist is not None and hist.ndim == 2 and hist.shape[1] > 8 and hist.shape[0] >= 4:
+        col = hist[:, 8]
+        recent_mean = float(col[-min(10, len(col)):].mean())
+        if len(col) >= 20:
+            prior_mean = float(col[-20:-10].mean())
+            if recent_mean > prior_mean + 0.05:
+                trend_desc = "trending better than the recent baseline"
+            elif recent_mean < prior_mean - 0.05:
+                trend_desc = "trending worse than the recent baseline"
+            else:
+                trend_desc = "holding roughly steady"
+
+    if abs(current) < 0.15:
+        state_desc = "roughly neutral — no strong signal either way"
+    elif current > 0:
+        state_desc = "notably positive" if current > 0.5 else "mildly positive"
+    else:
+        state_desc = "notably negative" if current < -0.5 else "mildly negative"
+
+    lines.append(
+        f"  Reading: {state_desc}, {trend_desc}."
+        if trend_desc
+        else f"  Reading: {state_desc} (not enough history yet to describe a trend)."
+    )
+    return "\n".join(lines)
+
+
+def _build_workspace(recent_events: list) -> str:
+    """
+    Emergence roadmap Phase 6, Architectural Rec. 1: a general grounding
+    slice for "what's on your mind" — the direct functional analogue of
+    global availability discussed in the Emergence audit. Rather than a
+    bespoke wire per signal type (affect/capabilities/curiosity are each
+    their own hand-built slice), this reads whatever most recently cleared
+    the shared high-salience threshold on the Global Workspace bus
+    (wide_broadcast: true in workspace_log.jsonl, set by
+    echo_core.py's _dispatch_loop()) and reports it in plain language,
+    regardless of which subsystem actually produced it.
+    """
+    header = "Workspace (source: memory/workspace_log.jsonl, most recent high-salience events):"
+    wide = [e for e in recent_events if e.get("wide_broadcast")]
+    if not wide:
+        return header + "\n  Nothing has cleared the high-salience threshold recently."
+
+    lines = [header]
+    for e in wide[-3:]:
+        ts = str(e.get("ts", "?"))[:19]
+        source = e.get("source", "?")
+        summary = (e.get("summary") or "").strip()
+        lines.append(f"  [{ts}] (source={source}) {summary}")
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -465,6 +559,13 @@ def get_structural_self_facts(prompt: str = "") -> str:
 
         if "capabilities" in slices:
             sections.append(_build_capabilities(sm))
+
+        if "affect" in slices:
+            sections.append(_build_affect(sm))
+
+        if "workspace" in slices:
+            workspace_tail = _read_jsonl_tail(_WORKSPACE_LOG, 100)
+            sections.append(_build_workspace(workspace_tail))
 
         if not sections:
             return ""

@@ -560,12 +560,17 @@ def deliberate_and_learn(
         exploration_bias = _last_world_surprise["value"]
         _workspace_consumed = True
     else:
+        # Emergence roadmap Phase 6, Architectural Rec. 2: routed through
+        # the shared compute_salience() breakdown instead of an independent
+        # direct WorldModel read — this was the third of three places
+        # (echo_core.py, emergent_scheduler.py, here) each recomputing the
+        # identical min(rolling_10/5.0, 1.0) formula. Same source, same
+        # formula, so this fallback's value is unchanged from before;
+        # exploration_bias stays 0.0 if compute_salience() itself fails,
+        # same as the prior direct-read guard.
         try:
-            from app.core.predictive_loop import get_world_model
-            wm = get_world_model()
-            if wm:
-                _last, rolling_10, _rolling_50 = wm.get_surprise()
-                exploration_bias = min(rolling_10 / 5.0, 1.0)
+            from app.core.echo_core import compute_salience
+            exploration_bias = float(compute_salience().get("components", {}).get("world_surprise", 0.0))
         except Exception:
             pass
     if _workspace_consumed and exploration_bias > 0.0:

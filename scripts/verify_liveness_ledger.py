@@ -5,8 +5,10 @@ discriminates real from fake, not just "imports successfully."
 
 GREMLIN_ROLE.md names verify_integrity() as the canonical example of a
 check that looks like verification but only tests importability. This
-script is the check on the liveness ledger itself: for each of the nine
-pure `_evaluate_*` functions, feed it a reconstructed HISTORICAL FAKE
+script is the check on the liveness ledger itself: for each pure
+`_evaluate_*` function (14 as of 2026-07-16 — verify against
+app.core.liveness_ledger._CHECKS before trusting this number), feed it a
+reconstructed HISTORICAL FAKE
 (the exact behavior a prior audit/fix/session already caught this project
 doing) and confirm it's flagged failing, then feed it real-shaped GOOD
 data and confirm it passes. If any case here doesn't discriminate
@@ -344,6 +346,52 @@ _stale_consumption = [
 ]
 r = ll._evaluate_global_workspace_consumption(_stale_consumption, 1, 200, 1)
 check("global_workspace_consumption: a consumption event exists, but only >1d stale", r["pass"], False, r["evidence"])
+
+
+# ── 13. valence_self_report — Emergence roadmap Phase 5 ───────────────────
+# Historical fake this check exists to catch: echo_ground_truth.py's
+# _build_affect() slice reporting a mood direction that contradicts the real
+# echo_state.npy dim[8] value it's supposed to be grounded in — a future
+# prompt-assembly edit could easily drift this the same way other self-report
+# fields in this project have drifted from ground truth before.
+r = ll._evaluate_valence_self_report(0.6, "Reading: notably positive, trending better than the recent baseline.")
+check("valence_self_report: positive dim[8], text says positive — matches", r["pass"], True, r["evidence"])
+
+r = ll._evaluate_valence_self_report(0.6, "Reading: notably negative, trending worse than the recent baseline.")
+check("valence_self_report: positive dim[8], text says negative — confabulated mismatch", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_valence_self_report(0.0, "Reading: roughly neutral — no strong signal either way.")
+check("valence_self_report: neutral dim[8], text says neutral — matches", r["pass"], True, r["evidence"])
+
+r = ll._evaluate_valence_self_report(None, "Reading: notably positive.")
+check("valence_self_report: echo_state.npy unreadable — no ground truth to check against", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_valence_self_report(-0.6, "")
+check("valence_self_report: negative dim[8], slice returned no text at all", r["pass"], False, r["evidence"])
+
+
+# ── 14. reflection_shard_generation — Emergence roadmap Phase 5 ───────────
+# Historical fake this check exists to catch: reflection_shard.py silently
+# falling back to its pre-fix cosine-similarity quoting / fixed templates
+# because the real model call fails every cycle — deployed-looking, but not
+# actually generating, the same shape nature_spark's own check was built for.
+_fake_reflections = (
+    ["I notice the signal 'idle'—why does it matter to me?" for _ in range(10)]
+    + ["Signal 'autonomy:idle' triggers these echoes: idle -> x | idle -> y" for _ in range(6)]
+    + ["<<emergent-pattern>> In the last 5 signals I noticed: ['a', 'b']. My reflections drift toward: [...]" for _ in range(4)]
+)
+r = ll._evaluate_reflection_shard_generation(_fake_reflections, 20, 0.5)
+check("reflection_shard_generation: 20/20 fallback template/quote shapes (pre-fix behavior)", r["pass"], False, r["evidence"])
+
+_real_reflections = [
+    f"This makes me wonder whether concept {i} is really about disruption rather than accumulation."
+    for i in range(20)
+]
+r = ll._evaluate_reflection_shard_generation(_real_reflections, 20, 0.5)
+check("reflection_shard_generation: 20/20 genuinely distinct generated text", r["pass"], True, r["evidence"])
+
+r = ll._evaluate_reflection_shard_generation([], 20, 0.5)
+check("reflection_shard_generation: no journal entries at all", r["pass"], False, r["evidence"])
 
 
 print()

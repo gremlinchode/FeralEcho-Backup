@@ -101,6 +101,36 @@ def _on_self_edit_non_convergent(event_type, payload) -> None:
     _curiosity_topic_bias = {"topic": "ai_tech", "ts": time.time()}
 
 
+def _on_wide_broadcast_event(event_type: str, payload: dict) -> None:
+    """
+    Emergence roadmap Phase 6 ("broaden many-to-many recruitment"): a
+    second, independent curiosity-bias input alongside
+    _on_self_edit_non_convergent above — subscribed via the new
+    subscribe_wide_broadcast() channel (echo_core.py), which only forwards
+    events whose payload cleared the shared high-salience threshold.
+    Currently only acts on world_model.surprise events that carry real
+    per-topic detail (topics list, same order as predictive_loop.py's own
+    TOPIC_NAMES) — nudging attention toward whichever real-world topic
+    actually drove that surprise, rather than only ever reacting to
+    self-edit convergence state. Other wide-broadcast event types are
+    intentionally left alone here rather than guessing a topic mapping
+    that isn't backed by real per-topic data.
+    """
+    global _curiosity_topic_bias
+    if event_type != "world_model.surprise":
+        return
+    topics = (payload.get("detail") or {}).get("topics")
+    if not isinstance(topics, list) or not topics:
+        return
+    try:
+        from app.core.predictive_loop import TOPIC_NAMES
+        top_idx = max(range(len(topics)), key=lambda i: topics[i])
+        if topics[top_idx] > 0:
+            _curiosity_topic_bias = {"topic": TOPIC_NAMES[top_idx], "ts": time.time()}
+    except Exception:
+        pass
+
+
 def _ensure_workspace_subscribed() -> None:
     global _workspace_subscribed
     if _workspace_subscribed:
@@ -110,6 +140,7 @@ def _ensure_workspace_subscribed() -> None:
         core = get_echo_core()
         if core:
             core.subscribe("self_edit.non_convergent", _on_self_edit_non_convergent)
+            core.subscribe_wide_broadcast(_on_wide_broadcast_event)
             _workspace_subscribed = True
     except Exception:
         pass  # EchoCore not ready yet — retried on the next call, cheap check
@@ -388,26 +419,24 @@ def weighted_prompt_selection():
     weak_focus = _get_weak_task_focus()
     weak_keywords = _WEAK_TASK_KEYWORDS.get(weak_focus, [])
 
+    # Emergence roadmap Phase 6, Architectural Rec. 2: coherence_tension and
+    # world_surprise now come from the shared compute_salience() breakdown
+    # (app/core/echo_core.py) instead of each being independently re-derived
+    # here — this file, echo_core.py, and river_deliberation.py had each
+    # been computing the identical vec[1] read and the identical
+    # min(rolling_10/5.0, 1.0) formula on their own. Refactor only: same
+    # underlying sources, same formulas, so the values (and therefore the
+    # resulting weights/thresholds below) are unchanged from before — see
+    # echo_core.py's _salience_coherence_tension()/_salience_world_surprise()
+    # for the exact logic this now reuses. Fails closed to 0.0 for both if
+    # compute_salience() itself is unavailable, same posture as before.
     coherence_tension = 0.0
-    if _ECHO_STATE_AVAILABLE:
-        try:
-            vec = _echo_state_load()
-            if vec is not None:
-                coherence_tension = float(vec[1])
-        except Exception:
-            pass
-
-    # Same normalization formula Phase 2a's Global Workspace publisher and
-    # Phase 2b's council-exploration bump both already use (consistency,
-    # not a new number invented for this). Fails closed to 0.0 — no
-    # WorldModel, no boost, same as coherence_tension's own guard above.
     world_surprise = 0.0
     try:
-        from app.core.predictive_loop import get_world_model
-        wm = get_world_model()
-        if wm:
-            _last, rolling_10, _rolling_50 = wm.get_surprise()
-            world_surprise = min(rolling_10 / 5.0, 1.0)
+        from app.core.echo_core import compute_salience
+        _components = compute_salience().get("components", {})
+        coherence_tension = float(_components.get("coherence_tension", 0.0))
+        world_surprise = float(_components.get("world_surprise", 0.0))
     except Exception:
         pass
 

@@ -23,6 +23,15 @@ from typing import Any, Callable, Dict, List, Optional
 
 _WORKSPACE_LOG_PATH = os.path.join("memory", "workspace_log.jsonl")
 
+# Emergence roadmap Phase 6, Finding 4 (redesigned from the original audit's
+# batching-window proposal — real workspace_log.jsonl inter-arrival data
+# showed independent subsystems essentially never fire within seconds of
+# each other, so a time-based arbitration window would rarely trigger).
+# Reuses the same ">0.6" threshold emergent_scheduler.py's own coherence/
+# novelty boosts already use for "meaningfully high," rather than inventing
+# a new number.
+_WIDE_BROADCAST_SALIENCE_THRESHOLD = 0.6
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
@@ -77,6 +86,11 @@ class EchoCore:
         # 100% dormant infrastructure before this: zero publishers or
         # subscribers existed anywhere in the codebase outside this file.
         self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
+        # Separate from the "*" wildcard list on purpose (Emergence roadmap
+        # Phase 6) — existing "*" subscribers must keep receiving exactly
+        # what they always have; this is an additional, opt-in list for
+        # consumers that specifically want only the high-salience subset.
+        self._wide_broadcast_subscribers: List[Callable] = []
         self._event_queue: queue.Queue = queue.Queue(maxsize=500)
         t = threading.Thread(target=self._dispatch_loop, daemon=True, name="EchoCoreBus")
         t.start()
@@ -229,12 +243,31 @@ class EchoCore:
         except Exception as e:
             logger.warning("[EchoCore] Could not register river_deliberation workspace consumer: %s", e)
 
-        # 4c (emergent_scheduler.py subscribing to self_edit.non_convergent)
+        # 4c (emergent_scheduler.py subscribing to self_edit.non_convergent,
+        # and Phase 6's wide-broadcast topic-bias subscription alongside it)
         # registers itself lazily via _ensure_workspace_subscribed() — that
         # module isn't imported by EchoCore at all today, and importing it
         # here just to register one subscription would be a heavier,
         # one-directional dependency for no real benefit over the same
         # lazy-registration pattern already used elsewhere in this file.
+
+        # 6 — reflection_shard becomes a real wide-broadcast consumer
+        # (Emergence roadmap Phase 6, "broaden many-to-many recruitment").
+        # Previously the only caller of ReflectionShard.observe() anywhere
+        # in the repo was the autonomy loop feeding on its own prior journal
+        # tail — nothing fed it a real external signal despite the class
+        # being designed for one. observe() can now call a real model
+        # (Phase 5, Finding 2) — potentially slow, so it's offloaded to its
+        # own daemon thread rather than run inline, which would otherwise
+        # stall delivery to every other subscriber on this single dispatch
+        # loop for the duration of the call.
+        if self.reflection_shard is not None:
+            def _reflection_shard_wide_broadcast_consumer(et, p, shard=self.reflection_shard):
+                signal = f"workspace:{p.get('source', et)}:{(p.get('summary') or '')[:120]}"
+                threading.Thread(target=shard.observe, args=(signal,), daemon=True).start()
+
+            self.subscribe_wide_broadcast(_reflection_shard_wide_broadcast_consumer)
+            logger.info("[EchoCore] Workspace consumer registered: reflection_shard <- wide_broadcast")
 
     # --------------------------
     # Event bus
@@ -279,6 +312,22 @@ class EchoCore:
         self._subscribers[event_type].append(callback)
         logger.debug("[EchoCore] Subscribed to '%s'.", event_type)
 
+    def subscribe_wide_broadcast(self, callback: Callable) -> None:
+        """
+        Emergence roadmap Phase 6, Finding 4: any event whose payload
+        carries a real salience >= _WIDE_BROADCAST_SALIENCE_THRESHOLD (most
+        publishers already attach one via publish_salience()) is dispatched
+        here in addition to its normal per-type/"*" subscribers — a second,
+        opt-in list for consumers that specifically want only the
+        high-salience subset, deliberately kept separate from "*" so
+        nothing already listening there silently starts receiving a
+        filtered subset it didn't ask for. Events with no salience field, or
+        a non-numeric one, default to NOT wide_broadcast (fail closed —
+        no score means no special treatment).
+        """
+        self._wide_broadcast_subscribers.append(callback)
+        logger.debug("[EchoCore] Subscribed to wide_broadcast events.")
+
     def _log_workspace_event(self, event_type: str, payload: dict) -> None:
         """The one subscriber wired in Phase 2a — pure logging, no other
         side effect. Ground-truth evidence for liveness_ledger.py's
@@ -291,6 +340,7 @@ class EchoCore:
                 "source": payload.get("source"),
                 "summary": payload.get("summary"),
                 "salience": payload.get("salience"),
+                "wide_broadcast": bool(payload.get("wide_broadcast", False)),
             }
             with open(_WORKSPACE_LOG_PATH, "a", encoding="utf-8") as f:
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")
@@ -303,15 +353,32 @@ class EchoCore:
                 event = self._event_queue.get(timeout=1.0)
             except queue.Empty:
                 continue
+            payload = event["payload"]
+            # Per-event arbitration (Emergence roadmap Phase 6, Finding 4):
+            # stamped onto payload itself, not a separate dispatch argument,
+            # so every existing subscriber's (event_type, payload) signature
+            # stays unchanged — _log_workspace_event picks it up the same
+            # way it already reads "salience" off payload.
+            salience = payload.get("salience")
+            wide_broadcast = isinstance(salience, (int, float)) and salience >= _WIDE_BROADCAST_SALIENCE_THRESHOLD
+            payload["wide_broadcast"] = wide_broadcast
+
             subscribers = (
                 list(self._subscribers.get(event["type"], []))
                 + list(self._subscribers.get("*", []))
             )
             for cb in subscribers:
                 try:
-                    cb(event["type"], event["payload"])
+                    cb(event["type"], payload)
                 except Exception as e:
                     logger.warning("[EchoCore] Subscriber for '%s' raised: %s", event["type"], e)
+
+            if wide_broadcast:
+                for cb in list(self._wide_broadcast_subscribers):
+                    try:
+                        cb(event["type"], payload)
+                    except Exception as e:
+                        logger.warning("[EchoCore] Wide-broadcast subscriber for '%s' raised: %s", event["type"], e)
 
     # --------------------------
     # Autonomous dominion
@@ -558,6 +625,33 @@ def _salience_self_edit_streak() -> float:
         return 0.0
 
 
+_SALIENCE_STATE_PATH = os.path.join("memory", "salience_state.json")
+
+
+def _persist_salience_state(result: dict) -> None:
+    """
+    Best-effort persistence of compute_salience()'s last result (Emergence
+    roadmap Phase 5) so a sibling process — self_model_updater.py — can fold
+    coupling_estimate into self_model.json for trend visibility without
+    calling compute_salience() again itself. Re-calling it elsewhere would
+    both double-count a salience sample this call didn't actually take and
+    require importing this module's live WorldModel/echo_state dependencies
+    a second time; a small state file is the same file-read pattern already
+    used for recent_dream_synthesis. Never raises — a failed write here
+    must not affect the real computation it's attached to.
+    """
+    try:
+        os.makedirs(os.path.dirname(_SALIENCE_STATE_PATH), exist_ok=True)
+        tmp = _SALIENCE_STATE_PATH + ".tmp"
+        payload = dict(result)
+        payload["ts"] = datetime.now(timezone.utc).isoformat()
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(payload, f)
+        os.replace(tmp, _SALIENCE_STATE_PATH)
+    except Exception as e:
+        logger.debug("[EchoCore] salience_state persist failed: %s", e)
+
+
 def compute_salience() -> dict:
     """
     A shared "how salient is this right now" score any loop can voluntarily
@@ -582,11 +676,13 @@ def compute_salience() -> dict:
     }
     score = sum(components.values()) / len(components)
     _salience_history.append(dict(components))
-    return {
+    result = {
         "score": score,
         "components": components,
         "coupling_estimate": _coupling_estimate(_salience_history),
     }
+    _persist_salience_state(result)
+    return result
 
 
 # ── Coupling estimate (Emergence roadmap Phase 5, observe-only) ──────────

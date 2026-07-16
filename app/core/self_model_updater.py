@@ -133,6 +133,7 @@ class SelfModelUpdater:
             "targets": targets,
             "verified_capabilities": self._compute_verified_capabilities(),
             "recent_dream_synthesis": self._compute_recent_dream_synthesis(),
+            "coupling_estimate_trend": self._compute_coupling_estimate_trend(),
         }
 
         self._write(model)
@@ -579,6 +580,37 @@ class SelfModelUpdater:
             "status": "computed",
             "text": synthesis,
             "ts": state.get("last_synthesis_ts"),
+        }
+
+    def _compute_coupling_estimate_trend(self) -> dict:
+        """
+        Fold echo_core.py's observe-only coupling_estimate (Emergence
+        roadmap Phase 5, Finding 6) into self_model.json for trend
+        visibility — same read-and-fold shape as
+        _compute_recent_dream_synthesis() above (a file read, not a
+        sibling-module call: compute_salience() has a real side effect,
+        appending to its own rolling history, so calling it again here just
+        to read its last value would both double-count a sample it didn't
+        actually take and pull in its live WorldModel/echo_state
+        dependencies a second time). Deliberately observational only — no
+        liveness check yet, since there's no known-good baseline to check a
+        coupling number against until real data accumulates.
+        """
+        salience_state_path = os.path.join(self._memory_dir, "salience_state.json")
+        try:
+            with open(salience_state_path, "r", encoding="utf-8") as f:
+                state = json.load(f)
+        except Exception as e:
+            return {"status": "unavailable", "reason": str(e)}
+
+        coupling = state.get("coupling_estimate")
+        if coupling is None:
+            return {"status": "insufficient_samples"}
+        return {
+            "status": "computed",
+            "coupling_estimate": coupling,
+            "components": state.get("components", {}),
+            "ts": state.get("ts"),
         }
 
     def _compute_weekly_delta(self, current_performance: dict) -> dict:

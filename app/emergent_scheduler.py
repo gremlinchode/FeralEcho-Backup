@@ -896,6 +896,17 @@ def emergent_loop():
             except Exception as _se2:
                 logging.debug(f"[SCHEDULER] Salience consultation failed, using base interval: {_se2}")
 
+            # Seam detection (app/core/seam_engine.py, added 2026-07-16 — see
+            # CLAUDE.md's Machine-Native Awareness section and ORIGIN.md).
+            # Best-effort and purely observational: reads Echo's own
+            # already-persisted echo_state_history.npy, never writes to or
+            # blocks this loop, and has no effect on next_sleep above.
+            try:
+                from app.core.seam_engine import observe as _observe_seams
+                _observe_seams()
+            except Exception as _se3:
+                logging.debug(f"[SCHEDULER] Seam observation failed: {_se3}")
+
             # Sleep before next emergent cycle
             time.sleep(next_sleep)
 

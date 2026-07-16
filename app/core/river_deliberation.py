@@ -153,6 +153,30 @@ SYNTHESIS_TIMEOUT: int = 1200
 # start from.
 ECHO_SCORE_BOOST: float = 1.0
 
+# ── Declared-specialty scoring nudge (Finding 39, 2026-07-16) ──
+# detect_model_tags() (echo_model_orchestrator.py) has always existed but
+# was never read anywhere in selection — a coding specialist (qwen2.5-coder)
+# and two untagged-for-coding general models competed as if the tags didn't
+# exist, and the untagged models won on pure historical volume (confirmed
+# live: 4,200+ observations each vs. 16). This gives a model a small nudge
+# toward tasks its own declared tags claim it's suited for, without
+# filtering eligibility — it still has to actually perform once selected.
+# Deliberately conservative, smaller than ECHO_SCORE_BOOST's original 1.5
+# (see that constant's own comment on why an oversized structural thumb on
+# the scale was reduced to a no-op) — this is a new, unproven mechanism and
+# should start cautious, not aggressive.
+#
+# Honest caveat, not glossed over: this amplifies whatever the tags
+# currently say, and not all of them are equally well-grounded. qwen2.5-coder
+# -> coding and deepseek-r1 -> reasoning track real, known differences in
+# what those specific releases were built for. gemma3 and mistral both
+# landing on the identical ["creative", "story", "poetry"] set looks more
+# like bucket-filling than a verified capability claim — this mechanism
+# will boost those just the same, because deciding which tags "count" would
+# mean guessing at model capabilities without real benchmark data. Fixing
+# the tag content itself is a separate, not-yet-attempted task.
+TAG_SCORE_BOOST: float = 1.15
+
 # ── Direct Echo task types ────────────────────────────────────
 # These task types bypass the council entirely and route straight
 # to Echo. No deliberation needed — Echo should speak in its own
@@ -363,6 +387,9 @@ def _select_council(
     - Once a model is well-observed, ask River for a ranked list (via
       score_model) for this task.
     - Apply ECHO_SCORE_BOOST to Echo's score so it leads the council.
+    - Apply TAG_SCORE_BOOST (Finding 39) to any model whose declared tags
+      (detect_model_tags()) include this task_type — a nudge, not a filter;
+      an untagged model can still win on real performance.
     - Take the top `council_size` models.
     - Always try to include ECHO_SYNTHESIS_MODEL as a councillor
       if it is installed — Echo's self-opinion is valuable context
@@ -388,6 +415,8 @@ def _select_council(
         base = river_brain.score_model(model, task_type)
         if model == ECHO_SYNTHESIS_MODEL:
             return base * ECHO_SCORE_BOOST
+        if task_type in model_pool.get(model, {}).get("tags", []):
+            return base * TAG_SCORE_BOOST
         return base
 
     under_sampled = [

@@ -630,6 +630,19 @@ def detect_model_tags(name):
     else:
         return ["general"]
 
+# Finding 39 (2026-07-16), judgment call made at Gremlin's explicit request:
+# vicuna:latest is a 2023-era LLaMA-1/2 fine-tune, meaningfully obsolete next
+# to every other model in this pool (Qwen2.5, Llama3.1/3.2, Gemma3,
+# DeepSeek-R1 are all newer generations). It shares its only tags
+# (["instruction", "general"]) with several other, stronger models, so it
+# adds no real specialty diversity — it just competes for exploration budget
+# it's unlikely to ever justify (12 lifetime observations at the time of
+# this check, essentially never selected already). Excluded here rather
+# than via `ollama rm` — soft, code-level, and trivially reversible by
+# deleting this one line, versus an irreversible uninstall of a real local
+# model file for a call this close.
+_RETIRED_MODELS = {"vicuna:latest"}
+
 def list_ollama_models():
     try:
         result = subprocess.run(
@@ -642,6 +655,8 @@ def list_ollama_models():
                 continue
             parts = line.split()
             name = parts[0]
+            if name in _RETIRED_MODELS:
+                continue
             tags = detect_model_tags(name)
             models_info.append({
                 "name": name,
@@ -764,7 +779,24 @@ class RiverBrain:
             # entropy_of_predictions()'s probability normalization all still
             # behave sensibly with no changes needed there.
             normalized_score = raw_score / 4.0
-            stats["mean"] += (normalized_score - stats["mean"]) / stats["count"]
+            # Effective-window cap (Finding 39, 2026-07-16): the plain
+            # incremental mean (mean += delta/count) gives each new
+            # observation weight 1/count forever, so a model with a large
+            # early lead becomes permanently resistant to its score ever
+            # changing — confirmed live: llama3.2:3b at 4,232 coding
+            # observations moves by roughly 1/4232nd per new data point,
+            # while a 16-observation model swings by 1/16th. That's real
+            # preferential attachment, not just an abstract concern.
+            # Capping the denominator at _MEAN_EFFECTIVE_WINDOW turns this
+            # into an EMA-like update once a model passes that many
+            # observations — recent performance stays meaningfully able to
+            # move the score, for every model, indefinitely. 200 is a
+            # judgment call, not derived from data the way the seam engine's
+            # variance floor was — chosen as a middle ground: large enough
+            # to stay stable and not noisy, small enough that a model's
+            # score can't freeze solid the way it does today.
+            effective_n = min(stats["count"], self._MEAN_EFFECTIVE_WINDOW)
+            stats["mean"] += (normalized_score - stats["mean"]) / effective_n
             if self.observation_counts[task_type] % 50 == 0:
                 acc = self.accuracy_trackers[task_type].get()
                 logging.info(f"[RIVER] {task_type} classifier | "
@@ -823,6 +855,13 @@ class RiverBrain:
         )
 
     _MIN_MODEL_OBSERVATIONS = 5
+
+    # Finding 39 (2026-07-16): caps learn()'s incremental-mean denominator
+    # so a model's score stays responsive to recent performance indefinitely
+    # instead of freezing once observation count gets large. See learn()'s
+    # own comment for the reasoning; this is a judgment call, not derived
+    # from measured data.
+    _MEAN_EFFECTIVE_WINDOW = 200
 
     def score_model(self, model_name: str, task_type: str) -> float:
         """Real historical quality for this (model, task_type) pair — a

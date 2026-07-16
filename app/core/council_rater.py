@@ -390,6 +390,40 @@ def get_council_stats() -> dict:
     }
 
 
+def get_recent_council_average(n: int = 20) -> "float | None":
+    """Mean council_rating over the most recent n real (non-skipped, non-self-rated)
+    entries — a recent window, not all-time, so a stale streak from weeks ago can't
+    permanently outvote what's happening now (same reasoning as Finding 18's Optuna
+    best-trial fix and Finding 28's apply_to_code recent-error-rate hardening).
+    Returns None if no real ratings exist yet.
+    """
+    if not os.path.exists(_COUNCIL_LOG):
+        return None
+    ratings: list[int] = []
+    try:
+        with open(_COUNCIL_LOG, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    e = json.loads(line)
+                except Exception:
+                    continue
+                if e.get("skipped") or e.get("council_rating") is None:
+                    continue
+                if e.get("model_used") and e.get("model_used") == e.get("council_rating_model"):
+                    continue  # self-rating — excluded per Finding M-4, same as get_council_stats()
+                ratings.append(int(e["council_rating"]))
+    except Exception as e:
+        logger.warning("[Council] get_recent_council_average read error: %s", e)
+        return None
+    if not ratings:
+        return None
+    tail = ratings[-n:]
+    return round(sum(tail) / len(tail), 3)
+
+
 def get_pending_spot_checks(limit: int = 20) -> list:
     """Return unfilled spot-check entries, newest-first, up to limit."""
     if not os.path.exists(_COUNCIL_LOG):

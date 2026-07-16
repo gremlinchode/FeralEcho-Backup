@@ -36,6 +36,7 @@
 import logging
 import random
 import subprocess
+import time
 from typing import Optional
 import re
 
@@ -110,6 +111,24 @@ def _strip_ansi(text: str) -> str:
 # ── Council configuration ────────────────────────────────────
 ECHO_SYNTHESIS_MODEL: str = "echo:latest"
 DEFAULT_COUNCIL_SIZE: int = 3
+
+# ── Global Workspace world-surprise cache (Emergence roadmap Phase 4b) ──
+# river_deliberation.py does not import echo_core.py itself (avoids a
+# circular dependency risk on a file this project already treats with
+# extra care — both are in EDIT_FORBIDDEN_TARGETS). The subscription to
+# the "world_model.surprise" event is registered from echo_core.py's
+# __init__ instead, which calls this setter. This is a cache ALONGSIDE the
+# pre-existing direct WorldModel read below, not a replacement for it —
+# preferred when fresh, falls back to the direct read otherwise, so a
+# missing/late subscription registration degrades to exactly the prior
+# behavior rather than losing the signal.
+_last_world_surprise = {"value": 0.0, "ts": 0.0}
+_WORLD_SURPRISE_CACHE_TTL = 120  # seconds
+
+
+def set_cached_world_surprise(value: float) -> None:
+    _last_world_surprise["value"] = value
+    _last_world_surprise["ts"] = time.time()
 
 # ── Timeout configuration ─────────────────────────────────────
 # Raised from 120s — local 8B models under memory pressure need
@@ -527,15 +546,40 @@ def deliberate_and_learn(
     # invented for this), feeds the bounded exploration bump in
     # _select_council(). Best-effort — a missing/uninitialized WorldModel
     # falls back to 0.0, the exact prior behavior.
+    # Emergence roadmap Phase 4b: prefer the Global Workspace-subscribed
+    # cache (set_cached_world_surprise(), fed by echo_core.py's
+    # "world_model.surprise" subscription) when it's fresh — this makes
+    # the workspace an actual consulted integration point rather than a
+    # parallel channel carrying the same value nobody reads. Falls back to
+    # the direct read below, unchanged, if the cache is stale/never set —
+    # e.g. before EchoCore has finished initializing, or in a standalone/
+    # test context with no bus running at all.
     exploration_bias = 0.0
-    try:
-        from app.core.predictive_loop import get_world_model
-        wm = get_world_model()
-        if wm:
-            _last, rolling_10, _rolling_50 = wm.get_surprise()
-            exploration_bias = min(rolling_10 / 5.0, 1.0)
-    except Exception:
-        pass
+    _workspace_consumed = False
+    if time.time() - _last_world_surprise["ts"] < _WORLD_SURPRISE_CACHE_TTL:
+        exploration_bias = _last_world_surprise["value"]
+        _workspace_consumed = True
+    else:
+        try:
+            from app.core.predictive_loop import get_world_model
+            wm = get_world_model()
+            if wm:
+                _last, rolling_10, _rolling_50 = wm.get_surprise()
+                exploration_bias = min(rolling_10 / 5.0, 1.0)
+        except Exception:
+            pass
+    if _workspace_consumed and exploration_bias > 0.0:
+        try:
+            from app.core.echo_core import get_echo_core
+            core = get_echo_core()
+            if core:
+                core.publish_salience(
+                    source="river_deliberation", kind="workspace.consumed",
+                    summary=f"exploration_bias={exploration_bias:.3f} (from cache)",
+                    salience=exploration_bias,
+                )
+        except Exception:
+            pass  # observability only, never blocks council selection
     council = _select_council(task_type, river_brain, model_pool, council_size, exploration_bias)
 
     if not council:

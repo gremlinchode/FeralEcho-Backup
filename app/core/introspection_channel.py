@@ -414,7 +414,27 @@ class IntrospectionChannel:
             "hours_since_last_success": None,
             "last_success_prompt_preview": "",
             "success_rate": 0.0,
+            "recent_quality_delta": None,
         }
+        try:
+            # Mean quality_score.delta over the most recent evaluated
+            # self_edit_outcomes.jsonl entries — an externally-anchored
+            # (pre/post interaction quality, not the safety pipeline's own
+            # accept/reject gate) recent-improvement signal. Feeds
+            # echo_state.py's valence dimension; this was previously never
+            # read by anything outside self_edit_manager.py's prompt-hinting
+            # per self_edit_outcome_tracker.py's own docstring ("a separate,
+            # explicit decision").
+            from app.core.self_edit_outcome_tracker import get_outcomes_summary
+            recent = get_outcomes_summary(limit=10).get("recent", [])
+            deltas = [
+                e["quality_score"]["delta"] for e in recent
+                if isinstance(e.get("quality_score"), dict) and e["quality_score"].get("delta") is not None
+            ]
+            if deltas:
+                result["recent_quality_delta"] = round(sum(deltas) / len(deltas), 4)
+        except Exception as e:
+            logger.debug("[Introspection] recent_quality_delta collect failed: %s", e)
         try:
             shard_path = os.path.join(self._memory_dir, "reflection_shard.jsonl")
             if not os.path.exists(shard_path):

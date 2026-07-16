@@ -159,8 +159,17 @@ def harvest_question(
     question: str,
     category: str = "general",
     source: str = "echo",
-    parents: list | None = None
+    parents: list | None = None,
+    investigation_plan: list | None = None
 ):
+    """investigation_plan (Emergence roadmap Phase 6, optional): a list of
+    {"step": str, "done": bool} dicts sketching concrete follow-up actions
+    for this question, distinct from parent_questions/children's lineage —
+    a plan is steps toward answering THIS question, not other questions it
+    spawned. Reuses those same fields' existing defensive-read convention
+    (.get(..., default)) everywhere it's consumed, so entries planted
+    before this existed (or by any caller that never passes it) are
+    handled the same as an entry with an empty plan, not a missing field."""
 
     entries = _load_garden()
 
@@ -190,6 +199,7 @@ def harvest_question(
 
         "parent_questions": parents or [],
         "children": [],
+        "investigation_plan": investigation_plan or [],
 
         "status": "active",
 
@@ -369,6 +379,16 @@ def select_from_garden():
 
         if entry["source"] == "human":
             weight += 0.5
+
+        # Emergence roadmap Phase 6: a question with a real, incomplete
+        # investigation plan represents work already in progress — favor
+        # continuing it over starting fresh on an unplanned question of
+        # similar standing. A plan where every step is already done isn't
+        # "incomplete" and gets no bonus (that's progress to record via
+        # update_resolution(), not a reason to keep re-surfacing it).
+        plan = entry.get("investigation_plan") or []
+        if plan and any(not step.get("done") for step in plan if isinstance(step, dict)):
+            weight += 1.5
 
         weights.append(weight)
 

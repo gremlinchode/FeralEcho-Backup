@@ -82,6 +82,38 @@ except Exception:
 _weak_task_cache: dict = {"focus": "general", "ts": 0.0}
 _WEAK_TASK_TTL = 300.0
 
+# Emergence roadmap Phase 4c — a short-lived curiosity topic bias, set by a
+# Global Workspace subscription to "self_edit.non_convergent". When
+# self-edit is stuck in a non-convergent streak on some code family,
+# that's a real signal attention should shift toward coding-adjacent
+# curiosity for a while — a genuine cross-subsystem effect from a
+# broadcast event, not curiosity_engine.py's own information-gap detector
+# independently arriving at the same place. 30-minute TTL (not one 300s
+# scheduler cycle) — matches the timescale a real non-convergent streak
+# actually persists over.
+_curiosity_topic_bias: dict = {"topic": None, "ts": 0.0}
+_CURIOSITY_BIAS_TTL = 1800.0
+_workspace_subscribed = False
+
+
+def _on_self_edit_non_convergent(event_type, payload) -> None:
+    global _curiosity_topic_bias
+    _curiosity_topic_bias = {"topic": "ai_tech", "ts": time.time()}
+
+
+def _ensure_workspace_subscribed() -> None:
+    global _workspace_subscribed
+    if _workspace_subscribed:
+        return
+    try:
+        from app.core.echo_core import get_echo_core
+        core = get_echo_core()
+        if core:
+            core.subscribe("self_edit.non_convergent", _on_self_edit_non_convergent)
+            _workspace_subscribed = True
+    except Exception:
+        pass  # EchoCore not ready yet — retried on the next call, cheap check
+
 # Safe import of cartographer for autonomous self-scanning
 try:
     from echo_cartographer import build_map, write_json, write_sqlite, CartographerDB, OUTPUT_JSON, OUTPUT_DB
@@ -249,11 +281,28 @@ def select_next_prompt() -> str:
     curiosity doesn't fire, is unavailable, returns nothing, or errors.
     B2: Skip prompts that were recently reflected on (sim > 0.85, < 2h ago).
     """
+    _ensure_workspace_subscribed()
     for _attempt in range(3):
         candidate = None
         if _CURIOSITY_AVAILABLE and random.random() < 0.30:
             try:
-                candidate = _curiosity_pick(BASE_THOUGHT_CHEST)
+                topic_bias = (
+                    _curiosity_topic_bias["topic"]
+                    if time.time() - _curiosity_topic_bias["ts"] < _CURIOSITY_BIAS_TTL
+                    else None
+                )
+                candidate = _curiosity_pick(BASE_THOUGHT_CHEST, topic_bias=topic_bias)
+                if topic_bias and candidate:
+                    try:
+                        from app.core.echo_core import get_echo_core
+                        core = get_echo_core()
+                        if core:
+                            core.publish_salience(
+                                source="curiosity_engine", kind="workspace.consumed",
+                                summary=f"topic biased toward: {topic_bias}",
+                            )
+                    except Exception:
+                        pass
             except Exception as _ce:
                 logging.debug(f"[SCHEDULER] curiosity_engine.pick() failed, falling back: {_ce}")
                 candidate = None
@@ -301,6 +350,19 @@ _CONSISTENCY_SIGNALS = ["inconsistenc", "contradict", "pattern", "self-evaluat",
 # time?").
 _NOVELTY_SIGNALS = ["surprise", "first time", "learn", "uncertain", "understand", "experience"]
 
+# Emergence roadmap Phase 3 — echo_state.py dim[8] (valence) is the first
+# SIGNED internal-state dimension (everything else in that vector is an
+# unsigned activity magnitude). Chosen against the real BASE_THOUGHT_CHEST
+# entries, same discipline as _NOVELTY_SIGNALS above: sustained negative
+# valence favors consolidation-shaped prompts ("Reflect on your latest
+# interactions and summarize insights.", "Consider ways to improve your
+# reasoning and memory storage.", "What is the relationship between memory
+# and identity?") over novel exploration; sustained positive valence
+# reuses _NOVELTY_SIGNALS directly rather than inventing a near-duplicate
+# list — "things are going well" and "chase what's surprising" point the
+# same direction here.
+_CONSOLIDATION_SIGNALS = ["reflect", "summarize", "memory", "improve", "consider ways", "inconsistencies"]
+
 def weighted_prompt_selection():
     """
     Selects a prompt weighted by:
@@ -316,6 +378,12 @@ def weighted_prompt_selection():
       surprise signal is high, boost prompts about novelty/learning/first-
       time-experience — a distinct signal from coherence tension above, not
       folded into it
+    - Valence (Emergence roadmap Phase 3): echo_state.py dim[8], signed.
+      Sustained negative valence boosts consolidation/reflection-shaped
+      prompts; sustained positive valence boosts the same novelty-shaped
+      prompts world_surprise already favors. Silent/behavioral only per
+      this phase's own scope decision — not surfaced through
+      echo_ground_truth.py's self-report channel.
     """
     weak_focus = _get_weak_task_focus()
     weak_keywords = _WEAK_TASK_KEYWORDS.get(weak_focus, [])
@@ -342,6 +410,17 @@ def weighted_prompt_selection():
             world_surprise = min(rolling_10 / 5.0, 1.0)
     except Exception:
         pass
+
+    # Fails closed to 0.0 (neutral) — no echo_state.npy yet, or a dim[8]-less
+    # (pre-Phase-3) history still on disk, both look the same as "no signal".
+    valence = 0.0
+    if _ECHO_STATE_AVAILABLE:
+        try:
+            vec = _echo_state_load()
+            if vec is not None and len(vec) > 8:
+                valence = float(vec[8])
+        except Exception:
+            pass
 
     weights = []
     for prompt in BASE_THOUGHT_CHEST:
@@ -387,6 +466,17 @@ def weighted_prompt_selection():
             pl = prompt.lower()
             if any(sig in pl for sig in _NOVELTY_SIGNALS):
                 weight *= (1.0 + world_surprise)
+        # Valence (Emergence roadmap Phase 3): same threshold/multiplier
+        # shape as the two boosts above, applied in whichever direction the
+        # signed value actually points.
+        if valence < -0.6:
+            pl = prompt.lower()
+            if any(sig in pl for sig in _CONSOLIDATION_SIGNALS):
+                weight *= (1.0 + abs(valence))
+        elif valence > 0.6:
+            pl = prompt.lower()
+            if any(sig in pl for sig in _NOVELTY_SIGNALS):
+                weight *= (1.0 + valence)
         weights.append(weight)
 
     total = sum(weights)

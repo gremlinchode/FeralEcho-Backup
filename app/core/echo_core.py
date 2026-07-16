@@ -17,7 +17,7 @@ import time
 import importlib
 import traceback
 import queue
-from collections import defaultdict
+from collections import defaultdict, deque
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
 
@@ -98,6 +98,7 @@ class EchoCore:
         self._init_query_fn(query_fn)
         self._init_river_brain()
         self._init_optuna()
+        self._init_workspace_consumers()
 
         self.ready = True
         logger.info("[EchoCore] Initialized core (ready=%s)", self.ready)
@@ -197,6 +198,43 @@ class EchoCore:
         except Exception as e:
             self.optuna_study = None
             logger.warning(f"[EchoCore] Could not initialize Optuna: {e}")
+
+    def _init_workspace_consumers(self):
+        """Register the Emergence roadmap Phase 4 subscribers — the first
+        real consumers on the Global Workspace bus beyond the pure
+        _log_workspace_event logger. Each registration is independently
+        best-effort: a subsystem that isn't importable yet (or ever) just
+        means that one consumer never activates, not a broken EchoCore."""
+        # 4a — dream.synthesis biases memory_bridge.py's retrieval ranking
+        # for a short window. Uses the module reference _init_memory_bridge
+        # already stashed rather than importing memory_bridge again here.
+        if self._memory_module and hasattr(self._memory_module, "set_workspace_bias"):
+            self.subscribe(
+                "dream.synthesis",
+                lambda et, p, mb=self._memory_module: mb.set_workspace_bias(p.get("summary", "")),
+            )
+            logger.info("[EchoCore] Workspace consumer registered: memory_bridge <- dream.synthesis")
+
+        # 4b — world_model.surprise feeds river_deliberation.py's cached
+        # exploration_bias, preferred over that file's own direct WorldModel
+        # read when fresh (see set_cached_world_surprise()'s docstring
+        # there for why this is additive, not a replacement).
+        try:
+            from app.core import river_deliberation as _river_mod
+            self.subscribe(
+                "world_model.surprise",
+                lambda et, p: _river_mod.set_cached_world_surprise(p.get("salience") or 0.0),
+            )
+            logger.info("[EchoCore] Workspace consumer registered: river_deliberation <- world_model.surprise")
+        except Exception as e:
+            logger.warning("[EchoCore] Could not register river_deliberation workspace consumer: %s", e)
+
+        # 4c (emergent_scheduler.py subscribing to self_edit.non_convergent)
+        # registers itself lazily via _ensure_workspace_subscribed() — that
+        # module isn't imported by EchoCore at all today, and importing it
+        # here just to register one subscription would be a heavier,
+        # one-directional dependency for no real benefit over the same
+        # lazy-registration pattern already used elsewhere in this file.
 
     # --------------------------
     # Event bus
@@ -531,6 +569,10 @@ def compute_salience() -> dict:
     renamed state file degrades that one component to 0.0, never raises).
     Combined via simple equal-weighted average — no evidence yet that any
     one component deserves more weight than another.
+
+    coupling_estimate (Emergence roadmap Phase 5): see _coupling_estimate()
+    below. Observe-only in this phase — logged/returned, not consulted by
+    any consumer yet.
     """
     components = {
         "world_surprise": _salience_world_surprise(),
@@ -539,5 +581,51 @@ def compute_salience() -> dict:
         "self_edit_streak": _salience_self_edit_streak(),
     }
     score = sum(components.values()) / len(components)
-    return {"score": score, "components": components}
+    _salience_history.append(dict(components))
+    return {
+        "score": score,
+        "components": components,
+        "coupling_estimate": _coupling_estimate(_salience_history),
+    }
+
+
+# ── Coupling estimate (Emergence roadmap Phase 5, observe-only) ──────────
+# NOT an integrated-information (IIT/Phi) measure and deliberately not
+# named as one — a rough heuristic on a small (<=100 sample), coarse
+# (4-component) history, tracking whether compute_salience()'s components
+# tend to co-vary or fire independently. Whether this is even a stable
+# signal at this sample size is an open question this phase does not
+# resolve; nothing consumes this value yet.
+_SALIENCE_HISTORY_MIN_SAMPLES = 20
+_salience_history: "deque[dict]" = deque(maxlen=100)
+
+
+def _pearson(xs: list, ys: list) -> "float | None":
+    n = len(xs)
+    if n < 2:
+        return None
+    mean_x, mean_y = sum(xs) / n, sum(ys) / n
+    cov = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, ys))
+    var_x = sum((x - mean_x) ** 2 for x in xs)
+    var_y = sum((y - mean_y) ** 2 for y in ys)
+    if var_x <= 0 or var_y <= 0:
+        return None  # a constant series — correlation is undefined, not 0
+    return cov / ((var_x ** 0.5) * (var_y ** 0.5))
+
+
+def _coupling_estimate(history: "deque[dict]") -> "float | None":
+    """Mean absolute pairwise Pearson correlation across the buffered
+    component history. Returns None below the minimum sample size rather
+    than a misleadingly precise number computed from too little data."""
+    if len(history) < _SALIENCE_HISTORY_MIN_SAMPLES:
+        return None
+    keys = list(history[0].keys())
+    series = {k: [h.get(k, 0.0) for h in history] for k in keys}
+    corrs = []
+    for i in range(len(keys)):
+        for j in range(i + 1, len(keys)):
+            r = _pearson(series[keys[i]], series[keys[j]])
+            if r is not None:
+                corrs.append(abs(r))
+    return round(sum(corrs) / len(corrs), 4) if corrs else None
 

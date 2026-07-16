@@ -307,6 +307,45 @@ r = ll._evaluate_substrate_continuity(_consistent_history, None, 2000, 0.95)
 check("substrate_continuity: ECHO_SYNTHESIS_MODEL import failed", r["pass"], False, r["evidence"])
 
 
+# ── 12. global_workspace_consumption ──────────────────────────────────────
+# Historical fake this check exists specifically to distinguish from real
+# integration: exactly the state this codebase was in before Emergence
+# roadmap Phase 4 — genuine multi-source BROADCAST (global_workspace above
+# passes) but zero real subscribers beyond the pure logger, so nothing
+# downstream ever actually changes behavior. "The bus carries diverse
+# events" and "something reads the bus and acts" are different claims;
+# this check verifies the second one specifically.
+_now_wsc = time.time()
+
+r = ll._evaluate_global_workspace_consumption([], 1, 200, 1)
+check("global_workspace_consumption: no entries ever", r["pass"], False, r["evidence"])
+
+_broadcast_only_no_consumption = [
+    {"ts": _now_wsc - 60 * i, "type": "dream.synthesis", "source": "dream_cycle", "summary": "x"}
+    for i in range(10)
+] + [
+    {"ts": _now_wsc - 30, "type": "world_model.surprise", "source": "world_model", "summary": "y"}
+]
+r = ll._evaluate_global_workspace_consumption(_broadcast_only_no_consumption, 1, 200, 1)
+check(
+    "global_workspace_consumption: real diverse broadcast, but zero workspace.consumed events "
+    "(the pre-Phase-4 state — this is the exact gap the check exists to catch)",
+    r["pass"], False, r["evidence"],
+)
+
+_real_consumption = _broadcast_only_no_consumption + [
+    {"ts": _now_wsc - 45, "type": "workspace.consumed", "source": "memory_bridge", "summary": "retrieval biased"},
+]
+r = ll._evaluate_global_workspace_consumption(_real_consumption, 1, 200, 1)
+check("global_workspace_consumption: one real consumer genuinely applied a broadcast bias", r["pass"], True, r["evidence"])
+
+_stale_consumption = [
+    {"ts": _now_wsc - 10 * 86400, "type": "workspace.consumed", "source": "memory_bridge", "summary": "old"},
+]
+r = ll._evaluate_global_workspace_consumption(_stale_consumption, 1, 200, 1)
+check("global_workspace_consumption: a consumption event exists, but only >1d stale", r["pass"], False, r["evidence"])
+
+
 print()
 if FAILURES:
     print(f"=== {len(FAILURES)} DISCRIMINATION FAILURE(S) — ledger is not trustworthy as-is ===")

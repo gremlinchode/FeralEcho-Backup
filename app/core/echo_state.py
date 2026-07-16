@@ -11,15 +11,27 @@
 # That is the point: behavior driven by internal state, not by
 # language about internal state.
 #
-# Dimensions (all clamped 0-1):
-#   [0] processing_novelty  — how surprising the environment is
-#   [1] coherence_tension   — internal disagreement across River task types
-#   [2] orientation_drift   — rate of change in Echo's quality profile
-#   [3] system_vitality     — inverse RAM pressure (1=healthy, 0=stressed)
-#   [4] curiosity_index     — recent surprise vs rolling baseline
-#   [5] friction_rate       — ClaudeShard friction rate last 50
-#   [6] edit_momentum       — self-edit success rate
-#   [7] temporal_phase      — circadian sine signal (0=dawn, 1=dusk)
+# Dimensions:
+#   [0] processing_novelty  — how surprising the environment is (0-1)
+#   [1] coherence_tension   — internal disagreement across River task types (0-1)
+#   [2] orientation_drift   — rate of change in Echo's quality profile (0-1)
+#   [3] system_vitality     — inverse RAM pressure (1=healthy, 0=stressed) (0-1)
+#   [4] curiosity_index     — recent surprise vs rolling baseline (0-1)
+#   [5] friction_rate       — ClaudeShard friction rate last 50 (0-1)
+#   [6] edit_momentum       — self-edit success rate (0-1)
+#   [7] temporal_phase      — circadian sine signal (0=dawn, 1=dusk) (0-1)
+#   [8] valence             — SIGNED [-1, 1]: recent trajectory of
+#                             self-edit quality outcomes and independent
+#                             (peer-model) council ratings — the only
+#                             dimension here with a positive/negative
+#                             polarity rather than a pure activity
+#                             magnitude. Sourced entirely from signals this
+#                             project already treats as externally-anchored
+#                             (self_edit_outcomes.jsonl's pre/post deltas,
+#                             council_rater.py's peer-model average), not
+#                             Echo's own self-referential quality_score.
+#                             Fails closed to 0.0 (neutral) if neither
+#                             source is available yet.
 # ============================================================
 
 import json
@@ -33,7 +45,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-STATE_DIM = 8
+STATE_DIM = 9
 STATE_LABELS = [
     "processing_novelty",
     "coherence_tension",
@@ -43,6 +55,7 @@ STATE_LABELS = [
     "friction_rate",
     "edit_momentum",
     "temporal_phase",
+    "valence",
 ]
 
 _STATE_PATH = Path("memory/echo_state.npy")
@@ -112,6 +125,26 @@ def compute(introspection_state: dict) -> np.ndarray:
     now_local = datetime.now()
     hour_frac = now_local.hour + now_local.minute / 60.0
     vec[7] = float((math.sin(2 * math.pi * (hour_frac - 6.0) / 24.0) + 1.0) / 2.0)
+
+    # [8] valence — signed, fail-closed per component. Each source degrades
+    # independently to "absent" rather than raising or defaulting to a
+    # fake neutral-looking real value; combined score is the mean of
+    # whichever sources are actually available, 0.0 if neither is.
+    valence_components: list[float] = []
+    se_delta = se.get("recent_quality_delta")
+    if se_delta is not None:
+        valence_components.append(float(np.clip(float(se_delta), -1.0, 1.0)))
+    try:
+        from app.core.council_rater import get_recent_council_average
+        council_avg = get_recent_council_average()
+        if council_avg is not None:
+            # council_rating is 1-5; recenter on the scale midpoint (3) so
+            # 5=+1 (best), 1=-1 (worst), 3=0 (neutral) — same recentering
+            # shape used nowhere else in this file yet, first signed source.
+            valence_components.append(float(np.clip((float(council_avg) - 3.0) / 2.0, -1.0, 1.0)))
+    except Exception:
+        pass
+    vec[8] = float(np.mean(valence_components)) if valence_components else 0.0
 
     return vec
 

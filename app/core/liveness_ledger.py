@@ -75,6 +75,7 @@ _WINDOWS_DAYS = {
     "task_type_classifier": None,  # functional canary, not time-windowed
     "global_workspace": 1,
     "substrate_continuity": None,  # sample-size-windowed (last 2000 entries), not time-windowed
+    "global_workspace_consumption": 1,
 }
 
 
@@ -656,6 +657,76 @@ def _check_global_workspace() -> dict:
     )
 
 
+# ── 10b. Global Workspace CONSUMPTION — Emergence roadmap Phase 4 ────────
+# _check_global_workspace() above proves genuine multi-source BROADCAST —
+# publishers exist and are diverse. It says nothing about whether anything
+# downstream actually listens and changes behavior; before Phase 4 that
+# was true of literally everything on the bus (the only subscriber was a
+# pure logger). This is a separate, new check rather than folding into the
+# existing one, same reasoning this project already applied when adding
+# substrate_continuity alongside global_workspace itself: broadening an
+# existing check's semantics silently would invalidate its own
+# discrimination-suite history. Consumers publish "workspace.consumed"
+# themselves at the moment they actually apply a broadcast bias (see
+# memory_bridge.retrieve_relevant_memories(), river_deliberation's cached
+# exploration_bias, emergent_scheduler's curiosity topic_bias) — so this
+# reads the exact same ground-truth log the broadcast check does, not a
+# separate self-report channel.
+#
+# min_sources=1 (not 2, unlike the broadcast check): unlike publish
+# diversity Phase 2a could engineer immediately across 3 files in one
+# pass, real consumption events are gated on natural triggers this project
+# doesn't control the cadence of (a dream cycle, a genuinely elevated
+# WorldModel surprise reading, a non-convergent self-edit streak) — so a
+# single genuine consumption event is real evidence the wiring works, even
+# before enough time has passed to see all three consumers fire. Worth
+# raising to >=2 once real cadence data exists to judge that threshold
+# against, the same kind of judgment call apply_to_code's hardening
+# (Finding 28/31) was based on real invocation data rather than guessed
+# upfront.
+
+_GLOBAL_WORKSPACE_CONSUMPTION_TAIL_N = 200
+_GLOBAL_WORKSPACE_CONSUMPTION_MIN_SOURCES = 1
+
+
+def _evaluate_global_workspace_consumption(entries: list, window_days: float, tail_n: int, min_sources: int) -> dict:
+    if not entries:
+        return _result(
+            False,
+            "memory/workspace_log.jsonl has no entries — no consumption evidence possible.",
+            {"distinct_consumers": 0},
+        )
+    cutoff = _now() - window_days * 86400
+    recent = [
+        e for e in entries[-tail_n:]
+        if e.get("type") == "workspace.consumed" and (_parse_ts(e.get("ts")) or 0) >= cutoff
+    ]
+    consumers = {e.get("source") for e in recent if e.get("source")}
+    if len(consumers) >= min_sources:
+        return _result(
+            True,
+            f"{len(recent)} workspace.consumed event(s) in the last {window_days}d from "
+            f"{len(consumers)} real consumer(s): {sorted(consumers)} — the workspace is "
+            f"genuinely being read and acted on, not just broadcast into a log file.",
+            {"distinct_consumers": len(consumers), "recent_count": len(recent)},
+        )
+    return _result(
+        False,
+        f"No workspace.consumed events from a real consumer in the last {window_days}d "
+        f"(found {len(recent)} from {sorted(consumers)}) — broadcast may still be reaching "
+        f"zero downstream consumers, the exact gap this check exists to catch.",
+        {"distinct_consumers": len(consumers), "recent_count": len(recent)},
+    )
+
+
+def _check_global_workspace_consumption() -> dict:
+    entries = list(_iter_jsonl(_WORKSPACE_LOG))
+    return _evaluate_global_workspace_consumption(
+        entries, _WINDOWS_DAYS["global_workspace_consumption"],
+        _GLOBAL_WORKSPACE_CONSUMPTION_TAIL_N, _GLOBAL_WORKSPACE_CONSUMPTION_MIN_SOURCES,
+    )
+
+
 # ── 11. Substrate continuity — Emergence roadmap Phase 3 ────────────────
 # Downgraded from a planned new integrator to verification-only during
 # planning: the original concern (a real incident on the Ark machine,
@@ -732,6 +803,7 @@ _CHECKS = (
     "task_type_classifier",
     "global_workspace",
     "substrate_continuity",
+    "global_workspace_consumption",
 )
 
 
@@ -766,6 +838,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "task_type_classifier": _check_task_type_classifier,
         "global_workspace": _check_global_workspace,
         "substrate_continuity": _check_substrate_continuity,
+        "global_workspace_consumption": _check_global_workspace_consumption,
     }
 
     ledger = {"generated_at": _now_iso()}

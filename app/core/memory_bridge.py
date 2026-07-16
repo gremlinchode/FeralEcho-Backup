@@ -372,6 +372,28 @@ def add_to_vector_memory(text: str, meta: Optional[dict] = None) -> None:
     else:
         logging.warning("Embedding shape unexpected; skipping vector add.")
 
+# --- Global Workspace bias (Emergence roadmap Phase 4a) ---
+# A short-lived retrieval nudge set by whatever last won broadcast on the
+# workspace bus (e.g. a real dream-synthesis event) — this module does NOT
+# import echo_core.py itself (that would be circular: echo_core.py already
+# imports this module in _init_memory_bridge()). Registration of the
+# actual subscription happens from echo_core.py's __init__ instead, which
+# calls this setter through the module reference it already holds. Default
+# (no bias set, or a stale one) reproduces retrieve_relevant_memories()'s
+# exact prior behavior — this is additive, not a behavior change for any
+# existing caller.
+_workspace_bias = {"query": None, "ts": 0.0}
+_WORKSPACE_BIAS_TTL = 300  # seconds
+
+
+def set_workspace_bias(query: str) -> None:
+    if not query:
+        return
+    with memory_lock:
+        _workspace_bias["query"] = query
+        _workspace_bias["ts"] = datetime.now(timezone.utc).timestamp()
+
+
 def retrieve_relevant_memories(
     query: str,
     top_k: int = TOP_K,
@@ -384,6 +406,30 @@ def retrieve_relevant_memories(
     """
     try:
         qvec = embed_text(query)
+        bias_query, bias_ts = _workspace_bias["query"], _workspace_bias["ts"]
+        if bias_query and (datetime.now(timezone.utc).timestamp() - bias_ts) < _WORKSPACE_BIAS_TTL:
+            bvec = embed_text(bias_query)
+            if bvec.shape == qvec.shape:
+                blended = 0.7 * qvec + 0.3 * bvec
+                norm = np.linalg.norm(blended, axis=-1, keepdims=True)
+                qvec = np.where(norm > 0, blended / norm, blended).astype(np.float32)
+                # Observability (Emergence roadmap Phase 4d): make actual
+                # consumption of a workspace broadcast itself an observable
+                # workspace event, not just a silent internal blend — this
+                # is what gives liveness_ledger.py something ground-truth
+                # to check beyond "a bias was set." Lazy import — safe at
+                # call time even though echo_core.py's own module body
+                # never imports this module eagerly at top level.
+                try:
+                    from app.core.echo_core import get_echo_core
+                    core = get_echo_core()
+                    if core:
+                        core.publish_salience(
+                            source="memory_bridge", kind="workspace.consumed",
+                            summary=f"retrieval biased toward: {bias_query[:100]}",
+                        )
+                except Exception:
+                    pass
         fetch_k = top_k * 3 if source_filter else top_k
         results = vector_memory.search(qvec, k=fetch_k)
         records = [{"text": r[0], "score": r[1], "meta": r[2]} for r in results]

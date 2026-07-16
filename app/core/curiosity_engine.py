@@ -48,8 +48,17 @@ _CURIOSITY_TEMPLATE = (
 )
 
 
-def _get_underrepresented_topic() -> "str | None":
-    """Return the topic with the lowest probability mass in the WorldModel distribution."""
+def _get_underrepresented_topic(topic_bias: "str | None" = None) -> "str | None":
+    """Return the topic with the lowest probability mass in the WorldModel
+    distribution.
+
+    topic_bias (Emergence roadmap Phase 4c): when set to a valid topic and
+    that topic isn't already well-represented (posterior mass above the
+    50th percentile of all candidates — i.e. don't override a genuine
+    information-gap signal with a stale bias), prefer it over the
+    information-gap pick. Default None reproduces prior behavior exactly
+    for any existing caller.
+    """
     try:
         from app.core.predictive_loop import get_world_model
         wm = get_world_model()
@@ -61,6 +70,10 @@ def _get_underrepresented_topic() -> "str | None":
         candidates = {k: v for k, v in dist.items() if k != "other" and k in _TOPIC_SIGNALS}
         if not candidates:
             return None
+        if topic_bias and topic_bias in candidates:
+            median = sorted(candidates.values())[len(candidates) // 2]
+            if candidates[topic_bias] <= median:
+                return topic_bias
         # min() with a key function deterministically returns the *first*
         # key on a tie (dict iteration order) — every topic starts exactly
         # tied under a fresh/flat posterior, so this always favored
@@ -139,7 +152,7 @@ def _add_to_garden(prompt: str, topic: str) -> None:
         pass
 
 
-def pick(existing_prompts: "list[str] | None" = None) -> "str | None":
+def pick(existing_prompts: "list[str] | None" = None, topic_bias: "str | None" = None) -> "str | None":
     """Return a curiosity-driven prompt, or None if the engine can't produce one.
 
     Tries in order:
@@ -147,8 +160,10 @@ def pick(existing_prompts: "list[str] | None" = None) -> "str | None":
     2. Fresh Echo-generated question about that topic (added to garden).
 
     existing_prompts should be BASE_THOUGHT_CHEST or equivalent.
+    topic_bias (Emergence roadmap Phase 4c, default None — no behavior
+    change for existing callers): see _get_underrepresented_topic().
     """
-    topic = _get_underrepresented_topic()
+    topic = _get_underrepresented_topic(topic_bias=topic_bias)
     if topic is None:
         return None
 

@@ -177,6 +177,25 @@ ECHO_SCORE_BOOST: float = 1.0
 # the tag content itself is a separate, not-yet-attempted task.
 TAG_SCORE_BOOST: float = 1.15
 
+# ── Fair-sample refresh (Finding 39 follow-up, 2026-07-16) ─────
+# Brainstormed with Gremlin, built after live data confirmed it was needed:
+# a model can clear the hard 5-observation cold-start floor
+# (is_well_observed) and still be nowhere near a fair sample — verified the
+# same day, live: qwen2.5-coder sat at 16 real coding observations against
+# leaders with 4,500+, and TAG_SCORE_BOOST alone (measured: +15%) came
+# nowhere close to closing that gap, because 16 observations isn't a
+# result, it's noise. This is a second, independent bounded swap (same "at
+# most one slot, never more" shape as the exploration_bias bump below) that
+# occasionally forces a genuinely under-sampled model back into the room so
+# it can actually earn more data — deliberately NOT proportional to how
+# under-sampled a model is, and deliberately NOT permanent: once a model's
+# real observation count crosses the fair-sample bar, this mechanism stops
+# touching it entirely, and its ranking is settled by real performance
+# alone from then on. Kept off by default (see fair_sample_refresh param
+# below) — same discipline as exploration_bias, so no caller is silently
+# affected without opting in.
+UNDER_SAMPLED_REFRESH_PROBABILITY: float = 0.25
+
 # ── Direct Echo task types ────────────────────────────────────
 # These task types bypass the council entirely and route straight
 # to Echo. No deliberation needed — Echo should speak in its own
@@ -375,6 +394,7 @@ def _select_council(
     model_pool: dict,
     council_size: int = DEFAULT_COUNCIL_SIZE,
     exploration_bias: float = 0.0,
+    fair_sample_refresh: bool = False,
 ) -> list[str]:
     """
     Return an ordered list of councillor model names.
@@ -406,6 +426,18 @@ def _select_council(
     into the room, without abandoning the ranking wholesale. Never touches
     under_sampled's cold-start slots below, which already exist to
     guarantee every model eventually earns real observations.
+
+    fair_sample_refresh (Finding 39 follow-up, default False — same
+    preserve-prior-output discipline as exploration_bias): when True, an
+    independent UNDER_SAMPLED_REFRESH_PROBABILITY chance per call to swap
+    one slot for whichever scored_rest model has the fewest real
+    observations for this task_type, if any are still below
+    river_brain's fair-sample bar. Independent of exploration_bias — both
+    can fire in the same call, since they answer different questions
+    ("is the world unfamiliar" vs. "does this model still lack a fair
+    sample"), the same way world_surprise and coherence_tension are kept
+    as separate signals elsewhere in this codebase rather than folded
+    into one.
     """
     available = list(model_pool.keys())
     if not available:
@@ -465,6 +497,35 @@ def _select_council(
                 f"{council[swap_idx]} -> {replacement}"
             )
             council[swap_idx] = replacement
+
+    # Fair-sample refresh (Finding 39 follow-up) — independent bounded
+    # swap, at most one slot, never more. See UNDER_SAMPLED_REFRESH_
+    # PROBABILITY's own comment above for the full reasoning.
+    if fair_sample_refresh and random.random() < UNDER_SAMPLED_REFRESH_PROBABILITY:
+        fair_sample_bar = getattr(river_brain, "_MEAN_EFFECTIVE_WINDOW", 200)
+        needs_refresh = sorted(
+            [
+                m for m in scored_rest
+                if m != ECHO_SYNTHESIS_MODEL
+                and m not in council
+                and river_brain.observations_for(m, task_type) < fair_sample_bar
+            ],
+            key=lambda m: river_brain.observations_for(m, task_type),
+        )
+        council_scored_positions = [
+            i for i, m in enumerate(council)
+            if m in scored_rest and m != ECHO_SYNTHESIS_MODEL
+        ]
+        if needs_refresh and council_scored_positions:
+            candidate = needs_refresh[0]
+            swap_idx = council_scored_positions[-1]
+            logging.info(
+                f"[DELIBERATION] Fair-sample refresh: "
+                f"{council[swap_idx]} -> {candidate} "
+                f"({river_brain.observations_for(candidate, task_type)} obs, "
+                f"bar={fair_sample_bar})"
+            )
+            council[swap_idx] = candidate
 
     # Ensure Echo is in the council if installed and not already present.
     if ECHO_SYNTHESIS_MODEL in available and ECHO_SYNTHESIS_MODEL not in council:
@@ -614,7 +675,7 @@ def deliberate_and_learn(
                 )
         except Exception:
             pass  # observability only, never blocks council selection
-    council = _select_council(task_type, river_brain, model_pool, council_size, exploration_bias)
+    council = _select_council(task_type, river_brain, model_pool, council_size, exploration_bias, fair_sample_refresh=True)
 
     if not council:
         logging.warning("[DELIBERATION] Empty council — falling back to direct Echo query")

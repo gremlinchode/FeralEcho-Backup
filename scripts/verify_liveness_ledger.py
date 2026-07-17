@@ -6,7 +6,7 @@ discriminates real from fake, not just "imports successfully."
 GREMLIN_ROLE.md names verify_integrity() as the canonical example of a
 check that looks like verification but only tests importability. This
 script is the check on the liveness ledger itself: for each pure
-`_evaluate_*` function (14 as of 2026-07-16 — verify against
+`_evaluate_*` function (15 as of 2026-07-17 — verify against
 app.core.liveness_ledger._CHECKS before trusting this number), feed it a
 reconstructed HISTORICAL FAKE
 (the exact behavior a prior audit/fix/session already caught this project
@@ -392,6 +392,32 @@ check("reflection_shard_generation: 20/20 genuinely distinct generated text", r[
 
 r = ll._evaluate_reflection_shard_generation([], 20, 0.5)
 check("reflection_shard_generation: no journal entries at all", r["pass"], False, r["evidence"])
+
+# ── 15. dissent_log_hook ────────────────────────────────────────────────
+# Historical fake (the exact shape this check exists to catch): a future
+# edit silently removes the dissent-logging call from propose_core_edit(),
+# same class of drift wolf_friction_bridge's own check already guards
+# against for a different call site.
+fake_block = (
+    "    logging.info(f\"proposal written\")\n"
+    "    return True, proposal_path\n"
+)
+r = ll._evaluate_dissent_log_hook(fake_block)
+check("dissent_log_hook: logging call removed", r["pass"], False, r["evidence"])
+
+real_block = (
+    "    try:\n"
+    "        dissent_entry = _build_dissent_entry(target_file, prompt, council, proposal_path)\n"
+    "        _log_dissent_entry(dissent_entry)\n"
+    "    except Exception as _dissent_err:\n"
+    "        pass\n"
+    "    return True, proposal_path\n"
+)
+r = ll._evaluate_dissent_log_hook(real_block)
+check("dissent_log_hook: real intact hook", r["pass"], True, r["evidence"])
+
+r = ll._evaluate_dissent_log_hook(None)
+check("dissent_log_hook: propose_core_edit() not found at all", r["pass"], False, r["evidence"])
 
 
 print()

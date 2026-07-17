@@ -57,6 +57,9 @@ BACKUP_DIR = os.path.join(_PROJECT_ROOT, "app", "core", "self_edit_backups")
 LOGIC_PLAN_DIR = os.path.join(_PROJECT_ROOT, "app", "core", "self_edit_plans")
 STAGING_DIR = os.path.join(_PROJECT_ROOT, "staging")
 STAGING_FILE = os.path.join(STAGING_DIR, "self_edit_candidate.py")
+# Dissent log (2026-07-17) — see propose_core_edit()'s own council review.
+# Anchored to _PROJECT_ROOT for the same reason as the paths above.
+_DISSENT_LOG_PATH = os.path.join(_PROJECT_ROOT, "memory", "dissent_log.jsonl")
 
 # Files Echo must never overwrite — they define her identity, memory index,
 # or production routing. Self-edit is limited to self_edit_generated.py
@@ -2095,6 +2098,100 @@ def _scan_diff_added_lines(diff_text: str) -> str:
     return "heuristic scan of added lines found no obviously risky patterns (not a full AST parse)"
 
 
+def _build_dissent_entry(target_file: str, prompt: str, council: dict, proposal_path: str) -> dict:
+    """
+    Pure — no I/O, directly unit-testable (see scripts/verify_liveness_ledger.py's
+    own header for why this codebase splits pure evaluation from I/O this way).
+
+    Three states, not two: council review can genuinely disagree, genuinely
+    agree, or never have happened at all (council_available=False, when
+    rank_models() returned nothing — see _council_review_core_edit()'s
+    NO_COUNCIL_AVAILABLE path). Folding the third case into either extreme
+    would either divide by zero or silently read an absence of signal as a
+    real one — caught during planning, before it shipped, not after.
+    """
+    votes = council.get("votes") or []
+    total = len(votes)
+    approvals = sum(1 for v in votes if v.get("verdict") == "APPROVE")
+    council_available = total > 0
+    unanimous = council_available and approvals == total
+    return {
+        "ts": datetime.utcnow().isoformat() + "Z",
+        "target_file": target_file,
+        "reason": prompt,
+        "proposal_path": proposal_path,
+        "council_verdict": council.get("verdict"),
+        "votes": votes,
+        "council_available": council_available,
+        "unanimous": unanimous,
+        "approvals": approvals,
+        "total": total,
+    }
+
+
+def _log_dissent_entry(entry: dict) -> None:
+    """
+    Best-effort, never raises — a logging failure must never affect
+    propose_core_edit()'s real return value. Always appends the entry
+    (even a unanimous or no-council-available one, for honest
+    auditability — the same "log the empty/negative case too" discipline
+    seam_engine.py and memory_write_validator.py's EMPTY_SIGNAL fix already
+    use elsewhere in this codebase). Only genuine disagreement
+    (council_available and not unanimous) publishes to the Global Workspace
+    and harvests a real curiosity question — publishing the no-council-
+    available case would confabulate a disagreement signal from an absence
+    of one.
+    """
+    try:
+        os.makedirs(os.path.dirname(_DISSENT_LOG_PATH), exist_ok=True)
+        with open(_DISSENT_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception as e:
+        logging.debug(f"[SELF-EDIT] dissent log write failed: {e}")
+
+    if not (entry["council_available"] and not entry["unanimous"]):
+        return
+
+    target_file = entry["target_file"]
+    votes_summary = "; ".join(
+        f"{v.get('model')}: {v.get('verdict')}" for v in entry["votes"]
+    )
+    summary = (
+        f"Council split {entry['approvals']}/{entry['total']} on a proposed edit "
+        f"to {target_file} — {votes_summary}"
+    )
+    salience = 1.0 - (entry["approvals"] / entry["total"])
+
+    # Same idiom as _record_convergence()'s own publish_salience call above —
+    # lazy import, best-effort, never raises.
+    try:
+        from app.core.echo_core import get_echo_core
+        core = get_echo_core()
+        if core:
+            core.publish_salience(
+                source="self_edit_manager",
+                kind="dissent.registered",
+                summary=summary,
+                detail={"target_file": target_file, "votes": entry["votes"]},
+                salience=salience,
+            )
+    except Exception:
+        pass
+
+    # Question built dynamically from the real target/votes, not a fixed
+    # template — harvest_question()'s near-duplicate filter would otherwise
+    # silently eat every subsequent dissent worded similarly.
+    try:
+        from app.core import garden_manager
+        question = (
+            f"{votes_summary} — the council didn't agree on the proposed change "
+            f"to {target_file} ({entry['reason'][:150]}). Which side had it right?"
+        )
+        garden_manager.harvest_question(question, category="dissent", source="dissent_log")
+    except Exception:
+        pass
+
+
 def propose_core_edit(target_file: str, prompt: str, intensity: float | None = None) -> tuple[bool, str]:
     """
     Advisory-only path for a self-edit that would target a file in
@@ -2197,6 +2294,15 @@ def propose_core_edit(target_file: str, prompt: str, intensity: float | None = N
         f"[SELF-EDIT] Core-file proposal for {target_file} written to {proposal_path} "
         f"(council: {council['verdict']})"
     )
+
+    # Dissent log (2026-07-17) — never affects the return value below, even
+    # on failure; see _log_dissent_entry()'s own docstring.
+    try:
+        dissent_entry = _build_dissent_entry(target_file, prompt, council, proposal_path)
+        _log_dissent_entry(dissent_entry)
+    except Exception as _dissent_err:
+        logging.debug(f"[SELF-EDIT] dissent log step failed: {_dissent_err}")
+
     return True, proposal_path
 
 

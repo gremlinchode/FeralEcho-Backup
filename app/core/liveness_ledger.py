@@ -81,6 +81,7 @@ _WINDOWS_DAYS = {
     "global_workspace_consumption": 1,
     "valence_self_report": None,  # point-in-time consistency check, not time-windowed
     "reflection_shard_generation": 1,
+    "dissent_log_hook": None,  # static source-invariant, same shape as wolf_friction_bridge
 }
 
 
@@ -347,6 +348,7 @@ def _check_nature_spark() -> dict:
 # ── 4. wolf_friction_bridge — still calling simulate_self_edit, not perform_self_edit ──
 
 _ORCHESTRATOR_PATH = os.path.join(_PROJECT_ROOT, "app", "core", "echo_model_orchestrator.py")
+_SELF_EDIT_MANAGER_PATH = os.path.join(_PROJECT_ROOT, "app", "core", "self_edit_manager.py")
 
 
 def _evaluate_wolf_friction_bridge(call_site_block: "str | None") -> dict:
@@ -388,6 +390,51 @@ def _check_wolf_friction_bridge() -> dict:
         # call a few lines later without pulling in unrelated code.
         block = source[max(0, idx - 200):idx + 800]
     return _evaluate_wolf_friction_bridge(block)
+
+
+# ── Dissent log hook (2026-07-17) ───────────────────────────────────────
+# "does propose_core_edit() still actually call the dissent-logging step?"
+# Same static/structural shape as wolf_friction_bridge above — this fires
+# only via a human-run !propose command, never an autonomous loop, so
+# there's no meaningful recency window to check, only whether the hook
+# itself is still wired.
+
+def _evaluate_dissent_log_hook(call_site_block: "str | None") -> dict:
+    if call_site_block is None:
+        return _result(
+            False,
+            "Could not locate propose_core_edit()'s dissent-logging call site in "
+            "self_edit_manager.py at all — either it moved (update this check's "
+            "anchor) or the hook was removed. Failing closed either way.",
+        )
+    calls_log = bool(re.search(r"_log_dissent_entry\s*\(", call_site_block))
+    calls_build = bool(re.search(r"_build_dissent_entry\s*\(", call_site_block))
+    if calls_build and calls_log:
+        return _result(
+            True,
+            "propose_core_edit() still calls _build_dissent_entry() and "
+            "_log_dissent_entry() — genuine council disagreement is still being "
+            "persisted and surfaced, not silently discarded.",
+        )
+    return _result(
+        False,
+        f"propose_core_edit() no longer calls the dissent-logging hook as expected "
+        f"(calls_build={calls_build}, calls_log={calls_log}) — a future edit may "
+        f"have silently removed it.",
+    )
+
+
+def _check_dissent_log_hook() -> dict:
+    source = _read_text(_SELF_EDIT_MANAGER_PATH)
+    block = None
+    idx = source.find("def propose_core_edit(")
+    if idx != -1:
+        # A generous window covering the whole function body — it's long
+        # (roughly 100 lines), and the dissent-logging call sits at the very
+        # end of it, well past what a smaller window like wolf_friction_
+        # bridge's 800 chars would reach.
+        block = source[idx:idx + 6000]
+    return _evaluate_dissent_log_hook(block)
 
 
 # ── 5. ClaudeShard — still keyword+random, not actually calling an LLM ──
@@ -930,6 +977,7 @@ _CHECKS = (
     "global_workspace_consumption",
     "valence_self_report",
     "reflection_shard_generation",
+    "dissent_log_hook",
 )
 
 
@@ -939,7 +987,7 @@ def _load_prev_ledger() -> dict:
 
 def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
     """
-    Run all checks in _CHECKS (14 as of 2026-07-16) and write
+    Run all checks in _CHECKS (15 as of 2026-07-17) and write
     memory/liveness_ledger.json.
     introspection_memory: the already-computed state["memory"] dict from
     this same introspection cycle (faiss_vector_count/journal_line_count),
@@ -968,6 +1016,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "global_workspace_consumption": _check_global_workspace_consumption,
         "valence_self_report": _check_valence_self_report,
         "reflection_shard_generation": _check_reflection_shard_generation,
+        "dissent_log_hook": _check_dissent_log_hook,
     }
 
     ledger = {"generated_at": _now_iso()}

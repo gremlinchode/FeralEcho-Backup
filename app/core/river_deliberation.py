@@ -39,6 +39,10 @@ import subprocess
 import time
 from typing import Optional
 import re
+import os
+import json
+import threading
+from datetime import datetime, timezone
 
 # ── Token budgeting (tiktoken) ────────────────────────────────
 # cl100k_base is close enough to llama3's tokenizer for context-window
@@ -111,6 +115,15 @@ def _strip_ansi(text: str) -> str:
 # ── Council configuration ────────────────────────────────────
 ECHO_SYNTHESIS_MODEL: str = "echo:latest"
 DEFAULT_COUNCIL_SIZE: int = 3
+
+# ── Council deliberation logging (2026-07-17) ─────────────────
+# Anchored to _PROJECT_ROOT, not a bare relative string — this file is
+# imported from multiple entry points (server, terminal client, sandbox/
+# verify scripts) with different working directories, same reasoning as
+# self_edit_manager.py's identical constant (see CLAUDE.md Finding 7).
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_COUNCIL_DELIBERATION_LOG = os.path.join(_PROJECT_ROOT, "memory", "council_deliberations.jsonl")
+_council_log_lock = threading.Lock()
 
 # ── Global Workspace world-surprise cache (Emergence roadmap Phase 4b) ──
 # river_deliberation.py does not import echo_core.py itself (avoids a
@@ -538,6 +551,74 @@ def _select_council(
     return council
 
 
+# ── Council deliberation logging ───────────────────────────────
+def _log_council_deliberation(
+    task_type: str,
+    prompt: str,
+    council: list,
+    opinions: dict,
+    councillor_temps: dict,
+    per_opinion_tokens: "int | None",
+    synth_model: str,
+    final_response: str,
+    source: str = "real_deliberation",
+) -> None:
+    """
+    Purely additive/observational (2026-07-17) — persists every councillor's
+    raw and truncated-for-synthesis response alongside the final synthesis,
+    to memory/council_deliberations.jsonl. Never raises, never blocks, never
+    changes deliberate_and_learn()'s return value — the one call site below
+    is wrapped in its own try/except for exactly that reason.
+
+    Independently recomputes the same per-model truncation _format_opinions()
+    already does (same _truncate_to_tokens/_FALLBACK_CHARS logic) rather than
+    changing that function's return contract — this function only reads
+    already-computed values, it doesn't alter the real synthesis path.
+
+    Scope, decided explicitly: only the real multi-councillor synthesis path
+    calls this. deliberate_and_learn()'s five other return points (the
+    DIRECT_ECHO_TASKS bypass for personal/reflective task types, the
+    empty-council fallback, the all-errored fallback, the solo-Echo
+    shortcut, and the synthesis-failed fallback) are single-response edge
+    cases with no real opinions to compare — not instrumented here. A
+    personal-task conversation will not appear in this log; that's by
+    design, not an oversight.
+    """
+    try:
+        entries = []
+        for model in council:
+            raw = opinions.get(model, "")
+            if raw and "[ERROR]" not in raw:
+                if per_opinion_tokens is not None:
+                    truncated = _truncate_to_tokens(raw, per_opinion_tokens).strip()
+                else:
+                    truncated = raw[:_FALLBACK_CHARS].strip()
+            else:
+                truncated = raw
+            entries.append({
+                "model": model,
+                "response_raw": raw,
+                "response_truncated": truncated,
+                "was_truncated": truncated != raw,
+                "temperature": councillor_temps.get(model),
+            })
+        record = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "source": source,
+            "task_type": task_type,
+            "prompt": prompt,
+            "councillors": entries,
+            "synthesis_model": synth_model,
+            "final_response": final_response,
+        }
+        os.makedirs(os.path.dirname(_COUNCIL_DELIBERATION_LOG), exist_ok=True)
+        with _council_log_lock:
+            with open(_COUNCIL_DELIBERATION_LOG, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except Exception as e:
+        logging.debug(f"[DELIBERATION] council_deliberations log write failed: {e}")
+
+
 # ── Opinion formatting ────────────────────────────────────────
 def _format_opinions(
     opinions: dict[str, str],
@@ -689,6 +770,7 @@ def deliberate_and_learn(
     # councillor previously received — real sampling diversity, not just
     # model-identity diversity.
     opinions: dict[str, str] = {}
+    councillor_temps: dict[str, float] = {}
     for i, model in enumerate(council):
         logging.info(f"[DELIBERATION] Querying councillor: {model}")
         councillor_temp = _jittered_temperature(temperature, i, len(council))
@@ -697,6 +779,7 @@ def deliberate_and_learn(
             temperature=councillor_temp, system=system, max_tokens=max_tokens, task_type=task_type,
         )
         opinions[model] = response
+        councillor_temps[model] = councillor_temp
         logging.debug(f"[DELIBERATION] River learned | model={model} | task={task_type}")
 
     # ── 4. Filter valid opinions ──────────────────────────────
@@ -772,5 +855,13 @@ def deliberate_and_learn(
         if model != synth_model:
             river_brain.learn(model, task_type, opinion)
     river_brain.learn(synth_model, task_type, final_response)
+
+    try:
+        _log_council_deliberation(
+            task_type, prompt, list(opinions.keys()), opinions, councillor_temps,
+            _per_opinion, synth_model, final_response,
+        )
+    except Exception as _log_err:
+        logging.debug(f"[DELIBERATION] deliberation logging step failed: {_log_err}")
 
     return final_response

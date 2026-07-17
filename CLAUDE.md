@@ -184,6 +184,18 @@ The cooldown is `_last_any_autonomous_edit: float`. **Correction (2026-07-15, Fi
 
   Separately, `liveness_ledger.py`'s new 15th check (`dissent_log_hook`, static/structural, same `wolf_friction_bridge`-style source-anchor pattern, since `propose_core_edit()` only fires via a human-run `!propose` command and never an autonomous loop) reported passing against the real, live post-test code. `scripts/verify_liveness_ledger.py`'s three new discrimination cases (hook removed → fail, real intact hook → pass, anchor not found → fail) all pass alongside the existing suite.
 
+  **Phase 10 (2026-07-17) — Council Deliberation Logging, `app/core/river_deliberation.py` + `terminal_client.py`.** Grew out of the same night's live council audit: `deliberate_and_learn()` queries multiple real models but only ever persisted the final *synthesized* answer to `memory/interaction_log.jsonl` — every individual councillor's raw response, including whatever synthesis trimmed away, was computed and discarded forever. No way to review historical council quality, no way to compare what a specific model actually said against what synthesis made of it. Gremlin's own curiosity the same night (asking a coding-tagged model an identity question, then a creative-tagged model a real algorithm problem — both done live, by hand) crystallized the second half: that should be a real, repeatable tool, not a one-off script.
+
+  Both halves write to one new log, `memory/council_deliberations.jsonl`, distinguished by a `source` field (`real_deliberation` vs `manual_probe`) — one mechanism, two triggers. `_log_council_deliberation()` (new, `river_deliberation.py`) independently recomputes the same per-model truncation `_format_opinions()` already applies, so each logged entry carries both `response_raw` (untruncated) and `response_truncated` (what synthesis actually saw) plus a `was_truncated` bool and the real per-councillor jittered temperature (previously computed and discarded every cycle, never stored). Writes are lock-guarded (`_council_log_lock`, held only around the file write) — a real, not theoretical, risk: Flask runs `threaded=True` and `deliberate_and_learn()` is called concurrently from the request thread, `emergent_scheduler.py`, `curiosity_engine.py`, and the hourly `ModelGuidedOrchestrator` loop, and these entries (multiple raw + truncated responses per line) are larger than any other single-line write in `memory/` today. The whole function is wrapped in its own try/except, logs on failure only, never raises — matches this project's standing "instrumentation never blocks the real computation it's attached to" rule. Called once, right before `deliberate_and_learn()`'s final `return final_response`.
+
+  **Deliberate scope boundary, not an oversight:** `deliberate_and_learn()` has five other return points before the real synthesis path (the `DIRECT_ECHO_TASKS` bypass for `personal`/reflective task types, the empty-council fallback, the all-councillors-errored fallback, the solo-Echo shortcut, the synthesis-failed fallback) — none are instrumented in this pass, since they're single-response edge cases with nothing to compare. **`personal`-task conversations will not appear in this log** — worth knowing, not an accident.
+
+  **Privacy/sync question, checked directly rather than defaulted:** the plan called for adding this log's source tag to `app/sync/sync_protocol.py`'s `LOCAL_ONLY_SOURCES` set, on the reasoning that raw pre-synthesis councillor opinions are more unfiltered than what already syncs. Checked the actual module before making that edit: `sync_protocol.py` reads exactly one hardcoded file for its entire sync payload, `INTERACTION_LOG = memory/interaction_log.jsonl` (confirmed via direct grep of every `.jsonl` reference in the file) — `LOCAL_ONLY_SOURCES` is only ever checked against entries pulled from that one file. There is no code path anywhere in this module that scans `memory/` generically or could ever reach `council_deliberations.jsonl`. **No edit was made to `sync_protocol.py`** — the new log is already fully local-only by construction, with no additional mechanism needed. Recorded here rather than silently dropped from the plan, since "the fix wasn't needed" is itself a finding worth keeping, same discipline as Finding 35's retracted `shadow_model.propose()` fix.
+
+  **Part B**, `terminal_client.py`: `!ask <model> <task_type> <prompt>` — validates `model` against the real `MODEL_POOL` dict (exact match only; rejects with a usage message listing real available keys, mirroring `!propose`'s existing error pattern), calls `_ollama_query()` directly (already confirmed standalone-callable, no dependency on `_select_council()` — the same pattern used by hand during the live identity/algorithm-question experiments earlier the same night), and logs through the same `_log_council_deliberation()` from Part A with `source="manual_probe"`, `council=[model]`. Deliberately does **not** call `speak_async()` on the result, unlike `!propose` — a raw, un-synthesized model response read aloud via TTS is a different kind of output than anything else this file currently speaks by default.
+
+  **A real bug caught before shipping, same discipline as Phase 9's ZeroDivisionError catch:** `request_manual_probe()`'s first draft logged its best-effort failure path via `logging.debug(...)` — but `terminal_client.py` has no `import logging` anywhere in the file (confirmed via direct grep). Fixed by dropping the log call in favor of a silent `pass`, matching `_log_council_deliberation()`'s own "never block, never raise" contract on the caller side too.
+
 ---
 
 ## Self-Edit Safety Pipeline (F1/F2/F3)
@@ -579,6 +591,17 @@ import sys, json
 for line in sys.stdin:
     e = json.loads(line)
     print(e.get('task_type'), e.get('quality_score'), repr((e.get('response_preview') or '')[:80]))
+"
+
+# Watch real per-councillor deliberation logs (raw + truncated responses,
+# real vs manual-probe entries) — added Phase 10, 2026-07-17. personal-task
+# conversations never appear here by design (see Phase 10 note above).
+tail -f memory/council_deliberations.jsonl | python3 -c "
+import sys, json
+for line in sys.stdin:
+    e = json.loads(line)
+    models = [c.get('model') for c in e.get('councillors', [])]
+    print(e.get('source'), e.get('task_type'), models)
 "
 
 # Council rating pipeline status

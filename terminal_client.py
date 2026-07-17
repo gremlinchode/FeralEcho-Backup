@@ -547,6 +547,52 @@ def request_core_edit_proposal(target_file: str, prompt: str) -> dict:
             "error": str(e)
         }
 
+def request_manual_probe(model: str, task_type: str, prompt: str) -> dict:
+    """
+    !ask <model> <task_type> <prompt> — a manual, human-curiosity-driven
+    single-model probe (2026-07-17), the direct outgrowth of a real live
+    experiment run in this same session: what does a coding-tagged model
+    actually say about an existential question, or a creative-tagged model
+    do with a real algorithm problem. Deliberately bypasses _select_council()
+    — this queries one specific model directly, not a deliberation cycle,
+    the same _ollama_query() pattern already proven safe and
+    council-independent. Reuses river_deliberation.py's
+    _log_council_deliberation() rather than a second writer, tagged
+    source="manual_probe" so it's distinguishable from real deliberation
+    cycles in memory/council_deliberations.jsonl.
+    """
+    try:
+        from app.core.echo_model_orchestrator import MODEL_POOL
+        if model not in MODEL_POOL:
+            return {
+                "status": "failed",
+                "error": f"Unknown model '{model}'. Available: {', '.join(sorted(MODEL_POOL.keys()))}",
+            }
+
+        from app.core.river_deliberation import _ollama_query, _log_council_deliberation
+        response = _ollama_query(model, prompt, task_type=task_type)
+
+        try:
+            _log_council_deliberation(
+                task_type, prompt, [model], {model: response}, {model: None},
+                None, model, response, source="manual_probe",
+            )
+        except Exception:
+            pass  # best-effort, matches _log_council_deliberation()'s own never-block contract
+
+        return {"status": "success", "result": response}
+
+    except Exception as e:
+
+        console.print(
+            f"[bold red]Probe Error:[/bold red] {e}"
+        )
+
+        return {
+            "status": "failed",
+            "error": str(e)
+        }
+
 def request_status_report() -> None:
     """
     !status — on-demand liveness + Global Workspace snapshot, mirroring the
@@ -731,6 +777,39 @@ def main():
                         "[bold yellow]"
                         "Usage: !propose <target_file> <prompt> "
                         "— target_file must be one of EDIT_FORBIDDEN_TARGETS."
+                        "[/bold yellow]"
+                    )
+
+            elif msg.startswith("!ask "):
+
+                rest = (
+                    msg[len("!ask "):]
+                    .strip()
+                )
+                parts = rest.split(None, 2)
+
+                if len(parts) == 3:
+
+                    probe_model, probe_task_type, probe_prompt = parts
+
+                    result = request_manual_probe(
+                        probe_model, probe_task_type, probe_prompt
+                    )
+
+                    console.print(
+                        f"[bold magenta]"
+                        f"Probe Result:"
+                        f"[/bold magenta] "
+                        f"{result.get('status', 'unknown')} "
+                        f"— {result.get('result', result.get('error', ''))}"
+                    )
+
+                else:
+
+                    console.print(
+                        "[bold yellow]"
+                        "Usage: !ask <model> <task_type> <prompt> "
+                        "— model must be a key in MODEL_POOL."
                         "[/bold yellow]"
                     )
 

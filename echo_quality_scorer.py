@@ -367,7 +367,11 @@ def _score_response_quality(response: str, task_type: str = "general") -> int:
     # Prose word count removed as 3→4 differentiator — it rewarded verbose wrong answers.
     # Known static-analysis limit: incorrect control-flow logic (wrong bounds, off-by-one)
     # is undetectable without execution. See findings tracker Finding 11 / wrong_logic_bug.
-    if task_type == "coding":
+    # "self_edit_coding" (Finding 35 fix, 2026-07-17) uses this exact same AST-based
+    # scoring — it's still real Python code being judged, just tracked under a
+    # separate RiverBrain stats bucket so self-edit's own generation quality doesn't
+    # get averaged together with conversational coding-help quality.
+    if task_type in ("coding", "self_edit_coding"):
         if not _has_real_code(response):
             return 1
 
@@ -506,7 +510,7 @@ def _extract_quality_features_v2(
 
     syntax_valid = 0.5
     has_real_code = 0.0
-    if task_type == "coding":
+    if task_type in ("coding", "self_edit_coding"):
         if _has_real_code(response):
             has_real_code = 1.0
             syntax_valid = 1.0

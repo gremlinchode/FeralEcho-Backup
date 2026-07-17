@@ -1601,8 +1601,12 @@ def generate_code_from_plan(plan: str, temperature: float | None = None) -> tupl
             f"Plan to implement:\n{plan}"
         )
 
-        # Resolve model name before querying so we can track it
-        model_name, _ = choose_model(code_prompt, task_type="coding")
+        # Resolve model name before querying so we can track it. Uses
+        # "self_edit_coding" (Finding 35 fix, 2026-07-17), not "coding" —
+        # a genuinely separate RiverBrain bucket from conversational coding
+        # help, since choose_model()'s entropy/ranking here was previously
+        # reading a stat self-edit itself never contributed to.
+        model_name, _ = choose_model(code_prompt, task_type="self_edit_coding")
         code = echo_query(code_prompt, task_type="coding", temperature=temperature)
 
         if not code:
@@ -1616,6 +1620,16 @@ def generate_code_from_plan(plan: str, temperature: float | None = None) -> tupl
             code = _extract_code_block(code)
 
         code = _apply_self_edit_output(code)
+
+        # Feed this real generation attempt into RiverBrain's "self_edit_coding"
+        # bucket (Finding 35 fix) — fires on every attempt, not just the ~1/hour
+        # that reaches real production, so this is also denser data than the
+        # sandbox-outcome signal alone. Best-effort: never let a learning-signal
+        # failure break actual code generation.
+        try:
+            get_river_brain().learn(model_name, "self_edit_coding", code)
+        except Exception as _learn_err:
+            logging.debug(f"[SELF-EDIT] self_edit_coding learn() failed: {_learn_err}")
 
         return code, model_name
     except Exception as e:
@@ -1764,8 +1778,9 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
             f"Write corrected Python code for this plan:\n{plan}"
         )
 
-        # Resolve retry model name for tracking
-        retry_model_name, _ = choose_model(retry_prompt, task_type="coding")
+        # Resolve retry model name for tracking. "self_edit_coding" per
+        # Finding 35's fix — same reasoning as the primary attempt above.
+        retry_model_name, _ = choose_model(retry_prompt, task_type="self_edit_coding")
         retry_code = echo_query(retry_prompt, task_type="coding")
 
         if retry_code:
@@ -1773,6 +1788,10 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
             if not _looks_like_python(retry_code):
                 retry_code = _extract_code_block(retry_code)
             retry_code = _strip_toplevel_self_calls(retry_code)
+            try:
+                get_river_brain().learn(retry_model_name, "self_edit_coding", retry_code)
+            except Exception as _learn_err:
+                logging.debug(f"[SELF-EDIT] retry self_edit_coding learn() failed: {_learn_err}")
 
             retry_success, retry_error = test_code_in_sandbox(retry_code, "temp_self_edit_retry.py")
 

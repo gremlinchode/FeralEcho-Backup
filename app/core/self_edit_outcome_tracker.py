@@ -19,6 +19,7 @@ from statistics import mean
 _OUTCOMES_PATH = Path("memory/self_edit_outcomes.jsonl")
 _INTERACTION_LOG = Path("memory/interaction_log.jsonl")
 _COUNCIL_LOG = Path("memory/council_ratings.jsonl")
+_WORKSPACE_LOG = Path("memory/workspace_log.jsonl")
 
 # Each edit's own pre/post window spans 2x this value (edit_ts - window to
 # edit_ts + window). Previously 90 minutes, so a 180-minute total span —
@@ -131,6 +132,39 @@ def _human_ratings_in_window(interaction_entries: list, start: datetime, end: da
     return (round(mean(vals), 3) if vals else None), len(vals)
 
 
+def _dry_run_quality_in_window(workspace_entries: list, start: datetime, end: datetime) -> "tuple[float | None, int]":
+    """
+    Finding 35 fix (2026-07-17): a genuinely separate, denser evidence source
+    from the conversational quality_score/council_rating/human_rating fields
+    above — echo_optuna.py's dry-run trials (self_edit.dry_run_quality_delta
+    workspace events, Phase 7.1) fire far more often than real user coding
+    conversations do, which is why quality_score's post-window was frequently
+    null in practice (6/10 of the last 10 evaluated entries, checked live
+    before this fix). Kept as its own field rather than blended into
+    quality_score — dry-run trial quality and real conversational quality are
+    different things measured differently, same reasoning as keeping
+    RiverBrain's new "self_edit_coding" bucket separate from "coding".
+    Same 0-4 _score_response_quality() scale as quality_score, so directly
+    comparable if ever read side by side, just not silently averaged
+    together.
+    """
+    vals = []
+    for e in workspace_entries:
+        if e.get("type") != "self_edit.dry_run_quality_delta":
+            continue
+        ts = _parse_ts((e.get("ts") or "").replace("+00:00", ""))
+        if ts is None or not (start <= ts < end):
+            continue
+        v = (e.get("detail") or {}).get("trial_quality")
+        if v is None:
+            continue
+        try:
+            vals.append(float(v))
+        except (TypeError, ValueError):
+            continue
+    return (round(mean(vals), 3) if vals else None), len(vals)
+
+
 def _delta(pre: "float | None", post: "float | None") -> "float | None":
     if pre is None or post is None:
         return None
@@ -173,6 +207,7 @@ def evaluate_pending_outcomes(eval_window_minutes: int = _EVAL_WINDOW_MINUTES) -
 
     interaction_entries = _load_jsonl(_INTERACTION_LOG)
     council_entries = _load_jsonl(_COUNCIL_LOG)
+    workspace_entries = _load_jsonl(_WORKSPACE_LOG)
 
     for e in ready:
         edit_ts = _parse_ts(e["edit_timestamp"])
@@ -186,12 +221,16 @@ def evaluate_pending_outcomes(eval_window_minutes: int = _EVAL_WINDOW_MINUTES) -
         post_c, post_c_n = _mean_in_window(council_entries, post_start, post_end, task_type, "council_rating", ts_key="source_timestamp")
         pre_h, pre_h_n = _human_ratings_in_window(interaction_entries, pre_start, pre_end, task_type)
         post_h, post_h_n = _human_ratings_in_window(interaction_entries, post_start, post_end, task_type)
+        pre_d, pre_d_n = _dry_run_quality_in_window(workspace_entries, pre_start, pre_end)
+        post_d, post_d_n = _dry_run_quality_in_window(workspace_entries, post_start, post_end)
 
         e["status"] = "evaluated"
         e["evaluated_at"] = now.isoformat()
         e["quality_score"] = {"pre": pre_q, "post": post_q, "pre_n": pre_q_n, "post_n": post_q_n, "delta": _delta(pre_q, post_q)}
         e["council_rating"] = {"pre": pre_c, "post": post_c, "pre_n": pre_c_n, "post_n": post_c_n, "delta": _delta(pre_c, post_c)}
         e["human_rating"] = {"pre": pre_h, "post": post_h, "pre_n": pre_h_n, "post_n": post_h_n, "delta": _delta(pre_h, post_h)}
+        # Finding 35 fix — separate field, not blended into quality_score above.
+        e["dry_run_quality"] = {"pre": pre_d, "post": post_d, "pre_n": pre_d_n, "post_n": post_d_n, "delta": _delta(pre_d, post_d)}
 
     try:
         tmp = _OUTCOMES_PATH.with_suffix(".tmp")

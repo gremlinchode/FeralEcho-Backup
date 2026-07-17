@@ -339,6 +339,15 @@ class EchoCore:
                 "type": event_type,
                 "source": payload.get("source"),
                 "summary": payload.get("summary"),
+                # Found live 2026-07-17, while building Finding 35's fix: this
+                # hardcoded field list silently dropped "detail" on every write,
+                # for every publisher that ever attached one — publish_salience()
+                # computes and forwards it correctly, this function just never
+                # persisted it. Nothing previously read .detail back from disk
+                # (self_edit_outcome_tracker.py's new dry-run-quality window is
+                # the first real consumer), so no existing behavior depended on
+                # the field being absent.
+                "detail": payload.get("detail") or {},
                 "salience": payload.get("salience"),
                 "wide_broadcast": bool(payload.get("wide_broadcast", False)),
             }

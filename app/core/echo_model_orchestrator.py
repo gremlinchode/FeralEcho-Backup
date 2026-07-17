@@ -685,7 +685,16 @@ _friction_window: list = []
 _FRICTION_WINDOW_SIZE: int = 50
 
 # UPDATED: reasoning branch added so RiverBrain tracks deepseek performance
-TASK_TYPE_MAP = {"general": 0, "coding": 1, "creative": 2, "personal": 3, "reasoning": 4}
+# "self_edit_coding": 5 added (Finding 35 fix, 2026-07-17) — same precedented
+# pattern as "reasoning" above, giving RiverBrain a genuinely separate
+# classifier/scaler/model_task_stats bucket for self-edit's own code
+# generation, distinct from "coding" (which only ever reflects conversational
+# coding help). Deliberately NOT read by resolve_task_type()/compute_intent_
+# heatmap() — those use their own keyword/heatmap logic independent of this
+# map, confirmed by a full-codebase grep before adding this key, so no real
+# user prompt can ever be classified into this bucket by accident. Populated
+# only by generate_code_from_plan()'s explicit learn() call.
+TASK_TYPE_MAP = {"general": 0, "coding": 1, "creative": 2, "personal": 3, "reasoning": 4, "self_edit_coding": 5}
 
 # Task types that benefit from tool context in the prompt.
 # Personal, creative, general, and spiritual queries do NOT get tool lists —

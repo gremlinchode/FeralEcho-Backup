@@ -18,6 +18,24 @@ os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+
+# ── HuggingFace offline mode ───────────────────────────────────────────────────
+# Found live 2026-07-17: startup hung indefinitely at the "threads_starting"
+# sentinel stage — SentenceTransformer's loader does an online HEAD request to
+# huggingface.co to check for model updates before it will use an already-complete
+# local cache, and retries that check forever on failure ("Retry 1/5" repeating,
+# never advancing, never falling through to the cache) instead of giving up after
+# a bounded number of attempts. Root cause of the failure itself: Python's own
+# socket.gethostbyname("huggingface.co") reproducibly raised
+# `[Errno 8] nodename nor servname provided, or not known` even while the shell's
+# own ping/nslookup succeeded — a real, live DNS resolution gap specific to
+# Python's resolver path, not a general network outage. The local cache
+# (~/.cache/huggingface/hub/models--sentence-transformers--all-MiniLM-L6-v2) was
+# confirmed complete and valid before this was added, so skipping the network
+# check entirely is safe, not just a workaround for a symptom. Must be set before
+# any transformers/sentence-transformers import.
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Load .env before anything reads os.environ

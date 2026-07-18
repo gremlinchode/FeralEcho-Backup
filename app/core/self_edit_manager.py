@@ -60,6 +60,11 @@ STAGING_FILE = os.path.join(STAGING_DIR, "self_edit_candidate.py")
 # Dissent log (2026-07-17) — see propose_core_edit()'s own council review.
 # Anchored to _PROJECT_ROOT for the same reason as the paths above.
 _DISSENT_LOG_PATH = os.path.join(_PROJECT_ROOT, "memory", "dissent_log.jsonl")
+# CLAUDE.md Finding 41 B5: this append had no lock, unlike every other jsonl
+# writer in this codebase touched by Batch 3's race-condition sweep (mirrors
+# river_deliberation.py's _council_log_lock pattern). Currently latent — the
+# only call path is the human-driven !propose command — but cheap to close.
+_dissent_log_lock = threading.Lock()
 
 # Files Echo must never overwrite — they define her identity, memory index,
 # or production routing. Self-edit is limited to self_edit_generated.py
@@ -2143,9 +2148,10 @@ def _log_dissent_entry(entry: dict) -> None:
     of one.
     """
     try:
-        os.makedirs(os.path.dirname(_DISSENT_LOG_PATH), exist_ok=True)
-        with open(_DISSENT_LOG_PATH, "a", encoding="utf-8") as f:
-            f.write(json.dumps(entry) + "\n")
+        with _dissent_log_lock:
+            os.makedirs(os.path.dirname(_DISSENT_LOG_PATH), exist_ok=True)
+            with open(_DISSENT_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry) + "\n")
     except Exception as e:
         logging.debug(f"[SELF-EDIT] dissent log write failed: {e}")
 

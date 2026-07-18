@@ -145,10 +145,14 @@ def set_auto_checkin_enabled(enabled: bool) -> dict:
 # Logging (append-only, one line per message, both directions)
 # ---------------------------------------------------------------------------
 def _log_message(entry: dict) -> None:
+    # CLAUDE.md Finding 41 A1: entry may be a full envelope carrying the real
+    # ECHO_PARTNER_SECRET (needed on the wire for the receiving side's HMAC
+    # check) — never persist that field to disk, regardless of caller.
     try:
         os.makedirs(os.path.dirname(MESSAGE_LOG_PATH), exist_ok=True)
+        safe_entry = {k: v for k, v in entry.items() if k != "secret"}
         with open(MESSAGE_LOG_PATH, "a", encoding="utf-8") as f:
-            f.write(json.dumps(entry) + "\n")
+            f.write(json.dumps(safe_entry) + "\n")
     except Exception as e:
         logger.warning(f"[MESSAGING] Failed to write message log: {e}")
 
@@ -165,9 +169,14 @@ def get_recent_messages(limit: int = 50) -> list:
     out = []
     for line in lines[-limit:]:
         try:
-            out.append(json.loads(line))
+            entry = json.loads(line)
         except json.JSONDecodeError:
             continue
+        # Defense in depth: strip "secret" even if it's already on disk (older
+        # log lines predate the _log_message fix above) — this route should
+        # never be able to serve it regardless of what's upstream.
+        entry.pop("secret", None)
+        out.append(entry)
     return out
 
 

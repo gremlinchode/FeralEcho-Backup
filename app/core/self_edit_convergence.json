@@ -32,9 +32,11 @@
       "tighten_prose_detection_guard",
       "strip_prose_and_tokenize",
       "strip_sandbox_prose_in_new_code",
-      "remove_leading_prose_in_output"
+      "remove_leading_prose_in_output",
+      "is_prose",
+      "guard_prose"
     ],
-    "cycles_attempted": 91
+    "cycles_attempted": 95
   },
   "response_shortening": {
     "count": 1,
@@ -48,19 +50,58 @@
     "cycles_attempted": 11
   },
   "quality_scoring": {
-    "count": 0,
+    "count": 1,
     "non_convergent_streak": 0,
     "all_names_seen": [
-      "score_candidate_code"
+      "score_candidate_code",
+      "score_response_quality",
+      "update_question_quality",
+      "score_code_quality"
     ],
-    "cycles_attempted": 1
+    "cycles_attempted": 4
   },
   "unclassified": {
     "count": 1,
     "non_convergent_streak": 0,
     "all_names_seen": [
-      "self_edit_generated"
+      "self_edit_generated",
+      "modelfileproposer",
+      "datetime",
+      "timezone",
+      "apply_to_code",
+      "log_memory_edit",
+      "cartographerdb",
+      "add_to_vector_memory",
+      "build_map",
+      "echo_query",
+      "emergent_loop",
+      "garden_summary",
+      "harvest_question",
+      "initialize_garden",
+      "reflect",
+      "retrieve_relevant_memories",
+      "run_cartographer",
+      "run_pending",
+      "run_self_model_reflection",
+      "schedule_task",
+      "select_from_garden",
+      "select_next_prompt",
+      "start_emergent_scheduler",
+      "stop_emergent_scheduler",
+      "wait_for_activity",
+      "weighted_prompt_selection",
+      "write_json",
+      "write_sqlite",
+      "optional",
+      "path",
+      "stillness",
+      "contextmanager",
+      "is_in_stillness",
+      "seconds_since_last_exit",
+      "should_enter_stillness",
+      "should_exit_stillness",
+      "re_compile"
     ],
-    "cycles_attempted": 2
+    "cycles_attempted": 14
   }
 }

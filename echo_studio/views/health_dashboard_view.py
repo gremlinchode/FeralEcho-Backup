@@ -55,6 +55,7 @@ class HealthDashboardView(QWidget):
         self._vector_lbl = _tile("vectors: —")
         self._council_lbl = _tile("council: —")
         self._selfedit_lbl = _tile("self-edit: —")
+        self._selfheal_lbl = _tile("self-heal: —")
         self._liveness_lbl = _tile("liveness: —")
 
         for w in (
@@ -64,6 +65,7 @@ class HealthDashboardView(QWidget):
             self._vector_lbl,
             self._council_lbl,
             self._selfedit_lbl,
+            self._selfheal_lbl,
             self._liveness_lbl,
         ):
             layout.addWidget(w)
@@ -99,6 +101,8 @@ class HealthDashboardView(QWidget):
         sentinel = payload.get("sentinel", {}) or {}
         council = payload.get("council", {}) or {}
         self_edit = payload.get("self_edit_outcomes", {}) or {}
+        self_edit_gen = payload.get("self_edit", {}) or {}
+        self_heal = payload.get("self_heal", {}) or {}
 
         ollama_alive = sysh.get("ollama_process_alive")
         self._model_lbl.setText(
@@ -126,25 +130,82 @@ class HealthDashboardView(QWidget):
             f"council: {agreement * 100:.0f}%" if isinstance(agreement, (int, float)) else "council: —"
         )
 
+        # CLAUDE.md Finding 41 / Echo Studio blind-spot fix: this used to only
+        # show pending/evaluated *counts* from self_edit_outcomes — the actual
+        # generation success_rate and quality trend (introspection_state.json's
+        # "self_edit" block, always present in the API response) were computed
+        # server-side but never read by this view at all. A "self-edit: 14/14
+        # eval" tile can look calm while the real generation success rate is
+        # 14%. Surface the number that actually matters, not just activity counts.
+        success_rate = self_edit_gen.get("success_rate")
+        quality_delta = self_edit_gen.get("recent_quality_delta")
         pending_count = self_edit.get("pending") if isinstance(self_edit, dict) else None
         evaluated_count = self_edit.get("evaluated") if isinstance(self_edit, dict) else None
-        if pending_count is not None and evaluated_count is not None:
+
+        if isinstance(success_rate, (int, float)):
+            delta_str = f" (Δ{quality_delta:+.2f})" if isinstance(quality_delta, (int, float)) else ""
+            text = f"self-edit: {success_rate * 100:.0f}% success{delta_str}"
+            if pending_count is not None and evaluated_count is not None:
+                text += f" / {evaluated_count} eval, {pending_count} pending"
+            self._selfedit_lbl.setText(text)
+            # A struggling generation loop should look struggling, not neutral —
+            # same "don't hide behind a clean tile" fix this whole block exists for.
+            if success_rate < 0.3 or (isinstance(quality_delta, (int, float)) and quality_delta < 0):
+                self._selfedit_lbl.setStyleSheet(
+                    "padding: 4px 10px; border-right: 1px solid palette(mid); color: #c0392b;"
+                )
+                self._selfedit_lbl.setToolTip(
+                    "Self-edit generation success rate is low and/or trending down. "
+                    "This reflects the underlying candidate-generation loop, not whether "
+                    "a currently-deployed edit is safe (see self_edit_apply_to_code in the "
+                    "liveness tile for that)."
+                )
+            else:
+                self._selfedit_lbl.setStyleSheet(
+                    "padding: 4px 10px; border-right: 1px solid palette(mid);"
+                )
+                self._selfedit_lbl.setToolTip("")
+        elif pending_count is not None and evaluated_count is not None:
             self._selfedit_lbl.setText(f"self-edit: {evaluated_count} eval / {pending_count} pending")
         else:
             self._selfedit_lbl.setText("self-edit: —")
 
+        connected = self_heal.get("connected") if isinstance(self_heal, dict) else None
+        if connected is None:
+            self._selfheal_lbl.setText("self-heal: —")
+            self._selfheal_lbl.setStyleSheet(
+                "padding: 4px 10px; border-right: 1px solid palette(mid); color: palette(mid);"
+            )
+        else:
+            self._selfheal_lbl.setText(f"self-heal: {'connected' if connected else 'disconnected'}")
+            self._selfheal_lbl.setStyleSheet(
+                "padding: 4px 10px; border-right: 1px solid palette(mid);"
+                + ("" if connected else " color: palette(mid);")
+            )
+        self._selfheal_lbl.setToolTip(self_heal.get("note", ""))
+
         self._update_liveness_tile(payload.get("liveness", {}) or {})
 
     def _update_liveness_tile(self, liveness: dict):
-        # liveness_ledger._CHECKS as of this writing — kept as a plain literal
-        # here (not imported) since this view has no other app.core import and
-        # the count only needs to be roughly right for display; get_liveness_status()
-        # itself is the ground truth this tile reflects, this is just the label.
+        # liveness_ledger._CHECKS as of this writing (16, CLAUDE.md Finding 42)
+        # — kept as a plain literal here (not imported) since this view has no
+        # other app.core import and the count only needs to be roughly right
+        # for display; get_liveness_status() itself is the ground truth this
+        # tile reflects, this is just the label. This list was stale at 11 for
+        # a while (missing global_workspace_consumption, valence_self_report,
+        # reflection_shard_generation, dissent_log_hook) — the exact
+        # "doc/display lags what's actually true" pattern this project keeps
+        # finding, this time in the one place meant to show it isn't stale.
+        # Caught going stale again within the same session that fixed it last
+        # (missing seam_engine, added the same night as this comment) —
+        # updated immediately rather than left to be found a third time.
         known_checks = [
             "self_edit_apply_to_code", "curiosity_engine", "nature_spark",
             "wolf_friction_bridge", "claude_shard", "question_garden_lineage",
             "claude_research", "self_model_drift", "task_type_classifier",
-            "global_workspace", "substrate_continuity",
+            "global_workspace", "substrate_continuity", "global_workspace_consumption",
+            "valence_self_report", "reflection_shard_generation", "dissent_log_hook",
+            "seam_engine",
         ]
         if not liveness.get("ledger_exists", True) or "error" in liveness:
             self._liveness_lbl.setText("liveness: —")

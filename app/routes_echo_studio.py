@@ -11,6 +11,7 @@ Not on EDIT_FORBIDDEN_TARGETS — freely editable.
 """
 
 import json
+import re
 import time
 import uuid
 import logging
@@ -289,6 +290,26 @@ def dashboard_health():
         payload["self_edit_outcomes"] = {"error": str(e)}
 
     try:
+        # Live check against run.py's actual source, not a cached claim — the
+        # dashboard should never assert self_heal's status from memory of what
+        # it used to be. A real (non-comment) import line is the only thing
+        # that counts as "connected."
+        with open("run.py") as f:
+            run_py_source = f.read()
+        real_import_lines = [
+            line for line in run_py_source.splitlines()
+            if ("import app.core.self_heal" in line or "from app.core.self_heal" in line)
+            and not line.strip().startswith("#")
+        ]
+        payload["self_heal"] = {
+            "connected": bool(real_import_lines),
+            "note": ("Imported in run.py." if real_import_lines else
+                      "Fixed but intentionally disconnected pending human review (GREMLIN_ROLE.md)."),
+        }
+    except Exception as e:
+        payload["self_heal"] = {"error": str(e)}
+
+    try:
         from app.core.autonomy_coordinator import get_autonomy_status
         payload["autonomy"] = get_autonomy_status()
     except Exception as e:
@@ -449,6 +470,30 @@ _EXCLUDED_DIR_NAMES = {
 }
 _MAX_FILE_READ_BYTES = 2_000_000  # 2MB cap — this is a viewer, not a file server
 
+# CLAUDE.md Finding 41 A2: a directory-name blocklist is a gate applied to the
+# specific instances someone thought to check, not the class — this project's
+# own history has three prior instances of exactly that failure shape. A real
+# leaked file (new_directory/app/core/env/environment.json, a full os.environ
+# dump with live API keys) survived an earlier codebase-wide secret sweep
+# because that sweep's grep pattern (`*_KEY=` shell-assignment style) doesn't
+# match JSON's `"KEY": "value"` form — this scan deliberately covers both, plus
+# common bare field names and known token prefixes, so it isn't tied to one
+# file's specific shape either. Heuristic, not exhaustive — a known residual
+# gap in the same spirit as this file's other documented limits.
+_SECRET_CONTENT_PATTERNS = [
+    re.compile(r'["\']?[\w]*(?:_KEY|_SECRET|_TOKEN|_PASSWORD)["\']?\s*[:=]\s*["\']?[A-Za-z0-9+/_\-\.]{12,}', re.IGNORECASE),
+    re.compile(r'["\'](?:secret|password|api_key|apikey|token|access_key)["\']\s*:\s*["\'][^"\']{6,}["\']', re.IGNORECASE),
+    re.compile(r'\bsk-[A-Za-z0-9]{10,}\b'),
+    re.compile(r'\bghp_[A-Za-z0-9]{20,}\b'),
+    re.compile(r'\bgithub_pat_[A-Za-z0-9_]{20,}\b'),
+    re.compile(r'\bAKIA[A-Z0-9]{12,}\b'),
+    re.compile(r'-----BEGIN [A-Z ]*PRIVATE KEY-----'),
+]
+
+
+def _looks_like_secret_dump(content: str) -> bool:
+    return any(p.search(content) for p in _SECRET_CONTENT_PATTERNS)
+
 
 def _safe_resolve(rel_path: str):
     """Resolve rel_path against the repo root; return None if it would
@@ -511,6 +556,12 @@ def projects_file():
         content = target.read_text(encoding="utf-8", errors="replace")
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+    # CLAUDE.md Finding 41 A2: content-based check, not just a directory-name
+    # blocklist — catches a credential-shaped file regardless of which
+    # directory it happens to sit in.
+    if _looks_like_secret_dump(content):
+        return jsonify({"error": "invalid path"}), 403
 
     return jsonify({"path": rel_path, "content": content, "size": size}), 200
 

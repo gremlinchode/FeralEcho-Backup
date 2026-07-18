@@ -1,40 +1,4 @@
-from app.core.self_edit_outcome_tracker import record_pending_outcome, evaluate_pending_outcomes
-import re
-
-def apply_to_code(code):
-    def strip_leading_prose(line):
-        if line.startswith('#'):
-            return ''
-        else:
-            return line
-
-    lines = (line.strip() for line in code.split('\n'))
-    sentences = [re.sub(r'^\s*([A-Za-z].*\.)', '', line) for line in lines]
-    return '\n'.join(sentences)
-
-class self_edit_generated:
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def apply_to_code(code: str) -> str:
-        logging.info('Prose detection guard applied')
-        return strip_leading_prose_in_code(code)
-
-def strip_leading_prose_in_code(code):
-    def detect_and_strip_prose(line):
-        if line.strip().startswith('import') or line.strip().startswith('from'):
-            return ''
-        else:
-            return line
-
-    output_lines = []
-    for line in code.split('\n'):
-        while True:
-            if not line.strip():
-                break
-            elif detect_and_strip_prose(line).strip():
-                break
-            line = line.lstrip()
-        output_lines.append(line)
-    return '\n'.join(output_lines)
+def apply_to_code(code: str) -> str:
+    prose_pattern = r'^\s*\b(?!.*?)([A-Za-z\s]+(?:\.\s*[A-Za-z\s]+)*?)(?!\s*.*)'
+    modified_code = '\n'.join([line if any(re.match(prose_pattern, line)) else line for line in code.split('\n')])
+    python_token_pattern = re.compile(r'^(?:\s*(?:def|class|if|elif|else|for|while|try|except|finally|break|continue)\s*\(|::)|[a-zA-Z_][a-zA-Z0-9_\.]*)')

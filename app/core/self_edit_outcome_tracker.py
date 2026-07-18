@@ -12,9 +12,19 @@ consequential is a separate, explicit decision — see GREMLIN_ROLE.md.
 """
 import json
 import logging
+import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 from statistics import mean
+
+# CLAUDE.md Finding 41 B1: record_pending_outcome() (called from the self-edit
+# deploy path, inside self_edit_manager's own _self_edit_deploy_lock) and
+# evaluate_pending_outcomes() (called from DMN Guardian's independent 60s
+# thread) both touch _OUTCOMES_PATH with no shared coordination — the deploy
+# lock only covers the deploy path, not Guardian's. A real self-edit's outcome
+# record could be silently erased if it landed mid-evaluation. One lock here,
+# shared by both functions, closes that regardless of which thread is calling.
+_outcomes_lock = threading.Lock()
 
 _OUTCOMES_PATH = Path("memory/self_edit_outcomes.jsonl")
 _INTERACTION_LOG = Path("memory/interaction_log.jsonl")
@@ -69,9 +79,10 @@ def record_pending_outcome(task_type: str, edit_timestamp: "str | None" = None) 
         "status": "pending",
     }
     try:
-        _OUTCOMES_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with open(_OUTCOMES_PATH, "a", encoding="utf-8") as f:
-            f.write(json.dumps(entry) + "\n")
+        with _outcomes_lock:
+            _OUTCOMES_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(_OUTCOMES_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry) + "\n")
     except Exception as e:
         logging.debug(f"[SELF-EDIT-OUTCOME] record_pending_outcome failed: {e}")
 
@@ -177,6 +188,14 @@ def evaluate_pending_outcomes(eval_window_minutes: int = _EVAL_WINDOW_MINUTES) -
     if not _OUTCOMES_PATH.exists():
         return 0
 
+    with _outcomes_lock:
+        return _evaluate_pending_outcomes_locked(eval_window_minutes)
+
+
+def _evaluate_pending_outcomes_locked(eval_window_minutes: int) -> int:
+    """The actual read-modify-writeback, always called with _outcomes_lock
+    already held — separated out so the lock scope is obvious at the call
+    site rather than buried mid-function."""
     try:
         lines = _OUTCOMES_PATH.read_text(encoding="utf-8").splitlines()
     except Exception as e:

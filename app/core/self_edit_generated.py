@@ -1,7 +1,16 @@
-# app/core/self_edit_generated.py
-# Reset 2026-07-15 (CLAUDE.md Finding 28): the previously-deployed
-# apply_to_code() hook here threw a NameError (missing `import re`) on
-# 253 of its last 254 invocations, and its one recorded success shrank a
-# candidate from 2173 to 47 characters — corruption, not an improvement.
-# Reset to an honestly-inert state rather than hand-patched, since this
-# file is autonomous self-edit's own output, not hand-authored code.
+import re
+
+def apply_to_code(code: str) -> str:
+    lines = [line for line in code.split('\n') if line.strip()]
+    
+    def tokenize():
+        for i, line in enumerate(lines):
+            if '=' in line or ':' in line:
+                yield line
+            elif re.search(r'\b(\w+(?:\W*\w+)*)\b', line):
+                pass
+            else:
+                yield ''
+                yield line
+
+    return '\n'.join(tokenize())

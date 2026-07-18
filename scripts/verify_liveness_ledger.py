@@ -419,6 +419,29 @@ check("dissent_log_hook: real intact hook", r["pass"], True, r["evidence"])
 r = ll._evaluate_dissent_log_hook(None)
 check("dissent_log_hook: propose_core_edit() not found at all", r["pass"], False, r["evidence"])
 
+# ── 16. seam_engine ──────────────────────────────────────────────────────
+# Historical fakes this check exists to catch: check_pair() silently
+# degrading into flagging every reading as a seam (noise, not signal), or
+# never flagging again (the leave-one-out baseline or a threshold breaking
+# so it can no longer detect a real contradiction).
+try:
+    from app.core.seam_engine import check_pair as _real_check_pair
+    r = ll._evaluate_seam_engine(_real_check_pair)
+    check("seam_engine: real current check_pair()", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] seam_engine real-function case: import failed ({e})")
+
+_always_fires = lambda a, b: {"historical_r": 0.9, "z_a": 2.0, "z_b": -2.0}
+r = ll._evaluate_seam_engine(_always_fires)
+check("seam_engine: check_pair() always fires (degraded into noise)", r["pass"], False, r["evidence"])
+
+_never_fires = lambda a, b: None
+r = ll._evaluate_seam_engine(_never_fires)
+check("seam_engine: check_pair() never fires (can no longer detect a real contradiction)", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_seam_engine(None)
+check("seam_engine: check_pair not importable at all", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

@@ -901,6 +901,14 @@ def admin_council_spotcheck():
 # --- Sync routes (Echo Air ↔ Echo M5 over Tailscale) ---
 @app.route("/sync/export", methods=["GET"])
 def sync_export():
+    # CLAUDE.md Finding 41 E: this had zero auth of any kind, unlike its
+    # sibling /sync/import — slipped past every prior audit because they all
+    # swept POST routes specifically and this is a GET route. Anyone reachable
+    # could pull the full real interaction_log.jsonl history with one request.
+    # Same _secret_ok() gate as /sync/import, read from query params since
+    # this is a GET request (?secret=...&since=...).
+    if not _secret_ok(request.args):
+        return jsonify({"error": "unauthorized"}), 403
     try:
         from app.sync.sync_protocol import export_since
         entries = export_since(float(request.args.get("since", 0.0)))

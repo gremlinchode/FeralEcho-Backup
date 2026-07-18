@@ -58,7 +58,14 @@ except Exception:
 # ============================================================
 # CONFIGURATION
 # ============================================================
-MACBOOK_IP   = "100.82.172.4"
+# NOTE: single-host for now, points at M5 (100.84.229.10) — was previously
+# 100.82.172.4 (Air), which this phone script could never actually reach
+# during 2026-07-18's session, explaining a real "mac_reachable: False"/
+# silent-failure incident. Real multi-host failover (try both, rely on
+# neither) is a good future idea, deliberately not built here — it needs a
+# proper refactor of every function below that hardcodes MACBOOK_IP, not a
+# tonight-sized change. See CLAUDE.md Finding 42.
+MACBOOK_IP   = "100.84.229.10"
 MACBOOK_PORT = 5000
 
 # GREMLIN_SECRET gates /learning_event and /learning_batch as of the 2026-07-11
@@ -73,6 +80,7 @@ CMD_FILE     = os.path.join(_DOCS, "symbiote_cmd.txt")
 STATUS_FILE  = os.path.join(_DOCS, "symbiote_status.json")
 BUNDLE_FILE  = os.path.join(_DOCS, "symbiote_bundle.jsonl")
 MEMORY_FILE  = os.path.join(_DOCS, "symbiote_memory.json")
+REPLY_FILE   = os.path.join(_DOCS, "symbiote_reply.txt")
 
 MAX_TEXT        = 2000
 MAX_VECTORS     = 3000
@@ -688,6 +696,7 @@ def mirror_echo(msg) -> "str | None":
                 "time":     datetime.now().strftime("%H:%M:%S"),
                 "context":  STATE.context,
                 "activity": STATE.activity,
+                "secret":   THUNDERHEAD_SECRET,
             },
             timeout=8,
         )
@@ -849,6 +858,16 @@ def cmd_loop():
                         msg   = cmd.split(":", 1)[1].strip()
                         reply = mirror_echo(msg)
                         _log(f"[MIRROR REPLY] {reply}")
+                        # Readable confirmation file — open in Files app instead
+                        # of hunting for this line in scrolling console output.
+                        try:
+                            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            atomic_write(
+                                REPLY_FILE,
+                                f"[{ts}]\nsent:  {msg}\nreply: {reply}\n".encode(),
+                            )
+                        except Exception as e:
+                            _log(f"[REPLY WRITE ERROR] {e}")
                     else:
                         send_event("command", cmd, {"type": "command"})
         except Exception as e:

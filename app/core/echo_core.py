@@ -635,6 +635,14 @@ def _salience_self_edit_streak() -> float:
 
 
 _SALIENCE_STATE_PATH = os.path.join("memory", "salience_state.json")
+# CLAUDE.md Finding 41 B2: this was a shared, non-unique tmp filename with no
+# lock, called from at least two independently-threaded sites (emergent_
+# scheduler.py, river_deliberation.py). Two concurrent calls could open the
+# same tmp path, and the loser's os.replace() would raise FileNotFoundError —
+# reproduced at ~62% loss under real contention. Lock + a per-call-unique tmp
+# name (belt and suspenders, matching this codebase's existing pattern
+# elsewhere) closes both the crash and the silent lost update.
+_salience_state_lock = threading.Lock()
 
 
 def _persist_salience_state(result: dict) -> None:
@@ -650,13 +658,14 @@ def _persist_salience_state(result: dict) -> None:
     must not affect the real computation it's attached to.
     """
     try:
-        os.makedirs(os.path.dirname(_SALIENCE_STATE_PATH), exist_ok=True)
-        tmp = _SALIENCE_STATE_PATH + ".tmp"
-        payload = dict(result)
-        payload["ts"] = datetime.now(timezone.utc).isoformat()
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(payload, f)
-        os.replace(tmp, _SALIENCE_STATE_PATH)
+        with _salience_state_lock:
+            os.makedirs(os.path.dirname(_SALIENCE_STATE_PATH), exist_ok=True)
+            tmp = f"{_SALIENCE_STATE_PATH}.{os.getpid()}.{threading.get_ident()}.tmp"
+            payload = dict(result)
+            payload["ts"] = datetime.now(timezone.utc).isoformat()
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(payload, f)
+            os.replace(tmp, _SALIENCE_STATE_PATH)
     except Exception as e:
         logger.debug("[EchoCore] salience_state persist failed: %s", e)
 

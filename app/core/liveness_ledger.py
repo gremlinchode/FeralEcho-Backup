@@ -82,6 +82,7 @@ _WINDOWS_DAYS = {
     "valence_self_report": None,  # point-in-time consistency check, not time-windowed
     "reflection_shard_generation": 1,
     "dissent_log_hook": None,  # static source-invariant, same shape as wolf_friction_bridge
+    "seam_engine": None,  # functional canary, not time-windowed — same shape as task_type_classifier
 }
 
 
@@ -960,6 +961,71 @@ def _check_reflection_shard_generation() -> dict:
     )
 
 
+# ── 16. seam_engine.py — check_pair() still genuinely discriminates ─────
+# a real contradiction from an unusual-but-consistent reading and from an
+# uncorrelated pair, rather than silently degrading into flagging every
+# cycle or never again. Same functional-canary shape as
+# task_type_classifier's check (call the real function with synthetic
+# known-answer cases), not a log-presence check — seam_engine.py logs an
+# empty result every cycle by design, so "it wrote to seam_log.jsonl
+# recently" would prove nothing about whether it's still correctly
+# discriminating.
+
+
+def _evaluate_seam_engine(check_pair_fn) -> dict:
+    """Functional canary, not a log-presence check: feed the real
+    check_pair() three synthetic cases whose correct answer is known by
+    construction — a genuine contradiction (must fire), an unusual-but-
+    consistent reading (must not fire), and a pair with no established
+    relationship (must not fire) — and confirm it still discriminates.
+    These are the same three shapes scripts/verify_seam_engine.py already
+    proves synthetically; this runs the same discrimination live, every
+    introspection cycle, so a future edit that weakens the leave-one-out
+    baseline or the _MIN_VARIANCE/_CORR_THRESHOLD gating is caught the
+    next cycle, not the next manual script run."""
+    if check_pair_fn is None:
+        return _result(False, "Could not import check_pair at all — failing closed.")
+
+    hist_a = list(range(20))
+    hist_b = list(range(20))
+    cases = [
+        ("genuine_contradiction", hist_a + [100], hist_b + [-100], True),
+        ("unusual_but_consistent", hist_a + [100], hist_b + [100], False),
+        ("no_relationship", [0, 1] * 10 + [1], list(range(20)) + [50], False),
+    ]
+    failures = []
+    for name, series_a, series_b, expect_seam in cases:
+        try:
+            result = check_pair_fn(series_a, series_b)
+        except Exception as e:
+            failures.append(f"{name} raised {e!r}")
+            continue
+        fired = result is not None
+        if fired != expect_seam:
+            failures.append(f"{name}: expected fire={expect_seam} got fire={fired} ({result})")
+    if not failures:
+        return _result(
+            True,
+            "check_pair() correctly discriminated all 3 canary cases (genuine "
+            "contradiction fires, unusual-but-consistent reading does not, "
+            "uncorrelated pair does not) — same shapes scripts/verify_seam_engine.py "
+            "proves synthetically, run live against the real function this cycle.",
+        )
+    return _result(
+        False,
+        "check_pair() failed canary cases: " + "; ".join(failures) +
+        " — seam_engine may be silently degrading into flagging everything or nothing.",
+    )
+
+
+def _check_seam_engine() -> dict:
+    try:
+        from app.core.seam_engine import check_pair
+    except Exception:
+        check_pair = None
+    return _evaluate_seam_engine(check_pair)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -978,6 +1044,7 @@ _CHECKS = (
     "valence_self_report",
     "reflection_shard_generation",
     "dissent_log_hook",
+    "seam_engine",
 )
 
 
@@ -987,7 +1054,7 @@ def _load_prev_ledger() -> dict:
 
 def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
     """
-    Run all checks in _CHECKS (15 as of 2026-07-17) and write
+    Run all checks in _CHECKS (16 as of 2026-07-18) and write
     memory/liveness_ledger.json.
     introspection_memory: the already-computed state["memory"] dict from
     this same introspection cycle (faiss_vector_count/journal_line_count),
@@ -1017,6 +1084,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "valence_self_report": _check_valence_self_report,
         "reflection_shard_generation": _check_reflection_shard_generation,
         "dissent_log_hook": _check_dissent_log_hook,
+        "seam_engine": _check_seam_engine,
     }
 
     ledger = {"generated_at": _now_iso()}

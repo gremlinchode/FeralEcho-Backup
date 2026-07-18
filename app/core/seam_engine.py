@@ -52,6 +52,7 @@
 
 import json
 import logging
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -61,6 +62,11 @@ logger = logging.getLogger(__name__)
 
 _SEAM_STATE_PATH = Path("memory/seam_state.json")
 _SEAM_LOG_PATH = Path("memory/seam_log.jsonl")
+# CLAUDE.md Finding 41 B4: observe()'s load-first_ever -> compute -> save cycle
+# had no lock — currently latent (only one caller, emergent_scheduler.py's
+# single thread), but undefended if a second caller is ever added. Cheap to
+# close now rather than rediscover later.
+_seam_state_lock = threading.Lock()
 
 _MIN_JOINT_OBSERVATIONS = 20   # matches compute_salience()'s own _SALIENCE_HISTORY_MIN_SAMPLES convention
 _CORR_THRESHOLD = 0.4          # a pair needs at least this much historical relationship to have anything to violate
@@ -257,40 +263,42 @@ def observe() -> dict:
 
     n_dims = hist.shape[1]
     labels = STATE_LABELS[:n_dims]
-    first_ever = _load_first_ever()
     seams = []
     checked = 0
 
-    for i in range(n_dims):
-        for j in range(i + 1, n_dims):
-            series_a = hist[:, i].tolist()
-            series_b = hist[:, j].tolist()
-            result = check_pair(series_a, series_b)
-            if result is None:
-                if _pearson(series_a, series_b) is not None and abs(_pearson(series_a, series_b)) >= _CORR_THRESHOLD:
-                    checked += 1
-                continue
-            checked += 1
+    with _seam_state_lock:
+        first_ever = _load_first_ever()
 
-            direction = _direction_key(labels[i], result["z_a"], labels[j], result["z_b"])
-            pair_key = (labels[i], labels[j], direction)
-            is_first = pair_key not in first_ever
-            if is_first:
-                first_ever.add(pair_key)
+        for i in range(n_dims):
+            for j in range(i + 1, n_dims):
+                series_a = hist[:, i].tolist()
+                series_b = hist[:, j].tolist()
+                result = check_pair(series_a, series_b)
+                if result is None:
+                    if _pearson(series_a, series_b) is not None and abs(_pearson(series_a, series_b)) >= _CORR_THRESHOLD:
+                        checked += 1
+                    continue
+                checked += 1
 
-            seam_entry = {
-                "pair": [labels[i], labels[j]],
-                "direction": direction,
-                "first_ever": is_first,
-                **result,
-            }
-            seams.append(seam_entry)
+                direction = _direction_key(labels[i], result["z_a"], labels[j], result["z_b"])
+                pair_key = (labels[i], labels[j], direction)
+                is_first = pair_key not in first_ever
+                if is_first:
+                    first_ever.add(pair_key)
 
-            if is_first:
-                _plant_seam_question(labels[i], labels[j], result)
-                _publish_seam_event(labels[i], labels[j], result)
+                seam_entry = {
+                    "pair": [labels[i], labels[j]],
+                    "direction": direction,
+                    "first_ever": is_first,
+                    **result,
+                }
+                seams.append(seam_entry)
 
-    _save_first_ever(first_ever, len(hist))
+                if is_first:
+                    _plant_seam_question(labels[i], labels[j], result)
+                    _publish_seam_event(labels[i], labels[j], result)
+
+        _save_first_ever(first_ever, len(hist))
 
     entry = {
         "ts": datetime.now(timezone.utc).isoformat(),

@@ -502,6 +502,14 @@ def emergency_shutdown():
 # MAIN ECHO ENTRY POINT — KEEP THIS EXACTLY AS-IS
 @app.route("/mirror_echo", methods=["POST"])
 def mirror_echo():
+    # 2026-07-19 "remove every excuse" pass: mark a real conversation as
+    # in flight so autonomous loops (via autonomy_coordinator.should_run_
+    # cycle()) don't add to Ollama's single-concurrency queue while this
+    # is being served. mark_end() in both exit paths below, not a
+    # try/finally wrapping the whole body — avoids re-indenting this
+    # function, which its own comment asks to be kept exactly as-is.
+    from app.core.conversation_activity import mark_start, mark_end
+    mark_start()
     try:
         data = request.json or {}
         msg = data.get("message", "").strip()
@@ -614,10 +622,12 @@ def mirror_echo():
         except Exception as le:
             logger.error(f"[DUAL_LEARNER-OUT ERROR] {le}")
 
+        mark_end()
         return jsonify(reply), 200
 
     except Exception as e:
         logger.error(f"[MIRROR_ECHO ERROR] {e}", exc_info=True)
+        mark_end()
         return jsonify({"error": str(e)}), 500
 
 # -----------------------------

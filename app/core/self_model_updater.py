@@ -595,6 +595,16 @@ class SelfModelUpdater:
         dependencies a second time). Deliberately observational only — no
         liveness check yet, since there's no known-good baseline to check a
         coupling number against until real data accumulates.
+
+        Stated plainly, 2026-07-19 "remove every excuse" pass: this value
+        currently has NO real consumer anywhere in the codebase — nothing
+        reads model_task_stats, prompt assembly, or any decision from it.
+        Its presence in self_model.json is observational infrastructure,
+        not evidence of anything acting on it, and it shouldn't be read as
+        more finished than that. echo_core.py's history-persistence fix
+        (same pass) means it can now actually accumulate real samples
+        across restarts instead of resetting to insufficient_samples every
+        time — but accumulating data is not the same as being used.
         """
         salience_state_path = os.path.join(self._memory_dir, "salience_state.json")
         try:

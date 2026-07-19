@@ -663,6 +663,11 @@ def _persist_salience_state(result: dict) -> None:
             tmp = f"{_SALIENCE_STATE_PATH}.{os.getpid()}.{threading.get_ident()}.tmp"
             payload = dict(result)
             payload["ts"] = datetime.now(timezone.utc).isoformat()
+            # 2026-07-19 "remove every excuse" pass: persist the raw
+            # history too, not just the derived score — see
+            # _load_salience_history()'s docstring for why this was
+            # missing and what it was silently costing.
+            payload["history"] = list(_salience_history)
             with open(tmp, "w", encoding="utf-8") as f:
                 json.dump(payload, f)
             os.replace(tmp, _SALIENCE_STATE_PATH)
@@ -712,6 +717,35 @@ def compute_salience() -> dict:
 # resolve; nothing consumes this value yet.
 _SALIENCE_HISTORY_MIN_SAMPLES = 20
 _salience_history: "deque[dict]" = deque(maxlen=100)
+
+
+def _load_salience_history() -> None:
+    """Restore coupling-estimate history across restarts — 2026-07-19
+    'remove every excuse' pass. Previously only the final computed score
+    was ever persisted (see _persist_salience_state()), not the
+    accumulating history behind it — every restart silently reset
+    accumulation to zero. Confirmed live, not assumed: coupling_estimate
+    was still None in production days after Phase 5 shipped it, and this
+    project restarts often (three times in one session is not unusual),
+    so _SALIENCE_HISTORY_MIN_SAMPLES was realistically never reachable
+    between restarts. This doesn't invent a consumer or a baseline for
+    the number — Phase 5's own "no known-good baseline exists yet"
+    reasoning still holds — it just stops discarding the one thing
+    standing between "never computed" and "eventually computed."
+    Best-effort: a missing or corrupt file just means an empty start,
+    the same behavior as before this fix existed."""
+    try:
+        if os.path.exists(_SALIENCE_STATE_PATH):
+            with open(_SALIENCE_STATE_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            for entry in data.get("history", []):
+                if isinstance(entry, dict):
+                    _salience_history.append(entry)
+    except Exception as e:
+        logger.debug("[EchoCore] salience_history load failed: %s", e)
+
+
+_load_salience_history()
 
 
 def _pearson(xs: list, ys: list) -> "float | None":

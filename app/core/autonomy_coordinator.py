@@ -55,6 +55,18 @@ def should_run_cycle(loop_name: str, tier: str = "heavy") -> bool:
             return False
     except Exception:
         pass
+    try:
+        # 2026-07-19 "remove every excuse" pass: don't let an autonomous
+        # loop add to Ollama's single-concurrency queue while a real
+        # conversation is already using it. Genuinely different from the
+        # stillness check above — see conversation_activity.py's own
+        # module docstring for why the two aren't merged.
+        from app.core.conversation_activity import is_conversation_active
+        if is_conversation_active():
+            _record(loop_name, "conversation_active")
+            return False
+    except Exception:
+        pass
     _record(loop_name, None)
     return True
 

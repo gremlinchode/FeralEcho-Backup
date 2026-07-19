@@ -123,6 +123,24 @@ def _chunk_text(text: str, words_per_chunk: int = _CHUNK_WORDS):
 
 
 def _generate_chat_response(conversation_id: str, original_msg: str, mode: str, session: dict):
+    """Thin wrapper around _generate_chat_response_body() — 2026-07-19
+    "remove every excuse" pass: marks this as a real conversation in
+    flight so autonomous loops defer to it (see conversation_activity.py,
+    autonomy_coordinator.should_run_cycle()). A try/finally around a
+    yield-from delegation, rather than wrapping the body generator's own
+    try/finally around its many yield points and branches directly —
+    guarantees mark_end() fires on normal completion, an exception, or the
+    generator being closed early (e.g. a dropped client connection), with
+    zero changes to the body's own logic."""
+    from app.core.conversation_activity import mark_start, mark_end
+    mark_start()
+    try:
+        yield from _generate_chat_response_body(conversation_id, original_msg, mode, session)
+    finally:
+        mark_end()
+
+
+def _generate_chat_response_body(conversation_id: str, original_msg: str, mode: str, session: dict):
     """Shared SSE generator used by both /chat/stream and /chat/regenerate.
 
     Full mode: calls echo_query() as-is (full deliberation, River learning,
@@ -228,6 +246,29 @@ def _generate_chat_response(conversation_id: str, original_msg: str, mode: str, 
                 )
             except Exception as river_err:
                 logger.debug(f"[echo_studio] river learning hook failed: {river_err}")
+
+    # 2026-07-19 "remove every excuse" pass: the same pattern as the code
+    # check above, applied to self-referential claims about Echo's own
+    # architecture instead of code correctness. Gated on the question
+    # having been introspective enough to receive ground-truth grounding
+    # in the first place (same signal _build_full_prompt() already used to
+    # decide whether to inject it) — if it was worth grounding, it's worth
+    # checking whether the answer honored that grounding. Deliberately
+    # narrow (see self_knowledge_verification.py's own module docstring)
+    # and does not feed RiverBrain — self-knowledge accuracy and code
+    # correctness are different skills; conflating them into the "coding"
+    # bucket would be a new, unproven assumption, not a proven one.
+    if response_text:
+        try:
+            from app.core.echo_ground_truth import _is_introspective
+            if _is_introspective(original_msg):
+                from app.core.self_knowledge_verification import verify_self_knowledge_claims
+                sk_caveat, _sk_verified = verify_self_knowledge_claims(response_text)
+                if sk_caveat:
+                    response_text += sk_caveat
+                    yield _sse({"type": "token", "text": sk_caveat})
+        except Exception as sk_err:
+            logger.debug(f"[echo_studio] self-knowledge verification failed: {sk_err}")
 
     session["conv_history"], session["history_summaries"] = conversation_service.store_turn_in_history(
         session["conv_history"], session["history_summaries"], original_msg, response_text

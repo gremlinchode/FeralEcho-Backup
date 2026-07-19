@@ -575,14 +575,17 @@ def _log_council_deliberation(
     changing that function's return contract — this function only reads
     already-computed values, it doesn't alter the real synthesis path.
 
-    Scope, decided explicitly: only the real multi-councillor synthesis path
-    calls this. deliberate_and_learn()'s five other return points (the
-    DIRECT_ECHO_TASKS bypass for personal/reflective task types, the
-    empty-council fallback, the all-errored fallback, the solo-Echo
-    shortcut, and the synthesis-failed fallback) are single-response edge
-    cases with no real opinions to compare — not instrumented here. A
-    personal-task conversation will not appear in this log; that's by
-    design, not an oversight.
+    Scope: originally only the real multi-councillor synthesis path called
+    this — deliberate_and_learn()'s other return points (empty-council
+    fallback, all-errored fallback, solo-Echo shortcut, synthesis-failed
+    fallback) are still single-response edge cases with no real opinions
+    to compare, still not instrumented. **Correction, 2026-07-19**: the
+    DIRECT_ECHO_TASKS bypass (personal/reflective task types) now also
+    calls this, as a genuine "council of one" (`council=[synth_model]`) —
+    it was the single most identity-adjacent category of conversation and
+    also the one with zero audit visibility, which was backwards. Logged
+    with `source="direct_echo_task"` so it's distinguishable from a real
+    synthesis at a glance.
     """
     try:
         entries = []
@@ -702,6 +705,20 @@ def deliberate_and_learn(
         )
         response = _ollama_query(synth_model, _direct_response_prompt(prompt, system), timeout=SYNTHESIS_TIMEOUT, temperature=temperature, system=system, max_tokens=max_tokens, task_type=task_type)
         river_brain.learn(synth_model, task_type, response)
+        # 2026-07-19: log this too, via the same function the real
+        # multi-councillor path already uses — a genuine "council of one."
+        # Previously the single most identity-adjacent category of
+        # conversation (personal/reflective) was also the one with zero
+        # audit visibility. source="direct_echo_task" distinguishes this
+        # from a real synthesis at a glance.
+        try:
+            _log_council_deliberation(
+                task_type, prompt, [synth_model], {synth_model: response},
+                {synth_model: temperature}, None, synth_model, response,
+                source="direct_echo_task",
+            )
+        except Exception:
+            pass
         return response
 
     # ── 1b. Warm up Echo before council queries begin ─────────

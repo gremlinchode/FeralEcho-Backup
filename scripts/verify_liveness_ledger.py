@@ -442,6 +442,41 @@ check("seam_engine: check_pair() never fires (can no longer detect a real contra
 r = ll._evaluate_seam_engine(None)
 check("seam_engine: check_pair not importable at all", r["pass"], False, r["evidence"])
 
+# ── 17. code_verification ────────────────────────────────────────────────
+# Historical fake this check exists to catch: verify_response_code()
+# silently degrading into always fail-open (no caveat, no signal ever) —
+# e.g. an exception swallowed somewhere upstream of the real logic,
+# indistinguishable from "nothing to check" without a canary that knows
+# the right answer in advance.
+try:
+    from app.core.code_verification import verify_response_code as _real_verify_code
+    r = ll._evaluate_code_verification(_real_verify_code)
+    check("code_verification: real current verify_response_code()", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] code_verification real-function case: import failed ({e})")
+
+_always_silent_code = lambda text: (None, None)
+r = ll._evaluate_code_verification(_always_silent_code)
+check("code_verification: always silent (degraded fail-open)", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_code_verification(None)
+check("code_verification: verify_response_code not importable at all", r["pass"], False, r["evidence"])
+
+# ── 18. self_knowledge_verification ───────────────────────────────────────
+try:
+    from app.core.self_knowledge_verification import verify_self_knowledge_claims as _real_verify_sk
+    r = ll._evaluate_self_knowledge_verification(_real_verify_sk)
+    check("self_knowledge_verification: real current verify_self_knowledge_claims()", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] self_knowledge_verification real-function case: import failed ({e})")
+
+_always_silent_sk = lambda text: (None, None)
+r = ll._evaluate_self_knowledge_verification(_always_silent_sk)
+check("self_knowledge_verification: always silent (degraded fail-open)", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_self_knowledge_verification(None)
+check("self_knowledge_verification: verify_self_knowledge_claims not importable at all", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

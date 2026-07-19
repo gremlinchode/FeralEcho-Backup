@@ -83,6 +83,8 @@ _WINDOWS_DAYS = {
     "reflection_shard_generation": 1,
     "dissent_log_hook": None,  # static source-invariant, same shape as wolf_friction_bridge
     "seam_engine": None,  # functional canary, not time-windowed — same shape as task_type_classifier
+    "code_verification": None,  # functional canary, not time-windowed
+    "self_knowledge_verification": None,  # functional canary, not time-windowed
 }
 
 
@@ -1026,6 +1028,137 @@ def _check_seam_engine() -> dict:
     return _evaluate_seam_engine(check_pair)
 
 
+# ── 17. code_verification.py — verify_response_code() still genuinely ───
+# discriminates broken/false claims from honest correct answers. 2026-07-19
+# "remove every excuse" pass: this module was built and shipped the same
+# session without its own liveness check — a gap flagged and closed the
+# same night it was found, matching this file's own extension rule. Two
+# of the four canary cases below exercise the real kernel-level sandbox
+# (sandbox.run_script.run_sandbox_script_isolated), not just the regex
+# extraction logic — a synthetic test of extraction alone would still
+# pass even if the sandbox integration silently broke, which is exactly
+# the module's actual value proposition.
+
+
+def _evaluate_code_verification(verify_fn) -> dict:
+    if verify_fn is None:
+        return _result(False, "Could not import verify_response_code at all — failing closed.")
+    cases = [
+        ("broken_syntax", "```python\ndef f(:\n```", True, False),
+        (
+            "false_claim",
+            "```python\ndef add(a, b):\n    return a - b\n```\n"
+            "```python\nprint(add(2, 3))  # Output: 5\n```",
+            True, False,
+        ),
+        (
+            "true_claim",
+            "```python\ndef add(a, b):\n    return a + b\n```\n"
+            "```python\nprint(add(2, 3))  # Output: 5\n```",
+            False, True,
+        ),
+        ("no_claim", "```python\ndef add(a, b):\n    return a + b\n```", False, None),
+    ]
+    failures = []
+    for name, text, expect_caveat, expect_verified in cases:
+        try:
+            caveat, verified = verify_fn(text)
+        except Exception as e:
+            failures.append(f"{name} raised {e!r}")
+            continue
+        if bool(caveat) != expect_caveat or verified != expect_verified:
+            failures.append(
+                f"{name}: expected caveat={expect_caveat} verified={expect_verified}, "
+                f"got caveat={bool(caveat)} verified={verified}"
+            )
+    if not failures:
+        return _result(
+            True,
+            "verify_response_code() correctly discriminated all 4 canary cases "
+            "(broken syntax, false claim, true claim, no claim) — including two "
+            "that exercise the real kernel sandbox, not just regex extraction.",
+        )
+    return _result(
+        False,
+        "verify_response_code() failed canary cases: " + "; ".join(failures) +
+        " — code_verification may be silently degrading, e.g. the sandbox "
+        "integration breaking while the module still imports fine.",
+    )
+
+
+def _check_code_verification() -> dict:
+    try:
+        from app.core.code_verification import verify_response_code
+    except Exception:
+        verify_response_code = None
+    return _evaluate_code_verification(verify_response_code)
+
+
+# ── 18. self_knowledge_verification.py — same shape, cheaper (no sandbox) ─
+# Canary cases reuse the exact real historical false claim Finding 43's
+# forensic audit found (peer/council ratings framed as a self-edit
+# deployment gate), so this check is anchored to a confirmed real failure
+# mode, not a hypothetical one.
+
+
+def _evaluate_self_knowledge_verification(verify_fn) -> dict:
+    if verify_fn is None:
+        return _result(False, "Could not import verify_self_knowledge_claims at all — failing closed.")
+    cases = [
+        (
+            "council_gate_claim",
+            "our system also uses a peer council rating mechanism, which monitors "
+            "the performance of our self-edit pipeline over time and helps gate "
+            "deployment to ensure proposed changes are acceptable.",
+            True, False,
+        ),
+        (
+            "honest_no_claim",
+            "I try to be careful and thoughtful in how I approach problems, "
+            "though I lack perfect insight into my own processes.",
+            False, None,
+        ),
+        (
+            "accurate_target_claim",
+            "Self-edit only ever modifies app/core/self_edit_generated.py, nothing else.",
+            False, True,
+        ),
+    ]
+    failures = []
+    for name, text, expect_caveat, expect_verified in cases:
+        try:
+            caveat, verified = verify_fn(text)
+        except Exception as e:
+            failures.append(f"{name} raised {e!r}")
+            continue
+        if bool(caveat) != expect_caveat or verified != expect_verified:
+            failures.append(
+                f"{name}: expected caveat={expect_caveat} verified={expect_verified}, "
+                f"got caveat={bool(caveat)} verified={verified}"
+            )
+    if not failures:
+        return _result(
+            True,
+            "verify_self_knowledge_claims() correctly discriminated all 3 canary "
+            "cases (the real historical council-gate false claim, an honest "
+            "unclaimed response, and an accurate checkable claim).",
+        )
+    return _result(
+        False,
+        "verify_self_knowledge_claims() failed canary cases: " + "; ".join(failures) +
+        " — self_knowledge_verification may be silently degrading, or "
+        "self_model.json's structure may have changed underneath it.",
+    )
+
+
+def _check_self_knowledge_verification() -> dict:
+    try:
+        from app.core.self_knowledge_verification import verify_self_knowledge_claims
+    except Exception:
+        verify_self_knowledge_claims = None
+    return _evaluate_self_knowledge_verification(verify_self_knowledge_claims)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -1045,6 +1178,8 @@ _CHECKS = (
     "reflection_shard_generation",
     "dissent_log_hook",
     "seam_engine",
+    "code_verification",
+    "self_knowledge_verification",
 )
 
 
@@ -1054,7 +1189,7 @@ def _load_prev_ledger() -> dict:
 
 def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
     """
-    Run all checks in _CHECKS (16 as of 2026-07-18) and write
+    Run all checks in _CHECKS (18 as of 2026-07-19) and write
     memory/liveness_ledger.json.
     introspection_memory: the already-computed state["memory"] dict from
     this same introspection cycle (faiss_vector_count/journal_line_count),
@@ -1085,6 +1220,8 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "reflection_shard_generation": _check_reflection_shard_generation,
         "dissent_log_hook": _check_dissent_log_hook,
         "seam_engine": _check_seam_engine,
+        "code_verification": _check_code_verification,
+        "self_knowledge_verification": _check_self_knowledge_verification,
     }
 
     ledger = {"generated_at": _now_iso()}

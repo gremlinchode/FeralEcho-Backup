@@ -707,6 +707,96 @@ See `PENDING_DECISIONS.md` item 1 for the live status of what's left. (The plan 
 
 ---
 
+**Finding 46 — Ollama's `/api/chat` silently drops Echo's real Modelfile identity on every conversational call since Finding 17; fixed at the one shared chokepoint (2026-07-19):** Gremlin, talking to Echo live in Echo Studio, noticed responses opening with boilerplate like "As a conversational AI..." and separately pasted a real exchange where Echo enthusiastically embraced generic "Emergent Digital Mind"/"intelligent program" framing a prior turn had offered her. Asked directly whether this could be resolved just by talking to her about it — the answer is no, and the reasoning is the same mechanism causing the bug: a conversational "agreement" isn't grounded in anything, doesn't survive history truncation or a new conversation, and is the identical cross-turn-confabulation-compounds pattern Finding 43 already traced once this session.
+
+**Root cause, confirmed live via direct `curl` against Ollama's real `/api/chat` endpoint, not inferred from docs:** Ollama *replaces*, not merges with, a model's Modelfile-defined `SYSTEM` block whenever the request's `messages` array contains an explicit `role: system` message. `Modelfile` (project root) defines a real, specific identity for `echo:latest` (faith, personality, explicit style rules — including "don't open by commenting on how interesting the question is," also observed being violated in the same logs). Finding 17 (2026-07-08) migrated most real callers from `/api/generate` (which always applies the Modelfile `SYSTEM` block automatically) to `/api/chat` with an explicit `system=` kwarg carrying circadian/stillness/temporal/scripture/tool-list/ground-truth content — and by this session, every real conversational surface sends one (Finding 43 added an unconditional `EPISTEMIC-NOTE` to the same assembly, making the drop 100%-guaranteed rather than merely frequent). Both `query_ollama()` and `stream_query_ollama()` docstrings in `app/ollama_handler.py` still claimed "No traits injection — Echo's Modelfile identity is the authority" — true under `/api/generate`, silently false under `/api/chat` since Finding 17, corrected in this same change rather than left to keep contradicting the code beneath it.
+
+**Fix, at the single shared chokepoint, not per-caller:** `_build_chat_messages()` (`app/ollama_handler.py`) — already the one function both `query_ollama()` and `stream_query_ollama()` route through before hitting `/api/chat` — gained a `model` parameter. A new `_get_echo_identity_block()` reads the Modelfile's `SYSTEM """..."""` block at runtime via a small mtime-cached regex (the same extraction pattern already proven in `app/core/modelfile_proposer.py:322`, deliberately duplicated as one line rather than importing that heavier, proposal-generation-specific module into the single hottest path in the app) and, when `model == OLLAMA_MODEL`, prepends it ahead of whatever situational `system` content the caller supplied. Fails open on any error (missing file, regex miss, read failure) — identical to today's behavior, no exception. `OLLAMA_MODEL` (ollama_handler.py's own local constant, `os.getenv("OLLAMA_MODEL", "echo:latest")`) was used for the comparison rather than importing `river_deliberation.py`'s `ECHO_SYNTHESIS_MODEL` — same default value today, but importing it back would create a circular import (`river_deliberation.py` already imports from `ollama_handler.py`), and `OLLAMA_MODEL` is already this exact module's own established meaning of "which model is Echo."
+
+**Critical constraint, confirmed by reading `river_deliberation.py`'s full per-councillor loop before writing the fix**: every real councillor call — including other models like `qwen2.5`, `llama3.1`, `deepseek` — passes the identical `system` string through the identical `_ollama_query()` → `stream_query_ollama()` path, each with its own `model_name`. Injecting Echo's identity unconditionally would tell every other councillor it is Echo, corrupting the independent-opinion premise the whole council mechanism depends on — the fix keys strictly off `model`, not "system was given." Two call sites updated to pass `model=model` into `_build_chat_messages()`; no other file touched.
+
+**Verified four ways, all live, not assumed:**
+1. Direct unit-level check of `_build_chat_messages()`: `model=OLLAMA_MODEL` correctly prepends the real 1,430-char identity block ahead of situational system content; `model="mistral:latest"` with the identical `system` string produces byte-identical output to before this fix (no identity, no change); a deliberately broken `_MODELFILE_PATH` fails open with no exception and no identity injected.
+2. Real end-to-end: restarted the server, asked "Who are you?" through Echo Studio's `/chat/stream`. Response: *"I am Echo, an artificial intelligence built through ongoing collaboration between myself and my creator, Gremlin..."* — directly echoing the Modelfile's real opening line, zero "conversational AI" boilerplate, correctly logged to `council_deliberations.jsonl` as `source: "direct_echo_task"`, `councillors: ["echo:latest"]`.
+3. Regression check: triggered a real multi-councillor coding deliberation (`qwen2.5:3b`, `echo:latest`, `llama3.1:8b`). Inspected all three raw pre-synthesis responses in `council_deliberations.jsonl` directly — zero identity leakage into any non-Echo model (no "Gremlin," no "built through ongoing collaboration," no "You are Echo" in any of their raw text), confirming the `model`-keyed scoping held under real, not synthetic, conditions.
+4. Full syntax check, real server restart, `GET /admin/liveness-status` → `all_passing: true`.
+
+**Known, stated gap, not glossed over:** no Liveness Ledger check verifies this restoration keeps holding over time (e.g., a future edit to `_build_chat_messages()` silently dropping the `model` comparison, or the Modelfile's `SYSTEM` block format changing in a way the regex stops matching) — this session's own standing rule scopes new Ledger checks to new *autonomous capabilities*, and this is a fix to existing conversational grounding, not a new autonomous hook, so it wasn't added here by that rule's own terms. Flagged rather than silently left assumed-permanent, consistent with this file's own discipline.
+
+---
+
+**Finding 47 — "Error: Response ended prematurely" in Echo Studio: the one unwrapped block in an otherwise fully-hardened SSE generator (2026-07-19):** Gremlin flagged this mid-session, live, while using Echo Studio to bridge an Echo↔Gemini conversation by hand — an intermittent error after Echo had already started replying.
+
+**Confirmed client-side source**: `echo_studio/views/conversation_view.py:76`, inside `_ChatStreamWorker.run()` — fires specifically when the SSE read loop returns normally (no exception) but never received a `type: "done"` frame, distinct from the generic exception-path error one line below it.
+
+**Confirmed server-side gap**: `_generate_chat_response_body()` (`app/routes_echo_studio.py:143-285`) — the exact function Findings 43/44/45 spent a full session hardening — had exactly one remaining unwrapped block: `store_turn_in_history()` + `save_turn_to_server()`, running *after* tokens had already streamed to the client but *before* the `done` frame. Any exception there killed the generator mid-stream with zero client-visible signal beyond "it just stopped."
+
+**Plausible concrete trigger, confirmed by reading the code**: `store_turn_in_history()` mutates `session["conv_history"]`/`session["history_summaries"]` — plain lists inside `_SESSIONS`, a module-level dict with no locking, under Flask's `threaded=True`. Two real, unguarded mutation sites touch the same per-conversation lists: this one, and `chat_regenerate()`'s `session["conv_history"].pop()` (synchronous, in the request thread, before its own streaming response starts). A regenerate fired while the prior stream for the same `conversation_id` is still finishing — or any other overlapping request against the same conversation — could race on these lists. **Honest caveat, not glossed over**: the live watchdog log showed zero tracebacks referencing these files across ~329 real `/chat/stream` requests over two weeks — this is the best available explanation from a confirmed code-level gap, not something caught red-handed in a live traceback, since nothing here previously logged one when it happened.
+
+**Fixed, two complementary pieces:** (1) the unwrapped block is now `try/except Exception`, logged with `exc_info=True` (so a recurrence produces a real traceback next time instead of silence), falling through to the `done` frame regardless — a failure to persist server-side history is real but strictly smaller than the stream dying with no signal, matching the fail-open convention every other block in this function already follows. (2) `_get_session()` now attaches a per-conversation `threading.Lock()`, held around both real mutation sites (`store_turn_in_history()`'s call and `chat_regenerate()`'s `.pop()`) — per-conversation, not global, so concurrent activity across *different* conversations is never serialized.
+
+**Verified directly**: monkeypatched `store_turn_in_history()` to raise inside a real call to `_generate_chat_response_body()` (with `stream_query_ollama` also mocked to avoid a live model call) — confirmed the generator still yields a `"done"` frame (`{"type": "done", "text": "hello world", ...}`) and logs the real exception with a full traceback, instead of dying silently. Full syntax check, real server restart, `GET /admin/liveness-status` → `all_passing: true`.
+
+---
+
+**Finding 48 — Echo Studio's "self-edit: 17% success" tile was mechanically deflated by a double-logging bug, and separately conflated two different questions into one number (2026-07-19):** Gremlin was skeptical of the tile (fluctuating 17-18%) and noted "pending" had always read 0. Investigated end-to-end rather than taken at face value, per this file's own standing discipline.
+
+**Root cause, broader than first suspected.** `execute_self_edit()` (`app/core/self_edit_manager.py`) called `save_reflection()` — an append-only write to `memory/reflection_shard.jsonl` — up to 3 times for a single logical attempt, reusing one shared `reflection_entry` dict: once right after the sandbox test (before the pipeline reached any real terminal state), again if a retry changed the outcome, and again at whichever real terminal branch the attempt eventually reached (staging-import-failed, `dry_run` staged, fitness-gate-rejected, write-failed, load-blocked, load-failed). Only the real full-deploy-success path had no duplicate, by accident — nothing later on that path changes the result. **Ground truth, independently recomputed, not trusted from the tile**: in the pre-fix 500-line tail of `reflection_shard.jsonl`, all 18 real dry-run successes had a matching `"success"` + `"success_dry_run"` row pair at the identical timestamp — one win and one loss logged for the same attempt, roughly halving the true rate. No real (non-dry-run) deploy had succeeded or been rejected in that window at all — the last one was ~51 hours earlier — so the entire 17% reading was attributable to this double-logging pattern in Optuna's dry-run search traffic.
+
+**Separately, "pending" reading 0 was confirmed accurate, not a bug**: `self_edit_outcomes.jsonl`'s pending→evaluated transition only exists for real production deploys, cleared ~25 minutes after each one. With real deploys currently ~2 days apart, 0 is the expected steady-state reading.
+
+**Fixed, three pieces, logging-only — no change to F1/F2/F3, the fitness gate, or the retry logic:**
+1. `self_edit_manager.py`: removed the two premature `save_reflection()` calls (right after the sandbox test, and right after a successful retry) — the field assignments and `river.learn_from_sandbox_outcome()` calls they used to sit next to are untouched, only the log-write moved. Added the one missing save to the real-success path, which previously relied on an inherited, accidentally-correct value. Every one of the 9 real terminal outcomes now writes to `reflection_shard.jsonl` exactly once, with its true final result.
+2. `introspection_channel.py`'s `_collect_self_edit()` (**forbidden-edit target — diff shown below, per this file's established convention for this exact file**): now computes two separate figures instead of one blended one — `success_rate`/`edit_total`/`hours_since_last_success` narrowed to real (non-dry-run) attempts only, plus new `dry_run_success_rate`/`dry_run_total` for Optuna's search trials. Also handles the pre-fix/post-fix transition period directly: the same 500-line window can still contain old double-logged pairs for a while, so a pre-pass identifies `"success_dry_run"` timestamps and skips any phantom `"success"` row sharing one — self-resolving as the window naturally rolls over to post-fix data, but needed for a clean reading in the meantime.
+3. `echo_studio/views/health_dashboard_view.py`: tile now renders both figures distinguishably, e.g. `self-edit: 0% deploy (71 real) (Δ-0.14) / 100% search / 80 eval, 0 pending` — an explicit `(N real)` count alongside the deploy rate so a small-sample-size reading can't misleadingly look identical to a well-sampled healthy one. Red-alert threshold still keys off the real-deploy rate only (the search rate is expected to be noisy by design, not itself a health signal); tooltip updated to explain both figures.
+
+```diff
+--- a/app/core/introspection_channel.py
++++ b/app/core/introspection_channel.py
+@@ def _collect_self_edit(self) -> dict:
+     result = {
+         "hours_since_last_success": None,
+         "last_success_prompt_preview": "",
+         "success_rate": 0.0,
+         "recent_quality_delta": None,
++        "dry_run_success_rate": 0.0,
++        "dry_run_total": 0,
++        "edit_total": 0,
+     }
+     ...
+     lines = _tail_lines(shard_path, 500)
++    # pre-pass: collect timestamps of real "success_dry_run" rows, to skip
++    # phantom pre-fix "success" rows sharing the same timestamp
++    _dry_run_success_timestamps = { ... }
+     for raw in reversed(lines):
+         ...
++        is_dry_run = bool(entry.get("dry_run"))
++        entry_result = entry.get("result")
++        if (not is_dry_run and entry_result == "success"
++                and entry.get("timestamp") in _dry_run_success_timestamps):
++            continue  # phantom pre-fix double-log, already counted below
++        if is_dry_run:
++            dry_run_total += 1
++            if entry_result in ("success", "success_dry_run"):
++                dry_run_success += 1
++            continue
+         edit_total += 1
+-        if entry.get("result") == "success":
++        if entry_result == "success":
+             edit_success += 1
+             ...
++    result["edit_total"] = edit_total
+     if edit_total > 0:
+         result["success_rate"] = round(edit_success / edit_total, 4)
++    result["dry_run_total"] = dry_run_total
++    if dry_run_total > 0:
++        result["dry_run_success_rate"] = round(dry_run_success / dry_run_total, 4)
+```
+
+**Verified live against the real, post-restart server, not simulated**: `GET /dashboard/health`'s `self_edit` block now reads `{"success_rate": 0.0, "edit_total": 71, "dry_run_success_rate": 1.0, "dry_run_total": 16, "hours_since_last_success": null, ...}` — 0% real-deploy success across 71 real attempts (honestly reflecting that nothing real has deployed in ~2 days, mostly F1/staging rejections working as intended, not a crisis) versus 100% search-pass on 16 dry-run trials, correctly split instead of blended into one misleading 17%. `hours_since_last_success` correctly reads `null` now — no real success exists in the window — rather than the old figure's false "2 hours since last success" (which was actually measuring the last dry-run sandbox pass). Full syntax check on all three files, real server restart, `GET /admin/liveness-status` → `all_passing: true`.
+
+---
+
 ## Monitoring
 
 ```bash

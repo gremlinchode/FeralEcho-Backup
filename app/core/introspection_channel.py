@@ -415,6 +415,20 @@ class IntrospectionChannel:
             "last_success_prompt_preview": "",
             "success_rate": 0.0,
             "recent_quality_delta": None,
+            # 2026-07-19: split from the fields above, which now report the
+            # *real deploy* rate only (dry_run entries excluded — see the
+            # loop below). dry_run_success_rate covers Optuna's exploratory
+            # search trials, a genuinely different question ("does the
+            # search find sandbox-passing candidates" vs. "is the real
+            # cooldown-gated deploy loop healthy") that was previously
+            # blended into one number. See self_edit_manager.py's 2026-07-19
+            # comments for the double-logging bug this split was built
+            # alongside fixing — this narrowing is necessary even after
+            # that fix, since dry-run search traffic and real deploy
+            # traffic remain two different populations.
+            "dry_run_success_rate": 0.0,
+            "dry_run_total": 0,
+            "edit_total": 0,
         }
         try:
             # Mean quality_score.delta over the most recent evaluated
@@ -441,9 +455,33 @@ class IntrospectionChannel:
                 return result
 
             lines = _tail_lines(shard_path, 500)
+
+            # 2026-07-19: pre-fix history in this same 500-line window can
+            # still contain the old double-logged shape self_edit_manager.py
+            # no longer produces (a "success" row with no dry_run key,
+            # immediately followed by a "success_dry_run" row at the same
+            # timestamp — the exact bug this split was built to correct for).
+            # Without this, those old phantom "success" rows would misread
+            # as real deploys until they naturally age out of the window.
+            # Self-resolving — becomes a no-op once the window fully rolls
+            # over to post-fix data, which only ever writes one row per
+            # attempt — but needed for a clean reading in the meantime.
+            _dry_run_success_timestamps = set()
+            for raw in lines:
+                if '"success_dry_run"' not in raw:
+                    continue
+                try:
+                    e = json.loads(raw)
+                except Exception:
+                    continue
+                if e.get("result") == "success_dry_run" and e.get("timestamp"):
+                    _dry_run_success_timestamps.add(e["timestamp"])
+
             found_last_success = False
             edit_total = 0
             edit_success = 0
+            dry_run_total = 0
+            dry_run_success = 0
 
             for raw in reversed(lines):
                 try:
@@ -452,8 +490,33 @@ class IntrospectionChannel:
                     continue
                 if not entry.get("generated_code"):
                     continue
+                is_dry_run = bool(entry.get("dry_run"))
+                entry_result = entry.get("result")
+
+                if (
+                    not is_dry_run
+                    and entry_result == "success"
+                    and entry.get("timestamp") in _dry_run_success_timestamps
+                ):
+                    # Phantom pre-fix interim row for a dry-run success — see
+                    # the comment above. Skip entirely; the real terminal
+                    # "success_dry_run" row for this same attempt is counted
+                    # in the dry-run bucket below.
+                    continue
+
+                if is_dry_run:
+                    dry_run_total += 1
+                    # success_dry_run is the real terminal state for a passing
+                    # dry-run trial — it cleared every gate through staging,
+                    # it just wasn't (by design) written to production. Not
+                    # counting it here would be the same "silently neither"
+                    # gap this split exists to close.
+                    if entry_result in ("success", "success_dry_run"):
+                        dry_run_success += 1
+                    continue
+
                 edit_total += 1
-                if entry.get("result") == "success":
+                if entry_result == "success":
                     edit_success += 1
                     if not found_last_success:
                         found_last_success = True
@@ -468,8 +531,12 @@ class IntrospectionChannel:
                         except Exception:
                             pass
 
+            result["edit_total"] = edit_total
             if edit_total > 0:
                 result["success_rate"] = round(edit_success / edit_total, 4)
+            result["dry_run_total"] = dry_run_total
+            if dry_run_total > 0:
+                result["dry_run_success_rate"] = round(dry_run_success / dry_run_total, 4)
 
         except Exception as e:
             logger.warning("[Introspection] self_edit collect failed: %s", e)

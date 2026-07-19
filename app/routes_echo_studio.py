@@ -12,6 +12,7 @@ Not on EDIT_FORBIDDEN_TARGETS — freely editable.
 
 import json
 import re
+import threading
 import time
 import uuid
 import logging
@@ -41,7 +42,8 @@ _CHUNK_DELAY_S = 0.02   # delay between chunks so the UI shows a live "typing" f
 
 def _get_session(conversation_id: str) -> dict:
     return _SESSIONS.setdefault(
-        conversation_id, {"conv_history": [], "history_summaries": []}
+        conversation_id,
+        {"conv_history": [], "history_summaries": [], "_lock": threading.Lock()},
     )
 
 
@@ -270,12 +272,26 @@ def _generate_chat_response_body(conversation_id: str, original_msg: str, mode: 
         except Exception as sk_err:
             logger.debug(f"[echo_studio] self-knowledge verification failed: {sk_err}")
 
-    session["conv_history"], session["history_summaries"] = conversation_service.store_turn_in_history(
-        session["conv_history"], session["history_summaries"], original_msg, response_text
-    )
-    conversation_service.save_turn_to_server(
-        original_msg, response_text, task_type, require_server_check=False
-    )
+    # 2026-07-19: this was the one remaining unwrapped block in this
+    # function — any exception here (e.g. a concurrent regenerate/stream
+    # racing on this conversation's shared, previously-unlocked history
+    # lists) propagated uncaught through the generator, killing the SSE
+    # stream after tokens were already shown but before the "done" frame
+    # ever went out. Client-side this reads as "Connection ended before
+    # the response finished." The turn was already fully generated and
+    # displayed — losing it from server-side history is a real but
+    # strictly smaller problem than the stream dying with no signal, so
+    # this now fails open like every other block in this function.
+    try:
+        with session["_lock"]:
+            session["conv_history"], session["history_summaries"] = conversation_service.store_turn_in_history(
+                session["conv_history"], session["history_summaries"], original_msg, response_text
+            )
+        conversation_service.save_turn_to_server(
+            original_msg, response_text, task_type, require_server_check=False
+        )
+    except Exception as e:
+        logger.error(f"[echo_studio] history persist failed: {e}", exc_info=True)
 
     yield _sse({
         "type": "done",
@@ -318,10 +334,10 @@ def chat_regenerate():
         return jsonify({"error": "unknown conversation_id"}), 400
 
     session = _SESSIONS[conversation_id]
-    if not session["conv_history"]:
-        return jsonify({"error": "no prior turn to regenerate"}), 400
-
-    last_turn = session["conv_history"].pop()
+    with session["_lock"]:
+        if not session["conv_history"]:
+            return jsonify({"error": "no prior turn to regenerate"}), 400
+        last_turn = session["conv_history"].pop()
     original_msg = last_turn["user"]
 
     return Response(

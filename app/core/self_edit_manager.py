@@ -1763,7 +1763,16 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
     success, sandbox_error = test_code_in_sandbox(code)
     reflection_entry["sandbox_feedback"] = "success" if success else f"failed: {sandbox_error}"
     reflection_entry["result"] = "success" if success else "failed"
-    save_reflection(reflection_entry)
+    # 2026-07-19: deliberately NOT saved here (no save_reflection() call).
+    # This is not yet a terminal state — retry, staging, dry_run, the
+    # fitness gate, and load can all still change the true outcome below,
+    # and every one of those branches saves reflection_entry itself when
+    # it reaches its own terminal state. Saving this interim value too
+    # was double-logging one logical attempt as both a win and a loss
+    # whenever a later branch changed the result (confirmed live: every
+    # dry-run success in reflection_shard.jsonl had a matching "success"
+    # + "success_dry_run" pair at the same timestamp, mechanically
+    # halving the real success rate introspection_channel.py reports).
 
     # v2.2: river learns from sandbox outcome with correct model identity
     river = get_river_brain()
@@ -1809,16 +1818,17 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
                 logging.info("Retry succeeded after error feedback.")
                 code = retry_code
                 success = True
-                # The reflection saved just above (line ~1253) recorded this
-                # cycle as "failed" from the first sandbox attempt — nothing
-                # ever re-saved it after a successful retry, so the append-
-                # only log permanently misreported every retry-then-succeed
-                # cycle (a common path, not an edge case) as a failure.
+                # 2026-07-19: field updates kept (so staging/dry_run/fitness-gate
+                # below operate on the corrected code and result), but the
+                # save_reflection() call that used to sit here is gone — same
+                # reasoning as the sandbox-result block above. This is still
+                # not a terminal state (staging, dry_run, and the fitness gate
+                # can all still change the outcome), and every real terminal
+                # branch below already saves reflection_entry itself.
                 reflection_entry["sandbox_feedback"] = "success_on_retry"
                 reflection_entry["result"] = "success"
                 reflection_entry["generated_code"] = code
                 reflection_entry["model_used"] = retry_model_name
-                save_reflection(reflection_entry)
             else:
                 river.learn_from_sandbox_outcome(retry_model_name, success=False, error=retry_error or "")
                 logging.warning(f"Retry also failed: {_sanitize_sandbox_error(retry_error)}. Keeping stub.")
@@ -1951,6 +1961,15 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
                 return False, "Load blocked: F3 post-write safety scan failed (backup restored) or file missing"
             append_to_journal("SELF_EDIT", f"prompt: {prompt} | result: success | timestamp: {datetime.utcnow().isoformat()}")
             logging.info("Self-edit loaded successfully.")
+            # 2026-07-19: previously the only terminal branch with no explicit
+            # save_reflection() call — it relied entirely on the (now-removed)
+            # interim sandbox-result save still holding "success", which
+            # happened to be correct here by coincidence since nothing on
+            # this path changes the result. Explicit now, for the same reason
+            # every other terminal branch already saves: one true final row
+            # per logical attempt, not an inherited accident.
+            reflection_entry["result"] = "success"
+            save_reflection(reflection_entry)
             try:
                 from app.core.self_edit_outcome_tracker import record_pending_outcome
                 record_pending_outcome(task_type)

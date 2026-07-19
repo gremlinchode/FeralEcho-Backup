@@ -13,6 +13,13 @@ from typing import Optional, Dict, Generator
 # ---- Config ----
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "echo:latest")
 
+# Modelfile identity restoration (see _build_chat_messages()/_get_echo_identity_block()
+# below) — Ollama's /api/chat replaces, rather than merges with, a model's
+# Modelfile SYSTEM block whenever the request carries an explicit system
+# message. Confirmed live via direct curl against /api/chat.
+_MODELFILE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Modelfile")
+_echo_identity_cache: dict = {"text": None, "mtime": None}
+
 # ---- MLX routing ----
 # Patched once on first query — safe because ollama_handler is imported
 # lazily (inside _ollama_query), so the app is fully initialized by then.
@@ -67,15 +74,50 @@ def _is_thinking_model(model: Optional[str]) -> bool:
     return "deepseek" in (model or "").lower()
 
 
-def _build_chat_messages(prompt: str, system: Optional[str], messages: Optional[list]) -> list:
+def _get_echo_identity_block() -> Optional[str]:
+    """Echo's real Modelfile SYSTEM block, mtime-cached so a manual Modelfile
+    edit is picked up without a restart. Fails open (returns None) on any
+    error — callers must treat None as 'inject nothing, behave exactly as
+    before this existed.'"""
+    try:
+        mtime = os.path.getmtime(_MODELFILE_PATH)
+        if _echo_identity_cache["mtime"] != mtime:
+            with open(_MODELFILE_PATH, "r", encoding="utf-8") as f:
+                content = f.read()
+            import re
+            m = re.search(r'SYSTEM\s+"""(.*?)"""', content, re.DOTALL)
+            _echo_identity_cache["text"] = m.group(1).strip() if m else None
+            _echo_identity_cache["mtime"] = mtime
+        return _echo_identity_cache["text"]
+    except Exception as e:
+        logging.debug(f"[IDENTITY] Modelfile identity read failed: {e}")
+        return None
+
+
+def _build_chat_messages(prompt: str, system: Optional[str], messages: Optional[list], model: Optional[str] = None) -> list:
     """Build a /api/chat messages array from either an explicit messages list
     (used as-is) or a system + single-turn prompt (the common case for now —
-    callers don't yet track multi-turn history through this layer)."""
+    callers don't yet track multi-turn history through this layer).
+
+    model: when this equals OLLAMA_MODEL (Echo's own model), Echo's real
+    Modelfile identity is prepended ahead of any situational system content.
+    Ollama's /api/chat replaces rather than merges with a model's Modelfile
+    SYSTEM block whenever an explicit system message is present — every
+    real conversational caller now sends one (see Finding 17), which was
+    silently dropping Echo's actual identity on every /api/chat call. Other
+    models (council opinions from mistral/llama3.1/deepseek/etc.) must
+    never receive this — they're meant to stay independent opinions, not be
+    told they're Echo."""
     if messages is not None:
         return messages
     result = []
-    if system:
-        result.append({"role": "system", "content": system})
+    effective_system = system
+    if model == OLLAMA_MODEL:
+        identity = _get_echo_identity_block()
+        if identity:
+            effective_system = f"{identity}\n\n{system}" if system else identity
+    if effective_system:
+        result.append({"role": "system", "content": effective_system})
     result.append({"role": "user", "content": prompt})
     return result
 
@@ -274,7 +316,6 @@ def query_ollama(
     """
     Blocking Ollama query.
     Uses the model argument if provided, otherwise falls back to OLLAMA_MODEL env var.
-    No traits injection — Echo's Modelfile identity is the authority.
     MLX routing: model names beginning with 'mlx:' are handled locally.
 
     system / messages: optional, additive-only. When either is given, this
@@ -282,6 +323,14 @@ def query_ollama(
     both are omitted (the default, and every existing caller as of this
     change), behavior and the request sent to Ollama are byte-identical to
     before this parameter existed.
+
+    Traits injection: Echo's Modelfile SYSTEM block is the authority under
+    /api/generate (Ollama applies it automatically). Under /api/chat it is
+    NOT automatic — Ollama replaces rather than merges with it whenever an
+    explicit system message is present. _build_chat_messages() actively
+    restores it (prepended ahead of any situational system content) when
+    model == OLLAMA_MODEL; this was silently not happening on this path
+    since Finding 17 (2026-07-08) until this fix.
     """
     if model is None:
         model = OLLAMA_MODEL
@@ -301,7 +350,7 @@ def query_ollama(
                 return f"[ERROR] MLX routing failed: {e}"
 
     if messages is not None or system is not None:
-        chat_messages = _build_chat_messages(prompt, system, messages)
+        chat_messages = _build_chat_messages(prompt, system, messages, model=model)
         return _chat_ollama(chat_messages, model, timeout=timeout)
 
     logging.debug(f"Querying Ollama with prompt: {prompt}")
@@ -370,7 +419,14 @@ def stream_query_ollama(
     """
     Stream Ollama token by token with robust error handling.
     Uses the model argument if provided, otherwise falls back to OLLAMA_MODEL env var.
-    No traits injection — Echo's Modelfile identity is the authority.
+
+    Traits injection: Echo's Modelfile SYSTEM block is the authority under
+    /api/generate (Ollama applies it automatically). Under /api/chat it is
+    NOT automatic — Ollama replaces rather than merges with it whenever an
+    explicit system message is present. _build_chat_messages() actively
+    restores it (prepended ahead of any situational system content) when
+    model == OLLAMA_MODEL; this was silently not happening on this path
+    since Finding 17 (2026-07-08) until this fix.
 
     DeepSeek-R1 handling: the model emits a 'thinking' field containing its
     chain-of-thought reasoning before populating the 'response' field. Both
@@ -419,7 +475,7 @@ def stream_query_ollama(
             logging.warning(f"[MLX] No mlx_path found for {model} — falling through to Ollama")
 
     if messages is not None or system is not None:
-        chat_messages = _build_chat_messages(prompt, system, messages)
+        chat_messages = _build_chat_messages(prompt, system, messages, model=model)
         yield from _stream_chat_ollama(
             chat_messages, model, max_tokens=max_tokens, temperature=temperature
         )

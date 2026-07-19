@@ -139,17 +139,33 @@ class HealthDashboardView(QWidget):
         # 14%. Surface the number that actually matters, not just activity counts.
         success_rate = self_edit_gen.get("success_rate")
         quality_delta = self_edit_gen.get("recent_quality_delta")
+        edit_real_total = self_edit_gen.get("edit_total")
+        dry_run_rate = self_edit_gen.get("dry_run_success_rate")
+        dry_run_total = self_edit_gen.get("dry_run_total")
         pending_count = self_edit.get("pending") if isinstance(self_edit, dict) else None
         evaluated_count = self_edit.get("evaluated") if isinstance(self_edit, dict) else None
 
         if isinstance(success_rate, (int, float)):
             delta_str = f" (Δ{quality_delta:+.2f})" if isinstance(quality_delta, (int, float)) else ""
-            text = f"self-edit: {success_rate * 100:.0f}% success{delta_str}"
+            # 2026-07-19: real-deploy rate and Optuna's dry-run search rate
+            # are now two separate numbers server-side (introspection_channel.py)
+            # instead of one blended figure — they answer different questions
+            # ("is the real deploy loop healthy" vs. "is the search finding
+            # sandbox-passing candidates") and conflating them is what made
+            # this tile misleading. Real-count shown alongside the deploy
+            # rate so e.g. "100% deploy" from 0 real attempts doesn't read
+            # as healthy the way a bare percentage would.
+            real_n = f" ({edit_real_total} real)" if isinstance(edit_real_total, int) else ""
+            text = f"self-edit: {success_rate * 100:.0f}% deploy{real_n}{delta_str}"
+            if isinstance(dry_run_rate, (int, float)) and isinstance(dry_run_total, int) and dry_run_total > 0:
+                text += f" / {dry_run_rate * 100:.0f}% search"
             if pending_count is not None and evaluated_count is not None:
                 text += f" / {evaluated_count} eval, {pending_count} pending"
             self._selfedit_lbl.setText(text)
             # A struggling generation loop should look struggling, not neutral —
             # same "don't hide behind a clean tile" fix this whole block exists for.
+            # Keyed on the real-deploy rate only — the search rate is expected
+            # to be noisy (exploratory trials) and isn't itself a health signal.
             if success_rate < 0.3 or (isinstance(quality_delta, (int, float)) and quality_delta < 0):
                 self._selfedit_lbl.setStyleSheet(
                     "padding: 4px 10px; border-right: 1px solid palette(mid); color: #c0392b;"
@@ -158,13 +174,19 @@ class HealthDashboardView(QWidget):
                     "Self-edit generation success rate is low and/or trending down. "
                     "This reflects the underlying candidate-generation loop, not whether "
                     "a currently-deployed edit is safe (see self_edit_apply_to_code in the "
-                    "liveness tile for that)."
+                    "liveness tile for that). 'deploy' = real, cooldown-gated production "
+                    "attempts only; 'search' = Optuna's exploratory dry-run trials, a "
+                    "different and expected-to-be-noisier signal — not itself a health check."
                 )
             else:
                 self._selfedit_lbl.setStyleSheet(
                     "padding: 4px 10px; border-right: 1px solid palette(mid);"
                 )
-                self._selfedit_lbl.setToolTip("")
+                self._selfedit_lbl.setToolTip(
+                    "'deploy' = real, cooldown-gated production attempts only; "
+                    "'search' = Optuna's exploratory dry-run trials, a different, "
+                    "expected-to-be-noisier signal."
+                )
         elif pending_count is not None and evaluated_count is not None:
             self._selfedit_lbl.setText(f"self-edit: {evaluated_count} eval / {pending_count} pending")
         else:

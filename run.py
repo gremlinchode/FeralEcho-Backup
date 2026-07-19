@@ -526,7 +526,28 @@ def mirror_echo():
         if echo_model_orchestrator and msg:
             try:
                 task_type = echo_model_orchestrator.detect_task_type(msg)
-                echo_reply_text = echo_model_orchestrator.echo_query(msg, task_type=task_type, source="user_conversation")
+
+                # 2026-07-19 forensic audit finding: this was the one real
+                # entry point (terminal_client.py, Echo Studio both do this)
+                # that never passed echo_ground_truth's self-knowledge
+                # grounding through — echo_query() only builds it internally
+                # if the caller supplies it via system=. Asked directly about
+                # her own architecture through this exact endpoint, Echo
+                # confabulated generic AI-assistant boilerplate with zero
+                # real component names. Same pattern as terminal_client.py.
+                system_context = ""
+                try:
+                    from app.core.echo_ground_truth import _is_introspective, get_structural_self_facts
+                    from app.core.echo_tool_context import _needs_tool_context, get_tool_context
+                    ground_truth = get_structural_self_facts(msg) if _is_introspective(msg) else ""
+                    tool_ctx = get_tool_context(msg) if _needs_tool_context(msg) else ""
+                    system_context = "\n\n".join(s for s in (tool_ctx, ground_truth) if s)
+                except Exception as gt_err:
+                    logger.debug(f"[MIRROR_ECHO] ground-truth injection failed: {gt_err}")
+
+                echo_reply_text = echo_model_orchestrator.echo_query(
+                    msg, task_type=task_type, source="user_conversation", system=system_context,
+                )
             except Exception as eq_err:
                 logger.warning(f"[MIRROR_ECHO] echo_query failed: {eq_err}")
         if not echo_reply_text:
@@ -551,10 +572,33 @@ def mirror_echo():
             except Exception as ce:
                 logger.warning(f"[ClaudeShard] assess failed: {ce}")
 
+        # 2026-07-19 forensic audit finding: "mood" was a hardcoded string
+        # with zero computation behind it, and "wolf" was deterministically
+        # always "sleeping" (WOLF retired 2026-07-04, wolf_process never
+        # becomes non-None) — decorative narration for a dead subsystem, in
+        # the one response the real phone client actually receives.
+        # thunderhead.py's mirror_echo() only ever reads "echo_reply", so
+        # neither field has a real consumer — "wolf" dropped entirely,
+        # "mood" now derived from the real signed valence dimension
+        # (echo_state.npy dim[8]) instead of invented.
+        mood = "unknown"
+        try:
+            from app.core.echo_state import load as _load_echo_state
+            _vec = _load_echo_state()
+            if _vec is not None:
+                _valence = float(_vec[8])
+                if _valence < -0.3:
+                    mood = "unsettled"
+                elif _valence > 0.3:
+                    mood = "bright"
+                else:
+                    mood = "steady"
+        except Exception as mood_err:
+            logger.debug(f"[MIRROR_ECHO] mood read failed: {mood_err}")
+
         reply = {
             "echo_reply": echo_reply_text,
-            "wolf": "HOWLING" if (wolf_process and wolf_process.poll() is None) else "sleeping",
-            "mood": "feral and ascending",
+            "mood": mood,
             "time": time.strftime("%H:%M:%S"),
         }
         if friction_question:

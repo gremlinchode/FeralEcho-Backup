@@ -188,6 +188,47 @@ def _generate_chat_response(conversation_id: str, original_msg: str, mode: str, 
         response_text = "Error: could not generate a response."
         yield _sse({"type": "token", "text": response_text})
 
+    # 2026-07-19 forensic audit finding: nothing in this path ever executed
+    # generated code before presenting it as a finished answer — asked for
+    # the exact task her own self-edit loop had failed at 96+ times, Echo's
+    # answer was confidently wrong, and one raw councillor even fabricated
+    # a specific "worked example" whose claimed output was false when
+    # actually run. Scoped narrowly on purpose: catches code that doesn't
+    # parse, and a response's own checkable claim about its output turning
+    # out to be false — not a general correctness prover. Gated on
+    # task_type to avoid sandboxing every reply; fails open (never raises,
+    # never blocks the real response) per code_verification.py's own contract.
+    if task_type == "coding" and response_text:
+        try:
+            from app.core.code_verification import verify_response_code
+            caveat, verified = verify_response_code(response_text)
+        except Exception as cv_err:
+            logger.debug(f"[echo_studio] code verification failed: {cv_err}")
+            caveat, verified = None, None
+        if caveat:
+            response_text += caveat
+            yield _sse({"type": "token", "text": caveat})
+
+        # 2026-07-19: feed the real, checkable verification outcome into
+        # RiverBrain via the same learn_from_sandbox_outcome() self-edit's
+        # own F2 gate already uses — not a new learning mechanism, a second
+        # caller of the existing one. `verified is None` (no checkable
+        # claim, the common case) deliberately produces NO signal — this
+        # only ever moves the "coding" bucket for this exact model, never
+        # creative/personal/reasoning (RiverBrain's model_task_stats is
+        # keyed per task_type, structurally isolated).
+        if verified is not None and dispatch_result is None:
+            try:
+                from app.core.echo_model_orchestrator import get_river_brain
+                from app.core.river_deliberation import ECHO_SYNTHESIS_MODEL
+                get_river_brain().learn_from_sandbox_outcome(
+                    ECHO_SYNTHESIS_MODEL, success=verified,
+                    code=response_text if verified else "",
+                    error=caveat or "",
+                )
+            except Exception as river_err:
+                logger.debug(f"[echo_studio] river learning hook failed: {river_err}")
+
     session["conv_history"], session["history_summaries"] = conversation_service.store_turn_in_history(
         session["conv_history"], session["history_summaries"], original_msg, response_text
     )

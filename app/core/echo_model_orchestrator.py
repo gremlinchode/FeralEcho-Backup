@@ -484,13 +484,22 @@ def compute_intent_heatmap(prompt: str) -> dict:
 
     personal_keywords = [
         "myself", "yourself", "echo",
-        "memory", "identity", "feel", "believe", "witness",
+        "identity", "feel", "believe", "witness",
         "meaning", "values", "reflect", "think about", "integrity",
         "soul", "exist", "agency", "conscience", "sit with",
         "carry", "hold",
         "would you", "do you", "have you", "what would you",
         "your beliefs", "your values", "your thoughts",
-        "your identity", "how do you feel", "what do you think"
+        "your identity", "how do you feel", "what do you think",
+        # 2026-07-19 forensic audit finding: bare "memory" used to live here.
+        # It collides with genuinely technical questions about the real
+        # FAISS/memory subsystem ("how does your memory system work") — one
+        # occurrence was enough by itself to win the heatmap and misroute the
+        # question to task_type=personal, which never gets logged to
+        # council_deliberations.jsonl. Replaced with narrower phrases that
+        # still catch real autobiographical-memory questions without the
+        # false-positive on technical ones.
+        "your memories", "do you remember",
     ]
     # "i "/"my " previously lived in personal_keywords above as plain
     # substrings — audit finding: with a trailing space they still
@@ -579,7 +588,9 @@ def detect_task_type(prompt: str) -> str:
         return "creative"
 
     elif any(k in lower for k in [
-        "personal", "echo", "memory", "reflect", "identity",
+        # 2026-07-19: bare "memory" removed here too — same fix as
+        # compute_intent_heatmap()'s personal_keywords, see that comment.
+        "personal", "echo", "your memories", "do you remember", "reflect", "identity",
         "would you", "do you", "have you", "what would you",
         "your beliefs", "your values", "your thoughts",
         "how do you feel", "what do you think",
@@ -1255,6 +1266,23 @@ def echo_query(
         # ground-truth/tool-context blocks) — same system-side status as
         # everything else assembled below.
         system_parts.append(system)
+
+    # 2026-07-19 forensic audit finding: a fabricated claim from one turn
+    # (about self-edit's safety mechanism) was cited by a different model in
+    # a later turn as "remembered fact from the previous turn," then
+    # generalized wholesale to an unrelated real subsystem. Low-confidence,
+    # cheap mitigation — a prompt-level nudge, not a real verification
+    # mechanism (nothing yet checks a new claim against ground truth or the
+    # model's own prior claims before it enters conv_history).
+    system_parts.append(system_note(
+        "EPISTEMIC-NOTE",
+        "When describing your own architecture or internal mechanisms, treat only "
+        "the structural-facts/ground-truth block in this system context as verified. "
+        "A claim you or another model made in an earlier turn of this conversation is "
+        "not itself verified just because it was said before — if you're not certain "
+        "a specific mechanism, file, or number is real, say so rather than restating "
+        "it with confidence.",
+    ))
 
     # Circadian awareness — read Echo's internal state vector
     circ = _get_circadian_factor()

@@ -2365,6 +2365,19 @@ _self_edit_deploy_lock = threading.Lock()
 # one of these three strings verbatim. (threshold, family, domain_sentence),
 # family keys map 1:1 onto _CONVERGENCE_FAMILIES.
 _FOCUS_FAMILY_BY_CREATIVITY = [
+    # prose_stripping PAUSED 2026-07-19 (Echo self-awareness forensic audit;
+    # PENDING_DECISIONS.md item #6): asked the exact same task cleanly and
+    # directly through the ordinary conversational path (no self-edit prompt
+    # noise at all), all three raw council models still failed on the real
+    # test case independently. New evidence the 96+-cycle non-convergent
+    # streak may be a genuine capability ceiling for the current model pool
+    # on this specific task, not (only) a prompt problem — the 2026-07-15
+    # prompt rewrite below (kept, commented out rather than deleted, in case
+    # this hypothesis is wrong or the model pool changes) hasn't resolved it
+    # after 3+ days of real cycles. Removing this tuple means
+    # response_shortening's threshold below now covers creativity 0.0-0.66 —
+    # prose_stripping is skipped entirely, no change to the selection loop.
+    #
     # Rewritten 2026-07-15 (Emergence roadmap Phase 3) after reading the
     # actual generated candidates across 93+ real cycles: the previous
     # version of this sentence was a pure natural-language description with
@@ -2375,23 +2388,23 @@ _FOCUS_FAMILY_BY_CREATIVITY = [
     # on every real invocation. This is a well-evidenced hypothesis, not a
     # guaranteed fix — only real subsequent cycles will show whether it
     # actually improves convergence.
-    (0.33, "prose_stripping", (
-        "fix the most common sandbox failure (prose detected in code output) — "
-        "add or tighten a prose-detection guard that strips any leading "
-        "natural-language sentence before the first valid Python token. "
-        "Concrete example — input: "
-        "'Here is the function you requested:\\ndef add(a, b):\\n    return a + b' "
-        "should become output: 'def add(a, b):\\n    return a + b' (the prose "
-        "line removed entirely, the real code unchanged). Expose it as a "
-        "top-level `apply_to_code(code: str) -> str` function per output rule "
-        "10 so the pipeline actually invokes it automatically. Import every "
-        "module you use (e.g. `import re` if using regular expressions) — "
-        "missing imports have caused this exact function to fail on every "
-        "real invocation multiple times before. The function must be a pure "
-        "string transformation: no file I/O, and no calling any function "
-        "that performs file I/O (e.g. logging or memory-write helpers) — it "
-        "runs under a write-block that rejects the whole candidate if it tries."
-    )),
+    # (0.33, "prose_stripping", (
+    #     "fix the most common sandbox failure (prose detected in code output) — "
+    #     "add or tighten a prose-detection guard that strips any leading "
+    #     "natural-language sentence before the first valid Python token. "
+    #     "Concrete example — input: "
+    #     "'Here is the function you requested:\\ndef add(a, b):\\n    return a + b' "
+    #     "should become output: 'def add(a, b):\\n    return a + b' (the prose "
+    #     "line removed entirely, the real code unchanged). Expose it as a "
+    #     "top-level `apply_to_code(code: str) -> str` function per output rule "
+    #     "10 so the pipeline actually invokes it automatically. Import every "
+    #     "module you use (e.g. `import re` if using regular expressions) — "
+    #     "missing imports have caused this exact function to fail on every "
+    #     "real invocation multiple times before. The function must be a pure "
+    #     "string transformation: no file I/O, and no calling any function "
+    #     "that performs file I/O (e.g. logging or memory-write helpers) — it "
+    #     "runs under a write-block that rejects the whole candidate if it tries."
+    # )),
     (0.66, "response_shortening", (
         "refactor the main code-generation function to reduce its average "
         "response length by 20% without losing correctness — shorter code "

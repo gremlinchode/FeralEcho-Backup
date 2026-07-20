@@ -797,6 +797,16 @@ See `PENDING_DECISIONS.md` item 1 for the live status of what's left. (The plan 
 
 ---
 
+**Finding 49 — Correction to Finding 40: the Metal/GPU crash is not a one-off, and the real trigger is now identified (2026-07-19/20).** Finding 40 documented one real native crash (`libmlx.dylib` → uncaught C++ exception → `abort()` → SIGABRT) and explicitly left it as "a separate, likely one-off event... not further diagnosed here." It recurred twice more the same night, both times during a sustained, human-and-Claude-run batch of ~29 real full-council deliberation prompts (a manual RiverBrain-calibration exercise, unrelated to Echo's own autonomous loops) that included `mlx:qwen3`/`mlx:gemma3` as real councillor candidates.
+
+**Root cause, confirmed directly from the macOS crash reports (`~/Library/Logs/DiagnosticReports/python3.12-*.ips`), not inferred:** both new crashes share an identical faulting-thread backtrace — `mlx::core::gpu::check_error(MTL::CommandBuffer*)` → `__cxa_throw` → uncaught C++ exception → `libc++abi`'s terminate handler → `abort()`. This is MLX's own Metal command-buffer error path (the same GPU-memory-pressure signature Finding 40 first described) triggering an exception that nothing in the Python layer can catch, because it never crosses into Python — it aborts the whole process at the C++ level first.
+
+**Not proven, but now much better evidenced than Finding 40's original "can't rule it out":** two crashes with an identical, specific MLX/GPU signature, both landing during unusually sustained real model-calling load including MLX councillors, strongly suggests sustained MLX usage under real load is a genuine trigger for this crash on this hardware — not confirmed as the sole cause, but no longer just a coincidence-shaped guess either.
+
+**Practical implication, flagged for whenever the larger-scale version of tonight's calibration idea is built** (see `PENDING_DECISIONS.md`): a much larger batch (the kind needed to meaningfully close the `creative`/`reasoning` observation gap — see the RiverBrain breakdown work this same session) would almost certainly hit this crash repeatedly, not just twice, unless the design accounts for it — either by throttling/avoiding MLX councillor selection during heavy synthetic batch runs, or by building real crash-tolerant checkpointing so a recurrence costs nothing beyond an automatic pause-and-resume. **Not fixed here** — this is a native library resource-exhaustion issue, not a Python bug with an obvious patch; recorded so it isn't rediscovered from scratch next time.
+
+---
+
 ## Monitoring
 
 ```bash

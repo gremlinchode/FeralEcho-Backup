@@ -196,6 +196,37 @@ def fetch_and_log(name, url, max_retries=3, temporal_context=None) -> list[str]:
                             log_dream_bridge(f"{ctx}\n{snippet}", meta=_FETCH_META, embedding_text=snippet)
                             collected.append(snippet)
 
+                elif isinstance(data, dict) and isinstance(data.get("items"), list):
+                    # StackOverflow Questions API. Found and fixed 2026-07-21:
+                    # this shape had no case here at all, so every
+                    # StackOverflow entry fell through to the generic dump
+                    # below — a raw repr of the whole response, including
+                    # irrelevant internals like owner profile-image URLs,
+                    # instead of the real, useful title field confirmed live
+                    # against the actual API before writing this fix.
+                    for item in data["items"][:MAX_ITEMS]:
+                        title = item.get("title", "")
+                        score = item.get("score", 0)
+                        answered = "answered" if item.get("is_answered") else "unanswered"
+                        snippet = f"[{name}] {title[:MAX_TEXT_LEN]} (score {score}, {answered})"
+                        if not _is_duplicate(snippet):
+                            log_dream_bridge(f"{ctx}\n{snippet}", meta=_FETCH_META, embedding_text=snippet)
+                            collected.append(snippet)
+
+                elif isinstance(data, dict) and "extract" in data:
+                    # Wikipedia REST summary API. Found and fixed 2026-07-21:
+                    # same class of gap as StackOverflow above — this shape
+                    # had no case here either, so entries stored a raw dict
+                    # repr with embedded HTML markup (displaytitle) instead
+                    # of the real, well-written extract field confirmed live
+                    # against the actual API before writing this fix.
+                    title = data.get("title", "")
+                    extract = data.get("extract", "")[:MAX_TEXT_LEN]
+                    snippet = f"[{name}] {title}: {extract}"
+                    if not _is_duplicate(snippet):
+                        log_dream_bridge(f"{ctx}\n{snippet}", meta=_FETCH_META, embedding_text=snippet)
+                        collected.append(snippet)
+
                 elif isinstance(data, list):
                     for item in data[:MAX_ITEMS]:
                         text = item.get("title") if isinstance(item, dict) else str(item)

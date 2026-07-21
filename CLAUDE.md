@@ -911,6 +911,14 @@ The mid-sentence cutoff Finding 53 flagged as a "separate, smaller issue, not ch
 
 ---
 
+**Finding 55 — `/mirror_echo`'s auth gate finally shipped, closing `PENDING_DECISIONS.md` #1 (Finding 42) (2026-07-21).** The phone-side blocker (Gremlin pasting the real secret onto the actual phone script) was confirmed cleared earlier the same night; the guard clause itself had been fully drafted since Finding 42 and was just waiting to be applied. `run.py`'s `mirror_echo()` now calls `_secret_ok(data)` immediately after `data = request.json or {}` — same convention as every other admin/control endpoint — and correctly calls `mark_end()` on the new unauthorized-403 exit path too, matching this function's own established per-exit-path convention (see the comment at its top) rather than the try/finally shape.
+
+**Verified live, all three real cases, not assumed:** no secret → 403; wrong secret → 403; the real `GREMLIN_SECRET` (read directly from `.env`, never printed or logged anywhere in this verification) → request passed the gate and reached real processing, confirmed via the actual `IPHONE GREMLIN 『verification』 SCREAMS: ...` log line that only fires past the auth check.
+
+**A real, unrelated MLX crash happened mid-verification — investigated immediately rather than assumed connected, and it wasn't.** One authenticated test attempt returned a connection failure; checked directly rather than blamed on the new code: `watchdog_manager` logged `Echo exited with code 134` (SIGABRT) at the same moment, the known MLX/Metal crash signature (Findings 40/49) — `crash_awareness.py`'s (Finding 51) avoidance cooldown from ~10:48 PM had already quietly expired hours earlier, letting `mlx:*` models back into the pool. Confirmed via the real, unprompted system response, not asserted: the very next restart's `refresh_avoidance_state()` correctly detected the fresh crash (`recent_crash_count: 3`) and re-engaged avoidance immediately, with zero manual intervention — "learned avoidance" doing exactly what Finding 51 built it to do, the first time it's been observed responding to a crash that happened in the middle of an active session rather than being found after the fact. A second, later authenticated request also showed as a connection failure but turned out to be an ordinary slow real deliberation under load (same PID, uptime still climbing, no crash) — confirmed the request had genuinely reached and passed the auth gate by finding its own log line, rather than assumed from the failed client connection.
+
+---
+
 ## Monitoring
 
 ```bash

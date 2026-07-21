@@ -521,6 +521,17 @@ def mirror_echo():
     mark_start()
     try:
         data = request.json or {}
+
+        # 2026-07-21: gate finally shipped (Finding 42/54, PENDING_DECISIONS.md
+        # #1) — the phone-side blocker (real THUNDERHEAD_SECRET pasted onto
+        # the actual phone script) is confirmed cleared, so this drafted
+        # guard clause can go live. Same _secret_ok() convention as every
+        # other admin/control endpoint. mark_end() here too, matching this
+        # function's own per-exit-path convention (see comment above).
+        if not _secret_ok(data):
+            mark_end()
+            return jsonify({"error": "unauthorized"}), 403
+
         msg = data.get("message", "").strip()
         sender = data.get("from", "unknown gremlin")
 

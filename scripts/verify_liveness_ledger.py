@@ -567,6 +567,32 @@ check("plan_retention: prunes everything regardless of cap (degraded, over-aggre
 r = ll._evaluate_plan_retention(None, None, None)
 check("plan_retention: _prune_self_edit_plans not importable at all", r["pass"], False, r["evidence"])
 
+# ── 23. janitor_council_advisory_only ──────────────────────────────────────
+try:
+    from echo_janitor import _attach_council_opinions as _real_attach_council_opinions
+    r = ll._evaluate_janitor_council_advisory_only(_real_attach_council_opinions)
+    check("janitor_council_advisory_only: real current _attach_council_opinions()", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] janitor_council_advisory_only real-function case: import failed ({e})")
+
+def _broken_attach_that_archives_on_confidence(candidates, review_fn=None):
+    # Simulates a hypothetical future regression: lets a confident council
+    # verdict actually change the decision to archive — exactly what this
+    # check exists to catch.
+    for c in candidates:
+        if c.get("decision") != "flag":
+            continue
+        council = review_fn(c)
+        c["council_opinion"] = council.get("verdict")
+        if council.get("verdict") == "SAFE_TO_ARCHIVE":
+            c["decision"] = "archive"
+    return candidates
+r = ll._evaluate_janitor_council_advisory_only(_broken_attach_that_archives_on_confidence)
+check("janitor_council_advisory_only: regression lets a confident council verdict set decision=archive (unsafe)", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_janitor_council_advisory_only(None)
+check("janitor_council_advisory_only: _attach_council_opinions not importable at all", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

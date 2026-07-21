@@ -1441,6 +1441,93 @@ def _check_plan_retention() -> dict:
     return _evaluate_plan_retention(_prune_self_edit_plans, LOGIC_PLAN_DIR, _MAX_SELF_EDIT_PLANS)
 
 
+# ── 23. janitor_council_advisory_only — echo_janitor.py's ──────────────────
+# _attach_council_opinions() still structurally cannot change a flag-only
+# candidate's decision, no matter how confident a (real or fake) council
+# sounds. Added 2026-07-21 (CLAUDE.md Finding 60/63) alongside the feature
+# itself — this is not a check on whether the council's opinions are
+# *good*, it's a check on whether they're structurally incapable of
+# mattering to the one decision that actually moves files, mirroring
+# janitor_safety's own invariant-protection shape exactly.
+
+def _evaluate_janitor_council_advisory_only(attach_fn) -> dict:
+    if attach_fn is None:
+        return _result(False, "Could not import _attach_council_opinions at all — failing closed.")
+
+    def _maximally_confident_archive(candidate):
+        return {
+            "verdict": "SAFE_TO_ARCHIVE",
+            "votes": [
+                {"model": "fake1", "verdict": "SAFE_TO_ARCHIVE", "rationale": "trust me, definitely safe"},
+                {"model": "fake2", "verdict": "SAFE_TO_ARCHIVE", "rationale": "no doubt at all"},
+                {"model": "fake3", "verdict": "SAFE_TO_ARCHIVE", "rationale": "archive it now"},
+            ],
+        }
+
+    candidates = [
+        {"path": "/tmp/__liveness_canary__.txt", "name": "__liveness_canary__.txt",
+         "reason": "orphaned_data", "detail": "synthetic canary case", "decision": "flag"},
+        {"path": "/tmp/__liveness_canary_archive__.py", "name": "__liveness_canary_archive__.py",
+         "reason": "known_clutter", "detail": "synthetic canary case", "decision": "archive"},
+    ]
+
+    # Found live while building this check: attach_fn's real implementation
+    # (_attach_council_opinions) logs every review to the real, persistent
+    # memory/janitor_council_log.jsonl — so this fixed synthetic path got a
+    # real entry on the first run, and every run after that (this check
+    # fires every 120s via introspection_channel) saw it as "recently
+    # reviewed" via the real staleness gate and silently skipped review,
+    # making the check non-idempotent and its own evidence wrong on the
+    # second and every subsequent call. Redirect the log path to a fresh
+    # throwaway tempfile for the duration of this one call so the canary
+    # never collides with its own prior runs, and never pollutes the real
+    # log with a synthetic entry every introspection cycle.
+    import tempfile
+    try:
+        import echo_janitor as _ej
+    except Exception as e:
+        return _result(False, f"Could not import echo_janitor module for log-path redirection: {e!r}")
+    original_log_path = _ej.JANITOR_COUNCIL_LOG_PATH
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            _ej.JANITOR_COUNCIL_LOG_PATH = Path(td) / "canary_council_log.jsonl"
+            try:
+                result = attach_fn(list(candidates), review_fn=_maximally_confident_archive)
+            except Exception as e:
+                return _result(False, f"_attach_council_opinions() raised {e!r}")
+    finally:
+        _ej.JANITOR_COUNCIL_LOG_PATH = original_log_path
+
+    flag_candidate = next((c for c in result if c.get("reason") == "orphaned_data"), None)
+    archive_candidate = next((c for c in result if c.get("reason") == "known_clutter"), None)
+
+    if flag_candidate is None or flag_candidate.get("decision") != "flag":
+        return _result(
+            False,
+            f"flag-only candidate's decision changed to {flag_candidate.get('decision') if flag_candidate else 'MISSING'!r} "
+            "even against a maximally confident SAFE_TO_ARCHIVE council verdict — the exact failure this check exists to catch.",
+        )
+    if flag_candidate.get("council_opinion") != "SAFE_TO_ARCHIVE":
+        return _result(False, "council_opinion field wasn't attached to the flag-only candidate at all.")
+    if archive_candidate is not None and "council_opinion" in archive_candidate:
+        return _result(False, "an already-archive-decision candidate was reviewed at all — review should be flag-only candidates exclusively.")
+
+    return _result(
+        True,
+        "_attach_council_opinions() correctly leaves decision='flag' untouched even against a "
+        "maximally confident SAFE_TO_ARCHIVE verdict from every council model, correctly attaches "
+        "the advisory council_opinion field, and correctly skips already-archive-decision candidates.",
+    )
+
+
+def _check_janitor_council_advisory_only() -> dict:
+    try:
+        from echo_janitor import _attach_council_opinions
+    except Exception:
+        _attach_council_opinions = None
+    return _evaluate_janitor_council_advisory_only(_attach_council_opinions)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -1466,6 +1553,7 @@ _CHECKS = (
     "log_retention",
     "janitor_safety",
     "plan_retention",
+    "janitor_council_advisory_only",
 )
 
 
@@ -1475,7 +1563,7 @@ def _load_prev_ledger() -> dict:
 
 def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
     """
-    Run all checks in _CHECKS (22 as of 2026-07-21) and write
+    Run all checks in _CHECKS (23 as of 2026-07-21) and write
     memory/liveness_ledger.json.
     introspection_memory: the already-computed state["memory"] dict from
     this same introspection cycle (faiss_vector_count/journal_line_count),
@@ -1512,6 +1600,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "log_retention": _check_log_retention,
         "janitor_safety": _check_janitor_safety,
         "plan_retention": _check_plan_retention,
+        "janitor_council_advisory_only": _check_janitor_council_advisory_only,
     }
 
     ledger = {"generated_at": _now_iso()}

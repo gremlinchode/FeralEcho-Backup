@@ -31,13 +31,24 @@ Pipeline:
         │                              including all three 2026-07-21 additions,
         │                              is flag-only.
         ▼
+    _attach_council_opinions(candidates)  — advisory-only multi-model opinion on
+        │                                    each flag-only candidate (CLAUDE.md
+        │                                    Finding 60/63), mirroring the Dissent
+        │                                    Log's proven constrained-verdict
+        │                                    pattern. Structurally cannot change
+        │                                    decision — only ever reads it, never
+        │                                    assigns it. Logged to
+        │                                    memory/janitor_council_log.jsonl.
+        ▼
     execute_plan(plan)               — moves decision="archive" files to archive_janitor/
         │
         ▼
-    write_janitor_report()           — JSON summary written to logs/janitor_report.json.
-                                       Nothing currently reads this back to surface it
-                                       in the terminal — see night_cycle.py's own
-                                       comment on this gap.
+    write_janitor_report()           — JSON summary (including each candidate's
+                                       council_opinion, if reviewed) written to
+                                       logs/janitor_report.json. Nothing currently
+                                       reads this back to surface it in the
+                                       terminal — see night_cycle.py's own comment
+                                       on this gap.
 
 Scheduling:
     NOT via emergent_scheduler.schedule_task() (that function is a hollow,
@@ -57,6 +68,7 @@ import shutil
 import logging
 import argparse
 import ast
+import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -69,6 +81,19 @@ LOG_PATH      = ROOT / "logs" / "janitor.log"
 REPORT_PATH   = ROOT / "logs" / "janitor_report.json"
 ARCHIVE_DIR   = ROOT / "archive_janitor"
 LOG_MAX_AGE_DAYS = 30
+
+# Council review (CLAUDE.md Finding 60/63, PENDING_DECISIONS.md #12) —
+# advisory-only, mirrors self_edit_manager.py's Dissent Log
+# (_council_review_core_edit()) exactly: structurally incapable of ever
+# setting decision="archive", purely an additional signal for the human
+# reviewing flagged candidates.
+JANITOR_COUNCIL_LOG_PATH = ROOT / "memory" / "janitor_council_log.jsonl"
+COUNCIL_REVIEW_STALENESS_DAYS = 7  # matches the weekly janitor cadence —
+# a still-flagged file already reviewed this week doesn't need re-querying
+# models until next week's cycle, even if nothing acted on it yet.
+COUNCIL_CONTENT_PREVIEW_EXTENSIONS = {".py", ".txt", ".json", ".jsonl", ".log", ".md"}
+COUNCIL_CONTENT_PREVIEW_CHARS = 2000
+_janitor_council_log_lock = threading.Lock()
 
 # Files that must never be touched regardless of scan results
 PROTECTED = {
@@ -604,6 +629,194 @@ def execute_plan(candidates: list[dict], dry_run: bool = False) -> dict:
 
 
 # ─────────────────────────────────────────────
+# COUNCIL REVIEW (advisory-only — see module docstring / CLAUDE.md Finding 63)
+# ─────────────────────────────────────────────
+
+def _read_content_preview(path: str) -> str:
+    """
+    Small, bounded read for the council prompt — never loads a whole file
+    (some orphaned_data candidates are 10MB+ JSON dumps). Only for
+    text-shaped extensions; binary/media files get no preview at all,
+    which is itself part of this review's honestly-limited signal (see
+    CLAUDE.md Finding 60's named risk).
+    """
+    try:
+        p = Path(path)
+        if not p.is_file() or p.suffix.lower() not in COUNCIL_CONTENT_PREVIEW_EXTENSIONS:
+            return ""
+        with open(p, "r", encoding="utf-8", errors="ignore") as f:
+            return f.read(COUNCIL_CONTENT_PREVIEW_CHARS)
+    except Exception:
+        return ""
+
+
+def _council_review_janitor_candidate(candidate: dict) -> dict:
+    """
+    Advisory-only multi-model opinion on a single flag-only candidate —
+    does it look safe to archive, or does it look like it might be
+    meaningful and worth keeping? Mirrors self_edit_manager.py's
+    _council_review_core_edit() exactly: a constrained one-line verdict
+    plus one sentence of rationale, not raw JSON — the same format
+    already proven reliable in production (Finding 9), and the reason
+    echo_review()'s own docstring gives for NOT asking a single model to
+    decide this directly ("too strongly embedded to reliably output raw
+    JSON") doesn't apply to this shape.
+
+    NEVER returns anything that changes a candidate's decision — this
+    function has no access to the candidate dict's "decision" key at all,
+    only reads path/name/reason/detail. See _attach_council_opinions()
+    for the caller-side guarantee, and liveness_ledger.py's
+    janitor_council_advisory_only check for the ground-truth proof.
+    """
+    try:
+        from app.core.echo_model_orchestrator import rank_models
+        from app.ollama_handler import query_ollama
+    except Exception as e:
+        return {"verdict": "NO_COUNCIL_AVAILABLE", "votes": [], "error": str(e)}
+
+    try:
+        models = rank_models(task_type="reasoning")[:3]
+    except Exception:
+        models = []
+    if not models:
+        return {"verdict": "NO_COUNCIL_AVAILABLE", "votes": []}
+
+    preview = _read_content_preview(candidate["path"])
+    review_prompt = (
+        "You are reviewing a file flagged during an autonomous filesystem "
+        "hygiene scan of a personal AI project. Nothing will be deleted "
+        "based on your answer — a human reviews every flagged file before "
+        "anything is ever removed. Assess only whether this file LOOKS "
+        "safe to archive, or LOOKS like it might be meaningful and worth "
+        "keeping. You have no access to the project's history, so say "
+        "UNCERTAIN rather than guess if the surface information isn't enough.\n\n"
+        f"Filename: {candidate['name']}\n"
+        f"Why it was flagged: {candidate['reason']} — {candidate['detail']}\n"
+        + (f"Content preview (first {COUNCIL_CONTENT_PREVIEW_CHARS} chars):\n```\n{preview}\n```\n\n"
+           if preview else "(No content preview available for this file type — assess from the filename and flag reason alone.)\n\n")
+        + "Respond with exactly one line: SAFE_TO_ARCHIVE, LIKELY_MEANINGFUL_KEEP, "
+        "or UNCERTAIN, followed by a dash and one sentence why."
+    )
+
+    votes = []
+    for model in models:
+        try:
+            resp = query_ollama(review_prompt, model=model) or ""
+            first_word = resp.strip().split()[0].upper().strip(".:-") if resp.strip() else "UNCERTAIN"
+            if first_word.startswith("SAFE"):
+                verdict = "SAFE_TO_ARCHIVE"
+            elif first_word.startswith("LIKELY") or first_word.startswith("KEEP") or first_word.startswith("MEANINGFUL"):
+                verdict = "LIKELY_MEANINGFUL_KEEP"
+            else:
+                verdict = "UNCERTAIN"
+            votes.append({"model": model, "verdict": verdict, "rationale": resp.strip()[:300]})
+        except Exception as e:
+            votes.append({"model": model, "verdict": "UNCERTAIN", "rationale": f"review call failed: {e}"})
+
+    counts = {"SAFE_TO_ARCHIVE": 0, "LIKELY_MEANINGFUL_KEEP": 0, "UNCERTAIN": 0}
+    for v in votes:
+        counts[v["verdict"]] += 1
+    return {"verdict": "/".join(f"{k}:{n}" for k, n in counts.items()), "votes": votes, "counts": counts}
+
+
+def _build_janitor_council_entry(candidate: dict, council: dict) -> dict:
+    """
+    Pure — no I/O, directly unit-testable, same split as
+    self_edit_manager.py's _build_dissent_entry(). council_available is a
+    genuine third state (mirrors the Dissent Log's own reasoning): no
+    council models being rankable is not the same as the council reaching
+    a verdict, and folding the two together would misrepresent an absence
+    of signal as a real one.
+    """
+    votes = council.get("votes") or []
+    return {
+        "ts": datetime.now().isoformat(),
+        "path": candidate.get("path"),
+        "name": candidate.get("name"),
+        "reason": candidate.get("reason"),
+        "janitor_decision": candidate.get("decision"),
+        "council_verdict": council.get("verdict"),
+        "votes": votes,
+        "council_available": len(votes) > 0,
+    }
+
+
+def _log_janitor_council_entry(entry: dict) -> None:
+    """
+    Best-effort, never raises. Always appends — even a no-council-available
+    entry — for honest auditability, same "log the empty/negative case
+    too" discipline as _log_dissent_entry() and seam_engine.py's own log.
+    """
+    try:
+        with _janitor_council_log_lock:
+            JANITOR_COUNCIL_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(JANITOR_COUNCIL_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry) + "\n")
+    except Exception as e:
+        logging.debug(f"[JANITOR] council log write failed: {e}")
+
+
+def _recently_reviewed(path: str) -> bool:
+    """
+    True if this exact path already has a council log entry within
+    COUNCIL_REVIEW_STALENESS_DAYS — avoids re-querying models every week
+    for the same persistently-flagged file that nothing has acted on yet.
+    Fails open (returns False, i.e. "not recently reviewed, go ahead and
+    review it") on any read error, since skipping a review is the safe
+    direction here, not the unsafe one.
+    """
+    try:
+        if not JANITOR_COUNCIL_LOG_PATH.exists():
+            return False
+        cutoff = datetime.now() - timedelta(days=COUNCIL_REVIEW_STALENESS_DAYS)
+        with open(JANITOR_COUNCIL_LOG_PATH, "r", encoding="utf-8") as f:
+            for line in f:
+                try:
+                    entry = json.loads(line)
+                except Exception:
+                    continue
+                if entry.get("path") != path:
+                    continue
+                ts = datetime.fromisoformat(entry.get("ts", ""))
+                if ts >= cutoff:
+                    return True
+    except Exception:
+        return False
+    return False
+
+
+def _attach_council_opinions(candidates: list[dict], review_fn=None) -> list[dict]:
+    """
+    For each flag-only candidate, attach an advisory council_opinion
+    field. Structurally never touches candidate["decision"] — this
+    function only ever reads that key (to select which candidates to
+    review), never assigns it. Ground-truth verified by
+    liveness_ledger.py's janitor_council_advisory_only check, which calls
+    this exact function with a synthetic review_fn that always returns
+    the most confident-sounding possible verdict and confirms decision
+    stays "flag" regardless.
+
+    review_fn is injectable specifically so that check (and
+    scripts/verify_liveness_ledger.py's discrimination cases) can exercise
+    this real function without making real LLM calls.
+    """
+    review_fn = review_fn or _council_review_janitor_candidate
+    for c in candidates:
+        if c.get("decision") != "flag":
+            continue
+        if _recently_reviewed(c.get("path", "")):
+            continue
+        try:
+            council = review_fn(c)
+        except Exception as e:
+            council = {"verdict": "NO_COUNCIL_AVAILABLE", "votes": [], "error": str(e)}
+        entry = _build_janitor_council_entry(c, council)
+        _log_janitor_council_entry(entry)
+        c["council_opinion"] = council.get("verdict")
+    return candidates
+
+
+# ─────────────────────────────────────────────
 # REPORT
 # ─────────────────────────────────────────────
 
@@ -624,9 +837,16 @@ def write_janitor_report(candidates: list[dict], summary: dict, dry_run: bool):
 # MAIN ENTRY POINT (scheduler + manual)
 # ─────────────────────────────────────────────
 
-def run_janitor(dry_run: bool = False, verbose: bool = False):
+def run_janitor(dry_run: bool = False, verbose: bool = False, run_council_review: bool = True):
     """
     Full janitor run. Call this from emergent_scheduler or directly.
+
+    run_council_review: gets an advisory multi-model opinion attached to
+    each flag-only candidate (CLAUDE.md Finding 60/63) — real LLM calls,
+    skipped by default only when explicitly disabled (e.g. quick manual
+    --dry-run testing that doesn't want to wait on model calls). The real
+    weekly autonomous cycle (night_cycle.py's _maybe_run_janitor()) leaves
+    this at its default of True.
     """
     setup_logging(verbose)
     logging.info("═" * 50)
@@ -648,6 +868,12 @@ def run_janitor(dry_run: bool = False, verbose: bool = False):
 
     logging.info("[JANITOR] Routing candidates to Echo for review...")
     candidates = echo_review(candidates)
+
+    if run_council_review:
+        flagged_count = sum(1 for c in candidates if c.get("decision") == "flag")
+        if flagged_count:
+            logging.info(f"[JANITOR] Requesting advisory council opinions on {flagged_count} flagged candidate(s)...")
+        candidates = _attach_council_opinions(candidates)
 
     summary = execute_plan(candidates, dry_run=dry_run)
     write_janitor_report(candidates, summary, dry_run)
@@ -673,5 +899,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Echo autonomous folder janitor")
     parser.add_argument("--dry-run",  action="store_true", help="Scan and review without moving files")
     parser.add_argument("--verbose",  action="store_true", help="Debug-level logging")
+    parser.add_argument("--no-council", action="store_true", help="Skip advisory council review (faster manual testing, no LLM calls)")
     args = parser.parse_args()
-    run_janitor(dry_run=args.dry_run, verbose=args.verbose)
+    run_janitor(dry_run=args.dry_run, verbose=args.verbose, run_council_review=not args.no_council)

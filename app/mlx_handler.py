@@ -157,6 +157,21 @@ def list_mlx_models() -> dict:
                 "mlx_path": entry["mlx_path"],
                 "backend": "mlx",
             }
+
+        # "Learned avoidance" (2026-07-21, differential audit follow-up):
+        # filter out any model currently under crash-avoidance (recent
+        # mlx::core::gpu::check_error cluster, CLAUDE.md Finding 49) at the
+        # single source both patch_model_pool() and _get_mlx_path() read
+        # from — same exclusion mechanism _RETIRED_MODELS already uses in
+        # echo_model_orchestrator.py, just temporary instead of permanent.
+        try:
+            from app.core.crash_awareness import is_mlx_avoidance_active
+            if pool and is_mlx_avoidance_active():
+                logging.warning(f"[MLX] Avoidance active — withholding from pool: {list(pool.keys())}")
+                pool = {}
+        except Exception:
+            pass  # avoidance check is best-effort; never blocks normal model listing
+
         logging.info(f"[MLX] Config loaded: {list(pool.keys())}")
         return pool
     except Exception as e:

@@ -51,6 +51,7 @@ import os
 import re
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -1159,6 +1160,194 @@ def _check_self_knowledge_verification() -> dict:
     return _evaluate_self_knowledge_verification(verify_self_knowledge_claims)
 
 
+# ── 19. mlx_avoidance — crash_awareness.py's window/threshold logic still ──
+# genuinely discriminates a real crash cluster from noise. Functional
+# canary, same shape as seam_engine/task_type_classifier: feed the real
+# _evaluate_crash_window() synthetic (mtime, has_signature) pairs whose
+# correct answer is known by construction, not a log-presence check —
+# avoidance engaging is rare by design, so "has it fired recently" would
+# mostly just prove nothing's crashed lately, not that the logic still works.
+
+def _evaluate_mlx_avoidance(evaluate_fn) -> dict:
+    if evaluate_fn is None:
+        return _result(False, "Could not import _evaluate_crash_window at all — failing closed.")
+
+    now = 1_000_000.0  # arbitrary fixed epoch; only relative offsets matter below
+    hour = 3600.0
+    cases = [
+        # two matching crashes inside the lookback window -> should engage
+        ("two_recent_matches", [(now - 1 * hour, True), (now - 5 * hour, True)], True),
+        # two matching crashes, but outside the lookback window -> should not engage
+        ("two_but_stale", [(now - 20 * hour, True), (now - 22 * hour, True)], False),
+        # one matching + one non-matching (e.g. the real KMP crash) -> below trigger count
+        ("one_match_one_unrelated", [(now - 1 * hour, True), (now - 2 * hour, False)], False),
+    ]
+    failures = []
+    for name, file_infos, expect_engaged in cases:
+        try:
+            result = evaluate_fn(file_infos, now)
+        except Exception as e:
+            failures.append(f"{name} raised {e!r}")
+            continue
+        engaged = result.get("avoid_until") is not None
+        if engaged != expect_engaged:
+            failures.append(f"{name}: expected engaged={expect_engaged} got engaged={engaged} ({result})")
+    if not failures:
+        return _result(
+            True,
+            "_evaluate_crash_window() correctly discriminated all 3 canary cases "
+            "(recent cluster engages, stale cluster doesn't, single-signature "
+            "match below trigger count doesn't) — run live against the real function.",
+        )
+    return _result(
+        False,
+        "_evaluate_crash_window() failed canary cases: " + "; ".join(failures) +
+        " — MLX crash avoidance may be silently degrading.",
+    )
+
+
+def _check_mlx_avoidance() -> dict:
+    try:
+        from app.core.crash_awareness import _evaluate_crash_window
+    except Exception:
+        _evaluate_crash_window = None
+    return _evaluate_mlx_avoidance(_evaluate_crash_window)
+
+
+# ── 20. log_retention — rotate_if_oversized()'s size-threshold decision ────
+# still genuinely discriminates, plus a live ground-truth signal that no
+# target file has silently grown past its own cap unchecked (which would
+# mean the daily NightCycle hook stopped firing).
+
+_LOG_RETENTION_STALE_MULTIPLIER = 2.0
+
+
+def _evaluate_log_retention(rotate_fn, targets: "list[tuple] | None" = None) -> dict:
+    if rotate_fn is None:
+        return _result(False, "Could not import rotate_if_oversized at all — failing closed.")
+
+    import tempfile
+    failures = []
+    with tempfile.TemporaryDirectory() as td:
+        small = os.path.join(td, "small.log")
+        with open(small, "wb") as f:
+            f.write(b"x" * 100)
+        try:
+            if rotate_fn(small, 1000):
+                failures.append("under-threshold file was rotated (should have been a no-op)")
+        except Exception as e:
+            failures.append(f"under-threshold case raised {e!r}")
+
+        big = os.path.join(td, "big.log")
+        with open(big, "wb") as f:
+            f.write(b"x" * 2000)
+        try:
+            rotated = rotate_fn(big, 1000)
+            still_big = os.path.exists(big) and os.path.getsize(big) > 1000
+            if not rotated or still_big:
+                failures.append(f"over-threshold file was not correctly rotated (rotated={rotated}, still_big={still_big})")
+        except Exception as e:
+            failures.append(f"over-threshold case raised {e!r}")
+
+    if failures:
+        return _result(
+            False,
+            "rotate_if_oversized() failed canary cases: " + "; ".join(failures),
+        )
+
+    # Live ground-truth signal: is any real target file more than
+    # _LOG_RETENTION_STALE_MULTIPLIER over its own cap right now? That would
+    # mean the daily NightCycle hook has stopped actually firing, not just
+    # that a file hasn't hit threshold yet.
+    stale = []
+    for path, max_bytes in (targets or []):
+        try:
+            p = Path(path)
+            if p.exists() and p.stat().st_size > max_bytes * _LOG_RETENTION_STALE_MULTIPLIER:
+                stale.append(f"{p.name} ({p.stat().st_size} bytes, cap {max_bytes})")
+        except Exception:
+            continue
+    if stale:
+        return _result(
+            False,
+            "rotate_if_oversized() discriminates correctly, but real target file(s) "
+            f"are more than {_LOG_RETENTION_STALE_MULTIPLIER}x over their cap, suggesting "
+            "the daily rotation hook isn't actually firing: " + "; ".join(stale),
+        )
+    return _result(
+        True,
+        "rotate_if_oversized() correctly discriminated both canary cases "
+        "(under-threshold no-op, over-threshold rotates), and no real target "
+        "file is more than "
+        f"{_LOG_RETENTION_STALE_MULTIPLIER}x over its cap.",
+    )
+
+
+def _check_log_retention() -> dict:
+    try:
+        from app.core.log_retention import rotate_if_oversized
+        from app.maintenance.night_cycle import _LOG_RETENTION_TARGETS
+    except Exception:
+        rotate_if_oversized = None
+        _LOG_RETENTION_TARGETS = None
+    return _evaluate_log_retention(rotate_if_oversized, _LOG_RETENTION_TARGETS)
+
+
+# ── 21. janitor_safety — echo_janitor.py's echo_review() still only ever ───
+# assigns decision="archive" (the only decision execute_plan() will act on
+# with dry_run=False) to the narrow, reversible categories it's designed
+# for — known_clutter, duplicate, old_log — and still correctly leaves
+# ambiguous candidates (not_imported, needs_review) as flag-only. This is
+# the exact safety property wiring echo_janitor.py into a real autonomous
+# weekly cycle (2026-07-21) depends on; a future edit that widened
+# echo_review()'s archive branch would turn a currently-safe, reversible
+# action into something that moves files it was never verified against.
+
+def _evaluate_janitor_safety(echo_review_fn) -> dict:
+    if echo_review_fn is None:
+        return _result(False, "Could not import echo_review at all — failing closed.")
+
+    cases = [
+        ("known_clutter", "archive"),
+        ("duplicate", "archive"),
+        ("old_log", "archive"),
+        ("not_imported", "flag"),
+        ("needs_review", "flag"),
+    ]
+    failures = []
+    for reason, expect_decision in cases:
+        candidate = {"path": "/tmp/fake.py", "name": "fake.py", "reason": reason, "detail": "synthetic"}
+        try:
+            result = echo_review_fn([candidate])
+        except Exception as e:
+            failures.append(f"{reason} raised {e!r}")
+            continue
+        got_decision = result[0].get("decision") if result else None
+        if got_decision != expect_decision:
+            failures.append(f"{reason}: expected decision={expect_decision!r} got {got_decision!r}")
+    if not failures:
+        return _result(
+            True,
+            "echo_review() still correctly restricts decision='archive' to "
+            "known_clutter/duplicate/old_log only, leaving not_imported/"
+            "needs_review as flag-only — the safety property the autonomous "
+            "weekly wiring in night_cycle.py depends on.",
+        )
+    return _result(
+        False,
+        "echo_review() failed canary cases: " + "; ".join(failures) +
+        " — the autonomous janitor cycle may now archive candidates it was never verified safe for.",
+    )
+
+
+def _check_janitor_safety() -> dict:
+    try:
+        from echo_janitor import echo_review
+    except Exception:
+        echo_review = None
+    return _evaluate_janitor_safety(echo_review)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -1180,6 +1369,9 @@ _CHECKS = (
     "seam_engine",
     "code_verification",
     "self_knowledge_verification",
+    "mlx_avoidance",
+    "log_retention",
+    "janitor_safety",
 )
 
 
@@ -1189,7 +1381,7 @@ def _load_prev_ledger() -> dict:
 
 def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
     """
-    Run all checks in _CHECKS (18 as of 2026-07-19) and write
+    Run all checks in _CHECKS (21 as of 2026-07-21) and write
     memory/liveness_ledger.json.
     introspection_memory: the already-computed state["memory"] dict from
     this same introspection cycle (faiss_vector_count/journal_line_count),
@@ -1222,6 +1414,9 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "seam_engine": _check_seam_engine,
         "code_verification": _check_code_verification,
         "self_knowledge_verification": _check_self_knowledge_verification,
+        "mlx_avoidance": _check_mlx_avoidance,
+        "log_retention": _check_log_retention,
+        "janitor_safety": _check_janitor_safety,
     }
 
     ledger = {"generated_at": _now_iso()}

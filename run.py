@@ -499,7 +499,16 @@ def emergency_shutdown():
     return jsonify({"error": "unauthorized"}), 403
 
 
-# MAIN ECHO ENTRY POINT — KEEP THIS EXACTLY AS-IS
+# PHONE SYMBIOTE ENTRY POINT (thunderhead.py / the Pyto script) — an
+# ambient/context channel meant to give Echo real-world awareness
+# (clipboard, location, sensor data), not Gremlin's primary way of
+# talking to Echo — that's Echo Studio, run alongside run.py in a
+# separate terminal. Corrected 2026-07-21; this comment previously read
+# "MAIN ECHO ENTRY POINT," which was never actually true of real usage
+# and was cited as fact in CLAUDE.md Finding 36 without ever being
+# checked against it. KEEP THIS EXACTLY AS-IS (that instruction still
+# holds — this function's structure is deliberate, see the comment
+# below about mark_start()/mark_end()).
 @app.route("/mirror_echo", methods=["POST"])
 def mirror_echo():
     # 2026-07-19 "remove every excuse" pass: mark a real conversation as
@@ -1069,6 +1078,21 @@ def start_background_threads():
             logger.warning("[GENESIS] Hash verification skipped — principles file or hash file missing.")
     except Exception as _ghe:
         logger.warning(f"[GENESIS] Hash verification failed: {_ghe}")
+
+    # MLX crash-avoidance state — "learned avoidance, not just resurrection"
+    # (2026-07-21, differential audit follow-up). Scans real macOS crash
+    # reports once per process start for the mlx::core::gpu::check_error
+    # signature (CLAUDE.md Finding 49); if a recent cluster is found,
+    # app/mlx_handler.py's list_mlx_models() excludes mlx:* models from
+    # this process's MODEL_POOL until the cooldown expires. Fails safe to
+    # "no avoidance" internally — this call never blocks startup either way.
+    try:
+        from app.core.crash_awareness import refresh_avoidance_state
+        _avoidance = refresh_avoidance_state()
+        if not _avoidance.get("avoid_until"):
+            logger.info("[MLX-AVOIDANCE] No recent MLX crash cluster — mlx:* models available as normal.")
+    except Exception as _cae:
+        logger.warning(f"[MLX-AVOIDANCE] Startup check failed: {_cae}")
 
     global dual_learner
     from app.learning.dual_learning import get_dual_learner

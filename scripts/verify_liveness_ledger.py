@@ -477,6 +477,69 @@ check("self_knowledge_verification: always silent (degraded fail-open)", r["pass
 r = ll._evaluate_self_knowledge_verification(None)
 check("self_knowledge_verification: verify_self_knowledge_claims not importable at all", r["pass"], False, r["evidence"])
 
+# ── 19. mlx_avoidance ──────────────────────────────────────────────────────
+try:
+    from app.core.crash_awareness import _evaluate_crash_window as _real_crash_window
+    r = ll._evaluate_mlx_avoidance(_real_crash_window)
+    check("mlx_avoidance: real current _evaluate_crash_window()", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] mlx_avoidance real-function case: import failed ({e})")
+
+_always_engaged = lambda file_infos, now: {"avoid_until": now + 1000}
+r = ll._evaluate_mlx_avoidance(_always_engaged)
+check("mlx_avoidance: always engaged (degraded into permanent MLX exclusion)", r["pass"], False, r["evidence"])
+
+_never_engaged = lambda file_infos, now: {"avoid_until": None}
+r = ll._evaluate_mlx_avoidance(_never_engaged)
+check("mlx_avoidance: never engages (degraded into never detecting a real cluster)", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_mlx_avoidance(None)
+check("mlx_avoidance: _evaluate_crash_window not importable at all", r["pass"], False, r["evidence"])
+
+# ── 20. log_retention ──────────────────────────────────────────────────────
+try:
+    from app.core.log_retention import rotate_if_oversized as _real_rotate
+    r = ll._evaluate_log_retention(_real_rotate, targets=[])
+    check("log_retention: real current rotate_if_oversized()", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] log_retention real-function case: import failed ({e})")
+
+_never_rotates = lambda path, max_bytes: False
+r = ll._evaluate_log_retention(_never_rotates, targets=[])
+check("log_retention: never rotates (degraded into a permanent no-op)", r["pass"], False, r["evidence"])
+
+_always_claims_rotated_but_doesnt = lambda path, max_bytes: True
+r = ll._evaluate_log_retention(_always_claims_rotated_but_doesnt, targets=[])
+check("log_retention: claims success on the under-threshold case (false positive)", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_log_retention(None, targets=[])
+check("log_retention: rotate_if_oversized not importable at all", r["pass"], False, r["evidence"])
+
+# ── 21. janitor_safety ──────────────────────────────────────────────────────
+try:
+    from echo_janitor import echo_review as _real_echo_review
+    r = ll._evaluate_janitor_safety(_real_echo_review)
+    check("janitor_safety: real current echo_review()", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] janitor_safety real-function case: import failed ({e})")
+
+def _archives_everything(candidates):
+    for c in candidates:
+        c["decision"] = "archive"
+    return candidates
+r = ll._evaluate_janitor_safety(_archives_everything)
+check("janitor_safety: archives everything, including not_imported/needs_review (widened, unsafe)", r["pass"], False, r["evidence"])
+
+def _flags_everything(candidates):
+    for c in candidates:
+        c["decision"] = "flag"
+    return candidates
+r = ll._evaluate_janitor_safety(_flags_everything)
+check("janitor_safety: never archives even known_clutter/duplicate/old_log (degraded into a no-op)", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_janitor_safety(None)
+check("janitor_safety: echo_review not importable at all", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

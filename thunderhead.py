@@ -949,6 +949,18 @@ def main():
         ("bundle",    bundle_loop),
     ]
 
+    # clipboard_loop() itself already no-ops when HAS_CLIP is False (the
+    # `clipboard` package generally isn't usable in an iOS Python runtime) —
+    # but that no-op meant the thread exited within microseconds of every
+    # start, and watchdog_loop() can't tell "correctly did nothing, missing
+    # dependency" from "crashed," so it restarted it forever, every 60s,
+    # logging "[WATCHDOG] restarting dead thread: clipboard" indefinitely.
+    # Harmless but noisy. Skipping the thread entirely when the dependency
+    # isn't there means it's never in _threads for the watchdog to chase.
+    if not HAS_CLIP:
+        thread_defs = [(n, t) for n, t in thread_defs if n != "clipboard"]
+        _log("[SYMBIOTE] clipboard module unavailable — skipping clipboard thread")
+
     for name, target in thread_defs:
         t = threading.Thread(target=target, daemon=True, name=name)
         t.start()

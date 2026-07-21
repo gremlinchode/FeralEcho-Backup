@@ -1,11 +1,40 @@
 {
-  "timestamp": "2026-06-25T20:04:45.420926",
+  "timestamp": "2026-07-21T01:00:36.901135",
   "dry_run": false,
   "summary": {
     "archived": [],
     "kept": [],
-    "flagged": [],
+    "flagged": [
+      "spot_check.py",
+      "verify_riverbrain.py",
+      "thunderhead.py"
+    ],
     "errors": []
   },
-  "candidates": []
+  "candidates": [
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/spot_check.py",
+      "name": "spot_check.py",
+      "reason": "not_imported",
+      "detail": "No static import of this module found in app/ or root scripts",
+      "decision": "flag",
+      "echo_reason": "Ambiguous \u2014 needs human review before archiving"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/verify_riverbrain.py",
+      "name": "verify_riverbrain.py",
+      "reason": "not_imported",
+      "detail": "No static import of this module found in app/ or root scripts",
+      "decision": "flag",
+      "echo_reason": "Ambiguous \u2014 needs human review before archiving"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/thunderhead.py",
+      "name": "thunderhead.py",
+      "reason": "not_imported",
+      "detail": "No static import of this module found in app/ or root scripts",
+      "decision": "flag",
+      "echo_reason": "Ambiguous \u2014 needs human review before archiving"
+    }
+  ]
 }

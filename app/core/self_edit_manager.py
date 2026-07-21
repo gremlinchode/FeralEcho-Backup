@@ -2425,17 +2425,39 @@ _FOCUS_FAMILY_BY_CREATIVITY = [
     #     "that performs file I/O (e.g. logging or memory-write helpers) — it "
     #     "runs under a write-block that rejects the whole candidate if it tries."
     # )),
-    (0.66, "response_shortening", (
+    (1.01, "response_shortening", (
         "refactor the main code-generation function to reduce its average "
         "response length by 20% without losing correctness — shorter code "
         "compiles faster and has fewer syntax errors."
     )),
-    (1.01, "quality_scoring", (
-        "add or improve a helper function that scores a candidate code string "
-        "on three dimensions: has_imports, has_function_def, no_prose_sentences. "
-        "Return a 0-3 int quality score, used to pre-filter LLM output before "
-        "sandbox testing."
-    )),
+    # quality_scoring PAUSED 2026-07-21 (self edit loop review, same session
+    # as the "learned avoidance"/"metabolism" work): same non-convergence
+    # shape as prose_stripping above — 6 attempts, each a near-duplicate
+    # reimplementation (score_candidate_code, score_response_quality,
+    # update_question_quality, score_code_quality, CodeQualityEvaluator),
+    # none landing on something that actually works. The 6th and most
+    # recent attempt was live in production with two hallucinated function
+    # calls (app.emergent_scheduler.schedule_code_generation,
+    # app.core.self_edit_outcome_tracker.load_outcomes — neither exists)
+    # and a missing `import re` despite calling re.search() — the exact
+    # missing-import failure mode prose_stripping's own rewrite above was
+    # built to fix, recurring in a different family. It never crashed
+    # anything only because apply_to_code landed nested inside a class
+    # instead of at module level, making it invisible to
+    # _apply_self_edit_output()'s module-level getattr() lookup — safe by
+    # accident, not by design. self_edit_generated.py reset to the clean,
+    # honestly-inert baseline in the same change (Finding 31 precedent —
+    # it's self-edit's own output, not hand-authored, so a reset was
+    # judged more honest than hand-patching a fourth broken version).
+    # Removing this tuple means response_shortening's threshold above now
+    # covers the full 0.0-1.01 range — quality_scoring is skipped
+    # entirely, no change to the selection loop itself.
+    # (1.01, "quality_scoring", (
+    #     "add or improve a helper function that scores a candidate code string "
+    #     "on three dimensions: has_imports, has_function_def, no_prose_sentences. "
+    #     "Return a 0-3 int quality score, used to pre-filter LLM output before "
+    #     "sandbox testing."
+    # )),
 ]
 
 

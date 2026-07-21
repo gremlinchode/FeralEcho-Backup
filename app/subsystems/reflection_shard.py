@@ -146,13 +146,15 @@ class ReflectionShard:
         dependency this loop can't survive without.
         """
         try:
-            from app.mlx_handler import stream_query_mlx, list_mlx_models
-            mlx_path = list_mlx_models().get(REFLECTION_MODEL_NAME, {}).get("mlx_path")
-            if not mlx_path:
-                return None
-            text = "".join(
-                stream_query_mlx(prompt, mlx_path, model_name=REFLECTION_MODEL_NAME, max_tokens=max_tokens)
-            ).strip()
+            # 2026-07-21: was a raw stream_query_mlx() call, returning None
+            # (falling to the prior offline/template behavior) whenever
+            # mlx:gemma3 specifically was unavailable, including during
+            # crash_awareness.py's own avoidance windows (built the same
+            # night). generate_with_ollama_fallback() tries a real Ollama
+            # model in that case instead, so reflections stay genuinely
+            # generated rather than falling back to retired templates.
+            from app.mlx_handler import generate_with_ollama_fallback
+            text = generate_with_ollama_fallback(prompt, REFLECTION_MODEL_NAME, max_tokens=max_tokens)
             return text or None
         except Exception:
             return None

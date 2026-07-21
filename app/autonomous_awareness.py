@@ -24,7 +24,7 @@ from app.core.memory_bridge import log_dream_bridge
 from app.core.awareness_tools_integration import discover_and_register_tools
 from app.core.stillness_state import wait_for_activity, is_in_stillness
 from app.core.garden_manager import harvest_question
-from app.mlx_handler import stream_query_mlx, list_mlx_models
+from app.mlx_handler import generate_with_ollama_fallback
 
 # --- Configuration ---
 AWARENESS_SLEEP = 1800   # seconds between full awareness cycles (tool discovery, env learning, etc.)
@@ -254,12 +254,6 @@ def dream_cycle():
 
     memories = _sample_diverse_set(candidates, n=5)
 
-    mlx_pool = list_mlx_models()
-    mlx_path = mlx_pool.get(DREAM_MODEL_NAME, {}).get("mlx_path")
-    if not mlx_path:
-        logger.debug(f"[Dream] {DREAM_MODEL_NAME} not configured — skipping this cycle.")
-        return
-
     numbered = "\n".join(f"{i}. {m['text'][:300]}" for i, m in enumerate(memories, 1))
     seed_ids = [m["id"] for m in memories]
 
@@ -269,7 +263,12 @@ def dream_cycle():
         f"Follow whatever connection or image arises between them — this doesn't "
         f"need to resolve or make complete sense. This is a dream, not an answer."
     )
-    dream_text = "".join(stream_query_mlx(dream_prompt, mlx_path, model_name=DREAM_MODEL_NAME, max_tokens=300)).strip()
+    # 2026-07-21: was a raw stream_query_mlx() call gated on a pre-checked
+    # mlx_path, which meant the whole dream cycle silently skipped whenever
+    # mlx:gemma3 was unavailable, including during crash_awareness.py's own
+    # avoidance windows (built the same night). generate_with_ollama_fallback()
+    # tries a real Ollama model in that case instead of skipping the cycle.
+    dream_text = generate_with_ollama_fallback(dream_prompt, DREAM_MODEL_NAME, max_tokens=300)
     if not dream_text:
         logger.debug("[Dream] Empty generation — skipping this cycle.")
         return
@@ -291,9 +290,7 @@ def dream_cycle():
         f"Is there a real pattern that connects them? Answer in 1-2 sentences. "
         f"If nothing genuinely connects them, say so plainly rather than forcing it."
     )
-    synthesis_text = "".join(
-        stream_query_mlx(synthesis_prompt, mlx_path, model_name=DREAM_MODEL_NAME, max_tokens=200)
-    ).strip()
+    synthesis_text = generate_with_ollama_fallback(synthesis_prompt, DREAM_MODEL_NAME, max_tokens=200)
 
     if synthesis_text:
         log_dream_bridge(
@@ -329,9 +326,7 @@ def dream_cycle():
         f"{question_source}\n\nIn one sentence, what open question does that raise "
         f"for you? Respond with only the question itself, nothing else."
     )
-    question_text = "".join(
-        stream_query_mlx(question_prompt, mlx_path, model_name=DREAM_MODEL_NAME, max_tokens=200)
-    ).strip()
+    question_text = generate_with_ollama_fallback(question_prompt, DREAM_MODEL_NAME, max_tokens=200)
     if "?" in question_text:
         harvest_question(question_text, category="dream", source="dream")
     else:

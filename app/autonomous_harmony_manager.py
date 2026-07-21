@@ -102,11 +102,8 @@ def _generate_nature_insight(pattern: str, seed_lines: list, reason: str = "") -
     regardless of why Harmony fired.
     """
     try:
-        from app.mlx_handler import stream_query_mlx, list_mlx_models
+        from app.mlx_handler import generate_with_ollama_fallback
         model_name = "mlx:gemma3"
-        mlx_path = list_mlx_models().get(model_name, {}).get("mlx_path")
-        if not mlx_path:
-            raise RuntimeError(f"{model_name} not configured")
         context_line = _REASON_CONTEXT.get(reason, "")
         prompt = (
             f"You are reflecting through the lens of '{pattern.replace('_', ' ')}' — "
@@ -117,9 +114,13 @@ def _generate_nature_insight(pattern: str, seed_lines: list, reason: str = "") -
             f"actually thinking about right now. Do not repeat the inspiration "
             f"text verbatim — say something genuinely different."
         )
-        result = "".join(
-            stream_query_mlx(prompt, mlx_path, model_name=model_name, max_tokens=80)
-        ).strip()
+        # 2026-07-21: was a raw stream_query_mlx() call that raised (and fell
+        # to the seed lines below) whenever mlx:gemma3 specifically was
+        # unavailable, including during crash_awareness.py's own avoidance
+        # windows — generate_with_ollama_fallback() tries a real Ollama
+        # model in that case instead, so this stays genuine generation
+        # rather than falling all the way to the canned patterns.
+        result = generate_with_ollama_fallback(prompt, model_name, max_tokens=80)
         if result and "[ERROR]" not in result:
             return result
         # liveness_ledger.py's nature_spark check (2026-07-13) found this

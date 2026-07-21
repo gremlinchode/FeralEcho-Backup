@@ -194,3 +194,52 @@ def patch_model_pool() -> None:
         logging.info(f"[MLX] Registered into MODEL_POOL: {list(mlx_pool.keys())}")
     except Exception as e:
         logging.warning(f"[MLX] MODEL_POOL patch failed: {e}")
+
+
+def generate_with_ollama_fallback(
+    prompt: str,
+    mlx_model_name: str,
+    max_tokens: int = 300,
+    ollama_fallback_model: str = "llama3.2:3b",
+    system: str = None,
+) -> str:
+    """
+    Try the named MLX model first; if it's unavailable — crash_awareness.py's
+    avoidance engaged (2026-07-21), or genuinely unconfigured — fall back to
+    a real Ollama model instead of jumping straight to canned/template
+    output. Added after avoidance (built the same night) was found to force
+    autonomous_harmony_manager.py's Nature Spark, autonomous_awareness.py's
+    dream cycle, and reflection_shard.py's real reflections into permanent
+    fixed-string/template fallback for the whole avoidance window — none of
+    the three had any fallback besides MLX, so "genuine generation
+    unavailable" (their own documented trigger for the canned fallback)
+    became true for hours at a stretch instead of the rare edge case it was
+    designed around.
+
+    Always returns a string (possibly empty on total failure) — a drop-in
+    replacement for the "".join(stream_query_mlx(...)).strip() pattern
+    every call site already used, so callers' existing empty-string/
+    "[ERROR]" handling needs no other change. Never raises.
+    """
+    try:
+        mlx_path = list_mlx_models().get(mlx_model_name, {}).get("mlx_path")
+        if mlx_path:
+            text = "".join(
+                stream_query_mlx(prompt, mlx_path, model_name=mlx_model_name, max_tokens=max_tokens, system=system)
+            ).strip()
+            if text and "[ERROR]" not in text:
+                return text
+    except Exception as e:
+        logging.debug(f"[MLX] {mlx_model_name} generation failed, trying Ollama fallback: {e}")
+
+    try:
+        from app.ollama_handler import stream_query_ollama
+        text = "".join(
+            stream_query_ollama(prompt, model=ollama_fallback_model, max_tokens=max_tokens, system=system)
+        ).strip()
+        if text and "[ERROR]" not in text:
+            return text
+    except Exception as e:
+        logging.debug(f"[MLX] Ollama fallback ({ollama_fallback_model}) also failed: {e}")
+
+    return ""

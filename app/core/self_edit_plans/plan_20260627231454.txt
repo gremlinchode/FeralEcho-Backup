@@ -1,0 +1,8 @@
+Here is my response:
+
+1. Import the necessary module from `app.core.self_edit_generated` using `from app.core.self_edit_generated import strip_prose`
+2. Load the existing function `strip_prose` to modify
+3. Modify the original function by adding a conditional check for leading natural-language sentences before the first valid Python token
+4. Implement the new guard using regular expressions (regex) or string manipulation techniques to detect and strip the unwanted prose
+5. Update the modified function with the new guard logic
+6. Save the modified `strip_prose` function in app/core/self_edit_generated.py

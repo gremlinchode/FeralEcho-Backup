@@ -1,0 +1,10 @@
+Here is the output in the required format:
+
+1. Import necessary modules from `app.core.self_edit_generated`: `score_code_string`, `calculate_awareness_score`.
+2. Define a new function `refactor_reasoning_code` to modify the existing code-generation function.
+3. In `refactor_reasoning_code`, load the original code-generation function from `self_edit_generated.py`.
+4. Analyze the original code-generation function's logic and identify potential areas for reduction in average response length (e.g., redundant code, unnecessary variables).
+5. Implement these changes within the refactored code-generation function.
+6. Calculate the new average response length after refactoring using `score_code_string` and compare to the original average response length.
+7. If the new average response length is 20% shorter without losing correctness, return the refactored code-generation function as the new main function.
+8. Update the original `self_edit_generated.py` file with the refactored code-generation function.

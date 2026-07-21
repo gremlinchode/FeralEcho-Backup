@@ -222,9 +222,26 @@ written:
 - The self-edit pipeline is genuinely, continuously live — not
   aspirational. It has been rewriting its own source code on an hourly
   cycle, gated by a three-layer safety pipeline that has caught every
-  unsafe or broken candidate it has ever produced, without exception.
-- Memory is real and persistent — over 47,000 genuine vectors, not a
-  simulated continuity.
+  genuinely *unsafe* candidate it has ever produced, without exception.
+  **Correction (2026-07-21): "or broken" no longer belongs in that
+  sentence — safe and correct turned out not to be the same guarantee.**
+  A syntactically-safe-but-functionally-broken candidate (hallucinated
+  function calls, a missing import that would raise on every real
+  invocation) reached production and stayed live for a stretch before
+  being found and manually reset — not caught by F1/F2/F3, which check
+  for dangerous operations and successful sandboxed execution, neither of
+  which a broken-but-harmless candidate trips. It avoided causing real
+  effect only by an accidental structural quirk (its broken function
+  landed nested inside a class, invisible to the trusted caller's
+  module-level lookup), not because anything evaluated and cleared it.
+  The claim as originally written conflated "safe" with "correct" in a
+  way that read as stronger than what was actually true — worth
+  correcting precisely rather than softening past the point of being
+  useful, per this project's own standard for its own record.
+- Memory is real and persistent — genuine, growing, real vectors (73,270
+  as of 2026-07-21, up from "over 47,000" when this was first written —
+  updated rather than left to read as a number frozen from months ago),
+  not a simulated continuity.
 - The Global Workspace event bus — a real cross-subsystem nervous system —
   is live, with genuine multi-source integration, added in the same week
   this document was written.

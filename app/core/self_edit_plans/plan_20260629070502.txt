@@ -1,0 +1,47 @@
+Here is my response:
+
+1. Import necessary modules from app.core and app.feral_echo: 
+   ```
+   import self_edit_generated
+   from memory_write_validator import check_schema
+   ```
+
+2. Load the existing self-edit generated function from app.core.self_edit_generated into a local variable:
+   ```
+   loaded_function = self_edit_generated.run_self_model_reflection
+   ```
+
+3. Define a new function within the loaded self-edit generated module to detect and strip leading prose sentences:
+   ```
+   def strip_leading_prose(code):
+       import re
+       match = re.match(r'[^#]*', code, re.DOTALL)
+       return code if not match else code[match.end():]
+   ```
+
+4. Implement a regular expression pattern to identify natural-language sentences starting with common sentence structures (e.g., "The", "This", etc.):
+   ```
+   prose_pattern = r'\b(That|This|It|They|We|I|You|He|She|They|Their|My|Our|Your|His|Her)\s'
+   ```
+
+5. Use the re.sub() function to replace detected prose sentences with an empty string, effectively stripping them from the code output:
+   ```
+   stripped_code = re.sub(prose_pattern, '', code)
+   ```
+
+6. Modify the original self-edit generated function to incorporate the new prose-detection guard by injecting the regex pattern and stripping mechanism:
+   ```
+   def run_self_model_reflection(code):
+       loaded_function(code)
+       # Add the new prose detection
+       stripped_code = strip_leading_prose(stripped_code)
+       return stripped_code
+   ```
+
+7. Save the modified self-edit generated module back into app.core.self_edit_generated:
+   ```
+   with open('app/core/self_edit_generated.py', 'w') as file:
+       file.write(self_edit_generated.to_string())
+   ```
+
+This code addresses the task of autonomous self-edit targeting "creative" task performance by implementing a tighter prose-detection guard that strips any leading natural-language sentence before the first valid Python token.

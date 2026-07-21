@@ -1,0 +1,9 @@
+1. Import the necessary module from app.core.self_edit_generated: `from app.core.self_edit_generated import strip_prose`
+2. Load the self-edit function from the same module: `self_edit = load('strip_prose')`
+3. Define a new function, `prose_guard`, that takes a code string as input and applies the strip_prose function to remove any leading natural-language sentence: `def prose_guard(code): return self_edit(code)`
+4. Modify the existing `score_code_candidate` function in app.core.self_edit_generated.py to use the newly defined `prose_guard`: `candidate_code = prose_guard(candidate_code)`
+5. In the same file, replace all occurrences of `strip_prose` with `prose_guard`
+6. Update the `SelfEditGenerated` class to include the new `prose_guard` function as a method: `class SelfEditGenerated:` ...`, def prose_guard(self, code): return self_edit(code)`
+7. Implement the same logic for the `score_code_candidate` function in the updated class: `def score_code_candidate(self, candidate_code): candidate_code = self.prose_guard(candidate_code) ...`
+
+Note that these steps assume a headless Python environment without user interaction and focus on modifying the app/core/self_edit_generated.py file to implement a tighter prose-detection guard.

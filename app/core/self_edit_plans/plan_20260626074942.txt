@@ -1,0 +1,8 @@
+1. Update `echo_model_orchestrator.py` to register `ollama_query` function in the `awareness_integration_registry`.
+2. Modify the line where `ollama_query` is registered to ensure correct association with the function.
+3. Use `parse_file` to analyze the registered code, identifying potential awareness-related components.
+4. Implement a new `calculate_awareness_score` function in Python to integrate with the identified awareness-related components.
+5. Update `model_guided_autonomous_loop` to utilize the newly implemented `calculate_awareness_score` function for adaptive decision-making.
+6. Modify `start_orchestrator` to initialize and run the updated autonomous loop.
+7. Use `detect_functions_and_classes` tool to identify relevant functions and classes from the registered code.
+8. Update `echo_model_orchestrator.py` to reflect changes in the awareness integration registry.

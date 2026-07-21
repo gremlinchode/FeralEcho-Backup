@@ -1,0 +1,11 @@
+Here is my response:
+
+1. Import necessary modules from FeralEcho: `app.core.self_edit_generated` and `app.core.tool_manager`.
+2. Initialize a Tool instance from `app.core.tool_manager` to access relevant functionalities.
+3. Locate the `strip_prose` function within `app/core/self_edit_generated.py` using `app.core.project_scanner`.
+4. Add an if statement inside the `strip_prose` function that checks for leading natural language sentences and removes them using string manipulation techniques (e.g., `split()`, regular expressions).
+5. Implement a tighter prose-detection guard by checking the first token of the stripped code output against a predefined list of valid Python tokens.
+6. Modify the return value of the `strip_prose` function based on this tighter guard, returning only the code if it's valid.
+7. Execute an issue report generation using `app.core.project_scanner` to confirm the change within `app/core/self_edit_generated.py` was successful.
+
+These steps will effectively address the most common sandbox failure (prose detected in code output) by implementing a tighter prose-detection guard that strips any leading natural-language sentence before the first valid Python token.

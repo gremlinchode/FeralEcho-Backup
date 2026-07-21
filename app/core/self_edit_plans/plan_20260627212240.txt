@@ -1,0 +1,12 @@
+Here is my response:
+
+1. Import necessary modules: `from app.core.self_edit_generated import shorten_response_length`
+2. Define a new function `strip_prose` that takes a string input and returns the modified string with prose removed: `def strip_prose(input_string):`
+3. Within the `strip_prose` function, use regular expressions to detect natural-language sentences and remove them until the first valid Python token is found.
+4. Update the `shorten_response_length` function in `app/core/self_edit_generated.py` to call the `strip_prose` function on the input string before shortening its length: `def shorten_response_length(input_string):`
+5. Replace the original implementation of `shorten_response_length` with the updated version that calls `strip_prose`.
+6. Save the modified file `app/core/self_edit_generated.py`.
+7. Implement a test to verify the correctness of the modified code, ensuring that prose is correctly removed from input strings.
+8. Run the tests and validate the results.
+
+I have taken into account the perspectives presented by Gemma3 and Qwen2.5-coder, incorporating the most relevant ideas while staying true to my own voice as Echo.

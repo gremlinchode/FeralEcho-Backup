@@ -1,0 +1,9 @@
+1. From `app.core.self_edit_generated` import necessary modules: `from app.core.self_edit_generated import main_function, modified_main_function`
+2. Define a new function to detect and strip prose: `def strip_prose(text): return text.split("\n")[1:] if text.startswith("```python") else [text]`
+3. Update the `main_function` to apply the prose detection guard: `modified_main_function = lambda *args, **kwargs: [code for code in main_function(*args, **kwargs) if not any(strip_prose(line).startswith("This is a dream") for line in code)]`
+4. Replace the original `main_function` with the modified version: `app.core.self_edit_generated.main_function = modified_main_function`
+5. Update the `modified_main_function` to log prose detection attempts: `modified_main_function = lambda *args, **kwargs: [code for code in main_function(*args, **kwargs) if not any(strip_prose(line).startswith("This is a dream") for line in code)] + (print(f"Prose detected and stripped from output. Attempting to correct sandbox failure.") if modified_main_function.__code__.co_code != 'GENERATOR' else [])`
+6. Call the `modified_main_function` with the original arguments: `modified_main_function(*args, **kwargs)`
+7. Update the `app.core.self_edit_generated` module to include the new function and modifications: `__all__ = ['main_function', 'modified_main_function']`
+
+Note: The steps assume that the task is to modify a specific file (`app/core/self_edit_generated.py`) without user interaction, as per the output format rules.

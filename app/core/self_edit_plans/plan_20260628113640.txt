@@ -1,0 +1,9 @@
+Here is my response:
+
+1. Import `strip_prose` from `app.core.self_edit_generated`.
+2. Open the file `self_edit_generated.py` for editing.
+3. Scan the file contents using `parse_file` to identify code blocks and detect prose presence.
+4. Use `detect_functions_and_classes` to scan the file's function and class definitions.
+5. Implement a loop that iterates over each identified code block, checking if it starts with a natural-language sentence using `get_most_negative_verse`.
+6. If a code block contains prose, strip it using `strip_prose` and re-write the modified code.
+7. Verify the integrity of the file by running `check_schema` from `memory_write_validator`.

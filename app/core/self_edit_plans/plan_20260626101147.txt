@@ -1,0 +1,8 @@
+1. Import the `ollama_handler` module from `app`: `from app import ollama_handler`
+2. Check if Ollama is running: `ollama_running = ollama_handler.is_ollama_running()`
+3. If not, start Ollama server: `ollama_handler.start_ollama_server()` (only run this step if `ollama_running` is False)
+4. Construct prompt for Ollama query: `"Describe the awareness integration process in detail."`
+5. Send prompt to Ollama and retrieve response as a string: `ollama_response = ollama_handler.query_ollama(prompt)`
+6. Parse retrieved string from `query_ollama()` to extract relevant information about awareness integration steps
+7. Store extracted awareness integration details in memory journal with metadata indicating source (Ollama): `app.core.memory_tools.append_memory_entry(response, "Ollama Query")`
+8. Register the 'ollama_query' function with Echo's model orchestrator using `generate_parameter_hints()`

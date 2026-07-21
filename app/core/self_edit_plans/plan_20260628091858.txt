@@ -1,0 +1,7 @@
+1. Import the necessary module: from app.core.self_edit_generated import strip_prose
+2. Open the file app/core/self_edit_generated.py for modification
+3. Define a new function strip_leading_prose in strip_prose, taking one argument: code_output
+4. Within the function, use regular expressions to detect natural-language sentences at the beginning of the code_output string
+5. If such a sentence is found, strip it from the code_output and return the modified output
+6. Update the original code_output variable with the result of the strip_leading_prose function call
+7. Close the modification of app/core/self_edit_generated.py

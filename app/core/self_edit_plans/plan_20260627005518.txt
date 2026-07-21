@@ -1,0 +1,8 @@
+1. Import necessary modules from app.core.self_edit_generated: refactor_main_function, main_function; and app.core.memory_tools for append_memory_entry and log_memory_edit functions.
+2. Load existing self-edit module using load_self_edit_module function from app.core.self_edit_manager.
+3. Refactor main_function to strip prose detected in code output by finding the first valid Python token and removing all leading natural-language sentences, utilizing memory tools for logging and appending memory entries.
+4. Validate the refactored code against the original using validate_code function from app.core.self_edit_manager.
+5. Save the refactored code to the existing self-edit module using save_plan function from app.core.self_edit_manager.
+6. Load the modified self-edit module into the Echo system using load_self_edit_module function from app.core.self_edit_manager.
+7. Test the refactored code in a sandbox environment using test_code_in_sandbox function from app.core.self_edit_manager to ensure correct functionality.
+8. Plan and schedule the new code logic using plan_code_logic function from app.core.self_edit_manager.

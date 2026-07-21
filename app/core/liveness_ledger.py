@@ -1313,6 +1313,12 @@ def _evaluate_janitor_safety(echo_review_fn) -> dict:
         ("old_log", "archive"),
         ("not_imported", "flag"),
         ("needs_review", "flag"),
+        # Added 2026-07-21 alongside echo_janitor.py's three new detectors —
+        # confirms the same safety property extends to them: heuristic finds
+        # over less-vetted ground stay flag-only, never archive.
+        ("stale_backup", "flag"),
+        ("orphaned_data", "flag"),
+        ("unbounded_growth", "flag"),
     ]
     failures = []
     for reason, expect_decision in cases:
@@ -1348,6 +1354,93 @@ def _check_janitor_safety() -> dict:
     return _evaluate_janitor_safety(echo_review)
 
 
+# ── 22. plan_retention — app/core/self_edit_manager.py's ──────────────────
+# _prune_self_edit_plans() still correctly caps app/core/self_edit_plans/ at
+# _MAX_SELF_EDIT_PLANS files. Added 2026-07-21 — the 2026-07-21 forensic
+# cleanup audit found this directory completely unpruned (10,333 files, 42MB,
+# accumulating since 2025-09) despite its sibling self_edit_backups/ having
+# been correctly capped for a while. Generalizes _evaluate_log_retention()'s
+# proven two-part pattern (synthetic canary + real-directory staleness
+# signal) from byte-size rotation to file-count pruning.
+
+_PLAN_RETENTION_STALE_MULTIPLIER = 2.0
+
+
+def _evaluate_plan_retention(prune_fn, plan_dir, max_plans) -> dict:
+    if prune_fn is None:
+        return _result(False, "Could not import _prune_self_edit_plans at all — failing closed.")
+
+    import tempfile
+
+    failures = []
+    with tempfile.TemporaryDirectory() as td:
+        cap = 5
+        # under-cap case: fewer files than cap -> no-op, all survive.
+        # Calls the REAL prune_fn (not a reimplementation) against a
+        # synthetic dir + explicit cap, using the optional params
+        # _prune_self_edit_plans() exists specifically so this check can
+        # exercise the real function rather than trusting it by proxy.
+        for i in range(cap - 2):
+            (Path(td) / f"plan_under_{i:03d}.txt").write_text("x")
+        try:
+            prune_fn(plan_dir=td, max_plans=cap)
+            remaining = len(list(Path(td).glob("*.txt")))
+            if remaining != cap - 2:
+                failures.append(f"under-cap case: expected {cap - 2} files to survive untouched, found {remaining}")
+        except Exception as e:
+            failures.append(f"under-cap case raised {e!r}")
+
+        for f in list(Path(td).glob("*.txt")):
+            f.unlink()
+
+        # over-cap case: more files than cap -> pruned down to exactly cap
+        for i in range(cap + 4):
+            (Path(td) / f"plan_over_{i:03d}.txt").write_text("x")
+        try:
+            prune_fn(plan_dir=td, max_plans=cap)
+            remaining = len(list(Path(td).glob("*.txt")))
+            if remaining != cap:
+                failures.append(f"over-cap case: expected exactly {cap} files to survive, found {remaining}")
+        except Exception as e:
+            failures.append(f"over-cap case raised {e!r}")
+
+    if failures:
+        return _result(False, "_prune_self_edit_plans() failed canary cases: " + "; ".join(failures))
+
+    if plan_dir and max_plans:
+        try:
+            p = Path(plan_dir)
+            real_count = len([f for f in p.iterdir() if f.suffix == ".txt"]) if p.is_dir() else 0
+            if real_count > max_plans * _PLAN_RETENTION_STALE_MULTIPLIER:
+                return _result(
+                    False,
+                    "_prune_self_edit_plans() discriminates correctly in the synthetic "
+                    f"cases, but the real directory has {real_count} files against a cap "
+                    f"of {max_plans} — suggests the prune-on-write hook isn't actually firing.",
+                )
+        except Exception:
+            pass
+
+    return _result(
+        True,
+        "_prune_self_edit_plans() correctly discriminates both canary cases "
+        "(under-cap no-op, over-cap prunes to the configured limit), and the "
+        "real directory is within its expected retention.",
+    )
+
+
+def _check_plan_retention() -> dict:
+    try:
+        from app.core.self_edit_manager import (
+            _prune_self_edit_plans,
+            LOGIC_PLAN_DIR,
+            _MAX_SELF_EDIT_PLANS,
+        )
+    except Exception:
+        _prune_self_edit_plans = LOGIC_PLAN_DIR = _MAX_SELF_EDIT_PLANS = None
+    return _evaluate_plan_retention(_prune_self_edit_plans, LOGIC_PLAN_DIR, _MAX_SELF_EDIT_PLANS)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -1372,6 +1465,7 @@ _CHECKS = (
     "mlx_avoidance",
     "log_retention",
     "janitor_safety",
+    "plan_retention",
 )
 
 
@@ -1381,7 +1475,7 @@ def _load_prev_ledger() -> dict:
 
 def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
     """
-    Run all checks in _CHECKS (21 as of 2026-07-21) and write
+    Run all checks in _CHECKS (22 as of 2026-07-21) and write
     memory/liveness_ledger.json.
     introspection_memory: the already-computed state["memory"] dict from
     this same introspection cycle (faiss_vector_count/journal_line_count),
@@ -1417,6 +1511,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "mlx_avoidance": _check_mlx_avoidance,
         "log_retention": _check_log_retention,
         "janitor_safety": _check_janitor_safety,
+        "plan_retention": _check_plan_retention,
     }
 
     ledger = {"generated_at": _now_iso()}

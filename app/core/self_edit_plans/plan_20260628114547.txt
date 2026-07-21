@@ -1,0 +1,7 @@
+1. Import necessary modules from feralEcho, including `app.core.self_edit_generated` and `strip_prose`.
+2. Load the self_edit_generated module for modification using `load_project_map` from `app.core.load_project_map`.
+3. Define a new function within self_edit_generated to refactor the main code-generation function.
+4. Within the refactored function, implement a logic to reduce the average response length by 20% without losing correctness by analyzing complexity and applying simplification techniques such as extracting repetitive code into separate functions, removing redundant comments, and optimizing variable usage.
+5. Apply the refactored function to the original code-generation function to replace it using `run_random_sandbox_script` from `app.core.sandbox_interface`.
+6. Save the modified self_edit_generated module.
+7. Run unit tests to verify the functionality and correctness of the refactored code-generation function.

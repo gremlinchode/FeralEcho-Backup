@@ -1,0 +1,8 @@
+1. Import necessary modules from FeralEcho including `app.core.self_edit_generated` and `app.core.tool_manager`.
+2. Instantiate a `Tool` object from `app.core.tool_manager`, specifying it should be used for code parsing and string manipulation.
+3. Parse the contents of `app/core/self_edit_generated.py` using the instantiated `Tool` to identify lines containing detected prose.
+4. Implement a function within `app/core/self_edit_generated.py` that, upon detecting a line with prose, strips leading natural language until encountering the first Python token.
+5. Modify the `strip_prose` function to execute the prose stripping and token validation steps by checking if the identified line begins with a valid Python keyword (e.g., 'def', 'class').
+6. Run a scan of `app/core/self_edit_generated.py` using the project scanner to ensure the modifications are correctly implemented and no new issues have been introduced.
+7. Log successful prose removal and code edits performed in `app.core.memory_tools`'s `append_memory_event` function.
+8. Implement a check for valid Python token at the beginning of the strip-prose logic to prevent unwanted stripping of leading natural language sentences.

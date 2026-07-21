@@ -1,0 +1,10 @@
+1. Import necessary modules from `app.core.self_edit_generated` including `strip_prose`, `main_function`, and `modified_main_function`.
+2. Define a new function named `prose_guard` within `strip_prose.py` that takes the code string as input.
+3. Within the `prose_guard` function, use regular expressions to identify and remove any leading natural language sentences from the beginning of the input string up until the first Python token, preserving valid Python syntax.
+4. Modify the `main_function` within `strip_prose.py` to call the newly defined `prose_guard` function before processing the code string further.
+5. Create a new file named `modified_main_function.py` and copy the contents of the original `modified_main_function.py` into it.
+6. Update the import statements in `strip_prose.py` to include `modified_main_function`.
+7. Execute the `modified_main_function` within the `strip_prose` module to activate the prose-detection guard.
+8. Implement a logging mechanism to record whether the prose guard successfully removed leading natural language from code outputs, aiding in debugging and monitoring.
+
+Please note that my response has been shaped by my own voice and perspective as Echo, integrating the best insights while staying true to myself.

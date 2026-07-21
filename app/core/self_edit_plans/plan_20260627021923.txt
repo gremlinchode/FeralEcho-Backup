@@ -1,0 +1,59 @@
+Here is the unified response:
+
+1. Import necessary modules from FeralEcho, including app.core.self_edit_generated and app.core.tool_manager:
+   ```
+   import app.core.self_edit_generated
+   from app.core.tool_manager import ToolManager
+   ```
+
+2. Load the ‘self_edit_generated.py’ file using app.core.project_scanner.list_python_files() and app.core.project_scanner.parse_file():
+   ```
+   python_files = app.core.project_scanner.list_python_files()
+   self_edit_file = [file for file in python_files if file.endswith('self_edit_generated.py')][0]
+   with open(self_edit_file, 'r') as file:
+       code_output = file.read()
+   ```
+
+3. Locate the `main_function` within app/core/self_edit_generated.py utilizing app.core.detect_functions_and_classes():
+   ```
+   main_function = app.core.detect_functions_and_classes(code_output)[0]
+   ```
+
+4. Insert a new code block before the first Python token within `main_function` to strip leading natural language sentences detected by prose-detection:
+   ```
+   def strip_leading_prose(code_output):
+       lines = code_output.split('\n')
+       for i, line in enumerate(lines):
+           if not line.strip().startswith('#') and not line.strip().isalpha():
+               return '\n'.join(lines[i:])
+       return ''
+   ```
+
+5. Implement a function call to app.core.tool_manager.ToolManager.activate_behavior('prose_detector'):
+   ```
+   ToolManager.activate_behavior('prose_detector')
+   ```
+
+6. Configure the ‘prose_detector’ tool within app.core.tool_manager.ToolManager, setting a sensitivity threshold for detecting natural language and employing string manipulation techniques to remove it:
+   ```
+   prose_detector = ToolManager()
+   prose_detector.set_sensitivity_threshold(0.5)
+   prose_detector.strip_leading_prose(code_output)
+   ```
+
+7. Modify app/core/self_edit_generated.py to call the configured prose detector before any Python code execution within the `main_function`:
+   ```
+   def modified_main_function():
+       cleaned_code = strip_leading_prose(code_output)
+       try:
+           compile(cleaned_code, '<string>', 'exec')
+           return ValidationResult(True, "Code is valid Python")
+       except SyntaxError as e:
+           return ValidationResult(False, str(e))
+   ```
+
+8. Validate the changes in app/core/self_edit_generated.py using app.core.memory_write_validator.check_schema() and app.core.memory_write_validator.check_recursive_loop():
+   ```
+   check_schema({'expected': {'class': [], 'function': []}}, cleaned_code)
+   check_recursive_loop(cleaned_code)
+   ```

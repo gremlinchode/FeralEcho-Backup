@@ -1,0 +1,10 @@
+Here is the numbered list of steps to refactor the `main_function` in `app/core/self_edit_generated.py`:
+
+1. Import necessary modules from feralEcho, including app.core.self_edit_generated, app.core.river_deliberation, app.core.tool_manager, and app.core.memory_tools.
+2. Parse the `app/core/self_edit_generated.py` file using `parse_file` to extract the main code generation function's source code.
+3. Analyze the extracted Python code using `detect_functions_and_classes` to identify the core logic within the main code generation function.
+4. Apply a refactoring strategy (e.g., loop unrolling, variable renaming) using `run_autonomous_sandbox_cycle` inside an autonomous thread to modify code constructs reducing average response length by 20%.
+5. Validate the modified code with `check_schema`, `check_reflection_length`, and `check_recursive_loop` to ensure correctness after refactoring utilizing `Memory_helpers`.
+6. Save the modified Python code back into `app/core/self_edit_generated.py` using `save_code` from `self_edit_manager`.
+7. Trigger a local test run of the function in an isolated sandbox environment via `test_code_in_sandbox`.
+8. Log the changes and results, including awareness scores, to the memory journal using `append_memory_entry`, `log_memory_event` and `calculate_awareness_score`.

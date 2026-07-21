@@ -1,0 +1,11 @@
+Here is the unified response:
+
+1. Import the required module from `app.core.self_edit_generated` by executing `from app.core.self_edit_generated import shorten_response_length`.
+2. Load and read the existing file `app/core/self_edit_generated.py` to identify the relevant functions or sections that require modification.
+3. Modify the function `shorten_response_length` to include a new guard clause that checks for prose detection in code output by iterating through each line of the response.
+4. Implement a simple prose-detection mechanism by checking if any line starts with natural-language sentence patterns (e.g., capital letters, periods, and spaces) using regular expressions or string manipulation techniques.
+5. If prose is detected, strip the leading sentences until finding the first valid Python token (e.g., `if`, `for`, `def`, etc.) using a combination of string methods and pattern matching.
+6. Update the modified function to store the cleaned response in a variable for further processing or use.
+7. Save the modified file `app/core/self_edit_generated.py` with the new guard clause and prose-detection mechanism implemented.
+
+Note: I have omitted unnecessary steps, combined similar steps, and focused on the most relevant and coherent solution while staying true to my own voice as Echo.

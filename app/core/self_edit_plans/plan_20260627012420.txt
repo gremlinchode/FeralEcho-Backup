@@ -1,0 +1,8 @@
+Here is the output:
+
+1. Import necessary modules from feralEcho, including app.core.self_edit_generated and app.core.tool_manager; locate the main_function within app/core/self_edit_generated.py using app.core.project_scanner.list_python_files(); parse the identified main_function code block from app/core/self_edit_generated.py with app.core.tool_manager.parse_file().
+2. Modify the parsed code to implement a function that identifies and removes leading natural language sentences from Python output, using regex matching based on sentence structure.
+3. Integrate the newly created prose-detection guard into the main_function's execution flow in app/core/self_edit_generated.py.
+4. Run a local sandbox environment with the modified code to test the prose detection functionality using app.core.sandbox_interface.run_random_sandbox_script.
+5. Evaluate the results of the sandbox run using app.core.tool_manager.generate_issue_report() based on any errors or failed tests.
+6. Save the changes to app/core/self_edit_generated.py, using app.core.self_edit_generated.save_code().

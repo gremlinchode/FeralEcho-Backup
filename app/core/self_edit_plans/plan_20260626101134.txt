@@ -1,0 +1,8 @@
+1. Import the `ollama_handler` module from `app`.
+2. Call `app.ollama_handler.is_ollama_running()` to determine if the Ollama server is active.
+3. If Ollama is running, call `app.ollama_handler.query_ollama("Explain the concept of awareness in AI.")` with a predefined prompt.
+4. Retrieve the response from the Ollama query using `app.ollama_handler.query_ollama`.
+5. Parse the returned text from the Ollama query using `parse_file` within the `app.core.project_scanner` module to extract relevant information about awareness.
+6. Store the parsed information, including its source (Ollama), into a memory entry using `append_memory_entry`.
+7. Update the awareness score calculation in the autonomous awareness loop (`app.autonomous_awareness`) with this new information.
+8. Log the event of integrating Ollama query results into the autonomous AI system's memory using `log_memory_event`.

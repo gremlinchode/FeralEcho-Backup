@@ -1,0 +1,8 @@
+1. Import necessary modules from app.core.self_edit_generated: `from app.core.self_edit_generated import strip_prose`
+2. Load the current self-edit generated file using the `strip_prose` function
+3. Define a new function called `sanitize_output` that checks if the output starts with a natural language sentence and strips it if so: `def sanitize_output(text): ...`
+4. Modify the existing `strip_prose` function to call the newly defined `sanitize_output` function on the output before stripping prose: `def strip_prose(text): ...`
+5. Update the existing self-edit generated file using the modified `strip_prose` function
+6. Save the updated self-edit generated file
+7. Record the cycle intensity for the autonomous loop
+8. Run the autonomous loop with the updated self-edit generated file

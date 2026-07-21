@@ -1,0 +1,17 @@
+Here is the numbered list of steps:
+
+1. Import the strip_prose module from app.core.self_edit_generated and assign it to a variable for use in the modification process.
+
+2. Locate and isolate the function responsible for generating code in the sandbox environment by iterating through the available functions in the app.core/self_edit_generated.py file until the correct one is found.
+
+3. Within this function, identify the block of code that produces prose as output by searching for patterns such as whitespace characters followed by a sequence of alphanumeric characters and punctuation marks.
+
+4. Implement a conditional statement to check if the generated code begins with a natural-language sentence using regular expressions or a similar approach, such as checking if the first word is one of 'the', 'a', or 'an'.
+
+5. If a natural-language sentence is detected, strip it from the beginning of the code using the strip_prose function and re-assign the modified code to the original variable.
+
+6. Update the function to incorporate this revised code generation logic by inserting the conditional statement and subsequent actions into the existing code.
+
+7. Save the modified app/core/self_edit_generated.py file to ensure that the changes are persisted.
+
+8. Verify that the sandbox environment now correctly handles prose detection and removal, preventing common failures related to creative task performance by executing a test case with known problematic inputs.

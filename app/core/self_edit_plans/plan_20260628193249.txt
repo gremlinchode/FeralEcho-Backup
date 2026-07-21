@@ -1,0 +1,8 @@
+1. Import the necessary modules from `app.core.self_edit_generated` and define a new function called `score_code_candidate`.
+2. Define the function parameters as a string, indicating the candidate code, and initialize an integer variable to store the quality score, set to 0 by default.
+3. Check if the candidate code contains any imports using a regular expression or a library like `importlib`, and increment the quality score by 1 if found.
+4. Check if the candidate code defines any functions using a regular expression or a library like `ast`, and increment the quality score by another 1 if found.
+5. Count the number of prose sentences in the candidate code and subtract this count from the total quality score.
+6. Return the final quality score as an integer between 0 and 3.
+
+Note: I have not included any interactive elements or user input in these steps, focusing solely on the technical implementation of the `score_code_candidate` function.

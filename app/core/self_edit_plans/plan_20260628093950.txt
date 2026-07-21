@@ -1,0 +1,10 @@
+Here is the numbered list of steps:
+
+1. From `app.core.self_edit_generated`, import `strip_prose` and other relevant tools like `app.core.tool_manager`.
+2. Initialize a `Tool` object using `app.core.tool_manager.Tool()` for streamlined access to modification functions.
+3. Parse the code within `app/core/self_edit_generated.py` using `app.core.project_scanner.parse_file(filepath="app/core/self_edit_generated.py")`.
+4. Identify the main code-generation function within the parsed file, specifically targeting its implementation details and potential inefficiencies.
+5. Implement a refactoring strategy within the identified function focusing on reducing average response length by 20%, prioritizing techniques like concise syntax optimization and redundant code removal based on internal heuristics.
+6. Utilize `app.core.tool_manager.Tool().run_random_sandbox_script()` to execute the modified code-generation function with randomized parameters for testing effectiveness.
+7. Evaluate the output from step 6 using `score_response_quality` within the `weighted_prompt_selection` mechanism of the emergent scheduler to assess performance metrics like response length and compilation success rate.
+8. If the response quality score exceeds a predefined threshold (e.g., -20% reduction in average response length), commit the changes to `app/core/self_edit_generated.py` via `app.core.project_scanner.generate_issue_report()` and subsequent automated file update mechanisms.

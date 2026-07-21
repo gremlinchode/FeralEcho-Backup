@@ -1,0 +1,11 @@
+Here is the unified response:
+
+1. Import necessary modules from `app.core.self_edit_generated` by adding `from app.core.self_edit_generated import *`
+2. Define a new function called `score_candidate_code` inside the same module that takes a candidate code string as input.
+3. Initialize a score variable to 0 within the function.
+4. Check if the code string contains any imports using `if "import" in candidate_code:` and increment the score by 1 if true.
+5. Check if the code string defines any functions using `if "def" in candidate_code:` and increment the score by 1 if true.
+6. Remove all prose sentences (assuming they start with a capital letter) from the code string and count their number using a loop; subtract this count from the total score to ensure no more than 3 points are given for prose sentences.
+7. Return the final score as an integer.
+
+Let me know if you'd like me to elaborate on any of these steps!

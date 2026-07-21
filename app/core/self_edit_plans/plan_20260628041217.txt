@@ -1,0 +1,9 @@
+1. Import necessary modules from `app.emergent_scheduler_backup_20260610` and `app.core.self_edit_generated`.
+2. Load the `strip_prose` function from `app.core.self_edit_generated`.
+3. Define a new function to detect prose in code output by iterating through each line of code, checking if it starts with an uppercase letter or punctuation mark.
+4. Implement a guard clause that strips any leading natural-language sentence before the first valid Python token using the `strip_prose` function.
+5. Modify the existing sandbox script to apply the new guard clause before executing the code.
+6. Update the `run_random_sandbox_script` function in `app.core.sandbox_interface` to utilize the modified sandbox script.
+7. Reload the `self_edit_generated` module with the updated changes.
+
+Note: The steps are designed to be executable without user interaction and focus on modifying the specified file (`app/core/self_edit_generated.py`) to implement a tighter prose-detection guard.

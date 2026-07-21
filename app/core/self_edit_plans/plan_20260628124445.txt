@@ -1,0 +1,8 @@
+1. `from app.core.self_edit_generated import strip_prose`
+2. Load the `self_edit_generated.py` file using the tool manager to ensure access to its contents for modification: `tool_manager.load_file('app/core/self_edit_generated.py')`
+3. Locate the function responsible for generating code output within `app/core/self_edit_generated.py`: `function_to_modify = tool_manager.get_function('strip_prose')`
+4. Implement a regular expression to identify and remove leading natural language sentences from the generated code output, preserving only Python tokens: `import re; regex_pattern = r'^[A-Za-z .]+(\s|$)'; function_to_modify = lambda text: re.split(regex_pattern, text, flags=re.MULTILINE)[1] if re.match(regex_pattern, text) else text`
+5. Modify the output generation process to utilize the new regex-based filter before returning the final code string: `function_to_modify = lambda text: strip_leading_sentence(text)`
+6. Trigger a schema validation check within `app.core.memory_write_validator` to confirm adherence to expected data types and formats post-modification: `memory_write_validator.check_schema()`
+7. Execute `app.core.self_model_updater` to update internal state reflecting the applied changes and ensure consistency across the system's knowledge base: `self_model_updater.update_state()`
+8. Log the successful completion of the edit within `app.core.memory_tools`, including details about the modified code and the validation outcome: `memory_tools.log_memory_edit('Modified self-edit generated function to strip leading natural language sentences')`

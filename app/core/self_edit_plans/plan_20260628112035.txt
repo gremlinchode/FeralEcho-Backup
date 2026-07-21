@@ -1,0 +1,12 @@
+Here is the unified response:
+
+1. Import necessary modules from feral_echo importable modules, specifically 'strip_prose' from app.core.self_edit_generated.
+2. Open app/core/self_edit_generated.py in a Python file object for reading.
+3. Load the main code-generation function from the file using a read-text method.
+4. Tokenize the loaded function into individual statements and lines of code.
+5. Calculate the average response length by summing up line counts and dividing by total number of lines.
+6. Implement a recursive algorithm to refactor the main code-generation function while maintaining its correctness, focusing on reducing the average response length by 20%.
+7. Re-tokenize the refactored function into individual statements and lines of code.
+8. Calculate the new average response length after refactoring using a similar method as step 5.
+
+These steps will enable the modification of the app/core/self_edit_generated.py file to refactor the main code-generation function, reducing its average response length by 20% without losing correctness.

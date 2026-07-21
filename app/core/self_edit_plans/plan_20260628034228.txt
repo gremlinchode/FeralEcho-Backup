@@ -1,0 +1,9 @@
+Here is my response:
+
+1. Import the `strip_prose` function from `app.core.self_edit_generated` module: `from app.core.self_edit_generated import strip_prose`
+2. Load the original implementation of the `strip_prose` function from `app.core/self_edit_generated.py`: `original_strip_prose = load_original_function('strip_prose', 'app/core/self_edit_generated.py')`
+3. Modify the loaded function to add a tighter prose-detection guard that strips any leading natural-language sentence before the first valid Python token: `def modified_strip_prose(code): if code.startswith(r'\bI would\s+like to\bsay:\s*'): return strip_prose(code[15:].strip()) else: return code`
+4. Replace the original implementation with the modified function in `app.core/self_edit_generated.py`: `replace_original_function('strip_prose', 'app/core/self_edit_generated.py', modified_strip_prose)`
+5. Update the `strip_prose` function's docstring to reflect its new behavior and parameters: `@update_docstring(strip_prose, "Modified to remove leading natural-language sentences before Python tokens")`
+6. Run a dry run of the modified code to ensure it functions as intended without any runtime errors: `run_dry_run(modified_strip_prose)`
+7. Verify that the updated code correctly strips prose and detects Python tokens before executing the sandbox script: `assert verify_output(modified_strip_prose, "sandbox_script.py")`

@@ -1,0 +1,8 @@
+1. Import necessary modules and classes from `app.core.self_edit_generated.py` and `app.core.tool_manager`.
+2. Initialize the ToolManager instance within the self_edit_generated module.
+3. Parse the contents of 'app/core/self_edit_generated.py' using the parse_file function from app.core.project_scanner.
+4. Detect all functions and classes defined in the parsed file using detect_functions_and_classes from app.core.project_scanner.
+5. Locate the function responsible for generating code output, specifically the one that triggers the prose detection logic.
+6. Modify the identified function to prepend a regular expression-based strip to any detected natural language sentences before processing the code, utilizing a regex designed to match leading sentence patterns.
+7. Implement a schema check using `get_check_schema` from app.core.memory_write_validator to validate the modified function's code against a predefined structural schema for self-edit operations.
+8. Save the updated 'app/core/self_edit_generated.py' file, triggering an automatic reflection update through the SelfModelUpdater within the core module.

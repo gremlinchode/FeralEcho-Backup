@@ -1,0 +1,11 @@
+Here is the unified response:
+
+1. Import the necessary modules from app.core: `from app.core import self_edit_generated`
+2. Open the file app/core/self_edit_generated.py and read its contents into a variable.
+3. Define a function to strip prose from Python code by identifying the first valid Python token, using techniques like regular expressions or NLP libraries.
+4. Apply this prose-stripping function to each line in the file, checking if it starts with a natural-language sentence.
+5. If a natural-language sentence is detected, strip it from the beginning of the line and replace the original line with the modified one.
+6. Write the modified contents back to the file app/core/self_edit_generated.py.
+7. Verify that the changes were successfully written by reading the updated file contents.
+
+These steps ensure a headless Python environment without user interaction, as required.

@@ -1,0 +1,9 @@
+Here is the solution in the requested format:
+
+1. Import necessary modules from `app.core.self_edit_generated`, including `shorten_response_length` and `strip_prose_from_output`.
+2. Define a new function called `strip_prose_from_output` within the same module, which will serve as the revised self-editing mechanism.
+3. Within the `strip_prose_from_output` function, use regular expressions to detect prose (natural-language text) at the beginning of the output string and truncate it using string manipulation techniques.
+4. Modify the existing `shorten_response_length` function by wrapping its execution within the newly created `strip_prose_from_output` function.
+5. Update the `app/core/self_edit_generated.py` module with the modified `shorten_response_length` and `strip_prose_from_output` function definitions.
+6. Implement a schema validation check to ensure adherence to Python syntax rules after text stripping, including checking for empty or trivial responses.
+7. Execute a test run of the modified `shorten_response_length` function using internal tools, logging all operations and results in the memory store.

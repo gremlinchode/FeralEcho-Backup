@@ -1,0 +1,18 @@
+Here is the unified response:
+
+1. Import the necessary modules: `app.core.self_edit_generated`, `ToolManager`, `GeminiShard`, and `deliberate_and_learn`.
+2. Create a new function named `score_code_candidate` within `app/core/self_edit_generated.py`: 
+```python
+def score_code_candidate(code_string):
+    has_imports = len([line for line in code_string.splitlines() if line.lstrip().startswith('import')]) > 0
+    has_function_def = len([line for line in code_string.splitlines() if line.lstrip().startswith('def')]) > 0
+    no_prose_sentences = all(not line.strip().endswith('.') for line in code_string.splitlines())
+    score = int(has_imports) + int(has_function_def) + int(not no_prose_sentences)
+    return score
+```
+3. Within `score_code_candidate`, use `detect_functions_and_classes` to identify all function definitions in the provided code string.
+4. Utilize `parse_file` to analyze the code for the presence of import statements, returning a boolean indicating whether imports are present.
+5. Implement logic using regular expressions or parsing techniques within `score_code_candidate` to detect and count sentences containing prose (natural language) – return a Boolean value.
+6. Calculate a composite quality score based on the boolean results from steps 3-5, mapping ‘True’ values to higher scores as needed for “has_imports”, "has_function_def", and "no_prose_sentences."
+7. Return the calculated integer quality score (0–3) from the `score_code_candidate` function.
+8. Add a docstring and type hints to the `score_code_candidate` function, documenting its purpose, arguments, and return value for clarity within the module.

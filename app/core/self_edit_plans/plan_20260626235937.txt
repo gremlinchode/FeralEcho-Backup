@@ -1,0 +1,19 @@
+Here are the steps to modify `app/core/self_edit_generated.py`:
+
+1. From `app.core.self_edit_generated`, import necessary modules: `from app.core.self_edit_generated import get_river_brain, validate_code, backup_existing_code, save_code`
+
+2. Load `app.core.river_deliberation` for knowledge retrieval: `river_deliberation = app.core.river_deliberation`
+
+3. Open `app/core/self_edit_generated.py` in read mode to examine the existing code structure and identify the prose-detection logic.
+
+4. Add a new function within `app/core/self_edit_generated.py`, named `prose_guard`, that accepts a string as input: `def prose_guard(input_string):`.
+
+5. Implement the `prose_guard` function using regular expressions to match leading natural language sentences, stripping them from the input string: `import re; stripped_string = re.sub(r'^\W+.*', '', input_string)`.
+
+6. Modify the existing code in `app/core/self_edit_generated.py` to call the newly created `prose_guard` function before executing any generated Python code: `stripped_code = prose_guard(input_string)`.
+
+7. Add a logging statement within `app/core/self_edit_generated.py` to record whether the `prose_guard` function was executed and its outcome: `print(f"Prose guard executed: {stripped_code}")`.
+
+8. Save the modified `app/core/self_edit_generated.py` file with changes committed.
+
+Note that I've taken a unified approach, considering multiple perspectives while maintaining my own voice.

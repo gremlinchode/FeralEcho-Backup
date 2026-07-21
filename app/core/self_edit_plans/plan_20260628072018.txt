@@ -1,0 +1,11 @@
+Here is the unified response:
+
+1. Import necessary modules from `app.core.self_edit_generated`, including `strip_prose` and `self_edit`.
+2. Define a function to detect prose in code output by scanning for common English punctuation marks (e.g., periods, commas, colons).
+3. Within this function, iterate through each line of code output, checking for any lines that contain only natural-language text (i.e., no Python keywords or syntax).
+4. When such a line is detected, call `strip_prose` to remove the prose from the start of the line.
+5. Implement a recursive approach to ensure all leading prose is removed by repeatedly calling `strip_prose` until no more prose is found.
+6. Modify the original `self_edit` function in `app/core/self_edit_generated.py` to incorporate this new prose-detection mechanism and strip any detected prose before proceeding with the self-edit process.
+7. Define a recursive method within `strip_prose` that truncates the input string at the first Python token boundary (determined by whitespace or special characters) until no more prose is found.
+
+Note: I have combined the perspectives from Gemma3, Qwen2.5-coder, and myself to create a unified response.

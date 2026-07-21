@@ -1,0 +1,9 @@
+Here is the unified response:
+
+1. From `app.core.self_edit_generated` import `strip_prose`, `score_code_candidate`.
+2. Define a new function `strip_prose()` within the self_edit_generated module to detect and remove any initial natural language sentences in code output.
+3. Modify the `score_code_candidate()` function by wrapping it with the newly created `strip_prose()` function, ensuring that any detected prose is removed before scoring code candidates.
+4. Update the existing `strip_prose()` implementation to use a regular expression pattern that matches leading English sentences (starting with capital letters or containing common sentence punctuation).
+5. Within `score_code_candidate()`, replace the current logging mechanism for prose detection with the modified `strip_prose()` function, ensuring correct logging and error reporting.
+6. Implement checks within `score_code_candidate()` to verify the effectiveness of the new prose-detection guard by monitoring failure rates in sandbox execution and adjusting the guard as needed.
+7. Test the updated script with various code scenarios to validate its functionality and performance.

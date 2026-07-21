@@ -1,0 +1,21 @@
+Here is the unified response:
+
+1. Import `app.core.self_edit_generated` as `self_edit_generated`.
+2. Within `self_edit_generated.py`, create a new function named `strip_prose_before_code` that accepts a string argument, `text`.
+   ```
+   import re
+   def strip_prose_before_code(text):
+       pattern = r'^\s*[^\n]*[.!?]\s*'
+       match = re.search(pattern, text)
+       if match:
+           return text[:match.start()].rstrip() + '  '
+       else:
+           return text
+   ```
+3. Within `strip_prose_before_code`, use the regular expression pattern to find the first occurrence of the sentence within the input `text`.
+4. Within `strip_prose_before_code`, slice the input string `text` from the end of the matched sentence plus one character back, ensuring that it starts with a Python token.
+5. Within `strip_prose_before_code`, return the resulting modified string.
+6. In `self_edit_generated.py`, replace the existing `strip_prose` function call with a call to `strip_prose_before_code`.
+7. Add an assertion inside `strip_prose_before_code` to check if the result is not empty before returning it.
+
+Note: The previous response was incorrect, and this one provides a more accurate solution for the task.

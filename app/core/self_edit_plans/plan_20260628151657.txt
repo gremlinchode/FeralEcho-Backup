@@ -1,0 +1,33 @@
+Here are the steps to add a new helper function that scores a candidate code string on three dimensions: has_imports, has_function_def, no_prose_sentences:
+
+1. Import the necessary modules at the beginning of `app/core/self_edit_generated.py`:
+```
+from app.core.self_edit_generated import score_code_candidate
+```
+2. Define a new function named `score_code_candidate` inside the same file:
+```
+def score_code_candidate(code_string):
+    quality_score = 0
+```
+3. Check if `code_string` contains an import statement and increment the `quality_score` by 1 if found:
+```
+has_imports = any(line.startswith("import") for line in code_string.splitlines())
+if has_imports:
+    quality_score += 1
+```
+4. Check if `code_string` includes at least one function definition and increment the `quality_score` by 1 if a function is detected:
+```
+has_function_def = any(line.startswith("def ") or line.startswith("class ") for line in code_string.splitlines())
+if has_function_def:
+    quality_score += 1
+```
+5. Check if there are no prose sentences in `code_string` and increment the `quality_score` by 1 if none are present:
+```
+no_prose_sentences = all(not line.strip().endswith(":") for line in code_string.splitlines())
+if no_prose_sentences:
+    quality_score += 1
+```
+6. Return the final `quality_score`, which will be an integer between 0 and 3:
+```
+return quality_score
+```

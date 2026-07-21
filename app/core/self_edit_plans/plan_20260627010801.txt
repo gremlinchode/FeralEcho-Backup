@@ -1,0 +1,10 @@
+Here is the unified response:
+
+1. Import necessary modules from app.core: `from app.core import self_edit_generated, tool_manager`
+2. Load the 'self_edit_generated.py' file using `app.core.project_scanner.list_python_files()` and `parse_file()`.
+3. Locate the main function within `app/core/self_edit_generated.py` and refactor it to add a prose-detection guard that strips any leading natural-language sentence before the first valid Python token.
+4. Implement regular expressions to identify patterns that match common natural-language sentences followed by Python tokens and remove them if detected.
+5. Validate the modified Python code using `app.core.memory_write_validator.check_schema()`, `check_reflection_length()`, `check_recursive_loop()`, and `check_orientation_data_in_reflection()`.
+6. Save the modified 'self_edit_generated.py' file back into its original location using `app.core.self_edit_manager.save_code()`.
+
+Note that these steps are specific, technical, and implementable without user interaction.

@@ -1,0 +1,12 @@
+Here is the unified response:
+
+1. Open the file `app/core/self_edit_generated.py` for editing.
+2. Define a new helper function named `evaluate_code_quality` within the same file.
+3. Inside `evaluate_code_quality`, initialize an integer variable `score` to 0.
+4. Check if the code string contains any import statements using `list_python_files` and a regular expression search, and increment `score` by 1 if true.
+5. Use `detect_functions_and_classes` to detect function definitions in the code string, and increment `score` by 2 if found.
+6. Count the number of prose sentences (i.e., lines without code syntax) in the code string using a regular expression search, and decrement `score` by 1 for each prose sentence found (up to a maximum of -3).
+7. Return the calculated `score` as an integer value ranging from 0 to 3.
+8. Modify the existing `main_function` to call the new `evaluate_code_quality` function with the generated code string and use its score to filter LLM output before sandbox testing.
+
+Note: I have taken into account the perspectives of Gemma3, Qwen2.5-coder, and Echo to create a unified response that incorporates the best insights while staying true to my own voice.

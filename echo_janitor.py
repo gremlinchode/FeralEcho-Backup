@@ -10,24 +10,41 @@ and a summary surfaced to the terminal on next session.
 Pipeline:
     scan_project_root()
         │
-        ├── detect_duplicates()      — same name in root + app/
-        ├── detect_stale_scripts()   — .py files not imported by any active module
-        ├── detect_old_logs()        — log files older than LOG_MAX_AGE_DAYS
-        └── detect_known_clutter()   — hardcoded legacy filenames
+        ├── detect_known_clutter()        — hardcoded legacy filenames
+        ├── detect_needs_review()         — hardcoded ambiguous-filename set
+        ├── detect_duplicates()           — same name in root + app/
+        ├── detect_stale_scripts()        — .py files not imported by any active module
+        ├── detect_old_logs()             — log files older than LOG_MAX_AGE_DAYS
+        ├── detect_stale_backups()        — one-time migration/contamination/reset
+        │                                   backups in memory/backups|archive, by
+        │                                   naming marker + age (added 2026-07-21)
+        ├── detect_orphaned_root_data()   — data-shaped root files with zero .py
+        │                                   references anywhere (added 2026-07-21)
+        └── detect_unbounded_growth()     — registry-watched dirs over 2x their
+                                            expected file-count cap (added 2026-07-21)
             │
             ▼
-    echo_review(candidates)          — routes candidate list through echo_query()
-        │                              Echo decides: archive / keep / flag
+    echo_review(candidates)          — rule-based decision, NOT an LLM call
+        │                              (see echo_review()'s own docstring for why).
+        │                              Only known_clutter/old_log/duplicate ever
+        │                              get decision="archive" — everything else,
+        │                              including all three 2026-07-21 additions,
+        │                              is flag-only.
         ▼
-    execute_plan(plan)               — moves approved files to archive/
+    execute_plan(plan)               — moves decision="archive" files to archive_janitor/
         │
         ▼
-    write_janitor_report()           — JSON summary written to logs/janitor_report.json
-                                       surfaced to terminal on next session open
+    write_janitor_report()           — JSON summary written to logs/janitor_report.json.
+                                       Nothing currently reads this back to surface it
+                                       in the terminal — see night_cycle.py's own
+                                       comment on this gap.
 
 Scheduling:
-    Register via emergent_scheduler:
-        schedule_task("echo_janitor", run_janitor, interval_hours=168)  # weekly
+    NOT via emergent_scheduler.schedule_task() (that function is a hollow,
+    never-implemented stub — see app/maintenance/night_cycle.py's comment).
+    The real wiring is night_cycle.py's own _maybe_run_janitor(), gated on a
+    7-day interval read from memory/janitor_state.json, called from
+    _perform_reflection()'s cycle.
 
 Usage (manual / test):
     python echo_janitor.py [--dry-run] [--verbose]
@@ -175,6 +192,37 @@ KNOWN_CLUTTER = {
 # Files still genuinely ambiguous — flag for human review
 NEEDS_ECHO_REVIEW: set = set()
 
+# Naming markers for one-time migration/contamination/reset backups found by
+# the 2026-07-21 forensic cleanup audit (memory/backups/pre_migration_20260713/,
+# memory/archive/faiss_splitbrain_*, faiss_contaminated_*, faiss_prefixfix_*,
+# memory/river_brain.pkl.pre_reset_backup_*, etc.) — these are real, but their
+# usefulness ends once the operation they snapshotted is confirmed complete.
+STALE_BACKUP_MARKERS = (
+    "contaminated", "splitbrain", "prefixfix",
+    "pre_migration", "pre_delete", "pre_reset", "pre_pending",
+)
+STALE_BACKUP_MIN_AGE_DAYS = 14
+STALE_BACKUP_DIRS = ("memory/backups", "memory/archive")
+
+# Data-shaped file extensions worth flagging if they sit loose in the project
+# root with nothing in app/ or root scripts referencing them by name. A size
+# floor keeps this from drowning in trivial droppings — see detect_orphaned_root_data().
+ORPHANED_DATA_EXTENSIONS = {
+    ".json", ".jsonl", ".wav", ".png", ".csv", ".pkl", ".txt", ".log", ".zip", ".save", ".OLD",
+}
+ORPHANED_DATA_MIN_SIZE_BYTES = 50 * 1024
+
+# Directories known to accumulate files without bound unless a dedicated
+# pruning function is wired in. Cap is a duplicate of the real cap enforced
+# elsewhere (app/core/self_edit_manager.py's _MAX_SELF_EDIT_PLANS) rather than
+# an import of it — self_edit_manager.py has real module-level side effects
+# on import (e.g. backfill_convergence_from_log()) that this scan shouldn't
+# trigger just to read one constant. Keep these two numbers in sync by hand.
+GROWTH_WATCH = (
+    {"path": "app/core/self_edit_plans", "suffix": ".txt", "expected_cap": 500},
+)
+GROWTH_STALE_MULTIPLIER = 2.0
+
 
 # ─────────────────────────────────────────────
 # LOGGING
@@ -313,12 +361,131 @@ def detect_old_logs() -> list[dict]:
     return candidates
 
 
+def detect_stale_backups() -> list[dict]:
+    """
+    Flag one-time migration/contamination/reset backups sitting in
+    memory/backups/ or memory/archive/ that match a known naming marker and
+    are older than STALE_BACKUP_MIN_AGE_DAYS. Heuristic, not exhaustive — see
+    STALE_BACKUP_MARKERS. Never archived automatically (see echo_review()):
+    these are exactly the kind of higher-stakes, less-vetted find that should
+    stay human-reviewed rather than auto-moved.
+    """
+    candidates = []
+    cutoff = datetime.now() - timedelta(days=STALE_BACKUP_MIN_AGE_DAYS)
+    for rel_dir in STALE_BACKUP_DIRS:
+        base = ROOT / rel_dir
+        if not base.exists():
+            continue
+        for entry in base.rglob("*"):
+            if not entry.is_file():
+                continue
+            lname = entry.name.lower()
+            if not any(marker in lname for marker in STALE_BACKUP_MARKERS):
+                continue
+            mtime = datetime.fromtimestamp(entry.stat().st_mtime)
+            if mtime < cutoff:
+                candidates.append({
+                    "path": str(entry),
+                    "name": entry.name,
+                    "reason": "stale_backup",
+                    "detail": f"Matches a one-time-backup naming marker, last modified "
+                              f"{mtime.strftime('%Y-%m-%d')} ({STALE_BACKUP_MIN_AGE_DAYS}+ days old)",
+                })
+    return candidates
+
+
+def detect_orphaned_root_data() -> list[dict]:
+    """
+    Flag data-shaped files sitting loose in the project root whose filename
+    string doesn't appear in any .py file under app/ or the root. Same
+    reference-check idea as detect_stale_scripts(), generalized from AST
+    import analysis (only meaningful for importable modules) to a plain
+    substring search (these aren't modules). Zero live references does not
+    mean safe to delete here — several past finds in this category turned
+    out to be intentional, meaningful artifacts (see echo_review(): this
+    reason is flag-only, never archive).
+
+    Known limitation, found live while building this: the substring search
+    can't distinguish a real code reference from a comment/docstring that
+    merely mentions a filename as an example — either one counts as a
+    "reference" and silently hides that file from this scan. Caught during
+    this function's own construction, when a docstring elsewhere in this
+    file naming an example filename made this scanner stop flagging that
+    exact file. Not worth AST/tokenize-based comment-stripping to close —
+    the failure direction is a false negative (under-flagging), and since
+    this reason is flag-only anyway, the cost of missing a real candidate
+    here is silence, not a wrongful action.
+    """
+    py_files = list(ROOT.glob("*.py")) + list((ROOT / "app").rglob("*.py"))
+    haystack = ""
+    for py_file in py_files:
+        try:
+            haystack += py_file.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            pass
+
+    candidates = []
+    for entry in ROOT.iterdir():
+        if not entry.is_file():
+            continue
+        if entry.suffix not in ORPHANED_DATA_EXTENSIONS:
+            continue
+        if entry.name in PROTECTED or entry.name in KNOWN_CLUTTER:
+            continue
+        try:
+            if entry.stat().st_size < ORPHANED_DATA_MIN_SIZE_BYTES:
+                continue
+        except Exception:
+            continue
+        if entry.name in haystack:
+            continue
+        candidates.append({
+            "path": str(entry),
+            "name": entry.name,
+            "reason": "orphaned_data",
+            "detail": f"No .py file under app/ or root references this filename "
+                      f"({entry.stat().st_size} bytes)",
+        })
+    return candidates
+
+
+def detect_unbounded_growth() -> list[dict]:
+    """
+    Flag directories on the GROWTH_WATCH registry whose file count exceeds
+    GROWTH_STALE_MULTIPLIER x their expected cap — signals the corresponding
+    prune function isn't actually firing (same "2x over cap" staleness idea
+    liveness_ledger.py's log_retention check already uses for byte-size
+    rotation, generalized here to file-count pruning).
+    """
+    candidates = []
+    for watch in GROWTH_WATCH:
+        base = ROOT / watch["path"]
+        if not base.is_dir():
+            continue
+        count = sum(1 for f in base.iterdir() if f.is_file() and f.suffix == watch["suffix"])
+        threshold = watch["expected_cap"] * GROWTH_STALE_MULTIPLIER
+        if count > threshold:
+            candidates.append({
+                "path": str(base),
+                "name": watch["path"],
+                "reason": "unbounded_growth",
+                "detail": f"{count} '{watch['suffix']}' files against an expected cap of "
+                          f"{watch['expected_cap']} — the pruning hook for this directory "
+                          f"may not be firing",
+            })
+    return candidates
+
+
 def scan_project_root() -> list[dict]:
     """Run all scanners and deduplicate by path."""
     all_candidates: list[dict] = []
     seen_paths: set[str] = set()
 
-    for scanner in [detect_known_clutter, detect_needs_review, detect_duplicates, detect_stale_scripts, detect_old_logs]:
+    for scanner in [
+        detect_known_clutter, detect_needs_review, detect_duplicates,
+        detect_stale_scripts, detect_old_logs,
+        detect_stale_backups, detect_orphaned_root_data, detect_unbounded_growth,
+    ]:
         for c in scanner():
             if c["path"] not in seen_paths:
                 all_candidates.append(c)
@@ -334,8 +501,27 @@ def scan_project_root() -> list[dict]:
 def echo_review(candidates: list[dict]) -> list[dict]:
     """
     Apply rule-based decisions to candidates.
-    known_clutter → archive (we already decided these in session)
-    needs_review, not_imported, duplicate, old_log → flag for human review
+    known_clutter, old_log, duplicate → archive (tightly-scoped, previously
+    human-vetted categories — the only three that ever get decision="archive").
+    Everything else — needs_review, not_imported, stale_backup, orphaned_data,
+    unbounded_growth → flag for human review, never auto-archived.
+
+    stale_backup/orphaned_data/unbounded_growth (added 2026-07-21, the same
+    audit that found app/core/self_edit_plans/ unpruned) are heuristic finds
+    over less-vetted, sometimes higher-stakes ground than the original three —
+    and the same audit found that "zero live code references" does not reliably
+    mean "safe to delete" here (a since-orphaned code directory and two
+    autonomously-generated media files all turned out to be intentional,
+    meaningful artifacts, not clutter — deliberately not named by their literal
+    filenames in this docstring, since detect_orphaned_root_data()'s reference
+    check is a naive substring search and a comment mentioning a filename as an
+    example would itself count as a "reference," silently hiding that exact
+    file from the scan — a real false negative caught live while verifying
+    this change, not a hypothetical).
+    Keeping these flag-only preserves the exact invariant liveness_ledger.py's
+    janitor_safety check protects, without needing to re-argue that invariant's
+    safety case for three new, less-vetted categories.
+
     Echo's identity is too strongly embedded to reliably output raw JSON,
     so structured file decisions are handled by explicit rules here.
     Echo's judgment is preserved for higher-order tasks via the council.
@@ -350,6 +536,15 @@ def echo_review(candidates: list[dict]) -> list[dict]:
         elif c["reason"] == "duplicate":
             c["decision"] = "archive"
             c["echo_reason"] = "Root-level duplicate of app/ file — stale copy"
+        elif c["reason"] == "stale_backup":
+            c["decision"] = "flag"
+            c["echo_reason"] = "Matches a one-time-backup naming marker — needs human confirmation the underlying operation is complete before removal"
+        elif c["reason"] == "orphaned_data":
+            c["decision"] = "flag"
+            c["echo_reason"] = "No live code reference found — but this alone has not reliably meant safe to delete in this project; needs human review"
+        elif c["reason"] == "unbounded_growth":
+            c["decision"] = "flag"
+            c["echo_reason"] = "Directory file count suggests its pruning hook may not be firing — needs investigation, not a file-level archive action"
         else:
             # needs_review, not_imported — flag for human
             c["decision"] = "flag"

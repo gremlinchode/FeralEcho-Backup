@@ -1,0 +1,12 @@
+Here is the unified response:
+
+1. Import necessary modules from FeralEcho: `app.core.self_edit_generated`, `app.core.tool_manager`, and `app.emergent_scheduler_backup_20260610`.
+2. Locate the 'modify_main_function' function within the `app/core/self_edit_generated.py` file using `parse_file` and `detect_functions_and_classes`.
+3. Add a new code block to the ‘modify_main_function’ that utilizes the `ToolManager` to find any tool capable of detecting prose in output.
+4. Instantiate a `GeminiShard` object within the modified function, configuring it with parameters optimized for text analysis.
+5. Implement a string manipulation function to remove any leading natural language sentences from detected code output before tokenization.
+6. Integrate the newly created string manipulation function into the existing logic of the ‘modify_main_function’ to preprocess the generated code.
+7. Add logging statements within the modified 'modify_main_function' to record the success or failure of prose detection and any applied transformations for debugging purposes.
+8. Utilize a `SelfModelUpdater` to verify that the changes in the  ‘modify_main_function’ did not introduce unintended consequences, capturing all actions taken as part of model updates.
+
+Note: I have chosen perspective [1. Gemma3] as it provides a more comprehensive and technical approach to solving the task.

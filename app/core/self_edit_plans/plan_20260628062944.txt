@@ -1,0 +1,11 @@
+Here is the unified response:
+
+1. Import the necessary module from `app.core.self_edit_generated`: `from app.core.self_edit_generated import strip_prose`
+2. Load the self-edit generator class: `self_edit_generator = strip_prose.SelfEditGenerated()`
+3. Define a function to detect and strip prose from code output: `def strip_prose_output(code):`
+4. Use regular expressions to search for the first valid Python token in the code: `import re; python_token_regex = re.compile(r'\b[a-zA-Z_][a-zA-Z0-9_]*\(');`
+5. Strip any leading natural-language sentence before the first valid Python token: `code = python_token_regex.search(code).start() if code else code`
+6. Call the self-edit generator to apply the `strip_prose_output` function: `self_edit_generator.strip_prose_output(code)`
+7. Modify the `app/core/self_edit_generated.py` file with the new function and its implementation.
+
+This response integrates the best insights from each perspective, prioritizing coherence and relevance while staying true to my own voice.

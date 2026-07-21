@@ -1,0 +1,10 @@
+Here is the unified response:
+
+1. Import necessary modules from `app.core.self_edit_generated` into the script.
+2. Define a wrapper function that calls `strip_prose` with the output of `run_random_sandbox_script`.
+3. Modify `run_random_sandbox_script` to append the result of calling the wrapper function to its output before returning it.
+4. Define a new function that combines the functionality of `shorten_response_length` and the wrapper function from step 2.
+5. Replace the original `run_random_sandbox_script` with the new function defined in step 4.
+6. Define a new function that checks if the output contains any natural-language sentence before the first valid Python token and, if so, strips it using the wrapper function from step 2.
+7. Modify `run_random_sandbox_script` to call the new function defined in step 6 and return its result instead of the original output.
+8. Save the modified script as `app/core/self_edit_generated.py`.

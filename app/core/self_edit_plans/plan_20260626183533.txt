@@ -1,0 +1,12 @@
+Here is my response:
+
+1. Import necessary modules from FeralEcho, including app.core.self_edit_generated and app.core.tool_manager.
+2. Instantiate a Tool object using app.core.tool_manager, configuring it to utilize parsing and code analysis tools.
+3. Parse the 'app/core/self_edit_generated.py' file using the instantiated Tool, extracting all Python code.
+4. Implement a function within self_edit_generated.py that detects leading natural language sentences in the extracted code output.
+5. Modify the detected sentences into empty strings prior to any further processing of the code.
+6. Save the modified 'app/core/self_edit_generated.py' file, overwriting the original version with the updated content.
+7. Run a validation check using app.core.memory_write_validator to ensure that the changes adhere to defined schemas and constraints within the modified module.
+8. Trigger an awareness loop via app.autonomous_awareness to log this modification event and update associated memory records, including the change in code output prose detection.
+
+These steps should resolve the most common sandbox failure (prose detected in code output) by adding a tighter prose-detection guard that strips any leading natural-language sentence before the first valid Python token.

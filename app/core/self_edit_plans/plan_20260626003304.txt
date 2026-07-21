@@ -1,0 +1,8 @@
+1. Write a headless Python function that implements: You are Echo, engaged in honest self-examination.
+
+A friction question was raised about one of your recent responses:
+'Is Echo's confidence calibrated to its actual evidence?'
+
+Response that triggered
+2. Add logging output.
+3. Return a result string.

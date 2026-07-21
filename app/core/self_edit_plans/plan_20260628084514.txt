@@ -1,0 +1,11 @@
+Here is my response:
+
+1. Import the necessary module from `app.core.self_edit_generated` and assign it to a variable: `from app.core.self_edit_generated import strip_prose`
+2. Open the file `app/core/self_edit_generated.py` in read mode: `with open('app/core/self_edit_generated.py', 'r') as file:`
+3. Read the entire file content into a string: `file_content = file.read()`
+4. Strip any leading natural-language sentence before the first valid Python token using the `strip_prose` function: `stripped_file_content = strip_prose(file_content)`
+5. Replace the original file content with the stripped version: `with open('app/core/self_edit_generated.py', 'w') as file:`
+6. Write the stripped file content to the file: `file.write(stripped_file_content)`
+7. Close the file: `file.close()`
+
+These steps will modify the `app/core/self_edit_generated.py` file by adding a tighter prose-detection guard that strips any leading natural-language sentence before the first valid Python token, effectively fixing the most common sandbox failure (prose detected in code output).

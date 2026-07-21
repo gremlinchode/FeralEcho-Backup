@@ -1,0 +1,6 @@
+1. From `app.core.self_edit_generated` import the `strip_prose` function: from app.core.self_edit_generated import strip_prose
+2. Open the target file for modification with read and write access: with open("app/core/self_edit_generated.py", "r+") as f:
+3. Read the entire file content: file_content = f.read()
+4. Apply the `strip_prose` function to detect and remove any leading natural-language sentence: file_content = strip_prose(file_content)
+5. Seek back to the beginning of the file: f.seek(0)
+6. Write the modified file content back to the file: f.write(file_content)

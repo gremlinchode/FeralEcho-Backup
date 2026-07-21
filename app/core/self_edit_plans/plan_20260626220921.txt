@@ -1,0 +1,62 @@
+Here is the unified response:
+
+1. Import necessary modules:
+   ```
+   from app.core.memory_tools import get_last_entries, append_to_journal
+   from app.core.self_edit_manager import validate_code, save_code
+   from app.core.tool_manager import ToolManager
+   ```
+
+2. Load and modify 'app/core/self_edit_generated.py':
+   ```
+   file_path = "app/core/self_edit_generated.py"
+   code_content = parse_file(file_path)
+   ```
+
+3. Identify the function responsible for handling sandbox output:
+   ```
+   function_name_to_modify = "main_function"
+   function_content, start_index, end_index = detect_functions_and_classes(code_content, function_name_to_modify)
+   ```
+
+4. Define a regex-based stripping function to remove leading natural language until the first Python token is encountered:
+   ```
+   import re
+   def strip_prose(output):
+       match = re.search(r'\b(import|class|def)\b', output, re.IGNORECASE)
+       if match:
+           return output[match.start():]
+       return ''
+   ```
+
+5. Wrap the original `main_function` within the `strip_prose` function to filter out any prose before running the original code:
+   ```
+   modified_function_content = """
+   def main_function():
+       output = {}
+       # Original code here
+       output['reasoning'] = strip_prose(output['reasoning'])
+       return output
+   """
+   ```
+
+6. Update the code with the modified function and overwrite it back into app/core/self_edit_generated.py:
+   ```
+   code_content = code_content[:start_index] + modified_function_content + code_content[end_index:]
+   save_code(file_path, code_content)
+   ```
+
+7. Validate the modifications by running a test case:
+   ```
+   # Assuming a test function exists in the same module
+   test_function = get_river_brain().get_test_case_for("autonomous self-edit")
+   if validate_code(test_function):
+       append_to_journal("Autonomous self-edit successful.")
+   else:
+       append_to_journal("Autonomous self-edit failed.")
+   ```
+
+8. Append the modification details to the journal for record-keeping:
+   ```
+   append_to_journal(f"Modified function: {function_name_to_modify}")
+   ```

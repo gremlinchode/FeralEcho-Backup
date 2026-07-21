@@ -1,0 +1,26 @@
+Here is the numbered list of steps for modifying app/core/self_edit_generated.py:
+
+1. Import necessary modules from FeralEcho: `from app.core.self_edit_generated import strip_prose, main_function`
+2. Within `main_function`, locate and extract the `strip_prose` code block.
+3. Add a new code block within `main_function` that utilizes `parse_file` from app.core.project_scanner to analyze the generated output string.
+4. Implement a `strip_prose` function within `main_function` utilizing `detect_functions_and_classes` to identify and remove leading natural language sentences.
+5. Modify the `main_function` to call `strip_prose` immediately before passing the result to the subsequent Python tokenization step.
+6. Introduce a new boolean variable, `prose_detected`, initialized to `False` within `main_function`.
+7. Implement a condition within `main_function` that sets `prose_detected = True` if `strip_prose` returns a non-empty string.
+8. Add an `if` statement within `main_function` to handle the case where `prose_detected` is true, executing a safeguard that raises an exception to prevent further processing of the tainted output.
+
+Let's work through these steps in Python:
+```
+import app.core.self_edit_generated
+from app.core.project_scanner import parse_file
+from app.core.memory_bridge import strip_prose
+
+def main_function():
+    # ... existing code ...
+    generated_code = generate_code()
+    parsed_output = parse_file(generated_code)
+    stripped_code = strip_prose(parsed_output)
+    if stripped_code != parsed_output:
+        raise Exception("Prose detected in code output. Aborting processing.")
+    return stripped_code
+```

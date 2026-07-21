@@ -698,7 +698,10 @@ class IntrospectionChannel:
 
     def _collect_liveness_ledger(self, live_memory: dict) -> dict:
         """
-        Runs the nine ground-truth liveness checks (see liveness_ledger.py)
+        Runs the ground-truth liveness checks (see liveness_ledger.py's
+        _CHECKS tuple for the current count — this docstring has lagged that
+        number before and isn't re-verified automatically, so don't trust a
+        specific count here without checking _CHECKS directly)
         and writes memory/liveness_ledger.json. Returns a compact summary
         for inclusion in introspection_state.json itself, not the full
         ledger (that would duplicate liveness_ledger.json) — just enough

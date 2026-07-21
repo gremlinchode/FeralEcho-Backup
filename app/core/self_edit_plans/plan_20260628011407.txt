@@ -1,0 +1,11 @@
+Here is the breakdown of the task into clear, sequential Python steps:
+
+1. Import necessary modules from `app.emergent_scheduler_backup_20260610` and `app.core.self_edit_generated`.
+2. Open `app/core/self_edit_generated.py` in read mode.
+3. Read the file contents into a string variable.
+4. Use regular expressions to detect leading natural-language sentences that start with capital letters or punctuation marks.
+5. Strip any detected prose from the beginning of the file contents using the `strip_prose` function from `app.core.self_edit_generated`.
+6. Open `app/core/self_edit_generated.py` in write mode and overwrite the original file contents with the modified string.
+7. Close the files.
+
+These steps are designed to be executed automatically without user interaction, as per the output format rules.

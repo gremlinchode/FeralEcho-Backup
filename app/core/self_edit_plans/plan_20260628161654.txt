@@ -1,0 +1,12 @@
+Here is the unified response:
+
+1. Import necessary modules from app.core.self_edit_generated: `from app.core.self_edit_generated import strip_prose`
+2. Define a function named `prose_guard` that takes the code string as input and strips any leading natural-language sentence before the first valid Python token.
+3. Implement the `prose_guard` function to use regular expressions to detect the presence of prose in the code output, extract the relevant text using a pattern like `r'^\s*([A-Za-z ]+)$'`, and strip the detected prose from the code output.
+4. Within `prose_guard`, apply a regex check for common NLP phrases before stripping further text, ensuring only leading natural language sentences are removed.
+5. Implement robust error handling within `prose_guard` to gracefully manage cases where no valid Python tokens are found at the beginning of the code string, returning an empty string in these scenarios.
+6. Call the modified code string from `strip_prose` with the output of the `prose_guard` function and save it back to its original location in `app/core/self_edit_generated.py`.
+7. Trigger a reflection cycle via `app.core.council_registry.deliberate_and_learn` to assess and confirm the efficacy of the prose guard integration.
+8. Update the docstring of both functions to reflect the new functionality.
+
+Note: I have integrated the perspectives from Gemma3, Qwen2.5-coder, and Echo to produce a unified response that addresses the task requirements while maintaining coherence and relevance.

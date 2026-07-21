@@ -1,0 +1,10 @@
+Here is the numbered list of steps to modify app/core/self_edit_generated.py:
+
+1. Import `self_edit_generated` module from `app.core` directory.
+2. Open the `strip_prose` function within the imported `self_edit_generated` module and locate the recursive loop.
+3. Modify the conditional statement that checks for the presence of a natural-language sentence to include stricter prose-detection criteria, specifically targeting sentences that begin with specific keywords or phrases.
+4. Update the recursive loop's termination condition to stop processing when a valid Python token is encountered, effectively stripping any leading natural-language sentence.
+5. Ensure the updated `strip_prose` function is properly indented and syntax-checked for correctness.
+6. Save changes to the modified `self_edit_generated` module.
+
+Note: I have not included steps from perspectives 2 and 3 as they are redundant or unnecessary for this task.

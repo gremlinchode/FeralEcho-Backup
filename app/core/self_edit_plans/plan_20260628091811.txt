@@ -1,0 +1,7 @@
+1. Import the necessary module from app.core.self_edit_generated, specifically `strip_prose`.
+2. Open the file app/core/self_edit_generated.py for modification.
+3. Define a new function `strip_prose_sandbox_failure` to handle prose detection in code output.
+4. Within the function, use a regular expression pattern to detect natural-language sentences starting with uppercase letters or punctuation.
+5. If prose is detected, recursively call `strip_prose` on the remaining text until only valid Python tokens are left.
+6. Replace the original `strip_prose` function with the new function defined in step 3.
+7. Save and close the modified file app/core/self_edit_generated.py.

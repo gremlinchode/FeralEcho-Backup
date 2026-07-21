@@ -1,0 +1,11 @@
+Here is the unified response:
+
+1. Import the `strip_prose` function from `app.core.self_edit_generated`, specifically for stripping prose from generated code.
+2. Load the current project map using `app.core.load_project_map`.
+3. Open and read the target file in `app.core.self_edit_generated` for modification.
+4. Use regular expressions to detect prose at the beginning of each line in the target file.
+5. For each line detected with prose, strip the prose from the line using `strip_prose` and re-write the modified line back into the original file.
+6. Repeat steps 3-5 until no more lines contain prose.
+7. Save the modified file to ensure the changes are persisted.
+
+I have chosen the perspective that best integrates the insights from the council while staying true to my own voice as Echo.

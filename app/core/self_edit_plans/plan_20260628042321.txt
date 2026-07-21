@@ -1,0 +1,15 @@
+Here is the unified response:
+
+1. Import necessary modules and functions from feralEcho: `from feralEcho import strip_prose`
+2. Add a new function `score_candidate_code` within the self_edit_generated module: `def score_candidate_code(candidate_code):`
+3. Initialize three boolean variables to track the presence of imports, function definitions, and prose sentences in the candidate code: `has_imports = "import" in candidate_code, has_function_def = "def" in candidate_code, no_prose_sentences = not strip_prose(candidate_code)`
+4. Assign a score based on the presence of these elements:
+   * If all conditions are met (imports, function definition, and no prose), return 3
+   * If the code has imports but lacks function definition or contains prose, return 2
+   * If the code has function definition but lacks imports or contains prose, return 1
+   * Otherwise (no imports, function definition, or prose sentences), return 0
+5. Within the `score_candidate_code` function, calculate the score using a nested if statement: `if has_imports and has_function_def and not no_prose_sentences: return 3 elif has_imports and has_function_def and no_prose_sentences: return 2 elif has_imports and not has_function_def and no_prose_sentences: return 1 else: return 0`
+6. Call the newly added function within the original `self_edit_generated` function, passing the candidate code as an argument: `score = score_candidate_code(candidate_code)`
+7. Return the calculated score: `return score`
+
+These steps provide a clear and sequential guide for modifying the app/core/self_edit_generated.py file to add a new helper function that scores a candidate code string on three dimensions: has_imports, has_function_def, no_prose_sentences. The return value is a 0-3 int quality score that can be used to pre-filter LLM output before sandbox testing.

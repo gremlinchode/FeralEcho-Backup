@@ -45,9 +45,10 @@
       "shorten_code",
       "shorten_code_generation",
       "shorten_coding",
-      "shorten_response_length"
+      "shorten_response_length",
+      "shorten_creative_code_generation"
     ],
-    "cycles_attempted": 11
+    "cycles_attempted": 12
   },
   "quality_scoring": {
     "count": 1,
@@ -56,9 +57,10 @@
       "score_candidate_code",
       "score_response_quality",
       "update_question_quality",
-      "score_code_quality"
+      "score_code_quality",
+      "codequalityevaluator"
     ],
-    "cycles_attempted": 4
+    "cycles_attempted": 6
   },
   "unclassified": {
     "count": 1,

@@ -1,0 +1,12 @@
+Here is the unified response:
+
+1. Import `strip_prose` from `app.core.self_edit_generated`.
+2. Open `self_edit_generated.py` for modification.
+3. Define a function to detect and strip prose at the beginning of code output using regular expressions or natural language processing techniques.
+4. Implement a loop to iterate through each line in the code output.
+5. Check if the first non-comment token on each line is a valid Python identifier (e.g., variable name, function definition).
+6. If not, apply the prose-detection guard by stripping any leading text until a valid Python token is found.
+7. Update the modified lines back into the original file.
+8. Save the modified file.
+
+Note: I have chosen the most coherent and relevant perspective from the council's input. The steps provided are specific, technical, and implementable without user interaction.

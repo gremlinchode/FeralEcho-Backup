@@ -1,0 +1,8 @@
+1. Import necessary modules: `from app.core.self_edit_generated import modified_main_function`
+2. Parse the `app/core/self_edit_generated.py` file using `app.core.project_scanner.parse_file`.
+3. Analyze the `main_function` within `app.core/self_edit_generated.py` to determine its current implementation and response length.
+4. Load the `EchoOptuna` tool via `app.core.tool_manager.ToolManager` and generate a series of alternative code variations for the `main_function`.
+5. Filter the generated variations based on a criteria that minimizes average response length (20% reduction) while maintaining code correctness, as determined by static analysis via `app.core.project_scanner.detect_functions_and_classes`.
+6. Implement a modified version of the `main_function` within `app/core/self_edit_generated.py`, incorporating the optimized code variation identified in step 5.
+7. Run the updated `main_function` within `app/core/self_edit_generated.py` using `app.core.echo_model_guided_orchestrator.start_autonomous_thread`.
+8. Validate the modified code and response length against the original through `app.core.tool_manager.ToolManager` and `app.core.project_scanner.score_response_quality`, then log the changes using `app.core.memory_tools.log_memory_edit`.

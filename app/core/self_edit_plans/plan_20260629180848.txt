@@ -1,0 +1,10 @@
+Here is the unified response:
+
+1. Open app/core/self_edit_generated.py and import the necessary modules: `from app.core.memory_write_validator import ValidationResult`
+2. Define a new function strip_prose() that takes a string input and returns the modified string with prose detected in code output removed: `def strip_prose(prose_string):`
+3. Use regular expressions to detect prose strings (e.g., sentences) at the beginning of the input string: `import re; prose_pattern = re.compile(r'\b[a-zA-Z\s]+')`
+4. Apply the prose_pattern to the input string and extract any detected prose: `prose_match = prose_pattern.search(prose_string)`
+5. If a prose match is found, strip it from the original string using slicing: `stripped_prose = prose_string[prose_match.end():]`
+6. Call the strip_prose() function on the original input string and assign the result to a new variable: `stripped_input = strip_prose(prose_string)`
+7. Modify the existing self-edit generated code to use the stripped_input instead of the original prose_string: `self_edit_generated_code = ... stripped_input ...`
+8. Save the modified file: `app/core/self_edit_generated.py`

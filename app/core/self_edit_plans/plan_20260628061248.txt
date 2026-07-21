@@ -1,0 +1,12 @@
+Here is my response:
+
+1. Import necessary modules from app.core.self_edit_generated: from app.core.self_edit_generated import strip_prose
+2. Define a new function, edit_creative_task, that takes a single argument, creative_task, which represents the task to be modified.
+3. Within edit_creative_task, call the original function, generate_code, with the creative_task as an argument and store its output in the variable generated_code.
+4. Measure the length of generated_code using the len() function and store it in a variable called initial_length.
+5. Define a new threshold value, reduction_percentage, equal to 20%.
+6. Calculate the target length for generated_code by multiplying the initial_length by (1 - reduction_percentage).
+7. Refactor the generated_code string to achieve the target length while preserving its correctness: use Python's slice notation to remove excess code and maintain the original functionality.
+8. Store the refactored generated_code in a new variable, edited_code.
+
+Note that these steps are designed to be headless Python with no interactive elements, focusing on modifying the app/core/self_edit_generated.py file without user interaction.

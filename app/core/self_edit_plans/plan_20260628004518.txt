@@ -1,0 +1,7 @@
+1. From `app.core.self_edit_generated` import `strip_prose`: `from app.core.self_edit_generated import strip_prose`
+2. Load the original `strip_prose` function: `original_strip_prose = strip_prose`
+3. Define a new, modified `strip_prose` function that detects prose and strips it before the first valid Python token: `def modified_strip_prose(text): ...`
+4. Implement the detection logic within the modified `strip_prose` function to identify natural-language sentences using regular expressions or other suitable methods.
+5. Modify the original `strip_prose` function by replacing its implementation with the new, modified `strip_prose` function: `strip_prose = modified_strip_prose`
+6. Update `app/core/self_edit_generated.py` file to reflect the changes made to the `strip_prose` function.
+7. Verify that the modified `strip_prose` function is correctly stripping prose and handling code output in creative task performance scenarios.

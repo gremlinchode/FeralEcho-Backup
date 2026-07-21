@@ -1,0 +1,7 @@
+1. Import `app.core.self_edit_generated` and `app.core.memory_write_validator` modules to access relevant functions and classes.
+2. Within `app.core.self_edit_generated.py`, locate the `strip_prose` function and define a new function, `strip_prose_and_tokenize`, which takes a code snippet as input.
+3. In the `strip_prose_and_tokenize` function, use `memory_write_validator.check_schema` and `check_recursive_loop` to validate the input code snippet.
+4. If the input code snippet is valid, use the `strip_prose` function from `app.core.memory_bridge` to remove any leading natural-language sentence before the first valid Python token.
+5. Tokenize the remaining Python code using a suitable tokenizer.
+6. Implement a tighter prose-detection guard within `app.core.self_edit_generated` by incorporating the revised `strip_prose_and_tokenize` function in place of the existing `strip_prose` function.
+7. Update the existing `score_code_candidate` function to utilize the new `strip_prose_and_tokenize` function for improved code quality assessment.

@@ -1,0 +1,15 @@
+Here is the output in the required format:
+
+1. Import necessary modules from app.core.self_edit_generated and load the current self-edit generated module for further modification.
+
+2. Define a function to strip natural language sentences from code output, targeting the most common sandbox failure (prose detected in code).
+
+3. Within the stripping function, use regular expressions or string manipulation techniques to detect and remove leading prose from the code output.
+
+4. Modify the existing self-edit generated module by inserting this new stripping function as a preprocessing step before actual code generation.
+
+5. Update the self-edit generated module's save mechanism to reflect these changes in its internal state.
+
+6. Save the modified self-edit generated module back to disk, effectively updating the autonomous AI system's creative task performance handling for prose detection in code output.
+
+Note: As per the instructions, I have omitted steps involving Thinking blocks or chain-of-thought reasoning. Each step is one sentence, technical, and specific.

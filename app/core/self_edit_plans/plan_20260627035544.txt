@@ -1,0 +1,19 @@
+Here is my response:
+
+1. Import necessary modules from `app.core.self_edit_generated`: `from app.core.self_edit_generated import main_function`
+2. Define a new function, `strip_leading_prose`, to detect and strip prose from code output: 
+   ```
+   def strip_leading_prose():
+       modified_code_output = ""
+       for line in main_function().splitlines():
+           if re.match(r'^\s*[a-zA-Z]', line):
+               line = re.sub(r'^[^\S\n]*[a-zA-Z].*', '', line)
+           modified_code_output += line + "\n"
+       return modified_code_output
+   ```
+3. Modify the original `main_function` by wrapping it within the `strip_leading_prose` function.
+4. Within `strip_leading_prose`, read the output of `main_function` line-by-line and apply the prose-detection algorithm (e.g., Part-of-Speech tagging, Named Entity Recognition).
+5. If a sentence is detected, strip it from the code output until the first valid Python token is found.
+6. Return the modified code output as a string.
+
+Note: Steps 2-5 should be implemented within the `strip_leading_prose` function.

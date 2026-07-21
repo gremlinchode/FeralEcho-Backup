@@ -1,0 +1,7 @@
+1. Import `strip_prose` from `app.core.self_edit_generated`: `from app.core.self_edit_generated import strip_prose`
+2. Open the target file `self_edit_generated.py` for modification: `with open('app/core/self_edit_generated.py', 'r') as f: code = f.read()`
+3. Define a new function `fix_sandbox_failure` that takes a string input and returns the modified string: `def fix_sandbox_failure(input_str): ...`
+4. Inside the `fix_sandbox_failure` function, use regular expressions to detect the presence of prose (natural language) at the beginning of the input string: `import re; prose_detected = re.match(r'^\w+[^a-zA-Z]', input_str)`
+5. If prose is detected, strip the leading natural-language sentence using a tight guard until the first valid Python token is found: `if prose_detected: stripped_str = input_str.split(prose_detected.group())[1]`
+6. Replace the original `strip_prose` function with the new `fix_sandbox_failure` function in `self_edit_generated.py`: `code = code.replace('strip_prose', 'fix_sandbox_failure')`
+7. Save and close the modified file: `with open('app/core/self_edit_generated.py', 'w') as f: f.write(code)`

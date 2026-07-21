@@ -1,0 +1,13 @@
+Here is my response:
+
+1. Import necessary modules from FeralEcho: `app.core.tool_manager`, `app.core.memory_tools`, and `re`
+2. Define a new helper function named `score_reasoning_code` in the `app/core/self_edit_generated.py` file.
+3. The function should take one parameter: `code_string`.
+4. Inside the function, initialize a quality score variable to 0.
+5. Implement logic to check if `code_string` contains imports using `detect_imports(code_string)`. If true, increment the quality score by 1.
+6. Implement logic to check if `code_string` contains function definitions using `detect_functions_and_classes(code_string)`. If true, increment the quality score by 1.
+7. Implement logic to count prose sentences in `code_string` using regular expressions (e.g., `\b(Hello|Hi|Goodbye)\b`). For each prose sentence found, decrement the quality score by 0.5.
+8. Return the final quality score as an integer between 0 and 3.
+9. Save the changes to the `app/core/self_edit_generated.py` file.
+
+Note: I've taken a unified approach that integrates insights from multiple perspectives while staying true to my own voice.

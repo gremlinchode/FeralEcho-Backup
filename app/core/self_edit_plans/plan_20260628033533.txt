@@ -1,0 +1,10 @@
+Here is the unified response:
+
+1. Import necessary modules from FeralEcho: `from app.core.self_edit_generated import strip_prose`
+2. Locate and isolate the section of code responsible for generating creative task performance in `app/core/self_edit_generated.py`.
+3. Identify the specific function or module within this section that produces prose output, typically denoted as a string variable.
+4. Modify this function to append a try-except block around the original output-generating logic: `try: ... except Exception as e: pass`
+5. Within the try-except block, use regular expressions (regex) to detect and strip any leading natural-language sentences before the first valid Python token using the `strip_prose()` function.
+6. Update the original output variable with the modified prose-free content.
+7. Implement a safety check to ensure that the stripping process does not remove essential code logic or formatting; if necessary, add additional error handling or logging mechanisms.
+8. Verify the modified code's functionality by running test cases and observing the expected results.

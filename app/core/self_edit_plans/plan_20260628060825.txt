@@ -1,0 +1,11 @@
+Here is the unified response:
+
+1. Import necessary modules from `app.core.self_edit_generated`: `strip_prose`.
+2. Define a new function `refactor_code_generation` within `self_edit_generated.py` that takes an input prompt and a target length reduction percentage as arguments.
+3. Within `refactor_code_generation`, use the original code-generation logic to generate initial code, then truncate the generated code when it exceeds a specific length threshold (e.g., 500 characters).
+4. Calculate the actual average response length before refactoring using the original code-generation function as a baseline.
+5. Implement an optimization loop that iteratively adjusts the code generation parameters until the target average response length reduction is met or exceeded, while maintaining correctness through validation checks.
+6. Update the function signature to include an additional parameter `target_length_reduction` for determining the optimal code length for each generated response.
+7. Calculate and compare the actual average response length before and after refactoring using the optimized code-generation function.
+
+Note: The output will be a list of Python steps, each specific, technical, and implementable without user interaction.

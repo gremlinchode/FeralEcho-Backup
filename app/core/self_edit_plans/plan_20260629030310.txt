@@ -1,0 +1,7 @@
+1. Import necessary modules from `app.core.self_edit_generated` into the current script: `from app.core.self_edit_generated import strip_prose, score_code_candidate`
+2. Open and load the `strip_prose` function from `app.core.self_edit_generated.py`.
+3. Modify the `strip_prose` function to strip any leading natural-language sentence before the first valid Python token using a regular expression pattern: `re.compile(r'^\s*\w+\.', re.MULTILINE).sub('', input_text)`
+4. Update the `score_code_candidate` function in `app.core.self_edit_generated.py` to utilize the modified `strip_prose` function for stripping prose from code output.
+5. Save the modifications made to `app.core.self_edit_generated.py`.
+6. Run the modified script through the `bootstrap_all` function from `app.core.awareness_tools_integration` to ensure that all necessary tools are registered and available.
+7. Verify the modifications by re-running the autonomous AI system with a 'creative' task performance.

@@ -1,0 +1,10 @@
+Here is my response:
+
+1. From app.core.self_edit_generated import strip_prose
+2. self_edit = load_tool('self_edit')
+3. re.sub(r'^\w*\.\s*', '', output)
+4. stripped_output = self_edit(stripped_output)
+5. def self_edit(output): return re.sub(r'^\w*\.\s*', '', output)
+6. open('app/core/self_edit_generated.py', 'w').write(self_edit.__code__.co_code)
+7. run_cartographer()
+8. start_emergent_scheduler()

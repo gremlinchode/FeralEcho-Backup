@@ -1,0 +1,9 @@
+1. Import necessary modules from `app.emergent_scheduler` and `app.core.self_edit_generated`.
+2. Open the file `app/core/self_edit_generated.py` for modification.
+3. Locate the function `strip_prose` within the file and modify it to add a tighter prose-detection guard that strips any leading natural-language sentence before the first valid Python token.
+4. Implement the modified `strip_prose` function as follows: iterate through each line of code output, check if the line starts with a natural language sentence (detected using a regular expression), and if so, strip the entire line until the first valid Python token is found.
+5. Replace the original `strip_prose` function in the file with the modified implementation.
+6. Save the modified file.
+7. Update the `self_edit_generated` module to reflect the changes made.
+
+Note: The council's perspectives are not mutually exclusive, and a unified response can be achieved by incorporating the best insights from each perspective.

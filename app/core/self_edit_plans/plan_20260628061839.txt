@@ -1,0 +1,11 @@
+Here is the numbered list of steps to modify `app/core/self_edit_generated.py` for autonomous self-edit targeting 'creative' task performance:
+
+1. Import the `self_edit_generated` module from `app/core/self_edit_generated.py`.
+2. Define a new regular expression pattern to detect and strip leading natural-language sentences that are not followed by a valid Python token.
+3. Modify the existing prose-stripping logic in the `strip_prose()` function to incorporate the new regular expression pattern.
+4. Add a logging statement to record when the prose-detection guard was triggered and the amount of text stripped.
+5. Test the modified function to ensure it correctly strips prose from code output.
+6. Save the modified file using a function like `save_file` or similar.
+7. Trigger an `analyze_python_code()` call from `app.autonomous_awareness` to ensure changes are incorporated and code integrity is maintained.
+
+Note that I have omitted steps involving input(), user prompts, or interactive elements, as per the original prompt.

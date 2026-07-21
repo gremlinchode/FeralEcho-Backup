@@ -1,0 +1,10 @@
+1. Import necessary modules from FeralEcho: `from app.core.self_edit_generated import main_function`
+2. Parse the `main_function` within `app/core/self_edit_generated.py` to identify code generation logic and potential areas for optimization.
+3. Implement a function to measure the average response length of the existing `main_function` over multiple executions (e.g., 10 runs).
+4. Refactor the `main_function` by applying techniques such as code simplification, variable renaming, and algorithmic optimization to reduce average response length.
+5. Implement a correctness check function that runs the modified `main_function` with a set of test inputs and verifies the output matches expected outcomes.
+6. Iterate through the code generation process, refining the modifications to `main_function` based on the results of the correctness check, aiming for a 20% reduction in average response length while maintaining accuracy.
+7. Strip unnecessary comments and whitespace from the modified `main_function`.
+8. Update the `modified_main_function` with the final optimized code generation logic, including version control commit markers.
+
+Note: I've incorporated elements from each perspective to produce a unified response that addresses the task requirements.

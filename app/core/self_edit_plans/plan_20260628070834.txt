@@ -1,0 +1,11 @@
+1. Import necessary modules from `app.core.self_edit_generated` into the current script: from app.core.self_edit_generated import strip_prose
+2. Load the original code-generation function, `strip_prose`, from `app.core.self_edit_generated`: strip_prose_func = strip_prose
+3. Define a new function, `refactor_strip_prose`, to refactor the original function and reduce its average response length by 20%: def refactor_strip_prose(input_string):
+4. Implement modifications in `refactor_strip_prose` to optimize the function without affecting correctness:
+   * Remove unnecessary whitespace and formatting
+   * Simplify complex expressions and conditions
+   * Eliminate redundant code blocks
+5. Replace the original code-generation function with the refactored version: strip_prose = refactor_strip_prose
+6. Verify the refactored function's correctness by testing it with a set of known inputs: for test_input in test_inputs:
+   * Run refactored `strip_prose` on the input and compare to expected output
+7. Update the modified file, `app/core/self_edit_generated.py`, with the refactored code:

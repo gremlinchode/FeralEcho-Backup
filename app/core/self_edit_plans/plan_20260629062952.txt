@@ -1,0 +1,7 @@
+1. Import necessary modules from `app.core.self_edit_generated` for editing the `strip_sandbox_output` function: `from app.core.self_edit_generated import strip_sandbox_output`.
+2. Copy the `strip_sandbox_output` function to a new variable, preserving its original implementation.
+3. Modify the copied function by inserting a conditional statement to check if the output length exceeds 80 characters; if it does, truncate the string to 80 characters: `if len(sandbox_output) > 80: sandbox_output = sandbox_output[:79] + '...'`.
+4. Update the original `strip_sandbox_output` function with the modified implementation from step 3.
+5. Remove any unnecessary imports or comments from the updated file.
+6. Verify that the modified function reduces the average response length by at least 20% without affecting correctness using automated testing and code analysis tools.
+7. Save the modified `app/core/self_edit_generated.py` file.

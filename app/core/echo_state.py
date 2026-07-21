@@ -28,10 +28,35 @@
 #                             magnitude. Sourced entirely from signals this
 #                             project already treats as externally-anchored
 #                             (self_edit_outcomes.jsonl's pre/post deltas,
-#                             council_rater.py's peer-model average), not
-#                             Echo's own self-referential quality_score.
-#                             Fails closed to 0.0 (neutral) if neither
-#                             source is available yet.
+#                             council_rater.py's peer-model average, and —
+#                             added 2026-07-21, closing the gap Finding 35
+#                             flagged and never wired — echo_optuna.py's
+#                             dry-run trial-vs-production quality deltas),
+#                             not Echo's own self-referential quality_score.
+#                             Fails closed to 0.0 (neutral) if none of the
+#                             three sources is available yet.
+#
+#                             Why the third source: a live investigation
+#                             (2026-07-21) found valence bit-identical
+#                             across its entire 100-reading history buffer
+#                             — not a bug, but a real consequence of its
+#                             first two sources both being rare (a real,
+#                             non-dry-run self-edit deploy lands roughly
+#                             every 1-2 days; the council-rating average
+#                             moves on a similar timescale). On the scale
+#                             of a single conversation, valence was
+#                             effectively a constant. Optuna's dry-run
+#                             trials fire roughly 10x/hour and already
+#                             publish a real trial-vs-production quality
+#                             comparison to the Global Workspace
+#                             (self_edit.dry_run_quality_delta, Phase 7.1)
+#                             — reading that gives valence real temporal
+#                             resolution on session timescales for the
+#                             first time. Deliberately observational only,
+#                             same posture as every other valence source:
+#                             this dimension already feeds prompts and
+#                             emergent_scheduler's pacing, nothing new is
+#                             wired to consequence here.
 # ============================================================
 
 import json
@@ -61,6 +86,74 @@ STATE_LABELS = [
 _STATE_PATH = Path("memory/echo_state.npy")
 _HISTORY_PATH = Path("memory/echo_state_history.npy")
 _HISTORY_SIZE = 100  # ring buffer — ~3.3h at 2-min cycles
+_WORKSPACE_LOG_PATH = Path("memory/workspace_log.jsonl")
+_DRY_RUN_QUALITY_RECENT_N = 10  # matches introspection's recent_quality_delta window size
+
+
+def _recent_dry_run_quality_component() -> "float | None":
+    """
+    Third valence source (2026-07-21, closes Finding 35's never-wired gap).
+
+    Reads the most recent `self_edit.dry_run_quality_delta` events straight
+    from the Global Workspace log — the same real events echo_optuna.py has
+    published on every dry-run trial since Phase 7.1, ~10x/hour, previously
+    consumed nowhere except self_edit_outcome_tracker.py's per-outcome
+    windowed aggregate (which is itself deliberately NOT wired into
+    echo_state.py, per that module's own docstring — this reads the raw
+    workspace events directly instead, a separate and much simpler path).
+
+    Self-contained rather than importing introspection_channel.py's
+    _tail_jsonl(): that module already imports FROM echo_state.py, so the
+    reverse import would be circular.
+
+    Each event's detail carries {trial_quality, current_quality}, both a
+    0-4 AST-based code-quality score (current_quality is -1 when no
+    production code exists yet to compare against — treated as unavailable,
+    not as a real zero). delta = trial_quality - current_quality, normalized
+    to roughly [-1, 1] by /4.0. Returns the mean of the most recent
+    _DRY_RUN_QUALITY_RECENT_N valid deltas, or None if none are found —
+    same fail-closed shape as the other two valence sources below.
+    """
+    try:
+        with open(_WORKSPACE_LOG_PATH, "r", encoding="utf-8", errors="replace") as f:
+            # Generous tail: dry-run events are interleaved with other
+            # workspace event types (emergent_loop.salience fires every
+            # cycle too), so scanning only the last _DRY_RUN_QUALITY_RECENT_N
+            # raw lines would usually find zero. 400 is comfortably more
+            # than the real event density observed (~10/hour dry-run vs.
+            # several other per-cycle publishers) needs to find the last 10.
+            raw_lines = f.readlines()[-400:]
+    except Exception:
+        return None
+
+    deltas: list = []
+    for line in reversed(raw_lines):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            entry = json.loads(line)
+        except Exception:
+            continue
+        if entry.get("type") != "self_edit.dry_run_quality_delta":
+            continue
+        detail = entry.get("detail") or {}
+        trial_q = detail.get("trial_quality")
+        current_q = detail.get("current_quality")
+        if trial_q is None or current_q is None:
+            continue
+        try:
+            trial_q = float(trial_q)
+            current_q = float(current_q)
+        except (TypeError, ValueError):
+            continue
+        if current_q < 0:  # -1 sentinel: no production code yet to compare against
+            continue
+        deltas.append(float(np.clip((trial_q - current_q) / 4.0, -1.0, 1.0)))
+        if len(deltas) >= _DRY_RUN_QUALITY_RECENT_N:
+            break
+
+    return float(np.mean(deltas)) if deltas else None
 
 
 def compute(introspection_state: dict) -> np.ndarray:
@@ -142,6 +235,12 @@ def compute(introspection_state: dict) -> np.ndarray:
             # 5=+1 (best), 1=-1 (worst), 3=0 (neutral) — same recentering
             # shape used nowhere else in this file yet, first signed source.
             valence_components.append(float(np.clip((float(council_avg) - 3.0) / 2.0, -1.0, 1.0)))
+    except Exception:
+        pass
+    try:
+        dry_run_component = _recent_dry_run_quality_component()
+        if dry_run_component is not None:
+            valence_components.append(dry_run_component)
     except Exception:
         pass
     vec[8] = float(np.mean(valence_components)) if valence_components else 0.0

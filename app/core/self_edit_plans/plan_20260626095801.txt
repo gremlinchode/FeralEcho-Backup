@@ -1,0 +1,10 @@
+1. Import the `ollama_handler` module from `app`.
+2. Call the `is_ollama_running()` function within the `ollama_handler` to determine if the Ollama server is active.
+3. If Ollama is running, initiate a query to the Ollama server using `query_ollama()` with an appropriate prompt for code generation instructions.
+4. Capture the response from the Ollama server using `generate_code()`.
+5. Parse the generated code string from the Ollama response, focusing on the integration logic for 'ollama_query'.
+6. Utilize the `ToolManager` to register the newly generated code as a tool within the Echo system's available tools.
+7. Update the configuration settings related to the ‘ollama_query’ tool registration using the appropriate method within the `ToolManager`.
+8. Record this new tool registration and update the awareness integration accordingly.
+
+Note: I have chosen the perspective that provides the most relevant insights for the task at hand, while also considering the coherence and relevance of the other perspectives.

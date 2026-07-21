@@ -1,0 +1,11 @@
+Here is the unified response:
+
+1. Import necessary modules from app.core.self_edit_generated: `from app.core.self_edit_generated import score_code_candidate, strip_prose`
+2. Modify the score_code_candidate function to incorporate a new parameter 'length_reduction_percentage' set to 20%.
+3. Within the score_code_candidate function, create an if-else statement that checks if the calculated length reduction percentage is greater than the current code length threshold (e.g., 50 characters).
+4. If the condition is met, implement a recursive function call to recursively strip prose and adjust the code length until it meets the desired reduction target.
+5. In the original score_code_candidate function, replace the existing code generation logic with a new conditional statement that checks if the calculated code length exceeds the revised threshold (e.g., 30 characters).
+6. If true, return an error message indicating excessive code length; otherwise, execute the original code generation algorithm.
+7. Refactor the main code-generation function to incorporate the modified score_code_candidate function and the new conditional logic.
+
+These steps address the key challenges in reducing the average response length by 20% without losing correctness while focusing on refactoring the main code-generation function.

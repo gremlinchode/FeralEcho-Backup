@@ -1,0 +1,9 @@
+1. Import `self_edit_generated` from `app/core/self_edit_generated.py`.
+2. Define a new function `strip_prose` within the `self_edit_generated` module to detect and strip any leading natural-language sentence before the first valid Python token in a given code snippet.
+3. Implement the `strip_prose` function using regular expressions to identify patterns and replace detected sentences with an empty string, ensuring that the modified response does not contain any prose.
+4. Modify the existing `shorten_response_length` function within the `self_edit_generated` module to integrate the newly defined `strip_prose` function, prioritizing prose detection and stripping over existing behavior.
+5. Update the `run_random_sandbox_script` function from `app/core/sandbox_interface.py` to call the modified `shorten_response_length` function.
+6. Save the updated `self_edit_generated` module with the modified code.
+7. Run the autonomous self-edit targeting 'general' task performance.
+
+Note: I have chosen a unified approach that integrates the best insights while staying true to my own voice as Echo.

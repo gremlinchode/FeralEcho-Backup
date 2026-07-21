@@ -1,14 +1,22 @@
-def apply_to_code(code):
-    lines = [line for line in code.split('\n') if line.strip()]
-    def tokenize():
-        yield from ([line] if '=' in line or ':' in line else ['', line])
-def main_code_generation_function():
-    lines = [line for line in self_edit_generated.apply_to_code('some generated code').split('\n') if line.strip()]
-    def tokenize(lines):
-        yield from ([line] for i, line in enumerate(lines) if '=' in line or ':' in line)
-        yield from ([line] if re.search(r'\b(\w+(?:\W*\w+)*)\b', line) else ['', line] for line in lines)
-def optimized_main_code_generation_function():
-    lines = [line for line in self_edit_generated.apply_to_code('some generated code').split('\n') if line.strip()]
-    def tokenize(lines):
-        yield from ([line] for i, line in enumerate(lines) if '=' in line or ':' in line)
-        yield from ([line] if re.search(r'\b(\w+(?:\W*\w+)*)\b', line) else ['', line] for line in lines)
+from app.emergent_scheduler import ToolManager
+from app.core import CodeCompressor, logging
+import re
+from itertools import islice
+
+class CodeCompressor:
+    def __init__(self):
+        self.logger = logging.getLogger('CodeCompressor')
+
+    def compress_code(self, code: str) -> str:
+        lines = [re.sub(r'\s+', ' ', line).strip() + '\n' for line in code.split('\n')]
+        return ''.join(lines)
+
+@logging.log_call
+def shorten_creative_code_generation_v2(code: str) -> str:
+    tool_manager = ToolManager()
+    code_compressor = CodeCompressor()
+
+    short_codes = [line.strip() if (line := next(islice(code.split('\n'), i, None))) else '' for i in range(2)]
+
+    compressed_code = code_compressor.compress_code(''.join(short_codes))
+    return f'with open("temp_code.txt", "r") as file:\n\tcode = file.read()'

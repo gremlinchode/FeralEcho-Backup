@@ -1,0 +1,9 @@
+1. Import necessary modules from app.core.self_edit_generated: `from app.core.self_edit_generated import strip_prose`.
+2. Load the strip_prose function from app.core.self_edit_generated for modification.
+3. Define a new function, shorten_code(), to apply modifications to strip_prose() while maintaining correctness: `def shorten_code(strip_prose): ...`
+4. Modify the strip_prose() function by applying the shorten_code() logic to reduce its average response length by 20%: `strip_prose = shorten_code(strip_prose)`.
+5. Replace the original strip_prose() function with the modified version in app.core.self_edit_generated.py.
+6. Verify that the refactored code remains correct and functional through unit testing or sanity checks.
+7. Save the modified script to app/core/self_edit_generated.py.
+
+Note: The above steps are based on perspective [1. Echo] with some adjustments for clarity and coherence.

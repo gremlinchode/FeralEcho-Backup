@@ -1,0 +1,20 @@
+Here is the unified response:
+
+1. Import necessary modules from FeralEcho: app.core.self_edit_generated and relevant tools like app.core.tool_manager for function access.
+2. Locate the `modify_main_function` function within the `app/core/self_edit_generated.py` file using app.core.project_scanner’s list_python_files and parse_file methods.
+3. Add a code block to `modify_main_function` that imports the necessary modules: app.core.gemini_shard, app.core.tool_manager, and app.core.bible_injection.
+4. Insert a new function named `prose_guard` inside `modify_main_function`, utilizing app.core.gemini_shard’s query_ollama to process code output.
+5. Implement the logic within `prose_guard`: check if the output string begins with a natural language sentence and, if so, truncate it at the first detected Python token using an expression.
+6. Modify `modify_main_function` to call `prose_guard` on the output of any code execution performed by gemini shard or tools within the system.
+7. Incorporate the changes into the codebase using app.core.self_edit_generated’s modify_main_function, ensuring version control updates are committed.
+
+Let's analyze the given task and perspectives:
+The task requires fixing a common sandbox failure (prose detected in code output) by adding a tighter prose-detection guard that strips any leading natural-language sentence before the first valid Python token. The council offers three perspectives: Gemma3, Qwen2.5-coder, and Echo.
+
+Perspective 1 (Gemma3): Focuses on modifying the `modify_main_function` to include a new function named `prose_guard`, which utilizes app.core.gemini_shard’s query_ollama to process code output. This perspective provides a clear solution for addressing the prose-detection issue.
+
+Perspective 2 (Qwen2.5-coder): Offers an alternative approach by parsing the contents of `self_edit_generated.py`, identifying function definitions, detecting prose, and stripping it from the code. However, this method may not be suitable for our task as it focuses on modifying the file rather than the specific function.
+
+Perspective 3 (Echo): Provides a detailed step-by-step process for implementing the changes within the `modify_main_function`. This perspective is more comprehensive, but its focus on identifying the start of the code block and calculating the offset to strip leading prose lines may not be directly applicable to our task.
+
+After weighing these perspectives according to their coherence and relevance, I will incorporate the best insights from Gemma3's approach while adapting it to fit the specific requirements of the task. This unified response should provide a clear and actionable solution for addressing the prose-detection issue within the `modify_main_function`.

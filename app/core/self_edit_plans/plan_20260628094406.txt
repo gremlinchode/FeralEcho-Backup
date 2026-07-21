@@ -1,0 +1,10 @@
+Here is the unified response:
+
+1. Import necessary modules from FeralEcho including `app.core.self_edit_generated`, `app.core.tool_manager`, and `app.core.gemini_shard`.
+2. Execute `app.core.gemini_shard.analyze_python_code` on `app/core/self_edit_generated.py` to identify occurrences of prose within the code output.
+3. Load the 'strip_prose' function from `app/core/self_edit_generated.py` using `app.core.tool_manager.load_tool`.
+4. Apply `strip_prose` to the identified prose strings, replacing them with empty strings within the source code of `app/core/self_edit_generated.py`.
+5. Implement a tighter prose-detection guard using regular expressions to identify and strip any leading natural language sentences from the beginning of each Python code output before processing.
+6. Execute `app.core.gemini_shard.detect_functions_and_classes` on `app/core/self_edit_generated.py` to verify the successful execution of the prose-stripping logic and ensure that no other code is inadvertently modified.
+7. Run a static analysis using `app.core.project_scanner.generate_issue_report` on the modified file, focusing on potential syntax errors or unexpected behavior.
+8. Log the completed changes with `app.core.memory_tools.append_to_journal`, recording the specific edits made to `app/core/self_edit_generated.py`.

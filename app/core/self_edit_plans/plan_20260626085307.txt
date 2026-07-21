@@ -1,0 +1,8 @@
+1. Start the Ollama server by calling the `start_ollama_server` function from the `ollama_handler` module to initiate the Ollama server.
+2. Register the 'ollama_query' function using the `register_package_functions` function from the `autonomous_harmony_manager`.
+3. Discover and register installed packages for the current environment using the `discover_installed_packages` function from the `awareness_tools_integration`.
+4. Load the project map to ensure correct context for modification using the `load_project_map` function from the `core.load_project_map`.
+5. Use the `generate_parameter_hints` function from the `echo_model_guided_orchestrator` module to integrate 'ollama_query' with the model.
+6. Modify the orchestrator code to include a new function call for 'ollama_query'.
+7. Save the updated EchoModelOrchestrator.py file using the `save_code` function from the `self_edit_manager`.
+8. Log the event of integrating 'ollama_query' in memory journal for future reference using the `log_memory_event` function from the `memory_tools`.

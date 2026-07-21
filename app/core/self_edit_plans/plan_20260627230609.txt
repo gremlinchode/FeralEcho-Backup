@@ -1,0 +1,8 @@
+1. Import the strip_prose function from app.core.self_edit_generated: `from app.core.self_edit_generated import strip_prose`
+2. Load the original self-edit generated function from app/core/self_edit_generated.py into a new variable: `original_function = __import__('app.core.self_edit_generated').self_edit_generated`
+3. Modify the loaded function to use strip_prose on the output before returning it: `def modified_function(): return strip_prose(original_function())`
+4. Define a new function that takes in the original self-edit generated function as an argument and returns the modified version with prose detection: `def strip_prose_detector(function): return modified_function()`
+5. Implement the new function by using strip_prose on the output of the original function: `modified_function = lambda: strip_prose(original_function())`
+6. Replace the original self-edit generated function with the modified one: `self_edit_generated = modified_function`
+7. Save the changes to app/core/self_edit_generated.py
+8. Test the modification by running a sandbox cycle and verifying that prose detection is successfully stripped from the code output

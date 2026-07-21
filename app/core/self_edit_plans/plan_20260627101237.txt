@@ -1,0 +1,10 @@
+Here is the unified response:
+
+1. Import necessary modules from FeralEcho: `from app.core.self_edit_generated import *; from app.core.tool_manager import ToolManager`
+2. Instantiate a Tool object using the ToolManager, targeting code formatting tools within the self-edit module: `tool = ToolManager().get_tool('self_edit')`
+3. Execute `strip_prose` function to remove leading natural language sentences from generated output: `tool.strip_prose()`
+4. Implement an if statement before main function execution to detect natural-language text: `if code_output.startswith('This is an imaginary story'): strip_prose(code_output)`
+5. If preceding step detects natural language, execute `main_function` within a try-except block to catch potential errors: `try: modified_main_function() except: print("Error occurred")`
+6. Implement recursive check inside `main_function` to ensure generated code contains no natural-language sentences before valid Python tokens: `while True: if not code_output.startswith('This is an imaginary story'): break; code_output = code_output.split('.')[0]; main_function()`
+7. Validate modified output using schema validation function (check_schema) in app.core.memory_write_validator: `ValidationResult.check_schema(modified_output)`
+8. Log successful modification and update self-model's knowledge base with changed code in app.core.self_model_updater: `self_model_updater.update_knowledge_base(modified_output)`

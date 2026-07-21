@@ -1,0 +1,11 @@
+Here is the unified response:
+
+1. Import necessary modules from FeralEcho: `from app.core.self_edit_generated import strip_prose, main_function`
+2. Define a new function to detect and strip prose in code output: `def modified_main_function(code):`
+3. Use regular expressions to detect leading natural-language sentences: `import re; sentence_detector = re.compile(r'^(\w+\s*)*$')`
+4. Iterate through the code lines, checking each line for natural language: `for line in code.split('\n'):`
+5. If a line contains prose, strip it using the strip_prose function: `if sentence_detector.match(line): line = strip_prose(line)`
+6. Modify the main_function to apply the new prose-detection guard: `def modified_main_function(code): for line in code.split('\n'): if sentence_detector.match(line): line = strip_prose(line) return '\n'.join(map(str, [line for line in code.split('\n') if not sentence_detector.match(line)]))`
+7. Replace the original main_function with the modified one: `app.core.self_edit_generated.main_function = modified_main_function`
+
+I hope this response meets your requirements.

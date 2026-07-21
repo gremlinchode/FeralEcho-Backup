@@ -1,0 +1,7 @@
+1. Import app.core.self_edit_generated and relevant modules from FeralEcho: `from app.core.self_edit_generated import shorten_response_length`
+2. Update shorten_response_length to accept an additional parameter, input_text, which represents the text output from the sandbox script.
+3. Within shorten_response_length, create a new function, detect_prose, that uses natural language processing techniques to identify prose in the input text.
+4. Modify the existing logic within shorten_response_length to call detect_prose and strip any detected prose before applying the original response length shortening algorithm.
+5. Update app/core/self_edit_generated.py file to reflect changes made in steps 1-4.
+6. Implement a guard clause to prevent prose detection when input text is not a string or does not contain at least one valid Python token.
+7. Use updated shorten_response_length function within autonomous self-editing mechanism to ensure that prose is correctly detected and removed from code output.

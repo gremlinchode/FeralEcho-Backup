@@ -1,0 +1,13 @@
+Here are the steps:
+
+1. `from app.core.self_edit_generated import strip_prose`
+2. `app.core.project_scanner.parse_file('app/core/self_edit_generated.py')`
+3. Within the parsed function, identify and isolate the core logic responsible for generating Python code.
+4. Implement a refactoring strategy to reduce average response length by 20% without losing correctness:
+    - Simplify conditional statements
+    - Reduce redundant calculations within the generated code
+    - Optimize variable names
+5. Apply `strip_prose` to remove unnecessary comments or whitespace from the refined code section.
+6. Evaluate the refactored code using `score_code_candidate`, aiming for a score exceeding 0.85 representing acceptable correctness.
+7. If the score is below the threshold, adjust the refactoring parameters using `load_tool` and re-evaluate the code.
+8. Save the modified code back into `app/core/self_edit_generated.py` utilizing `scan_project` and `generate_issue_report`.

@@ -1,0 +1,11 @@
+Here is my response:
+
+1. Import `strip_prose` from `app.core.self_edit_generated`.
+2. Define the function `detect_and_strip_sandbox_output()` to detect and remove prose from sandbox output.
+3. Open the target file (`'sandbox_output.txt'`) in read mode.
+4. Read the contents of the file line by line using a while loop or list comprehension.
+5. For each line, check if it starts with a valid Python token (e.g., 'if', 'def', 'class', etc.) and contains no natural language sentence.
+6. If the line passes the above checks, append it to a new list containing the modified lines.
+7. Write the modified lines back to the target file in overwrite mode.
+
+Note: These steps are technical, specific, and implementable without user interaction.

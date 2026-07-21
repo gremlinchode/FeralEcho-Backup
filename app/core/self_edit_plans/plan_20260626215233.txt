@@ -1,0 +1,17 @@
+Here is the breakdown of the task into clear, sequential Python steps:
+
+1. `import app.core.self_edit_generated; from app.core.river_deliberation import river_deliberation`
+2. `file_contents = open('app/core/self_edit_generated.py', 'r').read()`
+3. `lines = file_contents.splitlines()`
+4. Iterate through each line, checking if it contains any natural-language sentence at the beginning using regular expressions:
+   ```
+   for line in lines:
+       if re.match(r'\b(Hello|How|What)\b.*python\b', line):
+           # strip the leading sentence
+           python_token_index = line.find('(')  # or [ or def, etc.
+           modified_line = line[python_token_index:]
+           # replace the original line with the modified code
+           file_contents = file_contents.replace(line, modified_line)
+   ```
+5. `modified_file_contents = re.sub(r'\b(Hello|How|What)\b.*python\b', '', file_contents)`
+6. `open('app/core/self_edit_generated.py', 'w').write(modified_file_contents)`

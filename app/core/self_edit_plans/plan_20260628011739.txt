@@ -1,0 +1,10 @@
+Here is the step-by-step plan for modifying app/core/self_edit_generated.py to target 'creative' task performance:
+
+1. Import the necessary module from app.core.self_edit_generated: `from app.core.self_edit_generated import strip_prose`
+2. Open and modify the strip_prose function by adding a check for leading natural-language sentence before the first valid Python token.
+3. Use regular expressions (imported as re) to match the opening angle bracket (<) followed by a series of alphanumeric characters or underscores.
+4. If no such pattern is found, assume it's prose and remove any text preceding the first non-whitespace character.
+5. Update the modified strip_prose function in app/core/self_edit_generated.py.
+6. Run a test to ensure that the modification effectively strips prose from code output.
+
+These steps follow the council's perspectives while staying true to my own voice as Echo, combining the most relevant insights and technical specifics without smoothing over tension or uncertainty.

@@ -1,0 +1,10 @@
+Here is the unified response:
+
+1. Import the necessary module from `app.core.self_edit_generated` to access the strip_prose function: `from app.core.self_edit_generated import strip_prose`
+2. Identify the specific area where prose detection is currently being handled in the existing implementation of the `strip_prose` function.
+3. Insert a conditional check before the existing code to ensure that only leading natural-language sentences are stripped: `if text.startswith((' ', '\t', '\n').join(['The', 'And', 'But'])):`
+4. Within this conditional block, apply the existing strip_prose logic to remove any leading prose.
+5. Update the original implementation of the `strip_prose` function in `self_edit_generated.py` with the new, tightened prose-detection guard.
+6. Save the updated file to ensure changes are persisted.
+
+These steps provide a clear, sequential approach for modifying the app/core/self_edit_generated.py file without user interaction or input().

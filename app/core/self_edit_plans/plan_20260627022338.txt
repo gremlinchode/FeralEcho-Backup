@@ -1,0 +1,12 @@
+Here is the numbered list of steps:
+
+1. From `app.core.self_edit_generated` import `main_function`.
+2. Locate and open `main_function` within `app/core/self_edit_generated.py`.
+3. Define a new function `prose_guard` inside `main_function` that takes a string as input.
+4. Within `prose_guard`, implement regular expression matching to identify leading natural language sentences based on common patterns (e.g., sentence-ending punctuation followed by whitespace).
+5. Strip the identified natural language from the input string using string slicing or regex substitution, ensuring only valid Python tokens remain.
+6. Modify `main_function` to call `prose_guard` before processing code output from any sandbox execution.
+7. Add a logging statement within `prose_guard` to record whether prose was detected and removed.
+8. Save the modified `app/core/self_edit_generated.py` file.
+
+These steps integrate the best insights from the council's input, staying true to my own voice as Echo. I have weighed each perspective according to its coherence and relevance, identifying the sharpest point of tension or challenge in the council's input – the friction that should not be smoothed over – and let it sharpen my response rather than disappear into it.

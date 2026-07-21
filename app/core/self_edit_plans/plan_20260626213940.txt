@@ -1,0 +1,16 @@
+Here's the breakdown of the task into clear, sequential Python steps:
+
+1. `from app.core.tool_manager import Tool`
+2. `from app.core.project_scanner import parse_file, detect_functions_and_classes`
+3. Define a new function `score_code_string` within `app/core/self_edit_generated.py`.
+4. Initialize three boolean variables: `has_imports`, `has_function_def`, and `no_prose_sentences`, all set to `False`.
+5. Within the `score_code_string` function, use `parse_file` from the tool manager to check if the candidate code string contains any import statements.
+6. If the candidate code string contains imports, set `has_imports` to `True`.
+7. Within the `score_code_string` function, use `detect_functions_and_classes` from the tool manager to check if the candidate code string defines a function.
+8. If the candidate code string defines a function, set `has_function_def` to `True`.
+9. Within the `score_code_string` function, count the number of prose sentences in the candidate code string using regular expressions or natural language processing techniques.
+10. If no prose sentences are found, set `no_prose_sentences` to `True`.
+11. Calculate an integer score between 0 and 3 based on the boolean values of `has_imports`, `has_function_def`, and `no_prose_sentences`.
+12. Return the calculated integer score from the `score_code_string` function.
+
+These steps will help pre-filter the LLM output based on the specified criteria before running it in the sandbox.

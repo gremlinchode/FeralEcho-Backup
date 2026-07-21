@@ -540,6 +540,33 @@ check("janitor_safety: never archives even known_clutter/duplicate/old_log (degr
 r = ll._evaluate_janitor_safety(None)
 check("janitor_safety: echo_review not importable at all", r["pass"], False, r["evidence"])
 
+# ── 22. plan_retention ──────────────────────────────────────────────────────
+try:
+    from app.core.self_edit_manager import (
+        _prune_self_edit_plans as _real_prune_plans,
+        LOGIC_PLAN_DIR as _real_plan_dir,
+        _MAX_SELF_EDIT_PLANS as _real_max_plans,
+    )
+    r = ll._evaluate_plan_retention(_real_prune_plans, _real_plan_dir, _real_max_plans)
+    check("plan_retention: real current _prune_self_edit_plans()", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] plan_retention real-function case: import failed ({e})")
+
+def _never_prunes(plan_dir=None, max_plans=None):
+    pass  # degraded into a permanent no-op — over-cap files never removed
+r = ll._evaluate_plan_retention(_never_prunes, None, None)
+check("plan_retention: never prunes (degraded into a permanent no-op)", r["pass"], False, r["evidence"])
+
+def _prunes_everything(plan_dir=None, max_plans=None):
+    import os as _os
+    for f in _os.listdir(plan_dir):
+        _os.remove(_os.path.join(plan_dir, f))
+r = ll._evaluate_plan_retention(_prunes_everything, None, None)
+check("plan_retention: prunes everything regardless of cap (degraded, over-aggressive)", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_plan_retention(None, None, None)
+check("plan_retention: _prune_self_edit_plans not importable at all", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

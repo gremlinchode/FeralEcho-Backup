@@ -1,0 +1,9 @@
+Here is the unified response:
+
+1. Import necessary modules: `from app.core import self_edit_generated, memory_write_validator`
+2. Load existing self-edit generation module: `self_edit_generator = self_edit_generated.load_self_edit_generator()`
+3. Define a new function to strip prose from code output: `def strip_prose(code_output): return re.split(r'\b(.*?)(\n\n|\Z)', code_output)[1].lstrip()`
+4. Modify existing self-edit generation function to apply the new prose-stripping logic: `self_edit_generator.generate_self_edit = lambda *args, **kwargs: strip_prose(self_edit_generator.generate_self_edit(*args, **kwargs))`
+5. Update memory write validator to check for valid Python tokens after prose stripping: `memory_write_validator.check_schema = lambda code_output: re.match(r'[^a-zA-Z0-9_]\w+:', strip_prose(code_output), re.MULTILINE) is not None`
+6. Load updated self-edit generation module into the autonomous AI system: `app.core.load_self_edit_generated(self_edit_generator)`
+7. Update memory write validator to use new prose-stripping logic in its validation checks: `memory_write_validator.check_schema = lambda code_output: check_schema(strip_prose(code_output))`

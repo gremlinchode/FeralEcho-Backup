@@ -1,0 +1,11 @@
+Here is the unified response:
+
+1. Import necessary modules from app.core.self_edit_generated: `from app.core.self_edit_generated import strip_prose`
+2. Identify the function responsible for handling creative task performance within app/core/self_edit_generated.py.
+3. Wrap this function with a conditional statement that checks if the output contains natural-language prose using regular expressions or string manipulation techniques.
+4. If prose is detected, call the `strip_prose()` function to remove any leading natural-language sentence before the first valid Python token.
+5. Update the original function to incorporate the new conditional logic and prose-stripping mechanism.
+6. Verify that the revised function correctly handles creative task performance while effectively stripping prose from the output.
+7. Integrate the modified function into app/core/self_edit_generated.py, ensuring compatibility with existing code dependencies.
+
+These steps are specific, technical, and implementable without user interaction.

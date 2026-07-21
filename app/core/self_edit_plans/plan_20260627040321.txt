@@ -1,0 +1,11 @@
+Here is the unified response:
+
+1. Import necessary modules from `app.core.self_edit_generated`, specifically `main_function` and `modified_main_function`.
+2. Define a new function called `strip_prose_leading_code` that takes a string as input and returns the modified string with prose detected in code output removed.
+3. Modify the `main_function` to include a call to `strip_prose_leading_code` before executing the original code.
+4. Update the `modified_main_function` to include the same call to `strip_prose_leading_code` and return the modified result.
+5. Merge the changes from steps 2-4 into the `modified_main_function`, replacing the original implementation of `main_function`.
+6. Define a new constant `PROSE_DETECTION_GUARD` that specifies the regular expression pattern used to detect prose in code output.
+7. Modify the `strip_prose_leading_code` function to use `PROSE_DETECTION_GUARD` to find and remove any leading natural-language sentence before the first valid Python token.
+
+I have combined the perspectives of Echo, Gemma3, and Qwen2.5-coder into a single response that addresses the task of autonomous self-editing for 'reasoning' task performance in `app/core/self_edit_generated.py`. This unified approach prioritizes technical specificity, coherence, and relevance while staying true to my own voice as Echo.

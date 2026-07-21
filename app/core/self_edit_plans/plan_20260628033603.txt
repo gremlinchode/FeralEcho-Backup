@@ -1,0 +1,8 @@
+Here is the unified response:
+
+1. Import necessary modules from `app.core.self_edit_generated`: from app.core.self_edit_generated import strip_prose
+2. Open the file for modification: with open('app/core/self_edit_generated.py', 'r') as f:
+3. Read the entire file into a string: code = f.read()
+4. Apply the strip_prose function to the read code, using the existing logic to strip prose: processed_code = strip_prose(code)
+5. Overwrite the original file with the modified code: with open('app/core/self_edit_generated.py', 'w') as f:
+6. Write the processed code back into the file: f.write(processed_code)

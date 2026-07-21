@@ -1,13 +1,33 @@
 {
-  "timestamp": "2026-07-21T01:00:36.901135",
-  "dry_run": false,
+  "timestamp": "2026-07-21T15:07:46.709731",
+  "dry_run": true,
   "summary": {
     "archived": [],
     "kept": [],
     "flagged": [
       "spot_check.py",
       "verify_riverbrain.py",
-      "thunderhead.py"
+      "thunderhead.py",
+      "memory_meta_pre_delete_20260705T213227Z.json",
+      "faiss_pre_delete_20260705T213227Z.index",
+      "memory_meta_splitbrain_20260702T215002Z.json",
+      "faiss_contaminated_20260702T195258Z.index",
+      "prediction_log_contaminated_20260702T195413Z.jsonl",
+      "faiss_splitbrain_20260702T215002Z.index",
+      "memory_meta_contaminated_20260702T195258Z.json",
+      "world_model_diagnostics_contaminated_20260702T195413Z.json",
+      "faiss_prefixfix_20260703T003838Z.index",
+      "memory_meta_prefixfix_20260703T003838Z.json",
+      "bible_structured.json.save",
+      "imports.txt",
+      "bible_queue.jsonl",
+      "lattice_log.json",
+      "project_learner_output.txt",
+      "WhisperOfPeace.wav",
+      "ChatGPT Image Feb 21, 2026 at 11_35_53 PM.png",
+      "feral_echo_symbolic_map.json",
+      "feral_echo_report_index.json",
+      "bible_structured.json"
     ],
     "errors": []
   },
@@ -35,6 +55,166 @@
       "detail": "No static import of this module found in app/ or root scripts",
       "decision": "flag",
       "echo_reason": "Ambiguous \u2014 needs human review before archiving"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/backups/memory_meta_pre_delete_20260705T213227Z.json",
+      "name": "memory_meta_pre_delete_20260705T213227Z.json",
+      "reason": "stale_backup",
+      "detail": "Matches a one-time-backup naming marker, last modified 2026-07-05 (14+ days old)",
+      "decision": "flag",
+      "echo_reason": "Matches a one-time-backup naming marker \u2014 needs human confirmation the underlying operation is complete before removal"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/backups/faiss_pre_delete_20260705T213227Z.index",
+      "name": "faiss_pre_delete_20260705T213227Z.index",
+      "reason": "stale_backup",
+      "detail": "Matches a one-time-backup naming marker, last modified 2026-07-05 (14+ days old)",
+      "decision": "flag",
+      "echo_reason": "Matches a one-time-backup naming marker \u2014 needs human confirmation the underlying operation is complete before removal"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/archive/memory_meta_splitbrain_20260702T215002Z.json",
+      "name": "memory_meta_splitbrain_20260702T215002Z.json",
+      "reason": "stale_backup",
+      "detail": "Matches a one-time-backup naming marker, last modified 2026-07-02 (14+ days old)",
+      "decision": "flag",
+      "echo_reason": "Matches a one-time-backup naming marker \u2014 needs human confirmation the underlying operation is complete before removal"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/archive/faiss_contaminated_20260702T195258Z.index",
+      "name": "faiss_contaminated_20260702T195258Z.index",
+      "reason": "stale_backup",
+      "detail": "Matches a one-time-backup naming marker, last modified 2026-07-02 (14+ days old)",
+      "decision": "flag",
+      "echo_reason": "Matches a one-time-backup naming marker \u2014 needs human confirmation the underlying operation is complete before removal"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/archive/prediction_log_contaminated_20260702T195413Z.jsonl",
+      "name": "prediction_log_contaminated_20260702T195413Z.jsonl",
+      "reason": "stale_backup",
+      "detail": "Matches a one-time-backup naming marker, last modified 2026-07-02 (14+ days old)",
+      "decision": "flag",
+      "echo_reason": "Matches a one-time-backup naming marker \u2014 needs human confirmation the underlying operation is complete before removal"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/archive/faiss_splitbrain_20260702T215002Z.index",
+      "name": "faiss_splitbrain_20260702T215002Z.index",
+      "reason": "stale_backup",
+      "detail": "Matches a one-time-backup naming marker, last modified 2026-07-02 (14+ days old)",
+      "decision": "flag",
+      "echo_reason": "Matches a one-time-backup naming marker \u2014 needs human confirmation the underlying operation is complete before removal"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/archive/memory_meta_contaminated_20260702T195258Z.json",
+      "name": "memory_meta_contaminated_20260702T195258Z.json",
+      "reason": "stale_backup",
+      "detail": "Matches a one-time-backup naming marker, last modified 2026-07-02 (14+ days old)",
+      "decision": "flag",
+      "echo_reason": "Matches a one-time-backup naming marker \u2014 needs human confirmation the underlying operation is complete before removal"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/archive/world_model_diagnostics_contaminated_20260702T195413Z.json",
+      "name": "world_model_diagnostics_contaminated_20260702T195413Z.json",
+      "reason": "stale_backup",
+      "detail": "Matches a one-time-backup naming marker, last modified 2026-07-02 (14+ days old)",
+      "decision": "flag",
+      "echo_reason": "Matches a one-time-backup naming marker \u2014 needs human confirmation the underlying operation is complete before removal"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/archive/faiss_prefixfix_20260703T003838Z.index",
+      "name": "faiss_prefixfix_20260703T003838Z.index",
+      "reason": "stale_backup",
+      "detail": "Matches a one-time-backup naming marker, last modified 2026-07-02 (14+ days old)",
+      "decision": "flag",
+      "echo_reason": "Matches a one-time-backup naming marker \u2014 needs human confirmation the underlying operation is complete before removal"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/archive/memory_meta_prefixfix_20260703T003838Z.json",
+      "name": "memory_meta_prefixfix_20260703T003838Z.json",
+      "reason": "stale_backup",
+      "detail": "Matches a one-time-backup naming marker, last modified 2026-07-02 (14+ days old)",
+      "decision": "flag",
+      "echo_reason": "Matches a one-time-backup naming marker \u2014 needs human confirmation the underlying operation is complete before removal"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/bible_structured.json.save",
+      "name": "bible_structured.json.save",
+      "reason": "orphaned_data",
+      "detail": "No .py file under app/ or root references this filename (170326 bytes)",
+      "decision": "flag",
+      "echo_reason": "No live code reference found \u2014 but this alone has not reliably meant safe to delete in this project; needs human review"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/imports.txt",
+      "name": "imports.txt",
+      "reason": "orphaned_data",
+      "detail": "No .py file under app/ or root references this filename (1228800 bytes)",
+      "decision": "flag",
+      "echo_reason": "No live code reference found \u2014 but this alone has not reliably meant safe to delete in this project; needs human review"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/bible_queue.jsonl",
+      "name": "bible_queue.jsonl",
+      "reason": "orphaned_data",
+      "detail": "No .py file under app/ or root references this filename (5193331 bytes)",
+      "decision": "flag",
+      "echo_reason": "No live code reference found \u2014 but this alone has not reliably meant safe to delete in this project; needs human review"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/lattice_log.json",
+      "name": "lattice_log.json",
+      "reason": "orphaned_data",
+      "detail": "No .py file under app/ or root references this filename (12771735 bytes)",
+      "decision": "flag",
+      "echo_reason": "No live code reference found \u2014 but this alone has not reliably meant safe to delete in this project; needs human review"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/project_learner_output.txt",
+      "name": "project_learner_output.txt",
+      "reason": "orphaned_data",
+      "detail": "No .py file under app/ or root references this filename (778975 bytes)",
+      "decision": "flag",
+      "echo_reason": "No live code reference found \u2014 but this alone has not reliably meant safe to delete in this project; needs human review"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/WhisperOfPeace.wav",
+      "name": "WhisperOfPeace.wav",
+      "reason": "orphaned_data",
+      "detail": "No .py file under app/ or root references this filename (21168058 bytes)",
+      "decision": "flag",
+      "echo_reason": "No live code reference found \u2014 but this alone has not reliably meant safe to delete in this project; needs human review"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/ChatGPT Image Feb 21, 2026 at 11_35_53 PM.png",
+      "name": "ChatGPT Image Feb 21, 2026 at 11_35_53 PM.png",
+      "reason": "orphaned_data",
+      "detail": "No .py file under app/ or root references this filename (3117644 bytes)",
+      "decision": "flag",
+      "echo_reason": "No live code reference found \u2014 but this alone has not reliably meant safe to delete in this project; needs human review"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/feral_echo_symbolic_map.json",
+      "name": "feral_echo_symbolic_map.json",
+      "reason": "orphaned_data",
+      "detail": "No .py file under app/ or root references this filename (932876 bytes)",
+      "decision": "flag",
+      "echo_reason": "No live code reference found \u2014 but this alone has not reliably meant safe to delete in this project; needs human review"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/feral_echo_report_index.json",
+      "name": "feral_echo_report_index.json",
+      "reason": "orphaned_data",
+      "detail": "No .py file under app/ or root references this filename (935011 bytes)",
+      "decision": "flag",
+      "echo_reason": "No live code reference found \u2014 but this alone has not reliably meant safe to delete in this project; needs human review"
+    },
+    {
+      "path": "/Users/richietate/Desktop/FeralEcho/bible_structured.json",
+      "name": "bible_structured.json",
+      "reason": "orphaned_data",
+      "detail": "No .py file under app/ or root references this filename (4555096 bytes)",
+      "decision": "flag",
+      "echo_reason": "No live code reference found \u2014 but this alone has not reliably meant safe to delete in this project; needs human review"
     }
   ]
 }

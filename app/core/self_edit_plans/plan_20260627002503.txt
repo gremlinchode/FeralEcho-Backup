@@ -1,0 +1,6 @@
+1. Import necessary modules from app.core.self_edit_generated: `from app.core.self_edit_generated import main_function`
+2. Define a new function, shorten_response, which takes the original response as input and returns a shortened version: `def shorten_response(response): ...`
+3. Use a natural language processing (NLP) library to analyze the original response and identify key phrases or sentences that convey the same meaning with reduced length: `import nltk; ...`
+4. Apply the identified key phrases or sentences to the main code-generation function, replacing the original response: `main_function = shorten_response(main_function)`
+5. Define a new threshold for average response length reduction, in this case 20%: `threshold = 0.8`
+6. Implement a loop that iterates over the shortened responses and checks if the new threshold is met: `for response in shortened_responses:`

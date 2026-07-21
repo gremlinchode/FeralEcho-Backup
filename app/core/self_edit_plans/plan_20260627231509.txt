@@ -1,0 +1,9 @@
+Here is my response:
+
+1. Import the necessary module from `app.core.self_edit_generated` import `strip_prose`
+2. Open and read the self-edit generated file for modification
+3. Define a regular expression pattern to match prose sentences, specifically capturing sentences starting with common English words (e.g., 'The', 'And', 'But')
+4. Use the pattern in a find-and-replace operation to identify and strip any leading natural-language sentence before the first valid Python token
+5. Replace any matched prose sentences with an empty string, effectively removing them from the code output
+6. Write the modified code back to the self-edit generated file
+7. Reload the module to apply the changes

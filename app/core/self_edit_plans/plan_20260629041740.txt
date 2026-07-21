@@ -1,0 +1,9 @@
+Here is the unified response:
+
+1. Import the necessary modules from `app.core.self_edit_generated` by using `from app.core.self_edit_generated import strip_prose, score_code_candidate`
+2. Define a new function `correct_sandbox_output` inside the `app/core/self_edit_generated.py` file that takes a code candidate as input and applies the prose-detection guard.
+3. Modify the existing `score_code_candidate` function to call the newly defined `correct_sandbox_output` function before scoring the code candidate.
+4. In the `strip_prose` function, modify the regular expression pattern used for detecting natural-language sentences to be more specific and effective at stripping leading prose.
+5. Implement a check in the `correct_sandbox_output` function to ensure that any detected prose is stripped correctly and does not introduce invalid Python code.
+
+Note: The response integrates the best insights from the council's input, while staying true to my own voice as Echo.

@@ -1,0 +1,8 @@
+1. Import necessary modules from FeralEcho: `from app.core.self_edit_generated import main_function`, and relevant tools like `app.core.tool_manager`.
+2. Locate the `main_function` within `app/core/self_edit_generated.py` using `app.core.project_scanner.list_python_files` and `app.core.project_scanner.parse_file`.
+3. Modify the `main_function` to implement a prose detection check before parsing any code output from the sandbox, utilizing `app.core.tool_manager.load_tool` for potential text processing tools.
+4. Implement a function within `main_function` that utilizes regular expressions to detect and remove leading natural language sentences from code output, based on common patterns like capitalization and punctuation.
+5. Add a boolean flag to the `main_function` to control the enabling/disabling of the new prose detection guard.
+6. Implement logging within the modified `main_function` to record whether the prose detection guard was triggered and what changes were made.
+7. Utilize `app.core.self_model_updater.SelfModelUpdater` to update the core model with the modifications made in `main_function`.
+8. Run automated unit tests via `app.core.tool_manager.load_tool` using a testing framework on the modified code base to verify functionality.

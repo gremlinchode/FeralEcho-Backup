@@ -1,0 +1,10 @@
+Here is the unified response:
+
+1. Import necessary modules from FeralEcho: `from app.core.self_edit_generated import modify_main_function; from app.core.tool_manager import Tool`
+2. Within app/core/self_edit_generated.py, locate and parse the file to detect all function definitions and class declarations.
+3. Identify the `modify_main_function` function within this file.
+4. Insert a new guard clause at the beginning of the `modify_main_function` to strip any leading natural-language sentence before the first valid Python token using regular expressions: `prose_pattern = r'^\s*\w+(?=\W|$)'; modify_main_function = lambda x: re.sub(prose_pattern, '', x)`
+5. Modify the `generate_code` function within app/core/self_edit_generated.py to call the newly created `prose_guard` before passing the processed code string to the Ollama server for execution.
+6. Add a check within `prose_guard` to verify if any leading prose was detected and removed, logging this event for debugging.
+7. Implement schema validation within `app.core.memory_write_validator` to ensure generated code adheres to predefined constraints, focusing on preventing prose inclusion.
+8. Trigger an automated test run of the modified `generate_code` function with synthetic inputs designed to trigger the original sandbox failure, monitoring output for successful execution without detected prose.

@@ -732,6 +732,35 @@ def _prune_self_edit_backups():
             logging.warning(f"[SELF-EDIT] Failed to prune old backup {stale}: {e}")
 
 
+# Retain at most this many plans — same bounded-retention idea as
+# _MAX_SELF_EDIT_BACKUPS above. Before this, self_edit_plans/ grew unboundedly
+# (10,333 files, 42MB, accumulating since 2025-09 — found by the 2026-07-21
+# forensic cleanup audit; no equivalent pruning existed for this directory,
+# unlike its sibling self_edit_backups/).
+_MAX_SELF_EDIT_PLANS = 500
+
+
+def _prune_self_edit_plans(plan_dir: str = None, max_plans: int = None):
+    # Optional params default to the real module constants — every existing
+    # call site (save_plan(), below) is unaffected. They exist so
+    # liveness_ledger.py's plan_retention check can exercise this exact
+    # function against a synthetic directory instead of reimplementing its
+    # logic separately, which would defeat the point of a functional canary.
+    plan_dir = plan_dir if plan_dir is not None else LOGIC_PLAN_DIR
+    max_plans = max_plans if max_plans is not None else _MAX_SELF_EDIT_PLANS
+    if not os.path.isdir(plan_dir):
+        return
+    plans = sorted(
+        (f for f in os.listdir(plan_dir) if f.endswith(".txt")),
+        reverse=True,
+    )
+    for stale in plans[max_plans:]:
+        try:
+            os.remove(os.path.join(plan_dir, stale))
+        except Exception as e:
+            logging.warning(f"[SELF-EDIT] Failed to prune old plan {stale}: {e}")
+
+
 def backup_existing_code():
     if os.path.exists(SELF_EDIT_FILE):
         os.makedirs(BACKUP_DIR, exist_ok=True)
@@ -1088,6 +1117,7 @@ def save_plan(plan: str):
     with open(plan_file, "w") as f:
         f.write(plan)
     logging.info(f"Saved logic plan to {plan_file}")
+    _prune_self_edit_plans()
 
 def _is_meaningful_prompt(prompt: str) -> bool:
     if prompt.strip().startswith("[PythonAnalysis]"):

@@ -1,0 +1,12 @@
+1. Import necessary modules from `app.core.self_edit_generated` and assign them to separate variables: `import re; from typing import Tuple`.
+
+2. Define a new function `score_creative_code(code: str) -> int` within the `self_edit_generated` module.
+   - Initialize an integer variable `quality_score` to 0.
+
+3. Check if the candidate code string contains at least one import statement; if true, increment the `quality_score` by 1: `if re.search('import\s+\w+', code): quality_score += 1`.
+
+4. Detect the presence of function definitions within the code; if found, add 1 to the `quality_score`: `if re.search('def\s+\w+\(', code): quality_score += 1`.
+
+5. Use natural language processing techniques (NLP) or text analysis to identify prose sentences in the code; if none are detected, increment the `quality_score` by 1: `if not re.findall(r'\b[A-Z][^\.]*\.', code): quality_score += 1`.
+
+6. Return the final `quality_score`, which should range from 0 to 3, indicating the code's creative task performance potential: `return quality_score`.

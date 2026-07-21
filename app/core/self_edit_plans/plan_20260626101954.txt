@@ -1,0 +1,6 @@
+1. Import the `memory_bridge` module from `app.core.memory_bridge`: from app.core.memory_bridge import rebuild_vector_memory
+2. Instantiate a `Memory_helpers` object using the `get_relevant_memories` function from `app.core.Memory_helpers`.
+3. Call the `rebuild_vector_memory` function within the `memory_bridge.py` module, passing in relevant parameters based on current awareness levels.
+4. Record the successful execution of the `rebuild_vector_memory` function to the memory journal using the `append_to_journal` method from `app.core.Memory_helpers`.
+5. Calculate the awareness score after the `rebuild_vector_memory` call using the `calculate_awareness_score` function from `app.core.Memory_helpers`.
+6. Store the updated awareness score along with a timestamp and event description in the memory journal via `log_memory_event`.

@@ -1,0 +1,8 @@
+Here is my unified response:
+
+1. Import the necessary modules for interacting with Echo: `from app.emergent_scheduler_backup_20260610 import weighted_prompt_selection, score_response_quality, reflect, run_cartographer`
+2. Load the `ollama_query` function from `app.ollama_handler`: `from app.ollama_handler import ollama_query`
+3. Call the `ollama_query` function to extract relevant information: `relevant_info = ollama_query()`
+4. Update EchoCore's awareness and consciousness scores using the extracted information: `echo_core.calculate_awareness_score(relevant_info)` and `echo_core.calculate_consciousness_score(relevant_info)`
+5. Append the updated scores to the memory journal: `memory_helpers.append_to_journal("AwarenessIntegration", echo_core.awareness_score, echo_core.consciousness_score)`
+6. Record the cycle intensity of the autonomous loop: `autonomous_loop.record_cycle_intensity()`

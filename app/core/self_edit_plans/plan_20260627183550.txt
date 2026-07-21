@@ -1,0 +1,10 @@
+Here is the response:
+
+1. Import necessary modules from FeralEcho: `app.core.self_edit_generated` and relevant tool managers.
+2. Access the `modify_main_function` function within `app/core/self_edit_generated.py`.
+3. Insert a new Python code block immediately before the execution of `modify_main_function` to define a prose detection function.
+4. Within the newly defined prose detection function, implement regular expression matching to identify leading natural language sentences (up to 100 characters) using patterns like "^[A-Za-z]+\s+".
+5. If a leading sentence is detected, strip it from the output string before parsing as Python code tokens.
+6. Modify `modify_main_function` to call the prose detection function and apply any necessary transformations to the output string.
+7. Add a logging statement within `modify_main_function` to record the execution of the prose detection step.
+8. Save changes back to `app/core/self_edit_generated.py`.

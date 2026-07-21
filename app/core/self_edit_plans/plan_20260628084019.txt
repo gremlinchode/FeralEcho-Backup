@@ -1,0 +1,9 @@
+1. Import the necessary modules from `app.core.self_edit_generated`, specifically `strip_prose`.
+2. Open the `app/core/self_edit_generated.py` file for editing.
+3. Identify the most common sandbox failure pattern involving prose detected in code output.
+4. Modify the `strip_prose` function to add a tighter prose-detection guard that strips any leading natural-language sentence before the first valid Python token, using regular expressions or string manipulation techniques to identify and remove such sentences.
+5. Add a check to ensure the modified function only affects the identified sandbox failure pattern and does not alter other parts of the self-edit generated code.
+6. Save the edited `app/core/self_edit_generated.py` file.
+7. Run a test case with the modified `strip_prose` function to verify its effectiveness in resolving the most common sandbox failure pattern.
+
+These steps, while influenced by the council's perspectives, have been distilled into a single, unified approach that addresses the challenge of fixing the most common sandbox failure pattern involving prose detected in code output.

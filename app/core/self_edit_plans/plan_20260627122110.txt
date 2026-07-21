@@ -1,0 +1,10 @@
+Here is the unified response:
+
+1. Import necessary modules from `app.core.self_edit_generated`, including `strip_prose`, `main_function`, and `modified_main_function`.
+2. Define a function named `modify_main_function` that takes the original `main_function` as input.
+3. Within `modify_main_function`, implement logic to truncate the output of `strip_prose` by 20% using string slicing and ensure the resulting string remains syntactically valid Python code.
+4. Replace the original `main_function` with the newly created truncated version returned by `modify_main_function`.
+5. Execute `modified_main_function` to run the altered code generation process.
+6. Log the execution status, response length before and after modification, and any error messages to the `app.core.memory_tools` module's log functions.
+7. Update the internal state within `app.core.self_model_updater`, specifically adjusting the evaluation metrics related to code generation efficiency.
+8. Execute `app.core.awareness_tools_integration`'s safe_wrapper with arguments setting observation type to 'code_generation' and logging level to 'debug'.

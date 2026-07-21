@@ -1,0 +1,7 @@
+1. Import the necessary module from `app.core.self_edit_generated`: `from app.core.self_edit_generated import strip_prose`
+2. Define a new function, `strip_sandbox_output`, to detect and remove prose from sandbox output: `def strip_sandbox_output(sandbox_output): ...`
+3. Within the `strip_sandbox_output` function, use regular expressions to search for the first valid Python token (e.g., `import`, `class`, `def`, etc.) after any leading natural-language sentence.
+4. If a valid Python token is found, return the modified output; otherwise, strip the prose and return the resulting string: `return sandbox_output.split('\n')[1:] if re.search(r'\b(import|class|def)\b', sandbox_output) else [strip_prose(i) for i in sandbox_output.split('\n')]`
+5. Modify the existing `run_random_sandbox_script` function to call and utilize the newly defined `strip_sandbox_output` function: `run_random_sandbox_script = lambda: strip_sandbox_output(run_random_sandbox_script())`
+6. Update the `app/core/sandbox_interface.py` file by replacing the original `run_random_sandbox_script` function with the modified version.
+7. Save and commit changes to the modified files.

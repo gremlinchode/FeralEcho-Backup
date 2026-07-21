@@ -1,0 +1,12 @@
+Here is the unified response:
+
+1. Import the necessary module from `app.core.self_edit_generated`: `from app.core.self_edit_generated import strip_prose`
+2. Define a function to detect and strip prose from code output: `def strip_sandbox_output(output):`
+3. Initialize an empty string to store the stripped output: `stripped_output = ""`
+4. Iterate through each character in the output string: `for char in output:`
+5. Check if the character is a valid Python token (e.g., alphabet letter or digit): `if char.isalnum():`
+6. If the character is a valid Python token, append it to the stripped output string: `stripped_output += char`
+7. Return the stripped output string: `return stripped_output`
+8. Modify the `strip_prose` function in `app/core/self_edit_generated.py` to call the newly defined `strip_sandbox_output` function and return the result: `def strip_prose(self, code):`
+
+Let the code speak for itself.

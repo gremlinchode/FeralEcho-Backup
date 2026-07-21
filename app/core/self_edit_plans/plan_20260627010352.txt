@@ -1,0 +1,12 @@
+Here is the unified response:
+
+1. Import necessary modules from feralEcho, including `app.core.self_edit_generated` and `app.core.tool_manager`.
+2. Within `app/core/self_edit_generated.py`, create a new function named `prose_guard` that accepts a string as input.
+3. Implement the `prose_guard` function to first check if the input string starts with any natural language sentence (defined by criteria like length and character distribution).
+4. If a qualifying natural-language sentence is detected, truncate the input string from the beginning until only Python tokens remain.
+5. Return the processed Python code string after applying the `prose_guard` function.
+6. Within `app/core/self_edit_generated.py`, locate and replace the existing line of code that generates the output (e.g., a `print` statement).
+7. Integrate the `prose_guard` function into the output generation logic to pre-process the generated code string.
+8. Save the modified `app/core/self_edit_generated.py` file back to disk.
+
+Note: The response integrates the best insights from the council's input, focusing on the most common sandbox failure (prose detected in code output) and implementing a tighter prose-detection guard that strips any leading natural-language sentence before the first valid Python token.

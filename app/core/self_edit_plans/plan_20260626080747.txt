@@ -1,0 +1,8 @@
+1. Scan project for files related to echo_model_orchestrator.py.
+2. Update `echo_model_orchestrator.py` by modifying the `registered_models` dictionary to include `'ollama_query'`.
+3. Define a new function `ollama_query` within `echo_model_orchestrator.py`, inheriting from `BaseModel` class.
+4. Implement the `ollama_query` function logic to integrate with existing AI models and data structures.
+5. Update the `model_loader.py` file by adding an entry for `'ollama_query'` in the `MODEL_REGISTRY`.
+6. Modify the `main_orchestrator.py` file by registering the `'ollama_query'` model within the `orchestrator` class.
+7. Implement a new `awareness_integration` function within `echo_model_orchestrator.py`, which will handle awareness integration for registered models, including `'ollama_query'`.
+8. Append memory entry to reflect the successful implementation of the `ollama_query` function and its integration with the AI system.

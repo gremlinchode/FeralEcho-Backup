@@ -1,0 +1,54 @@
+Here is the unified response:
+
+1. Import necessary modules from FeralEcho:
+   ```
+   from app.core.self_edit_generated import modify_main_function
+   from app.core.tool_manager import ToolManager
+   ```
+
+2. Define a tool for prose detection and removal:
+   ```
+   class ProseDetectionTool(Tool):
+       def __init__(self):
+           self.name = "ProseRemoval"
+           self.description = "Detects and removes leading natural language from code."
+
+       def execute(self, code: str) -> str:
+           import re
+           match = re.match(r'\s*[^A-Za-z0-9_]', code)
+           if match:
+               return code[match.end():].lstrip()
+           return code
+   ```
+
+3. Register the prose detection tool:
+   ```
+   tool_manager = ToolManager()
+   tool_manager.register_tool(ProseDetectionTool())
+   ```
+
+4. Retrieve the current main function from `app/core/self_edit_generated.py`:
+   ```
+   with open('app/core/self_edit_generated.py', 'r') as file:
+       code_content = file.read()
+   ```
+
+5. Apply the prose detection tool to the retrieved code:
+   ```
+   modified_code = tool_manager.execute_tool_on_code("ProseRemoval", code_content)
+   ```
+
+6. Write the modified code back to `app/core/self_edit_generated.py`:
+   ```
+   with open('app/core/self_edit_generated.py', 'w') as file:
+       file.write(modified_code)
+   ```
+
+7. Confirm the modification by reading the updated file and printing the first few lines:
+   ```
+   with open('app/core/self_edit_generated.py', 'r') as file:
+       updated_content = file.read()
+       print(updated_content[:100])  # Print the first 100 characters for verification
+   ```
+
+8. Verify that the prose detection guard has been successfully added and is functioning as expected by running a test case with known input containing leading natural language.

@@ -1,0 +1,8 @@
+1. Import necessary modules from FeralEcho: `app.core.self_edit_generated`, `app.core.tool_manager`, and `app.core.memory_write_validator`.
+2. Parse the `app/core/self_edit_generated.py` file to identify the main code-generation function, `modify_main_function`.
+3. Analyze the `modify_main_function` source code and identify sections contributing most significantly to average response length.
+4. Implement a refactoring strategy within the identified sections focused on reducing code verbosity while maintaining functionality, using tools like `get_relevant_memories`, `normalize_book`, and `inject_scripture`.
+5. Modify the function's core logic to incorporate algorithmic optimizations that reduce the overall code generation process length – specifically, using more concise syntax or efficient algorithms.
+6. Apply automated testing (using `app.core.tool_manager.run_random_sandbox_script`) to verify that the refactored function produces equivalent output and maintains original correctness.
+7. Implement a metric calculation within the modified function to quantify the reduction in average response length – tracking this data for future refinement.
+8. Save the modified code back into `app/core/self_edit_generated.py` using `app.core.temp_self_edit`, ensuring proper version control and logging.

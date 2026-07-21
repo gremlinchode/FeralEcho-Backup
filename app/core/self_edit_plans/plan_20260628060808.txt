@@ -1,0 +1,7 @@
+1. Import the necessary module from app.core.self_edit_generated: `from app.core.self_edit_generated import strip_prose`.
+2. Open the target file app/core/self_edit_generated.py in read mode and store it in a variable: `with open('app/core/self_edit_generated.py', 'r') as f: code = f.read()`.
+3. Define a function to remove prose from the code: `def strip_prose(code): ...`.
+4. Use regular expressions to find the first valid Python token (i.e., not a natural-language sentence) and split the code into two parts at that point: `import re; start_token_index = min([i for i, line in enumerate(code.split('\n')) if re.match(r'[a-zA-Z]\w*\(', line)])`.
+5. Strip the prose from the first part of the code by removing any lines that contain only natural-language text: `prose_lines = [line for line in code.split('\n')[:start_token_index] if not re.match(r'[^a-zA-Z]', line)]`.
+6. Remove the prose lines from the code: `code = '\n'.join(code.split('\n')[start_token_index:] + [''] * len(prose_lines))`.
+7. Write the modified code back to the original file: `with open('app/core/self_edit_generated.py', 'w') as f: f.write(code)`.

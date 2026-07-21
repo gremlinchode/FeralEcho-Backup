@@ -1,0 +1,11 @@
+Here is the unified response:
+
+1. Import `app.core.self_edit_generated` and `app.core.tool_manager` in `reasoning_code_scorer.py`.
+2. Define a function called `score_reasoning_code(code_string)` that takes a string as input.
+3. Within `score_reasoning_code`, implement logic to count the number of imports, function definitions, and sentences containing prose (e.g., using regular expressions).
+4. Calculate a quality score between 0 and 3 based on the counts of imports, functions, and prose sentences, returning the integer score.
+5. Save `reasoning_code_scorer.py` in the `app/core/self_edit_generated` directory.
+6. Import `reasoning_code_scorer` into `app/core/self_edit_generated.py`.
+7. Within `app/core/self_edit_generated.py`, call the `score_reasoning_code` function on generated code before executing it in the sandbox.
+
+These steps create a new helper function, `score_reasoning_code`, that scores candidate code strings based on three dimensions: has_imports, has_function_def, and no_prose_sentences. This function will be used to pre-filter LLM output before sandbox testing.

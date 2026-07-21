@@ -1,0 +1,10 @@
+Here is the unified response:
+
+1. `from app.core.self_edit_generated import main_function`
+2. Define a new function, `strip_prose`, that leverages regular expressions to identify and remove leading natural-language sentences before the first valid Python token.
+3. Within `app/core/self_edit_generated.py`, modify the original `main_function` to wrap it with the `strip_prose` function, ensuring any detected prose is removed before executing the code.
+4. Update the modified `main_function` in `app/core/self_edit_generated.py`.
+5. Replace the original `main_function` call with a call to the modified `main_function`.
+6. Implement a conditional check within the modified `main_function` to assess whether prose removal occurred during processing; if so, proceed with standard code execution steps.
+7. Add comprehensive logging to the modified `main_function` documenting all instances where prose was detected and removed, along with the original and modified code snippets for auditing purposes.
+8. Save the modified content of `app/core/self_edit_generated.py` back to the file system using `app.core.tool_manager`.

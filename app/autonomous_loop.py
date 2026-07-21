@@ -40,6 +40,7 @@ except ImportError:
 # ---------------- IMPORTS ---------------- #
 from app.internet_tools.autonomous_fetch import FETCH_SOURCES, fetch_and_log
 from app.internet_tools.autonomous_fetch import _fetch_hackernews
+from app.internet_tools.autonomous_fetch import claim_fetch_cycle
 from app.core.temporal_environment import get_temporal_environment_context
 
 try:
@@ -248,39 +249,48 @@ def autonomous_loop():
         collected_texts: list[str] = []
 
         # 1. Fetch content — collect snippets for predictive update
-        # FIX #3: build temporal context once per cycle, reuse across all sources
-        try:
-            _cycle_ctx = get_temporal_environment_context(
-                weather_api_key=os.environ.get("OPENWEATHER_API_KEY")
-            )
-        except Exception as _ctx_err:
-            logger.warning(f"[LOOP] Temporal context failed: {_ctx_err}")
-            _cycle_ctx = None
+        # Found 2026-07-21: this loop and autonomous_loop_with_optuna.py's
+        # autonomous_loop_iteration() each ran their own independent fetch
+        # pass against every FETCH_SOURCES entry, confirmed firing 5-10s
+        # apart dozens of times a day — see claim_fetch_cycle()'s own
+        # docstring. Whichever loop's turn comes up first claims the cycle;
+        # the other skips fetch for this pass only, everything else proceeds.
+        if not claim_fetch_cycle():
+            logger.info("[LOOP] Skipping fetch — another loop already ran a cycle recently.")
+        else:
+            # FIX #3: build temporal context once per cycle, reuse across all sources
+            try:
+                _cycle_ctx = get_temporal_environment_context(
+                    weather_api_key=os.environ.get("OPENWEATHER_API_KEY")
+                )
+            except Exception as _ctx_err:
+                logger.warning(f"[LOOP] Temporal context failed: {_ctx_err}")
+                _cycle_ctx = None
 
-        # FIX #4: parallel fetching — 3 concurrent workers, capped to avoid
-        # hammering sources or overwhelming FAISS with concurrent writes
-        def _fetch_one(args):
-            n, u = args
-            return n, fetch_and_log(n, u, temporal_context=_cycle_ctx)
+            # FIX #4: parallel fetching — 3 concurrent workers, capped to avoid
+            # hammering sources or overwhelming FAISS with concurrent writes
+            def _fetch_one(args):
+                n, u = args
+                return n, fetch_and_log(n, u, temporal_context=_cycle_ctx)
 
-        with ThreadPoolExecutor(max_workers=3) as pool:
-            futures = {pool.submit(_fetch_one, (name, url)): name for name, url in FETCH_SOURCES}
-            for future in as_completed(futures):
-                try:
-                    src_name, snippets = future.result()
-                    collected_texts.extend(snippets)
+            with ThreadPoolExecutor(max_workers=3) as pool:
+                futures = {pool.submit(_fetch_one, (name, url)): name for name, url in FETCH_SOURCES}
+                for future in as_completed(futures):
+                    try:
+                        src_name, snippets = future.result()
+                        collected_texts.extend(snippets)
+                        fetch_count += 1
+                    except Exception as e:
+                        logger.error(f"Error fetching {futures[future]}: {e}", exc_info=True)
+
+            # Hacker News (two-step fetch, runs after parallel pool closes)
+            try:
+                hn_snippets = _fetch_hackernews(temporal_context=_cycle_ctx)
+                collected_texts.extend(hn_snippets)
+                if hn_snippets:
                     fetch_count += 1
-                except Exception as e:
-                    logger.error(f"Error fetching {futures[future]}: {e}", exc_info=True)
-
-        # Hacker News (two-step fetch, runs after parallel pool closes)
-        try:
-            hn_snippets = _fetch_hackernews(temporal_context=_cycle_ctx)
-            collected_texts.extend(hn_snippets)
-            if hn_snippets:
-                fetch_count += 1
-        except Exception as e:
-            logger.error(f"[LOOP] Hacker News fetch failed: {e}", exc_info=True)
+            except Exception as e:
+                logger.error(f"[LOOP] Hacker News fetch failed: {e}", exc_info=True)
 
         # Claude research synthesis — rate-limited internally to 1/hour
         if _CLAUDE_RESEARCH_AVAILABLE:

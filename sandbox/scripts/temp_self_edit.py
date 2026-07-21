@@ -1,22 +1,19 @@
-# [stripped top-level self-call] import app.core.self_edit_generated
+import app.emergent_scheduler
+from dataclasses import dataclass
 from itertools import islice
-import re
+from typing import Generator
 
-def refactor_log_call(func):
-    def wrapper(*args, **kwargs):
-        print(f"Calling {func.__name__} with args: {args}, kwargs: {kwargs}")
-        return func(*args, **kwargs)
-    return wrapper
+@dataclass
+class CodeChunk:
+    content: str
+    type: str = 'snippet'
 
-class RefactoredCodeGenerator:
-    def __init__(self):
-        self.health_monitor = self_edit_generated.HealthMonitor()
+def apply_to_code(code: str) -> Generator[CodeChunk, None, None]:
+    import re
     
-    @refactor_log_call
-    def refactor_code(self, code: str) -> str:
-        filtered_lines = [line for line in re.split(r'\n\s*\n', code) if not any(char.isspace() for char in line)]
-        
-        with open('temp_code.txt', 'w') as file:
-            file.writelines(filtered_lines)
-        
-        return f'with open("temp_code.txt", "r") as file:\n\tcode = file.read()'
+    def generator():
+        chunks = [re.sub(r'\s+', ' ', line).strip() + '\n' for line in code.split('\n') if line]
+        for chunk in chunks:
+            yield CodeChunk(chunk)
+    
+    return generator()

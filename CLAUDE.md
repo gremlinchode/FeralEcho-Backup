@@ -1001,6 +1001,12 @@ With no real variation recorded, the original predictive question couldn't be te
 
 ---
 
+**Finding 62 — Correction to Finding 61's two "secondary observations": both fully explained by a real, confirmed duplication between two independent autonomous loops, not restart timing; fixed the same day (2026-07-21).** Observing a real restart (the fix-verification pass for Finding 61) turned up the actual cause: `app/autonomous_loop.py`'s own `ThreadPoolExecutor` fetch pool and `app/core/autonomous_loop_with_optuna.py`'s `autonomous_loop_iteration()` (driving `ModelGuidedOrchestrator`, per Finding 28) each ran their **own independent, full fetch pass** against every `FETCH_SOURCES` entry — confirmed directly in `autonomous_loop_iteration()`'s own docstring ("1. Fetch content from all registered sources") and by tracing StackOverflow-specific log lines through a full day: the two loops' fetch attempts landed 5–10 seconds apart, dozens of times (00:49, 01:12, 02:16, 06:46, 09:15, 13:46, 15:12, 15:31, 15:55...). Finding 28 already knew this second loop does its own fetch step, but never connected it to duplicating the first loop's work — the same "two independent uncoordinated timers on one shared resource" shape Finding 28 already fixed once for this exact pair of loops' Optuna calls (`try_run_optuna()`'s shared atomic gate), never extended to the fetch step both loops also happen to run.
+
+**Fixed**, mirroring `try_run_optuna()`'s own pattern exactly: `app/internet_tools/autonomous_fetch.py` gained `claim_fetch_cycle()` — an atomic, lock-guarded check-and-claim (`threading.Lock` + a module-level timestamp, in-memory only, same posture as `_DISABLED_SOURCES`) gating a shared 1800s cooldown (half of `autonomous_loop.py`'s own base 3600s interval). Both loops now call it right before their existing fetch section; whichever loop's turn comes up first claims the cycle and proceeds exactly as before, the other logs a skip and moves straight to the rest of its own cycle (sandbox, Optuna, tool discovery) unaffected — neither loop's non-fetch behavior was touched. Verified directly: 20 concurrent threads calling `claim_fetch_cycle()` simultaneously produced exactly 1 winner, confirming the lock holds under real race conditions, not just sequential calls. Full liveness discrimination suite unaffected (no check references this module).
+
+---
+
 ## Monitoring
 
 ```bash

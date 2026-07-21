@@ -10,6 +10,7 @@ import os
 import re
 import logging
 import requests
+import threading
 import time
 from bs4 import BeautifulSoup
 import feedparser
@@ -39,6 +40,43 @@ HEADERS = {"User-Agent": "FeralEcho/1.0"}
 # forever. In-memory only (resets on restart); some sources (e.g. Reddit)
 # have no key concept at all, so there's nothing to fix by retrying.
 _DISABLED_SOURCES: set[str] = set()
+
+# Found 2026-07-21: two independent, uncoordinated loops — app/autonomous_loop.py's
+# own ThreadPoolExecutor pool, and app/core/autonomous_loop_with_optuna.py's
+# autonomous_loop_iteration() (driving ModelGuidedOrchestrator) — each ran their
+# own full fetch pass against every FETCH_SOURCES entry, confirmed firing back
+# to back (5-10s apart) dozens of times across a single day in real log data.
+# Same "two independent uncoordinated timers on the same resource" shape
+# Finding 28 already fixed once for this exact pair of loops' Optuna calls
+# (try_run_optuna()'s shared atomic gate) — never applied to the fetch step
+# both loops also happen to run. claim_fetch_cycle() is that same pattern
+# for fetching: whichever loop's turn comes up first claims the cycle: the
+# other skips its fetch step entirely for that pass rather than duplicating
+# every source's request and re-logging near-identical content within
+# seconds. In-memory only (resets on restart), same posture as
+# _DISABLED_SOURCES above — this guards duplicate work within one running
+# process, not a cross-process/cross-machine concern.
+_fetch_cycle_lock = threading.Lock()
+_last_fetch_cycle_ts: float = 0.0
+_MIN_FETCH_CYCLE_INTERVAL_SECONDS = 1800  # half of autonomous_loop.py's own base AUTONOMOUS_SLEEP (3600s)
+
+
+def claim_fetch_cycle() -> bool:
+    """
+    Atomic check-and-claim: returns True if the caller should proceed with
+    a real fetch cycle (and this call claims it for the cooldown window),
+    False if another loop already ran one too recently. Callers that get
+    False should skip their fetch step for this pass only — every other
+    step of their own cycle (sandbox, Optuna, tool discovery, etc.)
+    proceeds unaffected.
+    """
+    global _last_fetch_cycle_ts
+    with _fetch_cycle_lock:
+        now = time.time()
+        if now - _last_fetch_cycle_ts < _MIN_FETCH_CYCLE_INTERVAL_SECONDS:
+            return False
+        _last_fetch_cycle_ts = now
+        return True
 
 # --- API Keys ---
 NEWSAPI_KEY = os.getenv("NEWSAPI_KEY")

@@ -17,7 +17,7 @@ import threading
 # Re-export autonomous_loop so echo_model_guided_orchestrator can import it
 from app.autonomous_loop import autonomous_loop
 
-from app.internet_tools.autonomous_fetch import FETCH_SOURCES, fetch_and_log
+from app.internet_tools.autonomous_fetch import FETCH_SOURCES, fetch_and_log, claim_fetch_cycle
 from app.core.echo_optuna import EchoOptuna
 from app.core.memory_tools import log_memory_event
 from app.core.awareness_tools_integration import discover_and_register_tools
@@ -136,12 +136,20 @@ def autonomous_loop_iteration():
     logger.info(f"[ITERATION] Starting autonomous cycle #{cycle_count}")
 
     # 1. Fetch content
-    for name, url in FETCH_SOURCES:
-        try:
-            fetch_and_log(name, url)
-            fetch_count += 1
-        except Exception as e:
-            logger.error(f"[FETCH] Error fetching ({name}, {url}): {e}", exc_info=True)
+    # Found 2026-07-21: this loop and app/autonomous_loop.py's own
+    # ThreadPoolExecutor pool each ran their own independent fetch pass
+    # against every FETCH_SOURCES entry — see claim_fetch_cycle()'s own
+    # docstring for the confirmed duplication. Whichever loop's turn comes
+    # up first claims the cycle; the other skips fetch for this pass only.
+    if not claim_fetch_cycle():
+        logger.info("[ITERATION] Skipping fetch — another loop already ran a cycle recently.")
+    else:
+        for name, url in FETCH_SOURCES:
+            try:
+                fetch_and_log(name, url)
+                fetch_count += 1
+            except Exception as e:
+                logger.error(f"[FETCH] Error fetching ({name}, {url}): {e}", exc_info=True)
 
     # 2. Tool discovery
     try:

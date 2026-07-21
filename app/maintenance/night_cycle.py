@@ -31,6 +31,13 @@ _LOG_RETENTION_TARGETS = (
     (Path("memory/quarantine_journal.jsonl"), 50 * 1024 * 1024),
     (Path("memory/validator_audit.log"), 50 * 1024 * 1024),
     (Path("memory/council_deliberations.jsonl"), 50 * 1024 * 1024),
+    # Added 2026-07-21 — found during a live-restart observation sweep:
+    # this file grows steadily (976KB, 2263 entries spanning 2026-06-27 to
+    # present at the time it was found) and was never added to this list
+    # alongside its nine siblings, the same class of gap Finding 51 exists
+    # to close. Smaller cap than the others since it grows far slower
+    # (~40KB/day observed) — no need for a 50-100MB ceiling here.
+    (Path("memory/scripture_warnings.log"), 10 * 1024 * 1024),
 )
 _LOG_RETENTION_STATE = Path("memory/log_retention_state.json")
 _LOG_RETENTION_CHECK_INTERVAL_HOURS = 24

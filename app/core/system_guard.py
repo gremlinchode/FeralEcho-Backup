@@ -88,9 +88,30 @@ def throttle_level() -> str:
             level = "none"
 
         if level != "none":
+            # Found 2026-07-21: this line used to print all three raw
+            # readings unlabeled ("RAM=84.1% free=781.60GB load=1.9") with
+            # no indication of which metric(s) actually crossed a
+            # threshold — free_gb is disk free space for memory/
+            # (memory_dir_free_gb), not RAM, but sitting right next to a
+            # RAM percentage it reads like 781GB of free RAM, and a reader
+            # has to know the threshold constants by heart to tell which
+            # reading(s) triggered the alert. Now names the metric that
+            # actually crossed a threshold explicitly, and clarifies
+            # free_gb's real meaning in the full-readings tail.
+            ram_thresh = _SEVERE_RAM_PCT if level == "severe" else _MODERATE_RAM_PCT
+            free_thresh = _SEVERE_FREE_GB if level == "severe" else _MODERATE_FREE_GB
+            load_thresh = _SEVERE_LOAD_1M if level == "severe" else _MODERATE_LOAD_1M
+            triggers = []
+            if ram_pct > ram_thresh:
+                triggers.append(f"RAM={ram_pct:.1f}% (>{ram_thresh:.0f}%)")
+            if free_gb < free_thresh:
+                triggers.append(f"disk_free={free_gb:.2f}GB (<{free_thresh:.1f}GB)")
+            if load_1m > load_thresh:
+                triggers.append(f"load={load_1m:.1f} (>{load_thresh:.1f})")
             logger.warning(
-                "[THROTTLE] System under %s pressure: RAM=%.1f%% free=%.2fGB load=%.1f",
-                level, ram_pct, free_gb, load_1m,
+                "[THROTTLE] System under %s pressure: %s "
+                "(full readings: RAM=%.1f%% disk_free=%.2fGB load=%.1f)",
+                level, ", ".join(triggers) or "unknown metric", ram_pct, free_gb, load_1m,
             )
         _cache_val = level == "severe"
         _cache_level = level

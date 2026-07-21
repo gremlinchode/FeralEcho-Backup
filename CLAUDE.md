@@ -964,6 +964,16 @@ With no real variation recorded, the original predictive question couldn't be te
 
 ---
 
+**Finding 59 — Two small findings from a live-restart observation sweep (2026-07-21): a real, persistent Reddit fetch credential failure, and a log-retention gap in the same class as Finding 58's — the second one fixed, the first flagged (needs a real credential, not something fixable in code).** Prompted directly by watching a real restart's log output rather than a targeted investigation.
+
+**Reddit fetch (`app/internet_tools/`, exact module not further traced this pass) fails on every run, not intermittently.** `Reddit Science`/`Reddit Philosophy`/`Reddit WorldNews` each log `"Unauthorized or forbidden (check API key). Disabling for the rest of this run."` — confirmed to recur identically across two consecutive fresh restarts (15:12 and 15:23 the same day), ruling out a transient blip. 3 of the ~13 documented internet-fetch sources are silently down every run as a result. **Not fixed — no code bug found, this needs a real, working Reddit API credential in `.env`, which isn't something fixable from inside a session.** Flagged rather than defaulted into a code change that wouldn't address the actual cause.
+
+**`memory/scripture_warnings.log` (976KB, 2263 entries spanning 2026-06-27–present at time of finding) was never added to `night_cycle.py`'s `_LOG_RETENTION_TARGETS`**, the same nine-file list Finding 51 built — a tenth, smaller, slower-growing file (~40KB/day observed) that simply wasn't included the first time. **Fixed**: added with a 10MB cap (smaller than its 50-100MB siblings, matched to its real observed growth rate rather than copied from the others). Verified: file is currently at 9.2% of its new cap, syntax-clean, full liveness discrimination suite unaffected (still 68/68 — `log_retention`'s check reads `_LOG_RETENTION_TARGETS` live and correctly saw the new entry with no stale-file alarm, since it's nowhere near 2x over cap).
+
+**A third, unrelated clarity fix caught in the same sweep**: `system_guard.py`'s throttle log line printed all three raw readings unlabeled (`"RAM=84.1% free=781.60GB load=1.9"`) with no indication of which metric actually crossed a threshold — `free_gb` is disk free space for `memory/` (`memory_dir_free_gb`), not RAM, but sitting directly next to a RAM percentage it reads like 781GB of free RAM. The throttle *decision* itself was always correct; only the log's own clarity was the problem, and a reader had to know the threshold constants by heart to attribute cause correctly. Fixed to explicitly name which metric(s) crossed their threshold (with the threshold value inline) ahead of the full raw readings, and relabeled `free` to `disk_free`. Verified directly against today's exact real values (`RAM=84.1%, free=781.60GB, load=1.9`): now correctly attributes the trigger to `RAM=84.1% (>80%)` alone, leaving the other two out of the trigger list since neither crossed its own threshold.
+
+---
+
 ## Monitoring
 
 ```bash

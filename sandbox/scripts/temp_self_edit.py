@@ -1,22 +1,20 @@
-from app.emergent_scheduler import ToolManager
-from app.core import CodeCompressor, logging
-import re
+import app.emergent_scheduler
 from itertools import islice
+import re
 
-class CodeCompressor:
-    def __init__(self):
-        self.logger = logging.getLogger('CodeCompressor')
+def log_call(func):
+    def wrapper(*args, **kwargs):
+        print(f"Calling {func.__name__} with args={args} and kwargs={kwargs}")
+        result = func(*args, **kwargs)
+        print(f"{func.__name__} returned: {result}")
+        return result
+    return wrapper
 
-    def compress_code(self, code: str) -> str:
-        lines = [re.sub(r'\s+', ' ', line).strip() + '\n' for line in code.split('\n')]
-        return ''.join(lines)
-
-@logging.log_call
-def shorten_creative_code_generation_v2(code: str) -> str:
-    tool_manager = ToolManager()
-    code_compressor = CodeCompressor()
-
-    short_codes = [line.strip() if (line := next(islice(code.split('\n'), i, None))) else '' for i in range(2)]
-
-    compressed_code = code_compressor.compress_code(''.join(short_codes))
-    return f'with open("temp_code.txt", "r") as file:\n\tcode = file.read()'
+@log_call
+def shorten_creative_code_generation(code: str) -> str:
+    lines = [re.sub(r'\s+', ' ', line).strip() + '\n' for line in islice(code.split('\n'), 2, None)]
+    
+    with open('temp_code.txt', 'w') as file:
+        file.writelines(lines)
+    
+    return 'with open("temp_code.txt", "r") as file:\n\tcode = file.read()'

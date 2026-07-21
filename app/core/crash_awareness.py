@@ -19,6 +19,7 @@ import json
 import logging
 import os
 import time
+from datetime import datetime
 from pathlib import Path
 
 _CRASH_REPORT_GLOB = os.path.expanduser(
@@ -62,6 +63,40 @@ def _evaluate_crash_window(
     }
 
 
+def _parse_ips_header_timestamp(text: str) -> "float | None":
+    """
+    Parse the authoritative crash timestamp from a .ips report's own JSON
+    header (its first line), e.g. "2026-07-16 20:20:41.00 -0700".
+
+    Found and fixed 2026-07-21: this function used to not exist —
+    _gather_crash_file_info() trusted os.path.getmtime() instead, which
+    turned out to be unreliable. Confirmed directly: two real crash
+    reports (filenames dated 2026-07-15 and 2026-07-16) had mtimes
+    matching the current day instead — 5-6 days after the actual crash,
+    each landing within seconds of a real avoidance-check timestamp in
+    memory/echo_watchdog.log. A plain Python read was directly tested
+    against a copy of one of these files and confirmed NOT to change its
+    mtime, ruling out this module's own file access as the cause — most
+    likely macOS's own background crash-report processing (symbolication,
+    Spotlight indexing, or similar) touches these files well after the
+    real crash. This made an old crash look artificially fresh, risking a
+    false or wrongly-extended avoidance trigger based on a stale report
+    rather than a genuinely new one. Returns None (falls back to mtime,
+    logged as a fallback rather than silently trusted as equally good)
+    only if the header itself is ever unparseable.
+    """
+    try:
+        first_line = text.split("\n", 1)[0]
+        header = json.loads(first_line)
+        ts_str = header.get("timestamp")
+        if not ts_str:
+            return None
+        dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S.%f %z")
+        return dt.timestamp()
+    except Exception:
+        return None
+
+
 def _gather_crash_file_info() -> "list[tuple[float, bool]]":
     """
     Real I/O: glob real macOS crash reports, check each for the MLX
@@ -73,10 +108,16 @@ def _gather_crash_file_info() -> "list[tuple[float, bool]]":
     try:
         for path in glob.glob(_CRASH_REPORT_GLOB):
             try:
-                mtime = os.path.getmtime(path)
                 with open(path, "r", encoding="utf-8", errors="ignore") as f:
                     text = f.read()
-                out.append((mtime, _MLX_SIGNATURE in text))
+                crash_time = _parse_ips_header_timestamp(text)
+                if crash_time is None:
+                    crash_time = os.path.getmtime(path)
+                    logging.debug(
+                        f"[MLX-AVOIDANCE] Falling back to mtime for {path} — "
+                        "header timestamp unparseable"
+                    )
+                out.append((crash_time, _MLX_SIGNATURE in text))
             except Exception:
                 continue
     except Exception as e:

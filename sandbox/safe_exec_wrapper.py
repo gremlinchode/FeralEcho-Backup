@@ -128,6 +128,16 @@ def _install_patches(scratch: str) -> None:
     for _gui_mod in ("tkinter", "_tkinter", "PyQt5", "PyQt6", "PySide2", "PySide6", "wx"):
         sys.modules.setdefault(_gui_mod, None)
 
+    # ── OpenMP / KMP duplicate-library guard (differential audit, 2026-07-20/21) ──
+    # Mirrors run.py's own startup guard (CLAUDE.md's "OpenMP / KMP startup
+    # guard" section). Not confirmed as the cause of the one KMP-signature crash
+    # found in this session's audit — cheap, harmless insurance either way: these
+    # vars only affect how numpy/faiss/MKL register their OpenMP runtime, and
+    # this subprocess can load self-edit candidates that import any of them.
+    _os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+    _os.environ.setdefault("OMP_NUM_THREADS", "1")
+    _os.environ.setdefault("MKL_NUM_THREADS", "1")
+
     # ── Phase 1: pre-import all stdlib modules we'll patch ────────────────────
     # Some modules run C-level initialization (ctypes builds pythonapi via
     # _ctypes.dlopen, shutil uses io.RawIOBase, etc.) that must complete

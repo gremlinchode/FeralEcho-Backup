@@ -77,6 +77,7 @@ EDIT_FORBIDDEN_TARGETS = frozenset({
     "app/core/introspection_channel.py",
     "app/core/self_model_updater.py",
     "app/core/bible_injection.py",
+    "app/subsystems/reflection_shard.py",
     "run.py",
     "Modelfile",
     "echo_principles.json",

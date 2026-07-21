@@ -232,6 +232,7 @@ expected_targets = {
     "app/core/echo_model_orchestrator.py",
     "app/core/self_model_updater.py",
     "app/core/bible_injection.py",
+    "app/subsystems/reflection_shard.py",
     "echo_principles.json",
 }
 if sm_src is None:
@@ -245,7 +246,7 @@ else:
     # uses forward-slash literals throughout).
     all_present = all(t in sm_src for t in expected_targets)
     results.append(check(
-        "All 10 CLAUDE.md-listed protected files found in EDIT_FORBIDDEN_TARGETS",
+        "All 11 CLAUDE.md-listed protected files found in EDIT_FORBIDDEN_TARGETS",
         all_present,
         f"Source slice: {grep('app/core/self_edit_manager.py', 'FORBIDDEN')[0] if grep('app/core/self_edit_manager.py', 'FORBIDDEN') else 'not found'}"
     ))

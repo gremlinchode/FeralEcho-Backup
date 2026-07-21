@@ -1179,11 +1179,17 @@ def _cb_is_open(model_name: str, task_type: Optional[str] = None) -> bool:
 _OLLAMA_API_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 
 # Token limits by task type. Reflections stay short; code and conversation get room.
+# reasoning/general/creative raised 1024 -> 2048 (2026-07-21, CLAUDE.md
+# Finding 53's follow-up): real deliberation exchanges the same night — a
+# reasoning-heavy logic puzzle, a creative piece — both ran out of room and
+# stopped mid-sentence at 1024. Matches coding's existing cap. personal/
+# autonomous_* deliberately left alone — concise is the intended shape
+# there, not an oversight (see the Machine-Native Awareness section).
 _TASK_TOKEN_LIMITS: dict[str, int] = {
     "personal": 512,       # autonomous reflections — concise
-    "reasoning": 1024,     # analysis and reasoning
-    "general": 1024,       # user conversation
-    "creative": 1024,      # creative writing
+    "reasoning": 2048,     # analysis and reasoning
+    "general": 2048,       # user conversation
+    "creative": 2048,      # creative writing
     "coding": 2048,        # code generation needs space
     "autonomous_reflection": 512,
     "autonomous_fetch": 512,

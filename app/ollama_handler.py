@@ -152,6 +152,7 @@ def _stream_chat_ollama(
     max_tokens: int = 1024,
     temperature: Optional[float] = None,
     options: Optional[dict] = None,
+    result_meta: Optional[dict] = None,
 ) -> Generator[str, None, None]:
     """
     Streaming /api/chat call. Confirmed live (2026-07-08, Ollama 0.30.10,
@@ -162,6 +163,13 @@ def _stream_chat_ollama(
     as /api/generate's top-level 'response'/'thinking') instead of top-level
     'response'/'thinking'. Mirrors stream_query_ollama's thinking-buffer
     assembly logic exactly, adjusted for the nested field names.
+
+    result_meta: optional out-parameter (2026-07-21). If given, populated
+    with the real Ollama done_reason ("stop" vs "length") from the final
+    chunk — the only way to actually know whether a response was cut off
+    by max_tokens rather than finishing naturally, which nothing in this
+    pipeline checked before (see CLAUDE.md Finding 53's follow-up). Default
+    None, so every existing caller is completely unaffected.
     """
     is_thinking_model = _is_thinking_model(model)
     _options = dict(options or {})
@@ -198,6 +206,9 @@ def _stream_chat_ollama(
 
                 done = data.get("done", False)
                 msg = data.get("message") or {}
+
+                if done and result_meta is not None:
+                    result_meta["done_reason"] = data.get("done_reason")
 
                 if is_thinking_model:
                     thinking_chunk = msg.get("thinking")
@@ -415,6 +426,7 @@ def stream_query_ollama(
     temperature: Optional[float] = None,
     system: Optional[str] = None,
     messages: Optional[list] = None,
+    result_meta: Optional[dict] = None,
 ) -> Generator[str, None, None]:
     """
     Stream Ollama token by token with robust error handling.
@@ -446,6 +458,11 @@ def stream_query_ollama(
     When both are omitted (the default, and every existing caller as of this
     change), behavior and the request sent to Ollama are byte-identical to
     before this parameter existed.
+
+    result_meta: optional out-parameter (2026-07-21), only populated on the
+    /api/chat branch (see _stream_chat_ollama's own docstring) — real
+    done_reason detection, so a caller can tell whether a response was
+    genuinely cut off by max_tokens. Default None, no other caller affected.
     """
     if model is None:
         model = OLLAMA_MODEL
@@ -477,7 +494,8 @@ def stream_query_ollama(
     if messages is not None or system is not None:
         chat_messages = _build_chat_messages(prompt, system, messages, model=model)
         yield from _stream_chat_ollama(
-            chat_messages, model, max_tokens=max_tokens, temperature=temperature
+            chat_messages, model, max_tokens=max_tokens, temperature=temperature,
+            result_meta=result_meta,
         )
         return
 

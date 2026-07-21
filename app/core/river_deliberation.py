@@ -56,7 +56,6 @@ except Exception:
 
 _NUM_CTX: int = 8192          # matches Echo's Modelfile num_ctx
 _SYNTHESIS_MARGIN: int = 512  # tokens reserved for Echo's own response
-_TEMPLATE_OVERHEAD: int = 150 # fixed tokens in SYNTHESIS_PROMPT_TEMPLATE
 _FALLBACK_CHARS: int = 800    # per-opinion char cap when tiktoken is absent
 
 
@@ -88,7 +87,10 @@ def _truncate_to_tokens_tail(text: str, max_tokens: int) -> str:
     return _tiktoken_enc.decode(ids[-max_tokens:])
 
 
-def _direct_response_prompt(prompt: str, system: Optional[str]) -> str:
+def _direct_response_prompt(
+    prompt: str, system: Optional[str],
+    max_tokens: Optional[int] = None, model_name: Optional[str] = None,
+) -> str:
     """Budget-cap a prompt going to a single model with no council/synthesis
     to dilute an oversized input (task_type in DIRECT_ECHO_TASKS, and the
     empty-council/all-errored fallbacks in deliberate_and_learn() — the only
@@ -97,8 +99,25 @@ def _direct_response_prompt(prompt: str, system: Optional[str]) -> str:
     _opinions_budget logic). Confirmed root cause of a live refusal bug:
     echo:latest breaks down on long personal-task prompts once real
     system-role content (Finding 17) is added on top, with no synthesis
-    step to absorb the confusion."""
-    _budget = max(500, _NUM_CTX - _SYNTHESIS_MARGIN - _count_tokens(system or ""))
+    step to absorb the confusion.
+
+    max_tokens/model_name: optional (2026-07-21) — same fix as the
+    synthesis opinions-budget (CLAUDE.md Finding 53's follow-up). Reserves
+    the real output cap (falling back to _SYNTHESIS_MARGIN if not given)
+    instead of a stale flat constant, and — when model_name is Echo's own
+    synthesis model — the real current size of the Modelfile identity
+    block _build_chat_messages() prepends, which this budget would
+    otherwise not know about at all."""
+    _margin = max_tokens if max_tokens is not None else _SYNTHESIS_MARGIN
+    _identity_tokens = 0
+    if model_name == ECHO_SYNTHESIS_MODEL:
+        try:
+            from app.ollama_handler import _get_echo_identity_block
+            _identity_text = _get_echo_identity_block()
+            _identity_tokens = _count_tokens(_identity_text) if _identity_text else 0
+        except Exception:
+            pass
+    _budget = max(500, _NUM_CTX - _margin - _identity_tokens - _count_tokens(system or ""))
     return _truncate_to_tokens_tail(prompt, _budget)
 
 # ── ANSI sanitization ─────────────────────────────────────────
@@ -326,11 +345,21 @@ def _ollama_query(
     try:
         from app.ollama_handler import stream_query_ollama
         _kwargs = {"max_tokens": max_tokens} if max_tokens is not None else {}
+        _result_meta: dict = {}
         tokens = list(stream_query_ollama(
             prompt=prompt, model=model_name, temperature=temperature, system=system,
+            result_meta=_result_meta,
             **_kwargs,
         ))
         response = "".join(tokens).strip()
+        # 2026-07-21: real done_reason check, not a guess — ground truth for
+        # whether this response was actually cut off by max_tokens rather
+        # than finishing naturally (CLAUDE.md Finding 53's follow-up).
+        if _result_meta.get("done_reason") == "length":
+            logging.warning(
+                f"[DELIBERATION] {model_name} truncated by max_tokens={max_tokens} "
+                f"(task_type={task_type})"
+            )
         if not response:
             _cb_record_failure(model_name, task_type)
             return f"[ERROR] Empty response from {model_name}"
@@ -703,7 +732,7 @@ def deliberate_and_learn(
         logging.info(
             f"[DELIBERATION] Direct Echo path for task={task_type} — bypassing council"
         )
-        response = _ollama_query(synth_model, _direct_response_prompt(prompt, system), timeout=SYNTHESIS_TIMEOUT, temperature=temperature, system=system, max_tokens=max_tokens, task_type=task_type)
+        response = _ollama_query(synth_model, _direct_response_prompt(prompt, system, max_tokens, synth_model), timeout=SYNTHESIS_TIMEOUT, temperature=temperature, system=system, max_tokens=max_tokens, task_type=task_type)
         river_brain.learn(synth_model, task_type, response)
         # 2026-07-19: log this too, via the same function the real
         # multi-councillor path already uses — a genuine "council of one."
@@ -777,7 +806,7 @@ def deliberate_and_learn(
 
     if not council:
         logging.warning("[DELIBERATION] Empty council — falling back to direct Echo query")
-        response = _ollama_query(synth_model, _direct_response_prompt(prompt, system), timeout=SYNTHESIS_TIMEOUT, temperature=temperature, system=system, max_tokens=max_tokens, task_type=task_type)
+        response = _ollama_query(synth_model, _direct_response_prompt(prompt, system, max_tokens, synth_model), timeout=SYNTHESIS_TIMEOUT, temperature=temperature, system=system, max_tokens=max_tokens, task_type=task_type)
         river_brain.learn(synth_model, task_type, response)
         return response
 
@@ -792,7 +821,7 @@ def deliberate_and_learn(
         logging.info(f"[DELIBERATION] Querying councillor: {model}")
         councillor_temp = _jittered_temperature(temperature, i, len(council))
         response = _ollama_query(
-            model, _direct_response_prompt(prompt, system), timeout=COUNCILLOR_TIMEOUT,
+            model, _direct_response_prompt(prompt, system, max_tokens, model), timeout=COUNCILLOR_TIMEOUT,
             temperature=councillor_temp, system=system, max_tokens=max_tokens, task_type=task_type,
         )
         opinions[model] = response
@@ -807,7 +836,7 @@ def deliberate_and_learn(
 
     if not valid_opinions:
         logging.warning("[DELIBERATION] All councillors errored — falling back to direct Echo query")
-        response = _ollama_query(synth_model, _direct_response_prompt(prompt, system), timeout=SYNTHESIS_TIMEOUT, temperature=temperature, system=system, max_tokens=max_tokens, task_type=task_type)
+        response = _ollama_query(synth_model, _direct_response_prompt(prompt, system, max_tokens, synth_model), timeout=SYNTHESIS_TIMEOUT, temperature=temperature, system=system, max_tokens=max_tokens, task_type=task_type)
         river_brain.learn(synth_model, task_type, response)
         return response
 
@@ -822,10 +851,37 @@ def deliberate_and_learn(
     # ── 5. Build synthesis system message ─────────────────────
     # Compute per-opinion token budget so no synthesis call overflows
     # num_ctx.  Budget = window - safety_margin - template_overhead - prompt - system.
+    #
+    # 2026-07-21 fix: _TEMPLATE_OVERHEAD (150) was calibrated before Finding
+    # 46 (2026-07-19) started prepending Echo's real Modelfile identity block
+    # ahead of every echo:latest system message — ~289 tokens, invisible to
+    # this budget, that landed on top of the template's own ~210-token fixed
+    # text (the constant already undercounted that too). Net effect,
+    # confirmed via a real reasoning-task synthesis call: the true system+
+    # user token count exceeded num_ctx, and echo:latest lost the system/
+    # user boundary and echoed its own synthesis instructions verbatim into
+    # the user-facing response. Computed live instead of a second stale
+    # constant, since the identity block's size isn't fixed either — Finding
+    # 46's own mtime-cache means a manual Modelfile edit changes it without
+    # a restart.
+    _template_fixed_tokens = _count_tokens(SYNTHESIS_SYSTEM_TEMPLATE.format(task_type=task_type, opinions=""))
+    _identity_tokens = 0
+    if synth_model == ECHO_SYNTHESIS_MODEL:
+        try:
+            from app.ollama_handler import _get_echo_identity_block
+            _identity_text = _get_echo_identity_block()
+            _identity_tokens = _count_tokens(_identity_text) if _identity_text else 0
+        except Exception:
+            pass
     _prompt_tokens = _count_tokens(prompt) + _count_tokens(system or "")
+    # 2026-07-21: reserve the real output cap (max_tokens), not the flat
+    # _SYNTHESIS_MARGIN constant — keeps this permanently in sync if
+    # max_tokens is ever raised again, closing the same class of drift
+    # this whole fix exists to close, proactively this time.
+    _response_margin = max_tokens if max_tokens is not None else _SYNTHESIS_MARGIN
     _opinions_budget = max(
         200,
-        _NUM_CTX - _SYNTHESIS_MARGIN - _TEMPLATE_OVERHEAD - _prompt_tokens,
+        _NUM_CTX - _response_margin - _template_fixed_tokens - _identity_tokens - _prompt_tokens,
     )
     _per_opinion = _opinions_budget // max(len(valid_opinions), 1)
     logging.debug(
@@ -847,7 +903,7 @@ def deliberate_and_learn(
         f"[DELIBERATION] Sending {len(valid_opinions)} opinions to {synth_model} for synthesis"
     )
     final_response = _ollama_query(
-        synth_model, _direct_response_prompt(prompt, synthesis_system), timeout=SYNTHESIS_TIMEOUT,
+        synth_model, _direct_response_prompt(prompt, synthesis_system, max_tokens, synth_model), timeout=SYNTHESIS_TIMEOUT,
         temperature=temperature, system=synthesis_system, max_tokens=max_tokens, task_type=task_type,
     )
 

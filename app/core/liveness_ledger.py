@@ -1810,6 +1810,93 @@ def _check_apply_to_code_sandbox_isolation() -> dict:
     return _evaluate_apply_to_code_sandbox_isolation(caller_block, sandboxed_fn_source)
 
 
+# ── 28. river_drift_alerting — snapshot_manager.py's real sustain/fire/reset ──
+# logic for the river_drift_sustained condition still discriminates
+# correctly, and still routes to the deliberately lower-urgency
+# raise_drift_notice() rather than the CRITICAL raise_restore_alert() tier.
+# Added 2026-07-22 (CLAUDE.md Finding 70, PENDING_DECISIONS.md #16).
+# Exercises the real, pure _evaluate_sustained_condition() against a fresh,
+# throwaway counts dict — never the real shared _alert_counts a live
+# guardian loop depends on for actual ram/disk/drift tracking, the same
+# reasoning already applied to plan_retention's real-function-not-
+# reimplementation requirement.
+
+_SNAPSHOT_MANAGER_PATH_FOR_LEDGER = os.path.join(_PROJECT_ROOT, "app", "core", "snapshot_manager.py")
+
+
+def _evaluate_river_drift_alerting(eval_fn, check_and_alert_source: "str | None") -> dict:
+    if eval_fn is None:
+        return _result(False, "Could not import _evaluate_sustained_condition() at all — failing closed.")
+
+    failures = []
+    try:
+        counts: dict = {}
+        fired_at = None
+        for cycle in range(1, 6):
+            r = eval_fn("test_cond", True, counts, 3)
+            counts = r["new_counts"]
+            if r["should_fire"]:
+                fired_at = cycle
+                break
+        if fired_at != 3:
+            failures.append(f"expected the condition to fire on cycle 3 (threshold=3), actually fired on cycle {fired_at!r}")
+
+        # A non-active cycle must reset the counter, not just leave it.
+        r = eval_fn("test_cond", False, {"test_cond": 2}, 3)
+        if r["new_counts"].get("test_cond") != 0 or r["should_fire"]:
+            failures.append(f"a non-active cycle did not correctly reset the counter to 0: {r}")
+
+        # The input dict must never be mutated in place (pure function contract).
+        original = {"test_cond": 1}
+        _ = eval_fn("test_cond", True, original, 3)
+        if original.get("test_cond") != 1:
+            failures.append("_evaluate_sustained_condition() mutated its input counts dict in place — no longer safely testable in isolation from real _alert_counts")
+    except Exception as e:
+        return _result(False, f"_evaluate_sustained_condition() raised {e!r}")
+
+    if check_and_alert_source is None:
+        failures.append(
+            "could not locate check_and_alert()'s river_drift_sustained block in "
+            "snapshot_manager.py at all — either it moved (update this check's anchor) "
+            "or the wiring was removed"
+        )
+    else:
+        calls_notice = bool(re.search(r"raise_drift_notice\s*\(", check_and_alert_source))
+        calls_restore_for_drift = bool(re.search(r"raise_restore_alert\s*\(\s*[\"']river_drift_sustained[\"']", check_and_alert_source))
+        if not calls_notice:
+            failures.append("check_and_alert() no longer calls raise_drift_notice() for river_drift_sustained — the notice wiring was removed")
+        if calls_restore_for_drift:
+            failures.append(
+                "check_and_alert() now routes river_drift_sustained through raise_restore_alert() — "
+                "this would escalate a soft statistical signal to the CRITICAL restore tier, "
+                "exactly the tier mismatch PENDING_DECISIONS.md #16 deliberately avoided"
+            )
+
+    if failures:
+        return _result(False, "; ".join(failures))
+    return _result(
+        True,
+        "_evaluate_sustained_condition() still correctly sustains-then-fires-then-resets "
+        "without mutating its input, and check_and_alert() still routes river_drift_sustained "
+        "through the deliberately lower-urgency raise_drift_notice(), not raise_restore_alert().",
+    )
+
+
+def _check_river_drift_alerting() -> dict:
+    try:
+        from app.core.snapshot_manager import _evaluate_sustained_condition
+    except Exception:
+        _evaluate_sustained_condition = None
+
+    source = _read_text(_SNAPSHOT_MANAGER_PATH_FOR_LEDGER)
+    block = None
+    idx = source.find("def check_and_alert(")
+    if idx != -1:
+        block = source[idx:idx + 2000]
+
+    return _evaluate_river_drift_alerting(_evaluate_sustained_condition, block)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -1840,6 +1927,7 @@ _CHECKS = (
     "council_river_blend",
     "council_content_privacy",
     "apply_to_code_sandbox_isolation",
+    "river_drift_alerting",
 )
 
 
@@ -1891,6 +1979,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "council_river_blend": _check_council_river_blend,
         "council_content_privacy": _check_council_privacy,
         "apply_to_code_sandbox_isolation": _check_apply_to_code_sandbox_isolation,
+        "river_drift_alerting": _check_river_drift_alerting,
     }
 
     ledger = {"generated_at": _now_iso()}

@@ -6,17 +6,29 @@ Snapshot triggers: "startup" (once at server start) and "post_self_edit"
 (immediately after each successful production write in execute_self_edit).
 
 Alert conditions (ground-truth signals only — system_guard chain):
-  ram_sustained_92pct  — RAM > 92% for _ALERT_SUSTAIN consecutive guardian cycles
-  disk_low             — disk free < 0.5 GB for _ALERT_SUSTAIN consecutive cycles
-  ollama_down          — Ollama process not alive (fires immediately, no sustain)
+  ram_sustained_92pct    — RAM > 92% for _ALERT_SUSTAIN consecutive guardian cycles
+  disk_low               — disk free < 0.5 GB for _ALERT_SUSTAIN consecutive cycles
+  ollama_down            — Ollama process not alive (fires immediately, no sustain)
+  river_drift_sustained  — RiverBrain's own PageHinkley drift flag, sustained for
+                           _DRIFT_ALERT_SUSTAIN cycles (longer than the three above —
+                           a softer, statistical signal that can flip for legitimate
+                           reasons, not just breakage). Only evaluated once
+                           baseline_trusted_since is genuinely set (PENDING_DECISIONS.md
+                           #16, decided 2026-07-22). Deliberately NOT the same tier as
+                           the three above: fires raise_drift_notice() (WARNING,
+                           [DRIFT-NOTICE], action_required="review_only", no suggested
+                           restore target) rather than raise_restore_alert() — restoring
+                           river_brain.pkl in response to "quality patterns shifted"
+                           risks reverting a legitimate change, not just breakage.
 
-Drift signals (drift_alerts, weekly_delta) are intentionally excluded as
-alert triggers until baseline_trusted_since is set in snapshot_baseline.json
-following a clean PageHinkley observation window.  They appear in manifest
-health_at_snapshot as informational only until that flag is set.
+weekly_delta (self_model.json's slower, weekly comparative quality trend — a
+different signal, different data source, different cadence than drift_alerts)
+remains deliberately out of scope for any alert path — a possible future
+follow-up, not decided.  It still appears in self_model.json only, informational.
 
 Restore is ALWAYS alert-and-propose.  The /admin/restore endpoint requires
 a human to supply the snapshot_id explicitly.  No autonomous restore path exists.
+river_drift_sustained never proposes a restore target at all (see above).
 
 river_brain.pkl is handled as opaque bytes throughout this module.
 pickle.load() is never called here — only sha256 streaming reads.
@@ -84,6 +96,16 @@ _DISK_MIN_GB   = 1.0   # skip snapshot (but not restore) if free space is below 
 _MAX_SNAPSHOTS = 5     # retain at most this many, plus the most recent startup snapshot
 _ALERT_SUSTAIN = 2     # consecutive guardian cycles a condition must persist before alert fires
 
+# PENDING_DECISIONS.md #16, decided 2026-07-22: separate, longer sustain
+# window for the drift-based condition below than ram/disk's _ALERT_SUSTAIN.
+# Deliberately more conservative — a PageHinkley flag is a softer,
+# statistical read that can legitimately flip for good reasons (a real
+# self-edit landing, a model retirement, Finding 39's tag-boost shifting
+# selection), not just breakage the way ram/disk/ollama are. ~10 guardian
+# cycles (60s each) rather than ~2, so a single noisy flip doesn't
+# immediately escalate.
+_DRIFT_ALERT_SUSTAIN = 10
+
 # ── Alert state ───────────────────────────────────────────────────────────────
 # In-memory only — resets on server restart.  Deliberate: a restart clears transient spikes.
 
@@ -99,6 +121,8 @@ def _condition_active(condition: str, health: dict) -> bool:
         return health.get("disk_free_gb", 99) < 0.5
     if condition == "ollama_down":
         return not health.get("ollama_alive", True)
+    if condition == "river_drift_sustained":
+        return bool(health.get("drift_alerts_active", False))
     return False
 
 
@@ -120,6 +144,7 @@ def _collect_health() -> dict:
         "load_avg_1m":          0.0,
         "ollama_alive":         True,
         "drift_alerts_active":  False,
+        "drifted_tasks":        [],
         "trusted_signals_only": False,
     }
     try:
@@ -145,6 +170,10 @@ def _collect_health() -> dict:
                 state = json.load(fh)
             drift = state.get("river_brain", {}).get("drift_alerts", {})
             result["drift_alerts_active"] = any(drift.values())
+            # PENDING_DECISIONS.md #16: which task types, not just the
+            # collapsed boolean — a human reading a drift notice should see
+            # where to look immediately, not have to re-derive it themselves.
+            result["drifted_tasks"] = sorted(task for task, active in drift.items() if active)
     except Exception:
         pass
 
@@ -379,28 +408,106 @@ def raise_restore_alert(condition: str, duration_s: int) -> None:
     )
 
 
+def raise_drift_notice(drifted_tasks: list, duration_s: int) -> None:
+    """
+    PENDING_DECISIONS.md #16, decided 2026-07-22: a real, deliberately
+    lower-urgency sibling to raise_restore_alert(), for RiverBrain's own
+    PageHinkley drift signal now that baseline_trusted_since is genuinely
+    set. NOT the same tier as a restore alert, on purpose: a sustained
+    drift flag means "quality patterns shifted," which can just as easily
+    reflect a genuine improvement (a real self-edit landing, a model
+    retirement, Finding 39's tag-boost) as a real problem — restoring
+    river_brain.pkl/self_edit_generated.py/etc. in response would risk
+    reverting a legitimate change. Logged at WARNING under a distinct
+    [DRIFT-NOTICE] tag (not CRITICAL/[RESTORE-ALERT]), action_required is
+    "review_only", and deliberately does NOT call find_last_known_good()
+    or suggest a restore_command — there is no "correct" restore target
+    for "the model learned something," and most of today's 5 retained
+    snapshots predate this fix anyway (their drift_alerts_active reading
+    is a stale hardcoded False, never a real evaluation — not worth
+    reasoning about here since this path doesn't propose using them).
+
+    Written to the same _ALERTS_LOG restore alerts use, for one unified
+    audit trail — the file's name predates this addition, but nothing
+    else in the codebase reads it (confirmed via grep), and every entry
+    self-describes its own action_required, so a review-only entry living
+    alongside restore alerts doesn't risk being mistaken for one.
+    """
+    entry = {
+        "timestamp_utc":   datetime.now(timezone.utc).isoformat(),
+        "condition":       "river_drift_sustained",
+        "duration_s":      duration_s,
+        "drifted_tasks":   drifted_tasks,
+        "action_required": "review_only",
+    }
+    os.makedirs(os.path.dirname(_ALERTS_LOG), exist_ok=True)
+    with open(_ALERTS_LOG, "a", encoding="utf-8") as fh:
+        fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    logger.warning(
+        "[DRIFT-NOTICE] river_drift_sustained sustained=%ds | drifted_tasks=%s | "
+        "review_only, no restore suggested — drift can reflect a legitimate change.",
+        duration_s, drifted_tasks,
+    )
+
+
 # ── Guardian hook ─────────────────────────────────────────────────────────────
+
+def _evaluate_sustained_condition(condition: str, active: bool, counts: dict, threshold: int) -> dict:
+    """
+    Pure: given whether `condition` is currently active and the current
+    sustain-counts dict, computes the next counter state without mutating
+    the input (a new dict is returned). Shared by every sustain-tracked
+    condition in check_and_alert() below — extracted specifically so
+    liveness_ledger.py's functional canary can exercise the real sustain/
+    fire/reset logic against a fresh, throwaway counts dict, never the
+    real shared _alert_counts a live guardian loop depends on (the same
+    reasoning already applied to _prune_self_edit_plans()'s optional
+    params and _blend_council_and_quality()'s pure extraction).
+
+    Returns {"new_counts": dict, "should_fire": bool, "fired_count": int}
+    — fired_count is the sustained-cycle count at the moment of firing
+    (used for duration_s), 0 when should_fire is False.
+    """
+    new_counts = dict(counts)
+    if not active:
+        new_counts[condition] = 0
+        return {"new_counts": new_counts, "should_fire": False, "fired_count": 0}
+    new_counts[condition] = new_counts.get(condition, 0) + 1
+    if new_counts[condition] >= threshold:
+        fired_count = new_counts[condition]
+        new_counts[condition] = 0
+        return {"new_counts": new_counts, "should_fire": True, "fired_count": fired_count}
+    return {"new_counts": new_counts, "should_fire": False, "fired_count": 0}
+
 
 def check_and_alert(guardian_interval_s: int = 60) -> None:
     """
     Called from the guardian loop each cycle.
     Sustained conditions fire raise_restore_alert() after _ALERT_SUSTAIN cycles.
     Ollama-down fires immediately without sustain.
-    After an alert fires, the counter resets so it does not re-alert every cycle.
+    river_drift_sustained (PENDING_DECISIONS.md #16) fires raise_drift_notice()
+    — a deliberately separate, lower-urgency path — after _DRIFT_ALERT_SUSTAIN
+    cycles, a longer window than the resource conditions above use.
+    After an alert/notice fires, its counter resets so it does not re-fire every cycle.
     """
     health = _collect_health()
 
     for cond in ("ram_sustained_92pct", "disk_low"):
-        if _condition_active(cond, health):
-            _alert_counts[cond] = _alert_counts.get(cond, 0) + 1
-            if _alert_counts[cond] >= _ALERT_SUSTAIN:
-                raise_restore_alert(cond, duration_s=_alert_counts[cond] * guardian_interval_s)
-                _alert_counts[cond] = 0
-        else:
-            _alert_counts[cond] = 0
+        r = _evaluate_sustained_condition(cond, _condition_active(cond, health), _alert_counts, _ALERT_SUSTAIN)
+        _alert_counts[cond] = r["new_counts"][cond]
+        if r["should_fire"]:
+            raise_restore_alert(cond, duration_s=r["fired_count"] * guardian_interval_s)
 
     if _condition_active("ollama_down", health):
         raise_restore_alert("ollama_down", duration_s=0)
+
+    r = _evaluate_sustained_condition(
+        "river_drift_sustained", _condition_active("river_drift_sustained", health),
+        _alert_counts, _DRIFT_ALERT_SUSTAIN,
+    )
+    _alert_counts["river_drift_sustained"] = r["new_counts"]["river_drift_sustained"]
+    if r["should_fire"]:
+        raise_drift_notice(health.get("drifted_tasks", []), duration_s=r["fired_count"] * guardian_interval_s)
 
 
 # ── Restore ───────────────────────────────────────────────────────────────────

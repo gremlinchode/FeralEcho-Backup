@@ -765,6 +765,56 @@ check("apply_to_code_sandbox_isolation: _run_apply_to_code_sandboxed no longer s
 r = ll._evaluate_apply_to_code_sandbox_isolation(None, None)
 check("apply_to_code_sandbox_isolation: functions not found in source at all", r["pass"], False, r["evidence"])
 
+# ── 28. river_drift_alerting ───────────────────────────────────────────────────
+_REAL_CHECK_AND_ALERT_BLOCK = """
+def check_and_alert(guardian_interval_s: int = 60) -> None:
+    health = _collect_health()
+    for cond in ("ram_sustained_92pct", "disk_low"):
+        r = _evaluate_sustained_condition(cond, _condition_active(cond, health), _alert_counts, _ALERT_SUSTAIN)
+        _alert_counts[cond] = r["new_counts"][cond]
+        if r["should_fire"]:
+            raise_restore_alert(cond, duration_s=r["fired_count"] * guardian_interval_s)
+    if _condition_active("ollama_down", health):
+        raise_restore_alert("ollama_down", duration_s=0)
+    r = _evaluate_sustained_condition(
+        "river_drift_sustained", _condition_active("river_drift_sustained", health),
+        _alert_counts, _DRIFT_ALERT_SUSTAIN,
+    )
+    _alert_counts["river_drift_sustained"] = r["new_counts"]["river_drift_sustained"]
+    if r["should_fire"]:
+        raise_drift_notice(health.get("drifted_tasks", []), duration_s=r["fired_count"] * guardian_interval_s)
+"""
+
+try:
+    from app.core.snapshot_manager import _evaluate_sustained_condition as _real_evaluate_sustained_condition
+    r = ll._evaluate_river_drift_alerting(_real_evaluate_sustained_condition, _REAL_CHECK_AND_ALERT_BLOCK)
+    check("river_drift_alerting: real function + real routing to raise_drift_notice", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] river_drift_alerting real-function case: import failed ({e})")
+
+def _always_fires_eval_fn(condition, active, counts, threshold):
+    new_counts = dict(counts)
+    new_counts[condition] = 0
+    return {"new_counts": new_counts, "should_fire": active, "fired_count": 1 if active else 0}
+r = ll._evaluate_river_drift_alerting(_always_fires_eval_fn, _REAL_CHECK_AND_ALERT_BLOCK)
+check("river_drift_alerting: degraded evaluator fires immediately, ignoring the sustain threshold", r["pass"], False, r["evidence"])
+
+_REGRESSED_TO_RESTORE_ALERT_BLOCK = """
+def check_and_alert(guardian_interval_s: int = 60) -> None:
+    health = _collect_health()
+    r = _evaluate_sustained_condition(
+        "river_drift_sustained", _condition_active("river_drift_sustained", health),
+        _alert_counts, _DRIFT_ALERT_SUSTAIN,
+    )
+    if r["should_fire"]:
+        raise_restore_alert("river_drift_sustained", duration_s=r["fired_count"] * guardian_interval_s)
+"""
+r = ll._evaluate_river_drift_alerting(_real_evaluate_sustained_condition, _REGRESSED_TO_RESTORE_ALERT_BLOCK)
+check("river_drift_alerting: regressed to the CRITICAL raise_restore_alert() tier for drift", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_river_drift_alerting(None, None)
+check("river_drift_alerting: _evaluate_sustained_condition not importable at all", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

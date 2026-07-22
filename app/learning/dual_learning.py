@@ -77,6 +77,51 @@ META_PATH = BASE / "dual_meta.json"
 
 _lock = Lock()
 
+
+def _validate_event_content(source, text) -> bool:
+    """
+    Gate function for DualLearner.log_event() — CLAUDE.md Finding 41-E,
+    2026-07-22. Returns True if content is safe to log, False if blocked.
+    Fails open (returns True) if the validator is unavailable or itself
+    raises, matching memory_bridge.py's own _validate_before_commit()
+    contract exactly: a validator problem must never block real event
+    logging.
+
+    "reflection" is the real content (checked for emptiness, bloat, and
+    recursive-loop patterns). "signal" is a sha256 of that same content,
+    not a raw text prefix (unlike memory_bridge.py's own signal[:500]
+    convention) — there's no separate query/response pair in this data
+    model the way a reflection-generation pipeline has, so a raw prefix
+    would always trivially appear "verbatim inside" the reflection field,
+    tripping check_recursive_loop()'s SIGNAL_EMBEDDED_IN_REFLECTION warning
+    on every single call. A content hash still gives check_duplicate_
+    signal() exactly what it needs for exact-duplicate detection (real,
+    useful here: the same clipboard/location snippet logged repeatedly by
+    the phone client adds nothing) without ever being a substring match.
+    """
+    text = text or ""
+    try:
+        from app.core.memory_write_validator import validate_memory_entry
+    except Exception as e:
+        logging.debug(f"[DualLearner] memory_write_validator unavailable, failing open: {e}")
+        return True
+    import hashlib
+    entry = {
+        "ts": datetime.now().isoformat(),
+        "signal": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        "reflection": text,
+        "source": source,
+    }
+    try:
+        allowed, result = validate_memory_entry(entry)
+        if not allowed:
+            logging.warning(f"[DualLearner] log_event blocked from '{source}' | {result.summary()}")
+        return allowed
+    except Exception as e:
+        logging.debug(f"[DualLearner] validate_memory_entry raised, failing open: {e}")
+        return True
+
+
 class DualLearner:
     def __init__(self, emb_dim=384):
         self.emb_dim = emb_dim
@@ -111,8 +156,25 @@ class DualLearner:
             self.meta = {"created": time.time(), "count": 0}
 
     def log_event(self, source, text, metadata=None, ts=None):
-        """Append an event: source in {'user','echo','phone'}"""
+        """Append an event: source in {'user','echo','phone'}.
+
+        Validated through the same memory_write_validator gate real FAISS/
+        journal memory writes already go through (CLAUDE.md Finding 41-E,
+        2026-07-22) — this event log was the one path a phone client's
+        content reached with zero validation of any kind, despite being no
+        more trusted a source than the parallel ClaudeShard->FAISS path
+        that already has this gate. Mirrors memory_bridge.py's own real,
+        live _validate_before_commit() call shape (signal truncated to 500
+        chars, matching its exact convention) rather than the unused
+        validate_reflection_string() convenience wrapper. Rejected entries
+        are quarantined by the validator itself (memory/quarantine_
+        journal.jsonl) and never reach this file; best-effort, fails open
+        on any validator error so a validator bug can never block real
+        event logging.
+        """
         ts = ts or time.time()
+        if not _validate_event_content(source, text):
+            return
         entry = {"ts": ts, "source": source, "text": text, "meta": metadata or {}}
         with _lock:
             with open(self.events_path, "a", encoding="utf8") as f:

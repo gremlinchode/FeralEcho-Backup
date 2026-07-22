@@ -815,6 +815,49 @@ check("river_drift_alerting: regressed to the CRITICAL raise_restore_alert() tie
 r = ll._evaluate_river_drift_alerting(None, None)
 check("river_drift_alerting: _evaluate_sustained_condition not importable at all", r["pass"], False, r["evidence"])
 
+# ── 29. f1_aliased_import_detection ───────────────────────────────────────────
+try:
+    from app.core.self_edit_manager import scan_for_unsafe_operations as _real_scan_fn
+    r = ll._evaluate_f1_aliased_import_detection(_real_scan_fn)
+    check("f1_aliased_import_detection: real scanner catches all 4 bypass patterns + no false positive", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] f1_aliased_import_detection real-function case: import failed ({e})")
+
+def _never_blocks_scan_fn(code):
+    pass  # degraded: never raises, regardless of content
+r = ll._evaluate_f1_aliased_import_detection(_never_blocks_scan_fn)
+check("f1_aliased_import_detection: degraded scanner never blocks anything (regression to no-op)", r["pass"], False, r["evidence"])
+
+def _always_blocks_scan_fn(code):
+    raise ValueError("blocked")  # degraded: over-aggressive, blocks even legitimate code
+r = ll._evaluate_f1_aliased_import_detection(_always_blocks_scan_fn)
+check("f1_aliased_import_detection: degraded scanner blocks everything, including legitimate code", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_f1_aliased_import_detection(None)
+check("f1_aliased_import_detection: scan_for_unsafe_operations not importable at all", r["pass"], False, r["evidence"])
+
+# ── 30. dual_learner_validation_gate ──────────────────────────────────────────
+_REAL_LOG_EVENT_SOURCE = """
+    def log_event(self, source, text, metadata=None, ts=None):
+        ts = ts or time.time()
+        if not _validate_event_content(source, text):
+            return
+        entry = {"ts": ts, "source": source, "text": text, "meta": metadata or {}}
+"""
+r = ll._evaluate_dual_learner_validation_gate(_REAL_LOG_EVENT_SOURCE)
+check("dual_learner_validation_gate: real shape -- calls _validate_event_content()", r["pass"], True, r["evidence"])
+
+_REGRESSED_LOG_EVENT_SOURCE = """
+    def log_event(self, source, text, metadata=None, ts=None):
+        ts = ts or time.time()
+        entry = {"ts": ts, "source": source, "text": text, "meta": metadata or {}}
+"""
+r = ll._evaluate_dual_learner_validation_gate(_REGRESSED_LOG_EVENT_SOURCE)
+check("dual_learner_validation_gate: validation call silently removed", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_dual_learner_validation_gate(None)
+check("dual_learner_validation_gate: log_event() not found in source at all", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

@@ -1897,6 +1897,113 @@ def _check_river_drift_alerting() -> dict:
     return _evaluate_river_drift_alerting(_evaluate_sustained_condition, block)
 
 
+# ── 29. f1_aliased_import_detection — scan_for_unsafe_operations() still ────
+# catches the aliased-import bypass class Finding 41-C found: `from os
+# import system; system(...)`, `import os as o; o.system(...)`, `from
+# subprocess import call; call(...)`, and `__import__("os").system(...)`
+# all previously sailed past F1 untouched since none of them spell the
+# literal "os"/"subprocess" at the call site. Added 2026-07-22. Functional
+# canary against the real function (not a pluggable parameter — the
+# scanner itself is the thing under test), same shape as
+# task_type_classifier/seam_engine: known-bad patterns must still raise,
+# a harmless aliased import must still pass.
+
+def _evaluate_f1_aliased_import_detection(scan_fn) -> dict:
+    if scan_fn is None:
+        return _result(False, "Could not import scan_for_unsafe_operations() at all — failing closed.")
+
+    bypass_cases = [
+        ("from os import system", "def apply_to_code(code):\n    from os import system\n    system('x')\n    return code\n"),
+        ("import os as o", "def apply_to_code(code):\n    import os as o\n    o.system('x')\n    return code\n"),
+        ("from subprocess import call", "def apply_to_code(code):\n    from subprocess import call\n    call(['x'])\n    return code\n"),
+        ("__import__ dynamic", "def apply_to_code(code):\n    __import__('os').system('x')\n    return code\n"),
+    ]
+    failures = []
+    for name, code in bypass_cases:
+        try:
+            scan_fn(code)
+            failures.append(f"{name}: should have raised ValueError (a real bypass) but did not")
+        except ValueError:
+            pass
+        except Exception as e:
+            failures.append(f"{name}: raised unexpected {e!r} instead of ValueError")
+
+    # A harmless aliased import with no dangerous call must not be falsely blocked.
+    legit_code = "def apply_to_code(code):\n    import re as regex\n    return regex.sub('a', 'b', code)\n"
+    try:
+        scan_fn(legit_code)
+    except ValueError as e:
+        failures.append(f"legitimate aliased-import code was falsely blocked: {e}")
+    except Exception as e:
+        failures.append(f"legitimate code raised unexpected {e!r}")
+
+    if failures:
+        return _result(False, "; ".join(failures))
+    return _result(
+        True,
+        "scan_for_unsafe_operations() still correctly blocks all 4 known aliased-import "
+        "bypass patterns (Finding 41-C) and does not falsely flag a harmless aliased import.",
+    )
+
+
+def _check_f1_aliased_import_detection() -> dict:
+    try:
+        from app.core.self_edit_manager import scan_for_unsafe_operations
+    except Exception:
+        scan_for_unsafe_operations = None
+    return _evaluate_f1_aliased_import_detection(scan_for_unsafe_operations)
+
+
+# ── 30. dual_learner_validation_gate — DualLearner.log_event() still ────────
+# routes through _validate_event_content() before writing to the real
+# event log (CLAUDE.md Finding 41-E, added 2026-07-22). Static source-
+# anchor check, same shape as wolf_friction_bridge/dissent_log_hook: the
+# risk isn't "is the validator's own logic still correct" (memory_write_
+# validator.py has its own established checks elsewhere in this codebase),
+# it's specifically "did a future edit to log_event() quietly drop the
+# gate call," which would reopen the exact zero-validation gap this
+# Finding closed.
+
+_DUAL_LEARNING_PATH = os.path.join(_PROJECT_ROOT, "app", "learning", "dual_learning.py")
+
+
+def _evaluate_dual_learner_validation_gate(log_event_source: "str | None") -> dict:
+    if log_event_source is None:
+        return _result(
+            False,
+            "Could not locate DualLearner.log_event() in dual_learning.py at all — "
+            "either it moved (update this check's anchor) or the validation wiring "
+            "was removed. Failing closed either way.",
+        )
+    calls_validator = bool(re.search(r"_validate_event_content\s*\(", log_event_source))
+    if calls_validator:
+        return _result(
+            True,
+            "DualLearner.log_event() still calls _validate_event_content() before "
+            "writing to the real event log.",
+        )
+    return _result(
+        False,
+        "DualLearner.log_event() no longer calls _validate_event_content() — the "
+        "validation gate (Finding 41-E) was silently removed, reopening the "
+        "zero-validation gap for /mirror_echo-originated content.",
+    )
+
+
+def _check_dual_learner_validation_gate() -> dict:
+    source = _read_text(_DUAL_LEARNING_PATH)
+    block = None
+    idx = source.find("def log_event(")
+    if idx != -1:
+        # Generous window: log_event()'s own docstring documenting this
+        # exact fix is long enough that an 800-char window (the original
+        # draft of this check) consumed the whole thing before ever
+        # reaching the real code line — caught live against the real file
+        # during verification, not a hypothetical.
+        block = source[idx:idx + 2000]
+    return _evaluate_dual_learner_validation_gate(block)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -1928,6 +2035,8 @@ _CHECKS = (
     "council_content_privacy",
     "apply_to_code_sandbox_isolation",
     "river_drift_alerting",
+    "f1_aliased_import_detection",
+    "dual_learner_validation_gate",
 )
 
 
@@ -1980,6 +2089,8 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "council_content_privacy": _check_council_privacy,
         "apply_to_code_sandbox_isolation": _check_apply_to_code_sandbox_isolation,
         "river_drift_alerting": _check_river_drift_alerting,
+        "f1_aliased_import_detection": _check_f1_aliased_import_detection,
+        "dual_learner_validation_gate": _check_dual_learner_validation_gate,
     }
 
     ledger = {"generated_at": _now_iso()}

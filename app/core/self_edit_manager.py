@@ -278,6 +278,69 @@ def _check_open_call(node: ast.Call, var_strings: dict) -> str | None:
     return None
 
 
+def _resolve_import_aliases(tree: ast.Module) -> tuple:
+    """
+    CLAUDE.md Finding 41-C, fixed 2026-07-22. scan_for_unsafe_operations()
+    below matches dangerous calls by literal spelling only (obj.id ==
+    "subprocess", bare name in {"exec","eval"}) — confirmed live to miss an
+    entire bypass class: `from os import system; system(...)`, `import os
+    as o; o.system(...)`, and `from subprocess import call; call(...)` all
+    sailed past this scanner untouched, since none of them ever spell the
+    literal string "os"/"subprocess" at the call site. Not an active
+    exploit today (F2's kernel sandbox still blocks the actual execution
+    regardless — see Finding 41-C's own text), but F1's documented job is
+    to catch these before F2 ever runs, and it silently wasn't for this
+    whole class.
+
+    Returns (module_aliases, from_aliases):
+      module_aliases: {local_name: real_module} for `import X [as Y]` —
+        e.g. `import os as o` -> {"o": "os"}; a plain `import os` (no
+        alias) still maps {"os": "os"}, so callers can tell a genuine
+        alias apart from the direct spelling by checking local != real.
+      from_aliases: {local_name: "module.attr"} for `from X import Y [as Z]`
+        — e.g. `from os import system` -> {"system": "os.system"};
+        `from subprocess import call as c` -> {"c": "subprocess.call"}.
+    """
+    module_aliases: dict = {}
+    from_aliases: dict = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                real_module = alias.name.split(".")[0]
+                local = alias.asname or real_module
+                module_aliases[local] = real_module
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module or ""
+            for alias in node.names:
+                local = alias.asname or alias.name
+                from_aliases[local] = f"{module}.{alias.name}"
+    return module_aliases, from_aliases
+
+
+def _is_blocked_module_attr(module: str, attr: str) -> "str | None":
+    """
+    Central lookup shared by both the direct-spelling checks already in
+    scan_for_unsafe_operations() and the alias-resolution paths added for
+    Finding 41-C, so the actual blocked-operation list is only maintained
+    in one place (the existing _BLOCKED_* sets above). Returns a
+    human-readable description if module.attr is one of the operations
+    this scanner unconditionally blocks, else None.
+    """
+    if module in _BLOCKED_POSIX_MODULE and attr in _BLOCKED_OS_ATTRS:
+        return f"{module}.{attr}() is unconditionally blocked"
+    if module == "subprocess" and attr in _BLOCKED_SUB_ATTRS:
+        return f"subprocess.{attr}() is unconditionally blocked"
+    if module == "shutil" and attr in _BLOCKED_SHUTIL_ATTRS:
+        return f"shutil.{attr}() is unconditionally blocked"
+    if module in ("io", "_io") and attr in _BLOCKED_IO_CLASSES:
+        return f"{module}.{attr}() is unconditionally blocked"
+    if module == "importlib" and attr in _BLOCKED_IMPORTLIB_ATTRS:
+        return f"importlib.{attr}() is unconditionally blocked"
+    if module in ("ctypes", "cffi") and (attr in _BLOCKED_CTYPES_ATTRS or attr == "FFI"):
+        return f"{module}.{attr} is unconditionally blocked"
+    return None
+
+
 def scan_for_unsafe_operations(code: str) -> None:
     """
     AST-level safety gate for generated self-edit code.
@@ -302,6 +365,7 @@ def scan_for_unsafe_operations(code: str) -> None:
         raise ValueError(f"[SAFETY] Code failed to parse: {e}")
 
     var_strings = _collect_var_strings(tree)
+    module_aliases, from_aliases = _resolve_import_aliases(tree)
     violations: list = []
 
     for node in ast.walk(tree):
@@ -321,6 +385,19 @@ def scan_for_unsafe_operations(code: str) -> None:
                 v = _check_open_call(node, var_strings)
                 if v:
                     violations.append(v)
+                continue
+            # Finding 41-C: `from os import system; system(...)` — a bare
+            # call whose real origin (resolved via from_aliases) is a
+            # blocked module.attr, even though the call site never spells
+            # "os"/"subprocess" literally.
+            if name in from_aliases:
+                origin_module, _, origin_attr = from_aliases[name].rpartition(".")
+                v = _is_blocked_module_attr(origin_module, origin_attr)
+                if v:
+                    violations.append(
+                        f"line {lineno}: {v} (aliased via 'from {origin_module} import "
+                        f"{origin_attr}' as '{name}')"
+                    )
             continue
 
         # --- attribute calls: obj.method() --------------------------------
@@ -329,6 +406,36 @@ def scan_for_unsafe_operations(code: str) -> None:
 
         attr = func.attr
         obj  = func.value
+
+        # Finding 41-C: `import os as o; o.system(...)` — obj.id is the
+        # alias, not the real module; resolve it before the direct-spelling
+        # checks below (which only fire on the literal, unaliased name —
+        # module_aliases maps a plain `import os` to itself, so this branch
+        # is a no-op for the already-covered direct-spelling case).
+        if isinstance(obj, ast.Name):
+            aliased_module = module_aliases.get(obj.id)
+            if aliased_module and aliased_module != obj.id:
+                v = _is_blocked_module_attr(aliased_module, attr)
+                if v:
+                    violations.append(
+                        f"line {lineno}: {v} (aliased via 'import {aliased_module} as {obj.id}')"
+                    )
+                    continue
+
+        # Finding 41-C: `__import__("os").system(...)` — obj is itself a
+        # call to __import__ with a string-literal module name, not a Name.
+        if (
+            isinstance(obj, ast.Call)
+            and isinstance(obj.func, ast.Name)
+            and obj.func.id == "__import__"
+            and obj.args
+            and isinstance(obj.args[0], ast.Constant)
+            and isinstance(obj.args[0].value, str)
+        ):
+            v = _is_blocked_module_attr(obj.args[0].value, attr)
+            if v:
+                violations.append(f"line {lineno}: {v} (via __import__({obj.args[0].value!r}))")
+                continue
 
         # os.* and posix.* (C backing for os)
         if isinstance(obj, ast.Name) and obj.id in _BLOCKED_POSIX_MODULE:

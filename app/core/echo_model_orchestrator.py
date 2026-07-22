@@ -712,6 +712,40 @@ TASK_TYPE_MAP = {"general": 0, "coding": 1, "creative": 2, "personal": 3, "reaso
 # they bloat the prompt and confuse small models on intimate questions.
 TOOL_AWARE_TASKS = {"coding", "reasoning"}
 
+# PENDING_DECISIONS.md #4, decided 2026-07-22. Extracted as a standalone,
+# side-effect-free function — not inlined into RiverBrain.learn_from_
+# council_rating() — specifically so liveness_ledger.py's functional canary
+# can call the real blend math every 120s without also invoking the
+# stateful classifier/scaler mutation the class method performs (which
+# would otherwise inject synthetic canary observations into RiverBrain's
+# real training data every cycle, forever — the same class of mistake
+# already caught once this session for janitor_council_advisory_only's log
+# pollution).
+COUNCIL_RATING_WEIGHT = 0.3
+QUALITY_SCORE_WEIGHT  = 0.7
+
+
+def _blend_council_and_quality(council_rating, quality_score,
+                                council_weight: float = COUNCIL_RATING_WEIGHT,
+                                quality_weight: float = QUALITY_SCORE_WEIGHT) -> "tuple[float, int]":
+    """Pure computation: blend a 1-5 council rating with a 0-4 quality_score
+    into one (blended_score, label) pair on the same 0-1 scale learn() uses.
+    Falls back to council_rating alone if quality_score is missing or not a
+    real number — never raises. label uses learn()'s own 0.75 cutoff
+    (raw_score >= 3 out of 4) so a blended score is judged by the identical
+    bar, not a separately-invented threshold."""
+    council_normalized = council_rating / 5.0
+    blended = council_normalized
+    if quality_score is not None:
+        try:
+            quality_normalized = float(quality_score) / 4.0
+        except (TypeError, ValueError):
+            pass
+        else:
+            blended = council_weight * council_normalized + quality_weight * quality_normalized
+    label = 1 if blended >= 0.75 else 0
+    return blended, label
+
 class RiverBrain:
     def __init__(self):
         self.classifiers = {}
@@ -872,6 +906,55 @@ class RiverBrain:
         logging.info(
             f"[RIVER] User rating {user_rating}/5 → label={label} | "
             f"model={model_name} | task={task_type}"
+        )
+
+    # PENDING_DECISIONS.md #4 / CLAUDE.md's Council Peer Rating section,
+    # decided 2026-07-22 once council_baseline_trusted_since was genuinely
+    # set: a real peer-council rating is a delayed, second look at a
+    # response already scored once by learn() at generation time (raw
+    # quality_score alone). This blends the two into one training signal
+    # rather than treating either as authoritative on its own — 30% weight
+    # on the council's independent read, 70% on the automatic scorer,
+    # matching the ratio CLAUDE.md proposed and flagged for approval before
+    # it was ever wired in. Deliberately its own method, not a reuse of
+    # learn_from_rating()'s shape: that method treats a rating as a
+    # discrete override (3x-weighted, neutral scores skipped) meant to
+    # outweigh the scorer; this one produces a blended continuous score,
+    # closer in spirit to learn()'s own raw_score/4.0 normalization. The
+    # actual blend math lives in the module-level _blend_council_and_quality()
+    # so it can be exercised as a pure, side-effect-free canary — see that
+    # function's own docstring for why.
+    def learn_from_council_rating(self, model_name: str, task_type: str,
+                                  response_preview: str, council_rating: int,
+                                  quality_score) -> None:
+        """Blend a real peer-council rating (1-5) with the response's own
+        quality_score (0-4, from _score_response_quality at generation time)
+        into one additional training observation. Caller (council_rater.py)
+        is expected to gate this on is_council_trusted() — this method does
+        not re-check that itself, since trust-gating is council_rater.py's
+        own established responsibility (see its module docstring)."""
+        if not RIVER_AVAILABLE:
+            return
+        if task_type not in self.classifiers:
+            task_type = "general"
+
+        blended, label = _blend_council_and_quality(council_rating, quality_score)
+
+        with self._lock:
+            features = _extract_quality_features(response_preview, task_type, model_name)
+            self.scalers[task_type].learn_one(features)
+            scaled = self.scalers[task_type].transform_one(features)
+            self.classifiers[task_type].learn_one(scaled, label)
+            self.observation_counts[task_type] += 1
+            stats = self.model_task_stats[model_name].setdefault(
+                task_type, {"count": 0, "mean": 0.5}
+            )
+            stats["count"] += 1
+            effective_n = min(stats["count"], self._MEAN_EFFECTIVE_WINDOW)
+            stats["mean"] += (blended - stats["mean"]) / effective_n
+        logging.info(
+            f"[RIVER] Council rating {council_rating}/5 blended with quality_score={quality_score} "
+            f"→ blended={blended:.3f} label={label} | model={model_name} | task={task_type}"
         )
 
     _MIN_MODEL_OBSERVATIONS = 5

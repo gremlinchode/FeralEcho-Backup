@@ -625,6 +625,50 @@ check("modelfile_identity: leaks identity to every model regardless of which one
 r = ll._evaluate_modelfile_identity(None, None, "echo:latest")
 check("modelfile_identity: _build_chat_messages not importable at all", r["pass"], False, r["evidence"])
 
+# ── 25. council_river_blend ──────────────────────────────────────────────────
+_REAL_GATED_BLOCK = """
+    _append_council_log(log_entry)
+    if spot_check:
+        logger.info("flagged")
+
+    if is_council_trusted():
+        try:
+            from app.core.echo_model_orchestrator import get_river_brain
+            get_river_brain().learn_from_council_rating(
+                model_used, entry.get("task_type") or "general",
+                response_preview, score, entry.get("quality_score"),
+            )
+        except Exception as e:
+            logger.debug("failed: %s", e)
+
+    return log_entry
+"""
+
+try:
+    from app.core.echo_model_orchestrator import _blend_council_and_quality as _real_blend_fn
+    r = ll._evaluate_council_river_blend(_real_blend_fn, 0.3, 0.7, _REAL_GATED_BLOCK)
+    check("council_river_blend: real function + correct weights + gated call site", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] council_river_blend real-function case: import failed ({e})")
+
+r = ll._evaluate_council_river_blend(_real_blend_fn, 0.5, 0.5, _REAL_GATED_BLOCK)
+check("council_river_blend: weights drifted from the approved 0.3/0.7 ratio", r["pass"], False, r["evidence"])
+
+_UNGATED_BLOCK = """
+    _append_council_log(log_entry)
+    from app.core.echo_model_orchestrator import get_river_brain
+    get_river_brain().learn_from_council_rating(
+        model_used, entry.get("task_type") or "general",
+        response_preview, score, entry.get("quality_score"),
+    )
+    return log_entry
+"""
+r = ll._evaluate_council_river_blend(_real_blend_fn, 0.3, 0.7, _UNGATED_BLOCK)
+check("council_river_blend: is_council_trusted() gate silently removed (would train on unvetted ratings)", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_council_river_blend(None, None, None, None)
+check("council_river_blend: _blend_council_and_quality not importable at all", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

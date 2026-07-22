@@ -1587,6 +1587,110 @@ def _check_modelfile_identity() -> dict:
     return _evaluate_modelfile_identity(_build_chat_messages, _get_echo_identity_block, OLLAMA_MODEL)
 
 
+# ── 25. council_river_blend — the real 30/70 council/quality_score blend ───
+# stays live and correct. Added 2026-07-22 (CLAUDE.md Finding 67,
+# PENDING_DECISIONS.md #4). Two distinct things could silently regress
+# here, so both are checked: (1) the pure blend math in
+# echo_model_orchestrator._blend_council_and_quality() could drift from
+# the approved 30/70 ratio, or the two weights could stop summing to 1.0
+# (producing a blended score outside its intended [0,1] range); (2)
+# council_rater.py's rate_one_entry() could have its is_council_trusted()
+# gate silently removed, which would start feeding RiverBrain real
+# training signal from unvetted council ratings before trust is
+# genuinely earned — a training-signal-contamination risk, not just a
+# dead-feature risk. Deliberately calls the real pure blend function
+# (side-effect-free by construction — see that function's own docstring)
+# rather than the stateful RiverBrain.learn_from_council_rating() method,
+# which mutates persistent classifier state on every call and would
+# pollute real training data if invoked every 120s from this collector.
+
+_COUNCIL_RATER_PATH = os.path.join(_PROJECT_ROOT, "app", "core", "council_rater.py")
+_APPROVED_COUNCIL_WEIGHT = 0.3
+_APPROVED_QUALITY_WEIGHT = 0.7
+
+
+def _evaluate_council_river_blend(blend_fn, council_weight, quality_weight,
+                                   call_site_block: "str | None") -> dict:
+    if blend_fn is None:
+        return _result(False, "Could not import _blend_council_and_quality() at all — failing closed.")
+
+    failures = []
+
+    if council_weight is None or quality_weight is None or abs((council_weight + quality_weight) - 1.0) > 1e-9:
+        failures.append(
+            f"blend weights no longer sum to 1.0 (council_weight={council_weight}, "
+            f"quality_weight={quality_weight}) — a blended score could fall outside [0,1]"
+        )
+    if council_weight is not None and abs(council_weight - _APPROVED_COUNCIL_WEIGHT) > 1e-9:
+        failures.append(f"council_weight drifted from the approved {_APPROVED_COUNCIL_WEIGHT} to {council_weight}")
+    if quality_weight is not None and abs(quality_weight - _APPROVED_QUALITY_WEIGHT) > 1e-9:
+        failures.append(f"quality_weight drifted from the approved {_APPROVED_QUALITY_WEIGHT} to {quality_weight}")
+
+    # Known-answer math cases against the real live weights, not hardcoded
+    # 0.3/0.7 — if the weights above already flagged a drift, this still
+    # confirms the arithmetic itself (not just the constants) stays sound.
+    try:
+        cw = council_weight if council_weight is not None else _APPROVED_COUNCIL_WEIGHT
+        qw = quality_weight if quality_weight is not None else _APPROVED_QUALITY_WEIGHT
+        cases = [
+            (5, 4, cw * 1.0 + qw * 1.0),
+            (1, 0, cw * 0.2 + qw * 0.0),
+            (4, 2, cw * 0.8 + qw * 0.5),
+        ]
+        for council_rating, quality_score, expected in cases:
+            blended, _label = blend_fn(council_rating, quality_score, cw, qw)
+            if abs(blended - expected) > 1e-6:
+                failures.append(
+                    f"blend(council={council_rating}, quality={quality_score}) "
+                    f"returned {blended}, expected {expected}"
+                )
+    except Exception as e:
+        return _result(False, f"_blend_council_and_quality() raised {e!r}")
+
+    if call_site_block is None:
+        failures.append(
+            "could not locate rate_one_entry()'s learn_from_council_rating() call site in "
+            "council_rater.py at all — either it moved (update this check's anchor) or the "
+            "wiring was removed"
+        )
+    else:
+        calls_learn = bool(re.search(r"learn_from_council_rating\s*\(", call_site_block))
+        gated_on_trust = bool(re.search(r"is_council_trusted\s*\(\s*\)", call_site_block))
+        if not calls_learn:
+            failures.append("rate_one_entry() no longer calls learn_from_council_rating() — the blend wiring was removed")
+        elif not gated_on_trust:
+            failures.append(
+                "learn_from_council_rating() is called but is_council_trusted() no longer gates it — "
+                "this would feed RiverBrain real training signal from unvetted council ratings before trust is earned"
+            )
+
+    if failures:
+        return _result(False, "; ".join(failures))
+    return _result(
+        True,
+        f"_blend_council_and_quality() still computes the approved "
+        f"{_APPROVED_COUNCIL_WEIGHT}/{_APPROVED_QUALITY_WEIGHT} council/quality_score blend correctly, "
+        f"and rate_one_entry() still calls it gated on is_council_trusted().",
+    )
+
+
+def _check_council_river_blend() -> dict:
+    try:
+        from app.core.echo_model_orchestrator import (
+            _blend_council_and_quality, COUNCIL_RATING_WEIGHT, QUALITY_SCORE_WEIGHT,
+        )
+    except Exception:
+        _blend_council_and_quality = COUNCIL_RATING_WEIGHT = QUALITY_SCORE_WEIGHT = None
+
+    source = _read_text(_COUNCIL_RATER_PATH)
+    block = None
+    idx = source.find("def rate_one_entry(")
+    if idx != -1:
+        block = source[idx:idx + 4000]  # generous window; the call sits near the end of the function
+
+    return _evaluate_council_river_blend(_blend_council_and_quality, COUNCIL_RATING_WEIGHT, QUALITY_SCORE_WEIGHT, block)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -1614,6 +1718,7 @@ _CHECKS = (
     "plan_retention",
     "janitor_council_advisory_only",
     "modelfile_identity",
+    "council_river_blend",
 )
 
 
@@ -1662,6 +1767,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "plan_retention": _check_plan_retention,
         "janitor_council_advisory_only": _check_janitor_council_advisory_only,
         "modelfile_identity": _check_modelfile_identity,
+        "council_river_blend": _check_council_river_blend,
     }
 
     ledger = {"generated_at": _now_iso()}

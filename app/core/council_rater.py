@@ -7,8 +7,12 @@ Key properties:
 - Rater model MUST differ from model_used (no same-model fallback — hard constraint)
 - skipped_no_peer is a first-class counter in get_council_stats() so availability
   gaps are immediately visible rather than discovered later
-- River training is never touched here; council_baseline_trusted_since must be
-  set manually (see _check_and_set_trust) before any training wire-up is considered
+- River training is untouched until council_baseline_trusted_since is set
+  (see _check_and_set_trust, auto-triggered). Once set, rate_one_entry()
+  blends each new real rating with its quality_score (30/70) into
+  RiverBrain.learn_from_council_rating() — decided and wired 2026-07-22,
+  see CLAUDE.md's Council Peer Rating section and PENDING_DECISIONS.md #4's
+  resolution
 - Cursor initializes at the end of the current interaction_log.jsonl on first run
   (no historical backfill — only new entries are rated)
 - 1-in-_SAMPLE_EVERY rateable entries get sent to the rater; sampling skips are
@@ -279,6 +283,27 @@ def rate_one_entry(entry: dict) -> "dict | None":
     _append_council_log(log_entry)
     if spot_check:
         logger.info("[Council] Rating %d flagged for spot-check (ordinal=%d score=%d)", score, rating_count, score)
+
+    # PENDING_DECISIONS.md #4, decided 2026-07-22: once council_baseline_
+    # trusted_since is genuinely set, blend this real rating with the
+    # entry's own quality_score into RiverBrain's training signal (30%
+    # council / 70% quality_score, per CLAUDE.md's originally-proposed
+    # ratio). Gated here, not inside the RiverBrain method itself — this
+    # module already owns trust-gating (is_council_trusted()), matching
+    # its own docstring's stated boundary ("River training is never
+    # touched here... until council_baseline_trusted_since is set").
+    # Best-effort: a training-signal failure must never break rating
+    # logging, which already succeeded above.
+    if is_council_trusted():
+        try:
+            from app.core.echo_model_orchestrator import get_river_brain
+            get_river_brain().learn_from_council_rating(
+                model_used, entry.get("task_type") or "general",
+                response_preview, score, entry.get("quality_score"),
+            )
+        except Exception as e:
+            logger.debug("[Council] learn_from_council_rating failed: %s", e)
+
     return log_entry
 
 

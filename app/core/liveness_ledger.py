@@ -1747,6 +1747,69 @@ def _check_council_privacy() -> dict:
     return _evaluate_council_privacy(_build_council, text)
 
 
+# ── 27. apply_to_code_sandbox_isolation — the real F2 subprocess path stays ──
+# wired, and can't silently regress back to the vulnerable in-process
+# ThreadPoolExecutor it replaced. Added 2026-07-22 (CLAUDE.md Finding 69,
+# PENDING_DECISIONS.md #7 / Finding 41 B3). Static/structural, same shape
+# as wolf_friction_bridge — deliberately NOT a functional canary that
+# actually spawns a sandbox-exec subprocess and waits out a real timeout
+# every 120s (unlike code_verification's canaries, which run fast,
+# non-hanging cases): a genuine timeout-and-kill discrimination test needs
+# to wait out the real timeout to prove anything, which would mean
+# blocking the introspection collector for seconds every cycle, forever,
+# just to re-prove a property a source-anchor check can already confirm
+# far more cheaply. The risk this guards against is a future edit quietly
+# reintroducing the exact in-process pattern this Finding removed —
+# checking the source directly is the right tool for that, not runtime
+# behavior.
+
+def _evaluate_apply_to_code_sandbox_isolation(caller_block: "str | None", sandboxed_fn_source: "str | None") -> dict:
+    if caller_block is None or sandboxed_fn_source is None:
+        return _result(
+            False,
+            "Could not locate _apply_self_edit_output() and/or "
+            "_run_apply_to_code_sandboxed() in self_edit_manager.py at all — "
+            "either they moved (update this check's anchor) or the sandboxed "
+            "wiring was removed. Failing closed either way.",
+        )
+
+    calls_sandboxed = bool(re.search(r"_run_apply_to_code_sandboxed\s*\(", caller_block))
+    calls_old_threadpool = bool(re.search(r"_call_with_timeout\s*\(|ThreadPoolExecutor", caller_block))
+    spawns_real_sandbox = bool(re.search(r"sandbox-exec", sandboxed_fn_source))
+
+    if calls_sandboxed and not calls_old_threadpool and spawns_real_sandbox:
+        return _result(
+            True,
+            "_apply_self_edit_output() still calls the real F2-sandboxed "
+            "_run_apply_to_code_sandboxed() (which still genuinely invokes "
+            "sandbox-exec), with no reversion to the removed in-process "
+            "ThreadPoolExecutor path.",
+        )
+    return _result(
+        False,
+        f"apply_to_code's sandboxed execution path no longer matches the expected "
+        f"shape (calls_sandboxed={calls_sandboxed}, calls_old_threadpool="
+        f"{calls_old_threadpool}, spawns_real_sandbox={spawns_real_sandbox}) — this "
+        f"would reopen the exact hung-thread/write-block-bypass gap Finding 41 B3 "
+        f"found and this fix closed.",
+    )
+
+
+def _check_apply_to_code_sandbox_isolation() -> dict:
+    source = _read_text(_SELF_EDIT_MANAGER_PATH)
+    caller_block = None
+    idx = source.find("def _apply_self_edit_output(")
+    if idx != -1:
+        caller_block = source[idx:idx + 2500]
+
+    sandboxed_fn_source = None
+    idx2 = source.find("def _run_apply_to_code_sandboxed(")
+    if idx2 != -1:
+        sandboxed_fn_source = source[idx2:idx2 + 3000]
+
+    return _evaluate_apply_to_code_sandbox_isolation(caller_block, sandboxed_fn_source)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -1776,6 +1839,7 @@ _CHECKS = (
     "modelfile_identity",
     "council_river_blend",
     "council_content_privacy",
+    "apply_to_code_sandbox_isolation",
 )
 
 
@@ -1826,6 +1890,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "modelfile_identity": _check_modelfile_identity,
         "council_river_blend": _check_council_river_blend,
         "council_content_privacy": _check_council_privacy,
+        "apply_to_code_sandbox_isolation": _check_apply_to_code_sandbox_isolation,
     }
 
     ledger = {"generated_at": _now_iso()}

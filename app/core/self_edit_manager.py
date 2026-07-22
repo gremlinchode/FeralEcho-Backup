@@ -2,14 +2,10 @@
 # v2.2 — Wired sandbox outcomes into river brain via learn_from_sandbox_outcome()
 #         Model name now tracked through generation pipeline for accurate feedback.
 import ast
-import builtins
-import contextlib
 import importlib.util
 import inspect
-import io
 import json
 import os
-import pathlib
 import re
 import subprocess
 import sys
@@ -1446,97 +1442,76 @@ def _load_self_edit_generated_for_use():
     return module
 
 
-def _call_with_timeout(fn, arg, timeout: float = 2.0):
-    """Runs fn(arg) on a worker thread; abandons it (non-blocking) on timeout
-    rather than risking a hang in the calling thread."""
-    import concurrent.futures as _futures
-    ex = _futures.ThreadPoolExecutor(max_workers=1)
-    try:
-        future = ex.submit(fn, arg)
-        return future.result(timeout=timeout)
-    finally:
-        ex.shutdown(wait=False)
-
-
 _APPLY_TO_CODE_LOG = os.path.join(_PROJECT_ROOT, "memory", "apply_to_code_invocations.jsonl")
 
 
-# Guards the temporary process-wide write-block below so two concurrent
-# apply_to_code invocations can't race each other's patch/restore.
-_apply_to_code_write_block_lock = threading.Lock()
-
-
-@contextlib.contextmanager
-def _block_writes_for_apply_to_code():
-    """Enforces apply_to_code()'s documented pure (code: str) -> str contract
-    (CODE_OUTPUT_RULES rule 10) at call time, not just in prose — CLAUDE.md
-    Finding 31: a real staged candidate called app.core.memory_tools
-    functions that write to memory/*.log as a side effect. Neither F1 (only
-    scans the candidate's own top-level code, not inside already-approved
-    imports like memory_tools) nor an exception-based catch would have
-    caught this — memory_tools.py's own functions wrap their write in a
-    bare try/except that silently swallows the error rather than
-    re-raising it. Denies all filesystem writes for the duration of the
-    real invocation and flags the attempt (via the yielded dict) even when
-    the callee swallows the resulting exception itself.
-
-    Deliberately process-wide, not scoped to self_edit_generated's own
-    module globals: the vulnerable write happens inside memory_tools.py's
-    namespace, not the hook's own, so a per-module patch wouldn't reach it
-    without maintaining a fragile, silently-decaying allowlist of every
-    module a hook might legitimately import. Known, accepted residual: for
-    the brief window this is active, an unrelated thread doing a genuinely
-    legitimate write could theoretically collide and be blocked too — this
-    path fires infrequently with a timeout-bounded window, judged an
-    acceptable trade-off against that added complexity. Also known and
-    accepted, same posture as the F1/F2 sandbox: C extensions and os.open-
-    level writes bypass a Python-level patch like this one.
+def _run_apply_to_code_sandboxed(code: str, timeout: float = 2.0) -> dict:
     """
-    attempted = {"write": False, "site": None}
-    real_open = builtins.open
-    real_io_open = io.open
-    real_path_open = pathlib.Path.open
+    Runs the deployed self_edit_generated.py's apply_to_code(code) inside a
+    real F2 kernel-sandboxed subprocess (sandbox-exec + echo_sandbox.sb +
+    safe_exec_wrapper.py --mode=apply_to_code) — PENDING_DECISIONS.md #7 /
+    CLAUDE.md Finding 41 B3, 2026-07-22.
 
-    def _deny_if_write(file, mode: str) -> None:
-        """Raises PermissionError for a write-mode open(); no-op (returns
-        normally) for a read-mode one, letting the real open() proceed."""
-        if any(c in str(mode) for c in "wxa+"):
-            if attempted["site"] is None:
-                # Strip this frame (_deny_if_write) and the immediate
-                # _guarded_* wrapper frame that called it, landing on the
-                # real call site inside whatever function actually called
-                # open() — the hook's own code, or an imported helper like
-                # memory_tools.append_memory_entry.
-                stack = traceback.extract_stack()[:-2]
-                site = stack[-1] if stack else None
-                attempted["site"] = (
-                    f"{site.filename}:{site.lineno} in {site.name}" if site else "unknown"
-                )
-            attempted["write"] = True
-            raise PermissionError(f"[APPLY_TO_CODE] write blocked — hook must be a pure function: {file!r}")
+    Replaces the prior in-process ThreadPoolExecutor + soft 2s timeout plus
+    a temporary in-process open()/io.open()/Path.open() monkeypatch
+    (Finding 31's original fix). That combination had a real, unclosed gap:
+    Python threads cannot be forcibly killed, so a hook that ran past its
+    soft timeout kept executing in the background — including any file
+    writes — after the in-process write-guard had already been torn down
+    on the calling thread's way out. Moving the real call into its own
+    subprocess closes this at the root rather than hardening the same
+    mechanism again: subprocess.run(timeout=...) genuinely terminates
+    (SIGKILLs) the child process on TimeoutExpired, and the write-block is
+    now the real kernel Seatbelt profile plus safe_exec_wrapper.py's
+    patches — the same enforcement F2 already trusts for the pre-deploy
+    staging test, not a second, weaker, temporary substitute for it.
 
-    def _guarded_open(file, mode="r", *a, **kw):
-        _deny_if_write(file, mode)
-        return real_open(file, mode, *a, **kw)
+    Returns {"success": bool, "result": str|None, "error": str|None,
+    "blocked_write": bool}. Never raises — callers check "success"/
+    "blocked_write" the same way test_code_in_sandbox()'s callers do.
+    """
+    import tempfile
+    result = {"success": False, "result": None, "error": None, "blocked_write": False}
+    try:
+        with tempfile.TemporaryDirectory(prefix="echo_apply_to_code_") as scratch:
+            scratch_real = os.path.realpath(scratch)
+            input_path = os.path.join(scratch_real, "input_code.txt")
+            output_path = os.path.join(scratch_real, "output_code.txt")
+            with open(input_path, "w", encoding="utf-8") as f:
+                f.write(code)
 
-    def _guarded_io_open(file, mode="r", *a, **kw):
-        _deny_if_write(file, mode)
-        return real_io_open(file, mode, *a, **kw)
+            proc = subprocess.run(
+                ["sandbox-exec", "-f", _SANDBOX_PROFILE, "-D", f"SCRATCH={scratch_real}",
+                 sys.executable, _SANDBOX_WRAPPER, scratch_real, SELF_EDIT_FILE,
+                 "--mode=apply_to_code", "--", input_path, output_path],
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                cwd=os.getcwd(),
+            )
 
-    def _guarded_path_open(self, mode="r", *a, **kw):
-        _deny_if_write(self, mode)
-        return real_path_open(self, mode, *a, **kw)
+            if proc.returncode == 0 and "SANDBOX_OK" in proc.stdout:
+                with open(output_path, "r", encoding="utf-8") as f:
+                    result["result"] = f.read()
+                result["success"] = True
+                return result
 
-    with _apply_to_code_write_block_lock:
-        builtins.open = _guarded_open
-        io.open = _guarded_io_open
-        pathlib.Path.open = _guarded_path_open
-        try:
-            yield attempted
-        finally:
-            builtins.open = real_open
-            io.open = real_io_open
-            pathlib.Path.open = real_path_open
+            raw = (proc.stderr or proc.stdout).strip()
+            if "[SANDBOX]" in raw and "blocked" in raw.lower():
+                result["blocked_write"] = True
+            result["error"] = raw[:500]
+            return result
+
+    except subprocess.TimeoutExpired:
+        # subprocess.run() has already killed the child process by the time
+        # this exception reaches us — the actual fix this function exists
+        # to provide, unlike the old ThreadPoolExecutor path where a
+        # TimeoutError was caught but the worker thread kept running.
+        result["error"] = f"apply_to_code sandboxed call timed out after {timeout}s (process killed)"
+        return result
+    except Exception as e:
+        result["error"] = str(e)
+        return result
 
 
 def _log_apply_to_code_invocation(changed: bool, before_len: int, after_len: "int | None", error: "str | None" = None) -> None:
@@ -1588,29 +1563,32 @@ def _apply_self_edit_output(code: str) -> str:
             return code
     except (TypeError, ValueError):
         return code
-    try:
-        with _block_writes_for_apply_to_code() as attempted:
-            result = _call_with_timeout(fn, code, timeout=2.0)
-    except Exception as e:
-        logging.debug(f"[SELF-EDIT] apply_to_code raised/timed out, ignoring: {e}")
-        _log_apply_to_code_invocation(changed=False, before_len=len(code), after_len=None, error=str(e))
-        return code
-    if attempted["write"]:
-        # Finding 31: a candidate caught attempting a real filesystem write
-        # mid-call has broken its documented pure-function contract — don't
-        # trust its returned transformation either, even though the write
-        # itself was blocked and memory_tools.py's own try/except may have
-        # swallowed the resulting exception without the hook itself raising.
+    sandboxed = _run_apply_to_code_sandboxed(code, timeout=2.0)
+
+    if sandboxed["blocked_write"]:
+        # Finding 31/41 B3: a candidate caught attempting a real filesystem
+        # write mid-call has broken its documented pure-function contract —
+        # don't trust its returned transformation either. Now enforced by
+        # the real kernel Seatbelt profile + safe_exec_wrapper.py's patches
+        # (see _run_apply_to_code_sandboxed()'s docstring), not the removed
+        # in-process monkeypatch this replaces.
         logging.warning(
             "[SELF-EDIT] apply_to_code attempted a filesystem write during "
             "invocation — rejecting output, hook violates its pure-function "
-            "contract (Finding 31). Site: %s", attempted["site"],
+            "contract (Finding 31/41 B3). Detail: %s", sandboxed["error"],
         )
         _log_apply_to_code_invocation(
             changed=False, before_len=len(code), after_len=None,
-            error=f"blocked_write_attempt: {attempted['site']}",
+            error=f"blocked_write_attempt: {sandboxed['error']}",
         )
         return code
+
+    if not sandboxed["success"]:
+        logging.debug(f"[SELF-EDIT] apply_to_code raised/timed out in sandbox, ignoring: {sandboxed['error']}")
+        _log_apply_to_code_invocation(changed=False, before_len=len(code), after_len=None, error=sandboxed["error"])
+        return code
+
+    result = sandboxed["result"]
     if isinstance(result, str) and result.strip() and result != code:
         _log_apply_to_code_invocation(changed=True, before_len=len(code), after_len=len(result))
         return result

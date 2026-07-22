@@ -21,6 +21,24 @@ scripts (autonomous-loop baselines, LLM-generated experiments) the same way
 the kernel-level Seatbelt profile (echo_sandbox.sb) the caller wraps this
 process in.
 
+--mode=apply_to_code -- <input_path> <output_path>: PENDING_DECISIONS.md #7
+(CLAUDE.md Finding 41 B3), added 2026-07-22. Loads MODULE_PATH (the real
+deployed self_edit_generated.py) and calls its apply_to_code(code) with the
+real candidate code read from <input_path>, writing the real string result
+to <output_path> — both paths must live inside SCRATCH_DIR, same as every
+other write this wrapper allows. Replaces self_edit_manager.py's prior
+in-process ThreadPoolExecutor + soft 2s timeout, which could not actually
+kill a hung/malicious hook (Python threads aren't forcibly killable) —
+the abandoned thread kept running after the timeout fired, past the point
+the in-process write-guard had already been torn down. Running this call
+as its own subprocess under the real kernel Seatbelt profile means a
+caller-side subprocess.run(timeout=...) genuinely SIGKILLs the whole
+process on timeout, not just abandons a thread — closing the gap at its
+root rather than hardening the same soft mechanism further. Also gives
+the write-block itself real OS-level enforcement (the existing patches
+below) instead of the temporary, additional in-process monkeypatch
+self_edit_manager.py used to install and tear down around just this call.
+
 Patches applied before exec_module():
   builtins.open / io.open / _io.open   — all Python-level open() entry points
   io.FileIO / io.RawIOBase             — C file descriptor wrappers
@@ -294,8 +312,11 @@ if __name__ == "__main__":
     for _flag in _flags:
         if _flag.startswith("--mode="):
             _mode = _flag.split("=", 1)[1]
-    if _mode not in ("import", "script"):
-        print(f"Unknown --mode={_mode!r}, expected 'import' or 'script'", file=sys.stderr)
+    if _mode not in ("import", "script", "apply_to_code"):
+        print(f"Unknown --mode={_mode!r}, expected 'import', 'script', or 'apply_to_code'", file=sys.stderr)
+        sys.exit(1)
+    if _mode == "apply_to_code" and len(_extra_argv) < 2:
+        print("--mode=apply_to_code requires -- <input_path> <output_path>", file=sys.stderr)
         sys.exit(1)
 
     # This script is invoked directly (`sys.executable safe_exec_wrapper.py
@@ -325,10 +346,42 @@ if __name__ == "__main__":
         # gates its actual work behind exactly that guard).
         sys.argv = [module_path] + _extra_argv
         spec = importlib.util.spec_from_file_location("__main__", module_path)
+    elif _mode == "apply_to_code":
+        spec = importlib.util.spec_from_file_location("_sandbox_apply_to_code", module_path)
     else:
         spec = importlib.util.spec_from_file_location("_sandbox_test", module_path)
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
+
+    if _mode == "apply_to_code":
+        # The caller (self_edit_manager.py's _run_apply_to_code_sandboxed())
+        # already confirmed apply_to_code exists with a 1-arg signature
+        # before ever spawning this subprocess — re-check here anyway since
+        # this process re-imports the module fresh and must not trust the
+        # caller's read as authoritative for what's actually in memory now.
+        _in_path, _out_path = _extra_argv[0], _extra_argv[1]
+        fn = getattr(m, "apply_to_code", None)
+        if not callable(fn):
+            print("APPLY_TO_CODE_NOT_CALLABLE", file=sys.stderr)
+            sys.exit(1)
+        import inspect as _inspect
+        try:
+            if len(_inspect.signature(fn).parameters) != 1:
+                print("APPLY_TO_CODE_BAD_SIGNATURE", file=sys.stderr)
+                sys.exit(1)
+        except (TypeError, ValueError) as e:
+            print(f"APPLY_TO_CODE_SIGNATURE_ERROR: {e}", file=sys.stderr)
+            sys.exit(1)
+        with open(_in_path, "r", encoding="utf-8") as f:
+            _candidate_code = f.read()
+        _result = fn(_candidate_code)  # the one real risky call this mode exists to isolate
+        if not isinstance(_result, str):
+            print(f"APPLY_TO_CODE_BAD_RETURN_TYPE: {type(_result).__name__}", file=sys.stderr)
+            sys.exit(1)
+        with open(_out_path, "w", encoding="utf-8") as f:
+            f.write(_result)
+        print("SANDBOX_OK")
+        sys.exit(0)
 
     # Smoke-test apply_to_code() with real input, not just verify the module
     # imports (CLAUDE.md Finding 28): three successive broken versions of

@@ -712,6 +712,59 @@ check("council_content_privacy: privacy/existence-only framing silently dropped"
 r = ll._evaluate_council_privacy(None, _FAKE_COUNCIL_TEXT)
 check("council_content_privacy: _build_council not importable at all", r["pass"], False, r["evidence"])
 
+# ── 27. apply_to_code_sandbox_isolation ───────────────────────────────────────
+_REAL_CALLER_BLOCK = """
+def _apply_self_edit_output(code: str) -> str:
+    module = _load_self_edit_generated_for_use()
+    if module is None:
+        return code
+    fn = getattr(module, "apply_to_code", None)
+    if not callable(fn):
+        return code
+    sandboxed = _run_apply_to_code_sandboxed(code, timeout=2.0)
+    if sandboxed["blocked_write"]:
+        return code
+    if not sandboxed["success"]:
+        return code
+    return sandboxed["result"]
+"""
+_REAL_SANDBOXED_FN_SOURCE = """
+def _run_apply_to_code_sandboxed(code: str, timeout: float = 2.0) -> dict:
+    proc = subprocess.run(
+        ["sandbox-exec", "-f", _SANDBOX_PROFILE, "-D", "SCRATCH=" + scratch_real,
+         sys.executable, _SANDBOX_WRAPPER, scratch_real, SELF_EDIT_FILE,
+         "--mode=apply_to_code", "--", input_path, output_path],
+        capture_output=True, text=True, timeout=timeout,
+    )
+    return {"success": True}
+"""
+
+r = ll._evaluate_apply_to_code_sandbox_isolation(_REAL_CALLER_BLOCK, _REAL_SANDBOXED_FN_SOURCE)
+check("apply_to_code_sandbox_isolation: real shape -- sandboxed call, real sandbox-exec, no old ThreadPoolExecutor", r["pass"], True, r["evidence"])
+
+_REGRESSED_TO_THREADPOOL_BLOCK = """
+def _apply_self_edit_output(code: str) -> str:
+    module = _load_self_edit_generated_for_use()
+    fn = getattr(module, "apply_to_code", None)
+    with _block_writes_for_apply_to_code() as attempted:
+        result = _call_with_timeout(fn, code, timeout=2.0)
+    return result
+"""
+r = ll._evaluate_apply_to_code_sandbox_isolation(_REGRESSED_TO_THREADPOOL_BLOCK, _REAL_SANDBOXED_FN_SOURCE)
+check("apply_to_code_sandbox_isolation: regression back to in-process ThreadPoolExecutor", r["pass"], False, r["evidence"])
+
+_FAKE_SANDBOXED_FN_NO_REAL_SANDBOX = """
+def _run_apply_to_code_sandboxed(code: str, timeout: float = 2.0) -> dict:
+    # regressed: calls the hook directly in-process, no real isolation at all
+    result = fn(code)
+    return {"success": True, "result": result}
+"""
+r = ll._evaluate_apply_to_code_sandbox_isolation(_REAL_CALLER_BLOCK, _FAKE_SANDBOXED_FN_NO_REAL_SANDBOX)
+check("apply_to_code_sandbox_isolation: _run_apply_to_code_sandboxed no longer spawns a real sandbox", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_apply_to_code_sandbox_isolation(None, None)
+check("apply_to_code_sandbox_isolation: functions not found in source at all", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

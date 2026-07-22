@@ -1,23 +1,29 @@
-def timer(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        end_time = time.time()
-        print(f"{func.__name__} executed in {end_time - start_time:.2f} seconds")
-        return result
-    return wrapper
+class HealthMonitor:
+    _error_count = 0
+    _warning_count = 0
+    
+    def __init__(self):
+        self._error_count = 0
+        self._warning_count = 0
+    
+    @property
+    def error_count(self):
+        return self._error_count
+    
+    @property
+    def warning_count(self):
+        return self._warning_count
+    
+    def log_error(self, msg: str) -> None:
+        self._error_count += 1
+        logging.error(msg)
+    
+    def log_warning(self, msg: str) -> None:
+        self._warning_count += 1
+        logging.warning(msg)
 
-@dataclass
-class CodeGenerator:
-    code: str
-
-    def __post_init__(self):
-        self.code_lines = [line.strip() for line in self.code.split('\n')]
-
-    @timer
-    def generate_short_code(self) -> str:
-        shortened_codes = [re.sub(r'\s+', ' ', line).strip() + '\n' if (line := next(islice(self.code_lines, i, None))) else '' for i in range(2)]
-        with open('temp_code.txt', 'w') as file:
-            file.writelines(shortened_codes)
-        return f"with open('temp_code.txt', 'r') as file:\n\tcode = file.read()"
+def apply_to_code(code: str) -> str:
+    with open('temp_code.txt', 'w') as file:
+        file.write('\n'.join([line for line in code.split('\n') if len(line.strip()) > 0]))
+    
+    return f'with open("temp_code.txt", "r") as file:\n\tcode = file.read()'

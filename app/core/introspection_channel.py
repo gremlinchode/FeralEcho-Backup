@@ -25,6 +25,13 @@ logger = logging.getLogger(__name__)
 # Resolved at runtime from app.core.config; this is the fallback.
 _DEFAULT_MEMORY_DIR = "memory"
 
+# Matches PageHinkley(min_instances=30, ...) below -- the same threshold
+# _maybe_set_river_baseline_trust() checks each detector against before
+# calling mark_baseline_trusted() (Finding 3 / PENDING_DECISIONS.md #13,
+# decided 2026-07-22: auto-trigger, mirroring council_rater.py's own
+# _check_and_set_trust()).
+_RIVERBRAIN_TRUST_MIN_OBSERVATIONS = 30
+
 
 class IntrospectionChannel:
     """
@@ -163,6 +170,44 @@ class IntrospectionChannel:
             logger.info("[Introspection] Drift detectors reset: %s", reset)
         return reset
 
+    def _maybe_set_river_baseline_trust(self) -> None:
+        """
+        Auto-trigger for RiverBrain's own drift-detector baseline trust —
+        mirrors council_rater.py's _check_and_set_trust() exactly, the same
+        pattern that fired for real, live, this session for the council
+        rating trust gate. Decided 2026-07-22 (Finding 3 /
+        PENDING_DECISIONS.md #13): auto-trigger, not a one-off manual call
+        or leaving it pending indefinitely.
+
+        Same category of baseline bookkeeping as reset_drift_detectors()
+        just above -- that method already writes to snapshot_baseline.json
+        from inside this class, so this isn't a new exception to this
+        module's "reads only" collector contract, just the other half of
+        the same lifecycle (reset the window, then notice when it's full).
+
+        Fails closed on any error, including PageHinkley's own internal
+        observation-count attribute (_x_mean.n) ever changing shape in a
+        future river library version -- "not enough data yet" is always
+        the safe read of an unreadable count, never "trust anyway."
+        """
+        try:
+            from app.core.snapshot_manager import _read_baseline_meta, mark_baseline_trusted
+            if _read_baseline_meta().get("baseline_trusted_since"):
+                return  # already trusted -- nothing to do
+            for task, det in self._drift_detectors.items():
+                n = getattr(getattr(det, "_x_mean", None), "n", 0)
+                if n < _RIVERBRAIN_TRUST_MIN_OBSERVATIONS:
+                    return  # at least one task type hasn't reached the threshold yet
+            since = datetime.now(timezone.utc).isoformat()
+            mark_baseline_trusted(since)
+            logger.info(
+                "[Introspection] RiverBrain baseline_trusted_since set (%s) — "
+                "all %d task types past %d observations each.",
+                since, len(self._drift_detectors), _RIVERBRAIN_TRUST_MIN_OBSERVATIONS,
+            )
+        except Exception as e:
+            logger.debug("[Introspection] baseline-trust check failed: %s", e)
+
     # ── Public API ─────────────────────────────────────────────────────
 
     def collect(self) -> dict:
@@ -251,6 +296,12 @@ class IntrospectionChannel:
                             result["drift_alerts"][task] = bool(det.drift_detected)
                     except Exception:
                         result["per_task_accuracy"][task] = 0.0
+
+            # Check once per cycle whether this update pushed every detector
+            # past the trust threshold -- right after the loop above is the
+            # natural point, same as council_rater.py's own
+            # _check_and_set_trust() firing right after a rating changes.
+            self._maybe_set_river_baseline_trust()
 
             # Confidence score matrix: task_type → model → score
             try:

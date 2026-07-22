@@ -1528,6 +1528,65 @@ def _check_janitor_council_advisory_only() -> dict:
     return _evaluate_janitor_council_advisory_only(_attach_council_opinions)
 
 
+# ── 24. modelfile_identity — app/ollama_handler.py's ────────────────────────
+# _build_chat_messages() still correctly prepends Echo's real Modelfile
+# identity when model == OLLAMA_MODEL, and — just as importantly — still
+# correctly withholds it from every other model. Added 2026-07-21/22
+# (CLAUDE.md Finding 46), closing the gap Finding 46 itself flagged as
+# still open: the identity-restoration fix (Finding 46) had no check
+# verifying it keeps holding, so a future edit could silently drop the
+# `model == OLLAMA_MODEL` comparison (leaking Echo's identity to every
+# council model, corrupting the independent-opinion premise the whole
+# council mechanism depends on) or silently stop injecting it at all
+# (regressing back to Finding 46's original bug) without anything
+# noticing until a human happened to read a transcript closely.
+
+def _evaluate_modelfile_identity(build_fn, get_identity_fn, ollama_model) -> dict:
+    if build_fn is None or get_identity_fn is None:
+        return _result(False, "Could not import _build_chat_messages/_get_echo_identity_block at all — failing closed.")
+
+    try:
+        identity = get_identity_fn()
+    except Exception as e:
+        return _result(False, f"_get_echo_identity_block() raised {e!r}")
+    if not identity:
+        return _result(False, "_get_echo_identity_block() returned empty/None — identity restoration has nothing real to inject.")
+
+    try:
+        echo_messages = build_fn("test prompt", "situational note", None, model=ollama_model)
+        other_messages = build_fn("test prompt", "situational note", None, model="some-other-model:latest")
+    except Exception as e:
+        return _result(False, f"_build_chat_messages() raised {e!r}")
+
+    echo_system = next((m.get("content", "") for m in echo_messages if m.get("role") == "system"), "")
+    other_system = next((m.get("content", "") for m in other_messages if m.get("role") == "system"), "")
+    marker = identity[:50]
+
+    failures = []
+    if marker not in echo_system:
+        failures.append("Echo's own model call did not receive the real identity block in its system message")
+    if marker in other_system:
+        failures.append("a non-Echo model call received Echo's identity block — this must never happen, it corrupts the independent-opinion premise of council deliberation")
+    if "situational note" not in echo_system or "situational note" not in other_system:
+        failures.append("situational system content was lost for at least one of the two calls")
+
+    if failures:
+        return _result(False, "; ".join(failures))
+    return _result(
+        True,
+        "Echo's own chat calls correctly receive the real Modelfile identity block, other models correctly do not, "
+        "and situational system content is preserved for both.",
+    )
+
+
+def _check_modelfile_identity() -> dict:
+    try:
+        from app.ollama_handler import _build_chat_messages, _get_echo_identity_block, OLLAMA_MODEL
+    except Exception:
+        _build_chat_messages = _get_echo_identity_block = OLLAMA_MODEL = None
+    return _evaluate_modelfile_identity(_build_chat_messages, _get_echo_identity_block, OLLAMA_MODEL)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -1554,6 +1613,7 @@ _CHECKS = (
     "janitor_safety",
     "plan_retention",
     "janitor_council_advisory_only",
+    "modelfile_identity",
 )
 
 
@@ -1563,7 +1623,7 @@ def _load_prev_ledger() -> dict:
 
 def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
     """
-    Run all checks in _CHECKS (23 as of 2026-07-21) and write
+    Run all checks in _CHECKS (24 as of 2026-07-22) and write
     memory/liveness_ledger.json.
     introspection_memory: the already-computed state["memory"] dict from
     this same introspection cycle (faiss_vector_count/journal_line_count),
@@ -1601,6 +1661,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "janitor_safety": _check_janitor_safety,
         "plan_retention": _check_plan_retention,
         "janitor_council_advisory_only": _check_janitor_council_advisory_only,
+        "modelfile_identity": _check_modelfile_identity,
     }
 
     ledger = {"generated_at": _now_iso()}

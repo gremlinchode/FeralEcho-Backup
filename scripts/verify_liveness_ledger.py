@@ -593,6 +593,38 @@ check("janitor_council_advisory_only: regression lets a confident council verdic
 r = ll._evaluate_janitor_council_advisory_only(None)
 check("janitor_council_advisory_only: _attach_council_opinions not importable at all", r["pass"], False, r["evidence"])
 
+# ── 24. modelfile_identity ──────────────────────────────────────────────────
+try:
+    from app.ollama_handler import _build_chat_messages as _real_build_chat_messages
+    from app.ollama_handler import _get_echo_identity_block as _real_get_echo_identity_block
+    from app.ollama_handler import OLLAMA_MODEL as _real_ollama_model
+    r = ll._evaluate_modelfile_identity(_real_build_chat_messages, _real_get_echo_identity_block, _real_ollama_model)
+    check("modelfile_identity: real current _build_chat_messages()", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] modelfile_identity real-function case: import failed ({e})")
+
+_FAKE_IDENTITY = "FAKE MODELFILE IDENTITY TEXT — should never leak to a non-Echo model"
+def _fake_identity_fn():
+    return _FAKE_IDENTITY
+
+def _never_adds_identity(prompt, system, messages, model=None):
+    msgs = []
+    if system:
+        msgs.append({"role": "system", "content": system})
+    msgs.append({"role": "user", "content": prompt})
+    return msgs
+r = ll._evaluate_modelfile_identity(_never_adds_identity, _fake_identity_fn, "echo:latest")
+check("modelfile_identity: never adds identity, even for Echo's own model (regression to the original bug)", r["pass"], False, r["evidence"])
+
+def _always_leaks_identity(prompt, system, messages, model=None):
+    combined = f"{_FAKE_IDENTITY}\n\n{system}" if system else _FAKE_IDENTITY
+    return [{"role": "system", "content": combined}, {"role": "user", "content": prompt}]
+r = ll._evaluate_modelfile_identity(_always_leaks_identity, _fake_identity_fn, "echo:latest")
+check("modelfile_identity: leaks identity to every model regardless of which one (corrupts independent council opinions)", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_modelfile_identity(None, None, "echo:latest")
+check("modelfile_identity: _build_chat_messages not importable at all", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

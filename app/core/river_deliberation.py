@@ -815,9 +815,35 @@ def deliberate_and_learn(
     # (see _jittered_temperature) instead of the identical value every
     # councillor previously received — real sampling diversity, not just
     # model-identity diversity.
+    # 2026-07-21/22 (Finding 52): should_run_cycle() only gates whether a
+    # NEW cycle starts, not whether an already-running, multi-councillor
+    # cycle should stop partway through when a real conversation becomes
+    # active during it — confirmed cause of a real 17-second /mirror_echo
+    # delay. Snapshot conversation-active state before this loop starts so
+    # should_yield_mid_cycle() can tell "this call IS the active
+    # conversation" (was already true — never yield) from "a real request
+    # just arrived mid-loop" (a genuine false->true transition).
+    _conversation_active_before_loop = False
+    try:
+        from app.core.conversation_activity import is_conversation_active
+        _conversation_active_before_loop = is_conversation_active()
+    except Exception:
+        pass
+
     opinions: dict[str, str] = {}
     councillor_temps: dict[str, float] = {}
     for i, model in enumerate(council):
+        if i > 0:
+            try:
+                from app.core.autonomy_coordinator import should_yield_mid_cycle
+                if should_yield_mid_cycle(_conversation_active_before_loop):
+                    logging.info(
+                        f"[DELIBERATION] Yielding mid-cycle after {i} councillor(s) "
+                        "— a real conversation became active"
+                    )
+                    break
+            except Exception:
+                pass
         logging.info(f"[DELIBERATION] Querying councillor: {model}")
         councillor_temp = _jittered_temperature(temperature, i, len(council))
         response = _ollama_query(

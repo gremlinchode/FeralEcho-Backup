@@ -37,8 +37,8 @@ HEADERS = {"User-Agent": "FeralEcho/1.0"}
 
 # Sources that returned 401/403 this run — skipped without retrying rather
 # than re-attempting and re-logging the same failure every hourly cycle
-# forever. In-memory only (resets on restart); some sources (e.g. Reddit)
-# have no key concept at all, so there's nothing to fix by retrying.
+# forever. In-memory only (resets on restart) — some sources have no key
+# concept at all, so there's nothing to fix by retrying.
 _DISABLED_SOURCES: set[str] = set()
 
 # Found 2026-07-21: two independent, uncoordinated loops — app/autonomous_loop.py's
@@ -96,14 +96,20 @@ FETCH_SOURCES = [
     ("NPR News",           "https://www.npr.org/rss/rss.php?id=1001"),
     ("The Guardian",       "https://www.theguardian.com/world/rss"),
 
-    # ── Human discourse ───────────────────────────────────────────────────────
-    ("Reddit Philosophy",  "https://www.reddit.com/r/philosophy/top.json?limit=3&t=day&raw_json=1"),
-    ("Reddit Science",     "https://www.reddit.com/r/science/top.json?limit=3&t=day&raw_json=1"),
-    ("Reddit WorldNews",   "https://www.reddit.com/r/worldnews/top.json?limit=3&t=day&raw_json=1"),
-
     # ── Cosmos & history ──────────────────────────────────────────────────────
     ("This Day History",   "https://history.muffinlabs.com/date"),
 ]
+
+# Removed 2026-07-22: Reddit Philosophy/Science/WorldNews (the old
+# "Human discourse" section) called Reddit's unauthenticated .json listing
+# endpoints directly and had been failing 100% of the time with
+# "Unauthorized or forbidden" (Finding 59) — Reddit now requires a
+# descriptive User-Agent tied to a registered app and, increasingly, real
+# OAuth2 even for read-only access. Weighed real cost (register an app,
+# implement OAuth token fetch/refresh, maintain an ongoing external
+# dependency) against payoff (3 more sources alongside the ~10 already
+# confirmed working well, Finding 61) and chose to retire rather than
+# fix — decided directly with Gremlin, not defaulted into.
 
 # Add NASA APOD only if a real API key is set — DEMO_KEY has a 30 req/hour cap
 # and will 429 on any autonomous loop running more than once per two hours.
@@ -194,19 +200,6 @@ def fetch_and_log(name, url, max_retries=3, temporal_context=None) -> list[str]:
                     # NewsAPI
                     for art in data["articles"][:MAX_ITEMS]:
                         snippet = f"[{name}] {art.get('title', '')[:MAX_TEXT_LEN]}"
-                        if not _is_duplicate(snippet):
-                            log_dream_bridge(f"{ctx}\n{snippet}", meta=_FETCH_META, embedding_text=snippet)
-                            collected.append(snippet)
-
-                elif (isinstance(data, dict) and "data" in data
-                        and isinstance(data["data"], dict)
-                        and "children" in data["data"]):
-                    # Reddit listing format
-                    for child in data["data"]["children"][:MAX_ITEMS]:
-                        post = child.get("data", {})
-                        title = post.get("title", "")
-                        subreddit = post.get("subreddit_name_prefixed", "")
-                        snippet = f"[{name}] {subreddit}: {title[:MAX_TEXT_LEN]}"
                         if not _is_duplicate(snippet):
                             log_dream_bridge(f"{ctx}\n{snippet}", meta=_FETCH_META, embedding_text=snippet)
                             collected.append(snippet)

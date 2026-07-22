@@ -1183,10 +1183,24 @@ _OLLAMA_API_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 # Finding 53's follow-up): real deliberation exchanges the same night — a
 # reasoning-heavy logic puzzle, a creative piece — both ran out of room and
 # stopped mid-sentence at 1024. Matches coding's existing cap. personal/
-# autonomous_* deliberately left alone — concise is the intended shape
-# there, not an oversight (see the Machine-Native Awareness section).
+# autonomous_reflection/autonomous_fetch/autonomous_experiment deliberately
+# left alone — concise is the intended shape there, not an oversight (see
+# the Machine-Native Awareness section), and zero truncations were found
+# for these specific task types when this was checked.
+#
+# Corrected 2026-07-21/22 (CLAUDE.md Finding 54's correction, ground-truth
+# re-verification): "personal" raised 512 -> 2048, matching the other four.
+# Finding 54 originally left this at 512 alongside autonomous_*, assuming
+# it covered only Echo's own concise internal reflections — checking real
+# production data found otherwise: 16 real truncations in a single ~17-hour
+# window, and several were confirmed to be real POST /chat/stream requests
+# (genuine Echo Studio conversations someone was actually reading), not
+# just the autonomous emergent_loop's self-talk. A real human-facing
+# conversation getting cut off mid-sentence is the same class of problem
+# that already justified raising the other four categories — "personal"
+# just hadn't been checked against real data until now.
 _TASK_TOKEN_LIMITS: dict[str, int] = {
-    "personal": 512,       # autonomous reflections — concise
+    "personal": 2048,      # real conversations were cutting off mid-sentence at 512
     "reasoning": 2048,     # analysis and reasoning
     "general": 2048,       # user conversation
     "creative": 2048,      # creative writing

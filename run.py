@@ -1090,6 +1090,37 @@ def start_background_threads():
     except Exception as _ghe:
         logger.warning(f"[GENESIS] Hash verification failed: {_ghe}")
 
+    # COUNCIL.md hash verification — PENDING_DECISIONS.md #11, decided
+    # 2026-07-22: "hash-protect it like echo_principles.json." Same
+    # alert-only shape as the block immediately above — does not block
+    # startup, just makes an out-of-band modification loud in the log
+    # instead of silent. memory/genesis/council_hash.txt was generated
+    # once from the file's content as it stood at the time this decision
+    # was implemented; a real, deliberate future edit to COUNCIL.md
+    # (this file is explicitly a living document, corrected/extended in
+    # place per its own header) is expected to also update this hash in
+    # the same change, exactly the same maintenance obligation
+    # echo_principles.json already carries.
+    try:
+        import hashlib as _hashlib_council
+        _council_path = Path(__file__).parent / "COUNCIL.md"
+        _council_hash_path = Path(__file__).parent / "memory" / "genesis" / "council_hash.txt"
+        if _council_path.exists() and _council_hash_path.exists():
+            _live_council_hash = _hashlib_council.sha256(_council_path.read_bytes()).hexdigest()
+            _stored_council_hash = _council_hash_path.read_text().strip()
+            if _live_council_hash != _stored_council_hash:
+                logger.error(
+                    "[GENESIS] COUNCIL.md hash mismatch! stored=%s live=%s "
+                    "— file may have been modified outside a reviewed, deliberate edit.",
+                    _stored_council_hash[:12], _live_council_hash[:12],
+                )
+            else:
+                logger.info("[GENESIS] COUNCIL.md hash verified OK.")
+        else:
+            logger.warning("[GENESIS] COUNCIL.md hash verification skipped — file or hash file missing.")
+    except Exception as _cghe:
+        logger.warning(f"[GENESIS] COUNCIL.md hash verification failed: {_cghe}")
+
     # MLX crash-avoidance state — "learned avoidance, not just resurrection"
     # (2026-07-21, differential audit follow-up). Scans real macOS crash
     # reports once per process start for the mlx::core::gpu::check_error

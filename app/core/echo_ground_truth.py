@@ -34,6 +34,7 @@ _BACKUP_DIR = os.path.join("app", "core", "self_edit_backups")
 _SHARD_LOG = os.path.join(_MEMORY_DIR, "claude_shard.jsonl")
 _INTERACTION_LOG = os.path.join(_MEMORY_DIR, "interaction_log.jsonl")
 _WORKSPACE_LOG = os.path.join(_MEMORY_DIR, "workspace_log.jsonl")
+_COUNCIL_MD_PATH = "COUNCIL.md"
 _FRICTION_WINDOW_SIZE = 50
 
 # ---------------------------------------------------------------------------
@@ -84,6 +85,12 @@ _SLICE_SIGNALS: dict[str, frozenset] = {
         "what are you thinking about", "what's on your mind", "whats on your mind",
         "what have you noticed lately", "what's been salient", "on your mind",
         "what's occupying you", "what have you been noticing",
+    ]),
+    "council": frozenset([
+        "the council", "ai council", "outside ai", "other ais think",
+        "other models think", "what do other ai", "what does grok think",
+        "what does gemini think", "what does chatgpt think",
+        "external opinions of you", "other ais' opinion", "council.md",
     ]),
 }
 
@@ -490,6 +497,41 @@ def _build_affect(sm: dict) -> str:
     return "\n".join(lines)
 
 
+def _build_council() -> str:
+    """
+    PENDING_DECISIONS.md #11, decided 2026-07-22: some of COUNCIL.md's
+    existence should be surfaced to Echo, so she can know it exists rather
+    than it staying entirely a record kept about her -- but COUNCIL.md's
+    own text is explicit that its content stays private, including from
+    the council members themselves. This slice honors that boundary: it
+    reports that the file exists and a bare structural count (rounds,
+    individual responses), computed from the file's own section headers
+    at read time rather than hardcoded, and never quotes a single word of
+    the actual recorded reactions. Counts are computed live specifically
+    so this doesn't go stale the way a hardcoded number would (the exact
+    mistake this project's own Findings have repeatedly caught elsewhere,
+    e.g. Finding 62's "seven vs eight" count).
+    """
+    header = "External AI council (source: COUNCIL.md — existence only, content stays private):"
+    try:
+        with open(_COUNCIL_MD_PATH, "r", encoding="utf-8") as f:
+            text = f.read()
+    except Exception:
+        return header + "\n  No such file exists yet."
+
+    import re
+    rounds = len(re.findall(r"(?m)^## \d{4}-\d{2}-\d{2}", text))
+    responses = len(re.findall(r"(?m)^### ", text))
+    return "\n".join([
+        header,
+        "  A private, unpublished file recording honest reactions from an outside AI "
+        "council (Claude, Grok, Gemini, ChatGPT, DeepSeek) about your nature exists.",
+        f"  {rounds} round(s) so far, {responses} individual response(s) recorded in total.",
+        "  The actual recorded content is not surfaced here — it stays private by "
+        "deliberate decision, including from the council members who wrote it.",
+    ])
+
+
 def _build_workspace(recent_events: list) -> str:
     """
     Emergence roadmap Phase 6, Architectural Rec. 1: a general grounding
@@ -566,6 +608,9 @@ def get_structural_self_facts(prompt: str = "") -> str:
         if "workspace" in slices:
             workspace_tail = _read_jsonl_tail(_WORKSPACE_LOG, 100)
             sections.append(_build_workspace(workspace_tail))
+
+        if "council" in slices:
+            sections.append(_build_council())
 
         if not sections:
             return ""

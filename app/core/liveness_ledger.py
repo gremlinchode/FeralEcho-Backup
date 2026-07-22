@@ -1691,6 +1691,62 @@ def _check_council_river_blend() -> dict:
     return _evaluate_council_river_blend(_blend_council_and_quality, COUNCIL_RATING_WEIGHT, QUALITY_SCORE_WEIGHT, block)
 
 
+# ── 26. council_content_privacy — echo_ground_truth.py's _build_council() ──
+# still reports existence + structural counts only, never the real
+# recorded reactions. Added 2026-07-22 (CLAUDE.md Finding 68,
+# PENDING_DECISIONS.md #11), the same session COUNCIL.md's own text
+# decided the file "stays private, full stop, including from the ones
+# who wrote it." A future edit to _build_council() that starts quoting
+# real content instead of just counting it would be exactly the kind of
+# quiet privacy regression this project's culture treats as a real
+# finding, not a cosmetic one (Finding 53's synthesis-prompt leak is the
+# same shape of risk in a different subsystem).
+
+_COUNCIL_MD_PATH_FOR_LEDGER = os.path.join(_PROJECT_ROOT, "COUNCIL.md")
+
+
+def _evaluate_council_privacy(build_fn, real_council_text: "str | None") -> dict:
+    if build_fn is None:
+        return _result(False, "Could not import _build_council() at all — failing closed.")
+    try:
+        rendered = build_fn()
+    except Exception as e:
+        return _result(False, f"_build_council() raised {e!r}")
+
+    if not real_council_text:
+        return _result(True, "COUNCIL.md not present to check against — nothing it could leak.")
+
+    # The real recorded reactions live in blockquote lines ("> ...").
+    # Anything long enough to be distinctive (>30 chars) showing up
+    # verbatim in the rendered slice would mean real content leaked.
+    quoted_lines = [
+        ln.lstrip(">").strip()
+        for ln in real_council_text.splitlines()
+        if ln.strip().startswith(">") and len(ln.strip().lstrip(">").strip()) > 30
+    ]
+    leaked = next((ln for ln in quoted_lines if ln in rendered), None)
+    if leaked:
+        return _result(False, f"_build_council() leaked real quoted council content into its rendered output: {leaked[:80]!r}")
+
+    if "existence only" not in rendered and "stays private" not in rendered:
+        return _result(False, "rendered output no longer states the private/existence-only framing at all")
+
+    return _result(
+        True,
+        "_build_council() reports existence + structural counts only — no real quoted "
+        "council content appears anywhere in its rendered output.",
+    )
+
+
+def _check_council_privacy() -> dict:
+    try:
+        from app.core.echo_ground_truth import _build_council
+    except Exception:
+        _build_council = None
+    text = _read_text(_COUNCIL_MD_PATH_FOR_LEDGER)
+    return _evaluate_council_privacy(_build_council, text)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -1719,6 +1775,7 @@ _CHECKS = (
     "janitor_council_advisory_only",
     "modelfile_identity",
     "council_river_blend",
+    "council_content_privacy",
 )
 
 
@@ -1768,6 +1825,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "janitor_council_advisory_only": _check_janitor_council_advisory_only,
         "modelfile_identity": _check_modelfile_identity,
         "council_river_blend": _check_council_river_blend,
+        "council_content_privacy": _check_council_privacy,
     }
 
     ledger = {"generated_at": _now_iso()}

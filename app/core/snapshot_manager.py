@@ -58,6 +58,12 @@ _ARTIFACTS: dict[str, str] = {
     "echo_principles.json":    "echo_principles.json",
     "echo_principles_hash.txt":"memory/genesis/genesis_hash.txt",
     "Modelfile":               "Modelfile",
+    # PENDING_DECISIONS.md #11, decided 2026-07-22: COUNCIL.md gets the
+    # same hash-verified protection echo_principles.json already has (see
+    # run.py's startup check), so it gets the same snapshot/restore
+    # treatment too — same reasoning as the pair above it.
+    "COUNCIL.md":              "COUNCIL.md",
+    "council_hash.txt":        "memory/genesis/council_hash.txt",
 }
 
 # Write order for restore: lowest blast-radius first.
@@ -65,6 +71,8 @@ _ARTIFACTS: dict[str, str] = {
 _RESTORE_ORDER: list[tuple[str, str]] = [
     ("echo_principles.json",    "echo_principles.json"),
     ("echo_principles_hash.txt","memory/genesis/genesis_hash.txt"),
+    ("COUNCIL.md",              "COUNCIL.md"),
+    ("council_hash.txt",        "memory/genesis/council_hash.txt"),
     ("Modelfile",               "Modelfile"),
     ("self_edit_generated.py",  "app/core/self_edit_generated.py"),
     ("river_brain.pkl",         "memory/river_brain.pkl"),

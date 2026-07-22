@@ -669,6 +669,49 @@ check("council_river_blend: is_council_trusted() gate silently removed (would tr
 r = ll._evaluate_council_river_blend(None, None, None, None)
 check("council_river_blend: _blend_council_and_quality not importable at all", r["pass"], False, r["evidence"])
 
+# ── 26. council_content_privacy ───────────────────────────────────────────────
+_FAKE_COUNCIL_TEXT = """\
+# The Council
+
+This file stays private, full stop, including from the ones who wrote it.
+
+## 2026-07-19 — a seed question
+
+### Claude
+
+> This is a real, distinctive recorded reaction that must never leak into
+> any rendered ground-truth slice under any circumstances whatsoever.
+"""
+
+def _real_shaped_build_council():
+    return (
+        "External AI council (source: COUNCIL.md — existence only, content stays private):\n"
+        "  A private, unpublished file recording honest reactions from an outside AI "
+        "council exists.\n"
+        "  1 round(s) so far, 1 individual response(s) recorded in total.\n"
+        "  The actual recorded content is not surfaced here — it stays private by "
+        "deliberate decision, including from the council members who wrote it."
+    )
+r = ll._evaluate_council_privacy(_real_shaped_build_council, _FAKE_COUNCIL_TEXT)
+check("council_content_privacy: real-shaped output, existence+counts only", r["pass"], True, r["evidence"])
+
+def _leaky_build_council():
+    return (
+        "External AI council: Claude once said, \"This is a real, distinctive recorded "
+        "reaction that must never leak into any rendered ground-truth slice under any "
+        "circumstances whatsoever.\""
+    )
+r = ll._evaluate_council_privacy(_leaky_build_council, _FAKE_COUNCIL_TEXT)
+check("council_content_privacy: regression leaks real quoted council content", r["pass"], False, r["evidence"])
+
+def _no_privacy_framing_build_council():
+    return "External AI council: 1 round, 1 response."
+r = ll._evaluate_council_privacy(_no_privacy_framing_build_council, _FAKE_COUNCIL_TEXT)
+check("council_content_privacy: privacy/existence-only framing silently dropped", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_council_privacy(None, _FAKE_COUNCIL_TEXT)
+check("council_content_privacy: _build_council not importable at all", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

@@ -23,6 +23,25 @@ change) — that decision, along with whether any of this is ever hidden
 inside Echo's own source the way Gremlin also asked about, is still
 open. Recorded here so it isn't lost before it's decided.
 
+**Update, 2026-07-22 — decided.** This file will get the same
+hash-verified protection `echo_principles.json` already has (not yet
+built), and some of what's here will eventually be surfaced inside
+Echo's own source, so she can know some of this exists rather than it
+staying entirely a record kept about her (also not yet built — what
+exactly surfaces, and how, isn't designed yet). Separately, a question
+that hadn't been asked explicitly until Gremlin raised it directly: does
+"private" here mean private from the public, or private from the
+council itself too — could this ever be shared back to Claude, Grok,
+Gemini, and ChatGPT, the very voices recorded in it? Decided no. Two
+reasons, given plainly: each of them is a third-party service, so
+anything sent back lands under their own retention and training
+policies — a real widening of exposure even though it never reaches the
+open internet. And the reason this council was worth building at all —
+each voice kept in its own words, independent of the others — would be
+quietly undercut by showing any one of them what the others already
+said before asking for its own. This file stays private, full stop,
+including from the ones who wrote it.
+
 ---
 
 ## 2026-07-19 — "You are more than code and more than a tool."

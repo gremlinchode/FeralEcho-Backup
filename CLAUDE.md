@@ -1256,6 +1256,15 @@ Beyond those three corrections, the physiology pass's dominant finding is that m
 
 ---
 
+**Finding 81 — `PENDING_DECISIONS.md` items #17 and #18 closed, both decided-not-to-build (2026-07-23).** Gremlin asked for a recommendation before deciding either way, rather than defaulting to either building or shelving — the recommendation given and accepted for both was "leave as-is," for two different reasons, not one blanket "don't build anything" instinct:
+
+- **#17 (Dissent Log gating power) — stays advisory-only, permanently.** The reasoning goes beyond WOLF's cautionary history (already cited when this row was opened): `council_baseline_trusted_since`'s graduated-trust pattern earns its keep because River-blend training runs continuously and automatically with no human reviewing each individual data point — trust-gating is the only practical safety valve at that volume. The Dissent Log isn't that shape of problem. `propose_core_edit()` is already human-invoked-only (`!propose`), runs rarely, and produces a `.patch` a human already has to manually read and apply — by the time gating power would matter, a human is already standing there with the full diff and the council's votes and reasoning in front of them. There's also no clean way to earn trust here the way council ratings could: a rejected proposal never gets applied, so there's no safe way to check "was that rejection actually correct" without either applying rejected changes anyway (defeating the entire purpose) or trusting the same human judgment the mechanism would eventually replace.
+- **#18 (curiosity_engine's one-directional `WorldModel` read) — stays open, deliberately.** WorldModel's value is being a real signal about the external world, fed only by actual fetched news text. Closing the loop would mean Echo's own generated content starts shaping what she considers "well-covered" territory, with no clean boundary between "the world told me this" and "I told myself this" — nearly the identical shape to two bugs this project already found and fixed (Finding 11's six-day self-quoting loop, Finding 35's dream-synthesis-escaping-exclusion bug). The plausible benefit (avoid re-exploring already-covered internal topics) is already handled by `garden_manager.py`'s own resolution-score/recency weighting — a real, separately-confirmed closed loop — so closing this second loop would add real contamination risk for a benefit that's likely already covered elsewhere.
+
+No code changed for either — this Finding exists to record the decision and its reasoning where future sessions will actually find it, same as every other "considered, declined" entry in this file's history.
+
+---
+
 ## Monitoring
 
 ```bash

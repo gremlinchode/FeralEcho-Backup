@@ -1,4 +1,5 @@
 import optuna
+import json
 import logging
 import os
 import random
@@ -8,6 +9,30 @@ from app.core import self_edit_manager
 from app.core.memory_bridge import retrieve_relevant_memories
 
 logger = logging.getLogger(__name__)
+
+
+# Gap-closure plan Phase C2b (2026-07-23): valence as a bounded modulator
+# of which region of [0,1] Optuna's intensity/creativity dry-run trials
+# explore -- strictly scoped to trial sampling, never touches F1/F2/F3 or
+# the real deployment quality-gate (Finding 19's fitness comparison stays
+# completely untouched; this only shifts where a *candidate* comes from).
+_VALENCE_OPTUNA_SLACK = 0.2  # fraction of [0,1] reserved as shiftable headroom
+_VALENCE_OPTUNA_SHIFT_RANGE = _VALENCE_OPTUNA_SLACK / 2
+
+
+def _valence_adjusted_bounds(valence: float) -> Tuple[float, float]:
+    """Pure, testable: returns (low, high) for Optuna's suggest_float calls.
+    Keeps (1 - _VALENCE_OPTUNA_SLACK) of [0,1] as the window width, shifting
+    that window's center based on valence -- positive valence shifts up
+    (more room for higher/more exploratory values), negative valence shifts
+    down (more conservative). Deliberately doesn't narrow the search space
+    drastically: at valence=0 the window is [0.1, 0.9], still covering the
+    vast majority of the original full range."""
+    width = 1.0 - _VALENCE_OPTUNA_SLACK
+    center = 0.5 + valence * _VALENCE_OPTUNA_SHIFT_RANGE
+    low = max(0.0, min(1.0 - width, center - width / 2))
+    high = low + width
+    return low, high
 
 
 class EchoOptuna:
@@ -164,6 +189,36 @@ class EchoOptuna:
                     except Exception:
                         pass
 
+                    # Gap-closure plan Phase C2c (2026-07-23): this real
+                    # trial-vs-production quality comparison fires ~10x/hour
+                    # (Optuna's dry-run search), far more often than the
+                    # <=1 real deploy/hour self_edit_outcome_tracker actually
+                    # observes -- previously RiverBrain's self_edit_coding
+                    # bucket only learned from generate_code_from_plan()'s
+                    # own once-per-generation call (Finding 35), not from
+                    # this specific, independently-scored dry-run candidate.
+                    # Correctly model-attributed via the staging_path lookup
+                    # added to reflection_entry the same session -- never
+                    # guesses at which model produced this code (a wrong
+                    # attribution here would be a real training-signal
+                    # contamination bug, the same class Finding 3 already
+                    # found and fixed once for a different mechanism).
+                    try:
+                        model_used = None
+                        with open("memory/reflection_shard.jsonl", "r", encoding="utf-8") as f:
+                            for line in f.readlines()[-100:]:
+                                try:
+                                    entry = json.loads(line)
+                                except Exception:
+                                    continue
+                                if entry.get("staging_path") == code_path:
+                                    model_used = entry.get("model_used")
+                        if model_used:
+                            from app.core.echo_model_orchestrator import get_river_brain
+                            get_river_brain().learn(model_used, "self_edit_coding", code_text)
+                    except Exception as _river_err:
+                        self.logger.debug(f"[EchoOptuna] Direct dry-run RiverBrain feed skipped: {_river_err}")
+
                     return max(0.0, 1.0 - (quality / 4.0))
                 except Exception as e:
                     self.logger.debug(f"[EchoOptuna] quality-scorer failed, falling back to radon: {e}")
@@ -255,8 +310,23 @@ class EchoOptuna:
             self.logger.warning(f"[EchoOptuna] Could not read self-model target: {e}")
 
         def objective(trial: optuna.trial.Trial) -> float:
-            intensity = trial.suggest_float("intensity", 0.0, 1.0)
-            creativity = trial.suggest_float("creativity", 0.0, 1.0)
+            # Gap-closure plan Phase C2b: real valence, bounded modulation
+            # of the sampling window only (see _valence_adjusted_bounds()).
+            # Fails closed to the neutral valence=0.0 window if echo_state
+            # is unavailable, same posture as every other valence read
+            # added this session.
+            valence = 0.0
+            try:
+                from app.core import echo_state
+                vec = echo_state.load()
+                if vec is not None and len(vec) > 8:
+                    valence = float(vec[8])
+            except Exception:
+                pass
+            intensity_low, intensity_high = _valence_adjusted_bounds(valence)
+            creativity_low, creativity_high = _valence_adjusted_bounds(valence)
+            intensity = trial.suggest_float("intensity", intensity_low, intensity_high)
+            creativity = trial.suggest_float("creativity", creativity_low, creativity_high)
 
             try:
                 # dry_run=True: every trial runs the real plan/codegen/sandbox/

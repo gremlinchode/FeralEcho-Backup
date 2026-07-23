@@ -1981,6 +1981,13 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
     if dry_run:
         reflection_entry["result"] = "success_dry_run"
         reflection_entry["dry_run"] = True
+        # Gap-closure plan Phase C2c (2026-07-23): lets echo_optuna.py's
+        # _score_result() correctly attribute this trial's quality delta to
+        # the model that actually generated it (model_used, already tracked
+        # above) by matching on this exact staging path -- without changing
+        # this function's own (True, call_staging_file) return contract,
+        # which other callers depend on staying a plain 2-tuple.
+        reflection_entry["staging_path"] = call_staging_file
         save_reflection(reflection_entry)
         append_to_journal(
             "SELF_EDIT",

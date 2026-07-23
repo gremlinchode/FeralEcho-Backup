@@ -478,6 +478,106 @@ def _evaluate_reflection_meta_synthesis_hook(call_site_block: "str | None") -> d
     )
 
 
+def _evaluate_valence_exploration_bias(apply_fn) -> dict:
+    """Functional canary: river_deliberation.py's _apply_valence_to_
+    exploration_bias() must stay a valid probability [0,1] for any real
+    valence value, since the result feeds a random.random() < x Bernoulli
+    gate directly. Added 2026-07-23 (gap-closure plan Phase C2a)."""
+    if apply_fn is None:
+        return _result(False, "Could not import _apply_valence_to_exploration_bias at all — failing closed.")
+
+    cases = [(0.0, -1.0), (0.0, 1.0), (1.0, -1.0), (1.0, 1.0), (0.5, 0.0), (0.02, 0.18)]
+    failures = []
+    for eb, valence in cases:
+        try:
+            result = apply_fn(eb, valence)
+        except Exception as e:
+            failures.append(f"eb={eb} valence={valence} raised {e!r}")
+            continue
+        if not (0.0 <= result <= 1.0):
+            failures.append(f"eb={eb} valence={valence} produced out-of-bounds result={result}")
+    if failures:
+        return _result(False, "_apply_valence_to_exploration_bias() failed bounds cases: " + "; ".join(failures))
+    return _result(
+        True,
+        "_apply_valence_to_exploration_bias() stays within [0,1] across extreme "
+        "valence/exploration_bias inputs.",
+    )
+
+
+def _check_valence_exploration_bias() -> dict:
+    try:
+        from app.core.river_deliberation import _apply_valence_to_exploration_bias
+    except Exception:
+        _apply_valence_to_exploration_bias = None
+    return _evaluate_valence_exploration_bias(_apply_valence_to_exploration_bias)
+
+
+# ── valence_self_edit_bounds — echo_optuna.py's _valence_adjusted_bounds() ──
+# stays within valid [0,1] bounds for any real valence, AND objective()
+# still only ever calls the self-edit pipeline with dry_run=True, never
+# save_code() — the safety invariant this whole modulation depends on
+# (valence may shift which parameter region a *trial* explores, but must
+# never be able to reach a real production write). Added 2026-07-23
+# (gap-closure plan Phase C2b), same combined bounds+structural shape as
+# apply_to_code_sandbox_isolation's own boundary-holds pattern.
+
+def _evaluate_valence_self_edit_bounds(bounds_fn, objective_source_block: "str | None") -> dict:
+    if bounds_fn is None:
+        return _result(False, "Could not import _valence_adjusted_bounds at all — failing closed.")
+
+    failures = []
+    for v in (-1.0, -0.5, 0.0, 0.18, 0.5, 1.0):
+        try:
+            low, high = bounds_fn(v)
+        except Exception as e:
+            failures.append(f"valence={v} raised {e!r}")
+            continue
+        if not (0.0 <= low < high <= 1.0):
+            failures.append(f"valence={v} produced invalid bounds ({low}, {high})")
+    if failures:
+        return _result(False, "_valence_adjusted_bounds() failed bounds cases: " + "; ".join(failures))
+
+    if objective_source_block is None:
+        return _result(
+            False,
+            "Could not locate EchoOptuna.objective()'s source at all — either it "
+            "moved (update this check's anchor) or the function was removed. "
+            "Failing closed either way.",
+        )
+    calls_dry_run_true = bool(re.search(r"dry_run\s*=\s*True", objective_source_block))
+    calls_save_code = bool(re.search(r"save_code\s*\(", objective_source_block))
+    if calls_dry_run_true and not calls_save_code:
+        return _result(
+            True,
+            "_valence_adjusted_bounds() stays within valid bounds, and objective() "
+            "still only ever calls the self-edit pipeline with dry_run=True — "
+            "valence's modulation never reaches a real production write.",
+        )
+    return _result(
+        False,
+        f"objective() no longer matches its expected dry-run-only shape "
+        f"(calls_dry_run_true={calls_dry_run_true}, calls_save_code={calls_save_code}) "
+        f"— valence's modulation may now be able to influence a real deployment.",
+    )
+
+
+def _check_valence_self_edit_bounds() -> dict:
+    try:
+        from app.core.echo_optuna import _valence_adjusted_bounds
+    except Exception:
+        _valence_adjusted_bounds = None
+    source = _read_text(os.path.join(_PROJECT_ROOT, "app", "core", "echo_optuna.py"))
+    block = None
+    idx = source.find("def objective(trial")
+    if idx != -1:
+        # Real measured length is 3525 chars -- widened with real margin,
+        # not just guessed, per the lesson from reflection_meta_synthesis_
+        # hook's own window-too-small bug earlier this session.
+        block = source[idx:idx + 4500]
+    return _evaluate_valence_self_edit_bounds(_valence_adjusted_bounds, block)
+
+
 def _check_reflection_meta_synthesis_hook() -> dict:
     source = _read_text(_REFLECTION_SHARD_SRC_PATH)
     block = None
@@ -2323,6 +2423,8 @@ _CHECKS = (
     "echo_state_archiving",
     "coupling_self_report",
     "reflection_meta_synthesis_hook",
+    "valence_exploration_bias",
+    "valence_self_edit_bounds",
 )
 
 
@@ -2384,6 +2486,8 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "echo_state_archiving": _check_echo_state_archiving,
         "coupling_self_report": _check_coupling_self_report,
         "reflection_meta_synthesis_hook": _check_reflection_meta_synthesis_hook,
+        "valence_exploration_bias": _check_valence_exploration_bias,
+        "valence_self_edit_bounds": _check_valence_self_edit_bounds,
     }
 
     ledger = {"generated_at": _now_iso()}

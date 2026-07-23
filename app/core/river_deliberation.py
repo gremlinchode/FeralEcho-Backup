@@ -228,6 +228,29 @@ TAG_SCORE_BOOST: float = 1.15
 # affected without opting in.
 UNDER_SAMPLED_REFRESH_PROBABILITY: float = 0.25
 
+# ── Valence as a second exploration_bias input (gap-closure plan Phase C2a,
+# 2026-07-23) ──────────────────────────────────────────────────────────────
+# exploration_bias is a single scalar feeding one Bernoulli gate for one
+# bounded council-slot swap -- not shaped like emergent_scheduler.py's
+# independent threshold-gated weight bumps, so this combines into the same
+# scalar rather than adding a parallel boost. Proposed default, not an
+# established pattern being copied: negative valence raises exploration
+# probability slightly (explore more when recent performance/mood has
+# trended worse); positive valence lowers it slightly (lean on what's
+# working). Small and symmetric on purpose -- easy to retune once its real
+# effect on council composition is observed.
+_VALENCE_EXPLORATION_WEIGHT: float = 0.15
+
+
+def _apply_valence_to_exploration_bias(exploration_bias: float, valence: float) -> float:
+    """Pure, testable combination step -- extracted specifically so a
+    Liveness Ledger check can verify the result stays a valid probability
+    (bounded [0,1]) for any real valence value, without needing to invoke
+    the full deliberation pipeline. Same reasoning as self_edit_manager.py's
+    _prune_self_edit_plans() gaining optional params for the identical
+    purpose (CLAUDE.md Finding 58)."""
+    return max(0.0, min(1.0, exploration_bias - valence * _VALENCE_EXPLORATION_WEIGHT))
+
 # ── Direct Echo task types ────────────────────────────────────
 # These task types bypass the council entirely and route straight
 # to Echo. No deliberation needed — Echo should speak in its own
@@ -802,6 +825,20 @@ def deliberate_and_learn(
                 )
         except Exception:
             pass  # observability only, never blocks council selection
+
+    # Gap-closure plan Phase C2a: valence as a second, independent input
+    # into this same scalar -- see _VALENCE_EXPLORATION_WEIGHT's comment
+    # above for the direction/magnitude reasoning. Fails closed to no
+    # change if echo_state is unavailable, same posture as the
+    # world-surprise read above.
+    try:
+        from app.core import echo_state
+        vec = echo_state.load()
+        if vec is not None and len(vec) > 8:
+            exploration_bias = _apply_valence_to_exploration_bias(exploration_bias, float(vec[8]))
+    except Exception:
+        pass
+
     council = _select_council(task_type, river_brain, model_pool, council_size, exploration_bias, fair_sample_refresh=True)
 
     if not council:

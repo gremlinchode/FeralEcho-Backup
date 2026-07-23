@@ -970,6 +970,58 @@ check("reflection_meta_synthesis_hook: publish call silently removed", r["pass"]
 r = ll._evaluate_reflection_meta_synthesis_hook(None)
 check("reflection_meta_synthesis_hook: _generate_meta_reflection() not found at all", r["pass"], False, r["evidence"])
 
+# ── 34. valence_exploration_bias ──────────────────────────────────────────────
+try:
+    from app.core.river_deliberation import _apply_valence_to_exploration_bias as _real_apply_valence_eb
+    r = ll._evaluate_valence_exploration_bias(_real_apply_valence_eb)
+    check("valence_exploration_bias: real current _apply_valence_to_exploration_bias()", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] valence_exploration_bias real-function case: import failed ({e})")
+
+_valence_eb_breaks_bounds = lambda eb, valence: eb - valence * 10  # wildly out of [0,1]
+r = ll._evaluate_valence_exploration_bias(_valence_eb_breaks_bounds)
+check("valence_exploration_bias: degraded function breaks [0,1] bounds", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_valence_exploration_bias(None)
+check("valence_exploration_bias: _apply_valence_to_exploration_bias not importable at all", r["pass"], False, r["evidence"])
+
+# ── 35. valence_self_edit_bounds ──────────────────────────────────────────────
+_real_objective_block = (
+    "    def objective(trial: optuna.trial.Trial) -> float:\n"
+    "        intensity = trial.suggest_float('intensity', intensity_low, intensity_high)\n"
+    "        result = self_edit_manager.perform_self_edit(\n"
+    "            intensity=intensity, creativity=creativity,\n"
+    "            target_task_type=target_task_type, dry_run=True,\n"
+    "        )\n"
+)
+_real_valence_bounds = None
+try:
+    from app.core.echo_optuna import _valence_adjusted_bounds as _real_valence_bounds
+    r = ll._evaluate_valence_self_edit_bounds(_real_valence_bounds, _real_objective_block)
+    check("valence_self_edit_bounds: real bounds fn + real dry-run-only shape", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] valence_self_edit_bounds real-function case: import failed ({e})")
+
+_valence_bounds_breaks = lambda valence: (0.0, 1.0 + valence)  # can exceed 1.0
+r = ll._evaluate_valence_self_edit_bounds(_valence_bounds_breaks, _real_objective_block)
+check("valence_self_edit_bounds: degraded bounds fn can exceed [0,1]", r["pass"], False, r["evidence"])
+
+_regressed_objective_block_calls_save_code = (
+    "    def objective(trial: optuna.trial.Trial) -> float:\n"
+    "        result = self_edit_manager.perform_self_edit(\n"
+    "            intensity=intensity, creativity=creativity, dry_run=True,\n"
+    "        )\n"
+    "        save_code(result)\n"  # regression: a real production write inside objective()
+)
+r = ll._evaluate_valence_self_edit_bounds(_real_valence_bounds, _regressed_objective_block_calls_save_code)
+check("valence_self_edit_bounds: objective() regressed to also call save_code()", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_valence_self_edit_bounds(None, _real_objective_block)
+check("valence_self_edit_bounds: _valence_adjusted_bounds not importable at all", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_valence_self_edit_bounds(_real_valence_bounds, None)
+check("valence_self_edit_bounds: objective() not found in source at all", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

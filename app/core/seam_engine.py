@@ -62,6 +62,7 @@ logger = logging.getLogger(__name__)
 
 _SEAM_STATE_PATH = Path("memory/seam_state.json")
 _SEAM_LOG_PATH = Path("memory/seam_log.jsonl")
+_SALIENCE_STATE_PATH = Path("memory/salience_state.json")
 # CLAUDE.md Finding 41 B4: observe()'s load-first_ever -> compute -> save cycle
 # had no lock — currently latent (only one caller, emergent_scheduler.py's
 # single thread), but undefended if a second caller is ever added. Cheap to
@@ -69,9 +70,27 @@ _SEAM_LOG_PATH = Path("memory/seam_log.jsonl")
 _seam_state_lock = threading.Lock()
 
 _MIN_JOINT_OBSERVATIONS = 20   # matches compute_salience()'s own _SALIENCE_HISTORY_MIN_SAMPLES convention
-_CORR_THRESHOLD = 0.4          # a pair needs at least this much historical relationship to have anything to violate
+_CORR_THRESHOLD = 0.4          # default/fallback — a pair needs at least this much historical relationship to have anything to violate
 _Z_THRESHOLD = 1.0             # each signal must read at least this far from its own historical mean right now
 _MIN_VARIANCE = 1e-5           # see _pearson() — excludes near-frozen dimensions from spurious correlation
+
+# 2026-07-23 (gap-closure plan Phase C1b): bounds for the dynamic threshold
+# derived from coupling_estimate — see _dynamic_corr_threshold()'s docstring.
+_CORR_THRESHOLD_FLOOR = 0.25
+_CORR_THRESHOLD_CEILING = 0.6
+_CORR_THRESHOLD_TYPICAL_COUPLING = 0.2  # roughly the real observed range this session (0.11-0.28)
+_CORR_THRESHOLD_SENSITIVITY = 0.5
+
+# 2026-07-23 (gap-closure plan Phase C1a): the 3 compute_salience() components
+# added to seam_engine's candidate pool, alongside the 9 echo_state dims.
+# Deliberately excludes coherence_tension: that salience component is itself
+# directly sourced from echo_state.npy dim[1] (same value, not an
+# independent signal), so pairing them would just measure a near-identical
+# copy of itself, not a genuine new candidate relationship. RiverBrain
+# per-task score means are deferred as a future stretch goal — not a
+# rolling-window series the same shape as these two sources, a separate
+# piece of work, not attempted here.
+_SALIENCE_COMPONENT_KEYS = ("world_surprise", "curiosity_urgency", "self_edit_streak")
 
 
 def _pearson(xs: list, ys: list) -> "float | None":
@@ -121,7 +140,7 @@ def _zscore(value: float, series: list) -> float:
     return (value - mean) / std
 
 
-def check_pair(series_a: list, series_b: list) -> "dict | None":
+def check_pair(series_a: list, series_b: list, corr_threshold: float = _CORR_THRESHOLD) -> "dict | None":
     """
     Pure evaluator, deliberately separated from any file I/O so it can be
     tested directly with synthetic data (see scripts/verify_seam_engine.py)
@@ -134,6 +153,14 @@ def check_pair(series_a: list, series_b: list) -> "dict | None":
     or None if there's no relationship to violate, the current reading
     doesn't deviate enough to judge, or the reading is actually consistent
     with the historical pattern.
+
+    corr_threshold: defaults to the original fixed _CORR_THRESHOLD so every
+    existing caller (this function's own default, scripts/verify_seam_
+    engine.py, liveness_ledger.py's functional canary) is byte-identical to
+    before unless it explicitly opts into a dynamic value — see observe()'s
+    use of _dynamic_corr_threshold() (gap-closure plan Phase C1b, added
+    2026-07-23, sequenced after Phase C1a's candidate-pool generalization
+    since both touch this same function).
 
     Deliberately leave-one-out: the correlation and the z-score baselines
     are computed from history EXCLUDING the current reading, and only then
@@ -154,7 +181,7 @@ def check_pair(series_a: list, series_b: list) -> "dict | None":
     cur_a, cur_b = series_a[-1], series_b[-1]
 
     r = _pearson(hist_a, hist_b)
-    if r is None or abs(r) < _CORR_THRESHOLD:
+    if r is None or abs(r) < corr_threshold:
         return None  # no established relationship for this pair to violate
 
     z_a = _zscore(cur_a, hist_a)
@@ -244,38 +271,115 @@ def _publish_seam_event(label_a: str, label_b: str, seam: dict) -> None:
         logger.debug("[Seam] workspace publish failed: %s", e)
 
 
+def _load_salience_component_series() -> dict:
+    """Real historical values for 3 of compute_salience()'s 4 components
+    (world_surprise, curiosity_urgency, self_edit_streak — coherence_tension
+    excluded, see _SALIENCE_COMPONENT_KEYS's comment), read directly from
+    the persisted rolling history in memory/salience_state.json. Fails
+    closed to an empty dict on any error. Added 2026-07-23 (gap-closure
+    plan Phase C1a) to extend seam_engine's candidate pool beyond the 9
+    echo_state dims."""
+    try:
+        state = json.loads(_SALIENCE_STATE_PATH.read_text())
+        history = state.get("history", [])
+        series = {key: [] for key in _SALIENCE_COMPONENT_KEYS}
+        for entry in history:
+            for key in _SALIENCE_COMPONENT_KEYS:
+                val = entry.get(key)
+                if val is not None:
+                    series[key].append(float(val))
+        return {k: v for k, v in series.items() if v}
+    except Exception as e:
+        logger.debug("[Seam] salience component history load failed: %s", e)
+        return {}
+
+
+def _load_combined_series() -> dict:
+    """Combine echo_state's 9 real state dimensions with 3 of compute_
+    salience()'s real components into one named-series dict, truncated to
+    a common length so check_pair() (which requires equal-length series)
+    can compare any pair across both sources. Added 2026-07-23 (gap-closure
+    plan Phase C1a) — previously observe() only ever scanned the 9
+    echo_state dims. RiverBrain per-task score means are deliberately not
+    included yet (see _SALIENCE_COMPONENT_KEYS's comment)."""
+    combined = {}
+    hist = load_history()
+    if hist is not None and len(hist) > 0:
+        n_dims = hist.shape[1]
+        for idx, label in enumerate(STATE_LABELS[:n_dims]):
+            combined[label] = hist[:, idx].tolist()
+
+    for key, values in _load_salience_component_series().items():
+        combined[f"salience_{key}"] = values
+
+    if not combined:
+        return {}
+
+    min_len = min(len(v) for v in combined.values())
+    return {label: values[-min_len:] for label, values in combined.items() if min_len > 0}
+
+
+def _dynamic_corr_threshold() -> float:
+    """Derive check_pair()'s correlation-threshold gate from the current
+    real coupling_estimate (echo_core.py's compute_salience()) instead of
+    the flat _CORR_THRESHOLD=0.4 constant. Added 2026-07-23 (gap-closure
+    plan Phase C1b, sequenced after C1a's candidate-pool generalization
+    since both touch observe()'s same loop). Lower overall coupling ->
+    lower bar (any real correlation is rarer and more meaningful when the
+    system's signals are loosely coupled); higher coupling -> raise the bar
+    (correlations are the norm, so only a stronger relationship counts as
+    "established"). Centered on the original 0.4 constant at
+    _CORR_THRESHOLD_TYPICAL_COUPLING so behavior at a typical real coupling
+    value doesn't move dramatically from what's already been verified safe.
+    Falls back to the original fixed constant on any error or if
+    coupling_estimate isn't available yet."""
+    try:
+        state = json.loads(_SALIENCE_STATE_PATH.read_text())
+        coupling = state.get("coupling_estimate")
+        if coupling is None:
+            return _CORR_THRESHOLD
+        coupling = float(coupling)
+        threshold = _CORR_THRESHOLD + (coupling - _CORR_THRESHOLD_TYPICAL_COUPLING) * _CORR_THRESHOLD_SENSITIVITY
+        return max(_CORR_THRESHOLD_FLOOR, min(_CORR_THRESHOLD_CEILING, threshold))
+    except Exception:
+        return _CORR_THRESHOLD
+
+
 def observe() -> dict:
     """
-    Read Echo's own already-persisted state-vector history and check
-    every pair of dimensions that have a real historical relationship for
-    a seam. Fails closed to an honestly-labeled empty result if there
-    isn't enough history yet — never fabricates a seam from insufficient
-    data. Safe to call from anywhere; touches no existing file.
+    Read Echo's own already-persisted signal history (9 echo_state dims +
+    3 compute_salience() components, see _load_combined_series()) and check
+    every pair that has a real historical relationship for a seam. Fails
+    closed to an honestly-labeled empty result if there isn't enough
+    history yet — never fabricates a seam from insufficient data. Safe to
+    call from anywhere; touches no existing file.
     """
-    hist = load_history()
-    if hist is None or len(hist) < _MIN_JOINT_OBSERVATIONS + 1:
+    combined = _load_combined_series()
+    n_obs = min((len(v) for v in combined.values()), default=0)
+    if not combined or n_obs < _MIN_JOINT_OBSERVATIONS + 1:
         return {
             "status": "insufficient_history",
-            "observations": 0 if hist is None else len(hist),
+            "observations": n_obs,
             "checked_pairs": 0,
             "seams": [],
         }
 
-    n_dims = hist.shape[1]
-    labels = STATE_LABELS[:n_dims]
+    labels = sorted(combined.keys())
+    corr_threshold = _dynamic_corr_threshold()
     seams = []
     checked = 0
 
     with _seam_state_lock:
         first_ever = _load_first_ever()
 
-        for i in range(n_dims):
-            for j in range(i + 1, n_dims):
-                series_a = hist[:, i].tolist()
-                series_b = hist[:, j].tolist()
-                result = check_pair(series_a, series_b)
+        for i in range(len(labels)):
+            for j in range(i + 1, len(labels)):
+                series_a = combined[labels[i]]
+                series_b = combined[labels[j]]
+                result = check_pair(series_a, series_b, corr_threshold=corr_threshold)
                 if result is None:
-                    if _pearson(series_a, series_b) is not None and abs(_pearson(series_a, series_b)) >= _CORR_THRESHOLD:
+                    r = _pearson(series_a, series_b)
+                    if r is not None and abs(r) >= corr_threshold:
                         checked += 1
                     continue
                 checked += 1
@@ -298,12 +402,13 @@ def observe() -> dict:
                     _plant_seam_question(labels[i], labels[j], result)
                     _publish_seam_event(labels[i], labels[j], result)
 
-        _save_first_ever(first_ever, len(hist))
+        _save_first_ever(first_ever, n_obs)
 
     entry = {
         "ts": datetime.now(timezone.utc).isoformat(),
-        "observations": len(hist),
+        "observations": n_obs,
         "checked_pairs": checked,
+        "corr_threshold": round(corr_threshold, 3),
         "seams": seams,
     }
     try:
@@ -313,7 +418,7 @@ def observe() -> dict:
     except Exception as e:
         logger.debug("[Seam] log write failed: %s", e)
 
-    return {"status": "ok", "observations": len(hist), "checked_pairs": checked, "seams": seams}
+    return {"status": "ok", "observations": n_obs, "checked_pairs": checked, "seams": seams}
 
 
 if __name__ == "__main__":

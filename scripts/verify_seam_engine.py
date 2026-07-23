@@ -69,12 +69,32 @@ def case_5_insufficient_history():
     return check_pair(a, b) is None
 
 
+def case_6_dynamic_threshold_parameter():
+    """2026-07-23 (gap-closure plan Phase C1b): confirms check_pair()'s new
+    corr_threshold parameter genuinely changes discrimination, not just a
+    no-op default. A moderately-correlated pair (r ~0.25-0.35, deliberately
+    below the default 0.4 gate) should NOT fire at the default threshold but
+    SHOULD fire once explicitly lowered — same violation shape as case 1,
+    just with noisier underlying correlation."""
+    n = _MIN_JOINT_OBSERVATIONS + 10
+    # noise=2.5, seed=3 empirically gives r~0.35 on the history slice (below
+    # the default 0.4 gate, above a lowered 0.15 one) — found by direct
+    # search over the real _pearson() output, not guessed.
+    a, b = _linear_series(n, slope=1.0, noise=2.5, seed=3)
+    a[-1] = max(a) + 0.8
+    b[-1] = min(b) - 0.8
+    default_fires = check_pair(a, b) is not None
+    lowered_fires = check_pair(a, b, corr_threshold=0.15) is not None
+    return (not default_fires) and lowered_fires
+
+
 CASES = [
     ("violated positive correlation -> seam", case_1_violated_positive),
     ("consistent with positive correlation -> no seam", case_2_consistent_positive),
     ("violated negative correlation -> seam", case_3_violated_negative),
     ("no historical relationship -> no seam", case_4_no_relationship),
     ("insufficient history -> no seam", case_5_insufficient_history),
+    ("corr_threshold parameter genuinely changes discrimination", case_6_dynamic_threshold_parameter),
 ]
 
 if __name__ == "__main__":

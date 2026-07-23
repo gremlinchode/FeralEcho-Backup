@@ -1233,6 +1233,17 @@ Beyond those three corrections, the physiology pass's dominant finding is that m
 
 ---
 
+**Finding 79 — Phase C1 of the Finding 75/76/77/78 gap-closure plan, built and verified live (2026-07-23):** `seam_engine.py`'s candidate pool, generalized and given a real dynamic threshold, in the sequence the plan's own validation pass called for (structural change first, dynamic threshold layered on top — both touch the same `check_pair()`/`observe()` code, doing them in the wrong order would mean redoing work).
+
+- **C1a** — `observe()` previously scanned only the 9 `echo_state` dims (hard-coupled to one `(N,9)` array from `load_history()`/`STATE_LABELS`). New `_load_combined_series()` merges those 9 with 3 of `compute_salience()`'s 4 components (`world_surprise`, `curiosity_urgency`, `self_edit_streak`, read from `memory/salience_state.json`'s persisted history), truncated to a common length. `coherence_tension` deliberately excluded from the salience side — it's directly sourced from `echo_state.npy` dim[1] itself, so pairing it against its own source would just measure a near-identical copy, not a genuine new candidate relationship. RiverBrain per-task score means remain a deferred stretch goal (not a rolling-window series the same shape as these two sources). `observe()`'s double loop now iterates over 12 named series (up from 9) instead of the raw array.
+- **C1b** — `check_pair()` gained an optional `corr_threshold` parameter (defaulting to the original fixed `_CORR_THRESHOLD=0.4`, so every existing caller — `scripts/verify_seam_engine.py`, the Liveness Ledger's functional canary — stays byte-identical unless it explicitly opts in). New `_dynamic_corr_threshold()` derives the real gate from the current `coupling_estimate`: lower overall coupling lowers the bar (any real correlation is rarer and more meaningful when signals are loosely coupled), higher coupling raises it, centered on the original 0.4 at a typical observed coupling value so behavior doesn't move dramatically from what's already verified safe. `observe()` now computes this once per call and threads it through every `check_pair()` call, logging the real value used to `seam_log.jsonl`.
+
+**Verified against real live data, not just synthetic cases:** direct function call post-fix showed 12 real named series (all length 100), a live dynamic threshold of 0.387 (vs. the fixed 0.4), and `observe()` running cleanly end-to-end. `scripts/verify_seam_engine.py`'s existing 5 discrimination cases all still pass unchanged (confirming `check_pair()`'s default-parameter backward compatibility genuinely holds, not just in theory) plus one new case proving `corr_threshold` actually changes discrimination — found by direct empirical search for a real `(noise, seed)` combination landing `r≈0.35` (between the lowered and default thresholds), not guessed. Full syntax check, a real restart, and `GET /admin/liveness-status` reporting `all_passing: true`, zero regressions — `seam_engine`'s existing Liveness Ledger check needed no modification at all, since its canary calls `check_pair()` positionally and the new parameter's default preserves exact prior behavior.
+
+**Not built in this pass** — Phase C2 (valence as a bounded modulator of `river_deliberation.py`'s `exploration_bias` and `self_edit_manager.py`'s Optuna trial parameters, plus feeding `self_edit.dry_run_quality_delta` more directly into RiverBrain) remains as the plan's final follow-on phase.
+
+---
+
 ## Monitoring
 
 ```bash

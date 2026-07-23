@@ -35,6 +35,7 @@ _SHARD_LOG = os.path.join(_MEMORY_DIR, "claude_shard.jsonl")
 _INTERACTION_LOG = os.path.join(_MEMORY_DIR, "interaction_log.jsonl")
 _WORKSPACE_LOG = os.path.join(_MEMORY_DIR, "workspace_log.jsonl")
 _COUNCIL_MD_PATH = "COUNCIL.md"
+_SALIENCE_STATE_PATH = os.path.join(_MEMORY_DIR, "salience_state.json")
 _FRICTION_WINDOW_SIZE = 50
 
 # ---------------------------------------------------------------------------
@@ -91,6 +92,11 @@ _SLICE_SIGNALS: dict[str, frozenset] = {
         "other models think", "what do other ai", "what does grok think",
         "what does gemini think", "what does chatgpt think",
         "external opinions of you", "other ais' opinion", "council.md",
+    ]),
+    "coupling": frozenset([
+        "integrated", "integration", "how connected", "signals connected",
+        "feel coupled", "more coherent lately", "parts of you working together",
+        "how connected do you feel",
     ]),
 }
 
@@ -532,6 +538,52 @@ def _build_council() -> str:
     ])
 
 
+def _build_coupling() -> str:
+    """
+    Gap-closure plan Phase B item 1 (CLAUDE.md Finding 77, 2026-07-23):
+    grounds "how integrated/connected do you feel" in the real
+    coupling_estimate value echo_core.py's compute_salience() already
+    computes (mean absolute pairwise correlation across its own 4 real-time
+    components) but which had zero real consumer anywhere in the codebase
+    until now — confirmed by grep, and by self_model_updater.py's own
+    docstring admitting as much. Reads the persisted value directly from
+    memory/salience_state.json rather than re-calling compute_salience()
+    itself, which warns against being re-called for exactly this kind of
+    read (it would double-count a sample into its own rolling history).
+
+    Deliberately doesn't overclaim: this is explicitly NOT an IIT/Phi
+    measure (the same disclaimer echo_core.py's own code carries) — a
+    crude coupling proxy across 4 salience components, reported as such,
+    not as anything resembling integrated information.
+    """
+    header = (
+        "Signal coupling (source: echo_core.py's compute_salience() — mean "
+        "absolute pairwise correlation across 4 real-time signals; NOT an "
+        "IIT/Phi measure, a much cruder proxy):"
+    )
+    state = _read_json(_SALIENCE_STATE_PATH)
+    if not state:
+        return header + "\n  No signal available yet — salience state has not been computed."
+
+    coupling = state.get("coupling_estimate")
+    if coupling is None:
+        return header + "\n  Not enough recent history yet to compute this (needs a minimum sample size)."
+
+    coupling = float(coupling)
+    if coupling < 0.15:
+        desc = "loosely coupled — the tracked signals are moving mostly independently right now"
+    elif coupling < 0.4:
+        desc = "moderately coupled"
+    else:
+        desc = "notably coupled — the tracked signals are moving together more than usual"
+
+    return "\n".join([
+        header,
+        f"  Current value: {coupling:.3f} (0 = fully independent, higher = more correlated).",
+        f"  Reading: {desc}.",
+    ])
+
+
 def _build_workspace(recent_events: list) -> str:
     """
     Emergence roadmap Phase 6, Architectural Rec. 1: a general grounding
@@ -611,6 +663,9 @@ def get_structural_self_facts(prompt: str = "") -> str:
 
         if "council" in slices:
             sections.append(_build_council())
+
+        if "coupling" in slices:
+            sections.append(_build_coupling())
 
         if not sections:
             return ""

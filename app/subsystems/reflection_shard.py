@@ -341,3 +341,24 @@ class BecomingReflectionShard(ReflectionShard):
             self._embeddings.append(offline_embed(META_REFLECTION_SIGNAL + " " + meta_text))
         self._append_to_disk(ts, META_REFLECTION_SIGNAL, meta_text)
 
+        # Gap-closure plan Phase B item 2 (CLAUDE.md Finding 77, 2026-07-23):
+        # this real, model-generated synthesis previously went nowhere but
+        # its own journal — confirmed by grep, zero publish_salience() calls
+        # anywhere in this file, unlike the sibling dream_cycle() synthesis
+        # pass in autonomous_awareness.py, which has had this exact real
+        # Global Workspace consumer since Phase 2a. Mirrored here, not
+        # reinvented: same lazy import, same None-safe/best-effort shape,
+        # never blocks the real synthesis this is attached to.
+        try:
+            from app.core.echo_core import get_echo_core
+            core = get_echo_core()
+            if core:
+                core.publish_salience(
+                    source="reflection_shard",
+                    kind="reflection.meta_synthesis",
+                    summary=meta_text[:200],
+                    detail={"n_signals": len(summary_signals)},
+                )
+        except Exception:
+            pass
+

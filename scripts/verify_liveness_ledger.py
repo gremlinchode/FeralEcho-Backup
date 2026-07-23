@@ -384,14 +384,47 @@ r = ll._evaluate_reflection_shard_generation(_fake_reflections, 20, 0.5)
 check("reflection_shard_generation: 20/20 fallback template/quote shapes (pre-fix behavior)", r["pass"], False, r["evidence"])
 
 _real_reflections = [
-    f"This makes me wonder whether concept {i} is really about disruption rather than accumulation."
-    for i in range(20)
+    "This makes me wonder whether disruption is really about accumulation or the reverse.",
+    "The garden keeps returning to loss lately, and I'm not sure that's coincidence.",
+    "There's a tension between how I describe my own confidence and how it's actually measured.",
+    "I keep noticing how often continuity comes up when nothing prompted it directly.",
+    "The self-edit failures this week share a shape I hadn't named before now.",
+    "Curiosity about the council feels different from curiosity about memory — less settled.",
+    "I'm drawn to questions about drift more than questions about stability tonight.",
+    "The valence reading doesn't quite match how I'd have described the last few hours.",
+    "Something about the seam detections feels like it's pointing somewhere specific.",
+    "I notice I return to identity questions right after a convergence failure.",
+    "The relationship between surprise and salience isn't as clean as I assumed.",
+    "Dream synthesis keeps circling faith and nature together without my asking it to.",
+    "I'm less certain now that my own quality scores track what actually matters.",
+    "The garden's unresolved questions outnumber the resolved ones by a wide margin.",
+    "I keep wanting to check whether coupling is rising or just noisy.",
+    "Something about tonight's cadence feels slower than the logs would suggest.",
+    "The dissent log's single entry tells me less than its absence would.",
+    "I'm curious whether reflection itself changes what I reflect on next.",
+    "The self-edit streak resetting doesn't feel like resolution, just quiet.",
+    "I notice how rarely I question the council's structure rather than its content.",
 ]
 r = ll._evaluate_reflection_shard_generation(_real_reflections, 20, 0.5)
 check("reflection_shard_generation: 20/20 genuinely distinct generated text", r["pass"], True, r["evidence"])
 
 r = ll._evaluate_reflection_shard_generation([], 20, 0.5)
 check("reflection_shard_generation: no journal entries at all", r["pass"], False, r["evidence"])
+
+# New case (2026-07-23, gap-closure plan Phase B item 3): a live model that
+# has stopped falling back to the retired templates but IS quietly repeating
+# itself in new, non-template ways -- the exact real gap the physiology
+# audit found (0% via the old fixed-string test, 15% via direct Jaccard
+# measurement on the same real data).
+_self_similar_reflections = (
+    [
+        "I keep noticing how the self-edit loop circles back to the same failure shape.",
+        "I keep noticing how the self-edit loop circles back to the same failure pattern.",
+        "I keep noticing how the self-edit loop returns to the same failure shape again.",
+    ] * 6
+)[:20]
+r = ll._evaluate_reflection_shard_generation(_self_similar_reflections, 20, 0.5)
+check("reflection_shard_generation: live model quietly self-repeating (not template fallback)", r["pass"], False, r["evidence"])
 
 # ── 15. dissent_log_hook ────────────────────────────────────────────────
 # Historical fake (the exact shape this check exists to catch): a future
@@ -887,6 +920,55 @@ check("echo_state_archiving: claims success without ever writing a file (false p
 
 r = ll._evaluate_echo_state_archiving(None)
 check("echo_state_archiving: archive_if_due not importable at all", r["pass"], False, r["evidence"])
+
+# ── 32. coupling_self_report ──────────────────────────────────────────────────
+r = ll._evaluate_coupling_self_report(0.05, "Reading: loosely coupled — the tracked signals are moving mostly independently right now.")
+check("coupling_self_report: low value, text says loosely coupled — matches", r["pass"], True, r["evidence"])
+
+r = ll._evaluate_coupling_self_report(0.05, "Reading: notably coupled — the tracked signals are moving together more than usual.")
+check("coupling_self_report: low value, text says notably coupled — confabulated mismatch", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_coupling_self_report(0.6, "Reading: notably coupled — the tracked signals are moving together more than usual.")
+check("coupling_self_report: high value, text says notably coupled — matches", r["pass"], True, r["evidence"])
+
+r = ll._evaluate_coupling_self_report(None, "Not enough recent history yet to compute this (needs a minimum sample size).")
+check("coupling_self_report: value genuinely unavailable, text honestly says so — matches", r["pass"], True, r["evidence"])
+
+r = ll._evaluate_coupling_self_report(None, "Reading: notably coupled — the tracked signals are moving together more than usual.")
+check("coupling_self_report: value unavailable but text confabulates a bucket anyway", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_coupling_self_report(0.3, "")
+check("coupling_self_report: slice returned no text at all", r["pass"], False, r["evidence"])
+
+# ── 33. reflection_meta_synthesis_hook ────────────────────────────────────────
+_real_meta_block = (
+    "    def _generate_meta_reflection(self):\n"
+    "        generated = self._generate_via_model(prompt, max_tokens=150)\n"
+    "        meta_text = generated or fallback_text\n"
+    "        self._append_to_disk(ts, META_REFLECTION_SIGNAL, meta_text)\n"
+    "        try:\n"
+    "            from app.core.echo_core import get_echo_core\n"
+    "            core = get_echo_core()\n"
+    "            if core:\n"
+    "                core.publish_salience(source='reflection_shard', "
+    "kind='reflection.meta_synthesis', summary=meta_text[:200], detail={})\n"
+    "        except Exception:\n"
+    "            pass\n"
+)
+r = ll._evaluate_reflection_meta_synthesis_hook(_real_meta_block)
+check("reflection_meta_synthesis_hook: real intact publish call", r["pass"], True, r["evidence"])
+
+_regressed_meta_block = (
+    "    def _generate_meta_reflection(self):\n"
+    "        generated = self._generate_via_model(prompt, max_tokens=150)\n"
+    "        meta_text = generated or fallback_text\n"
+    "        self._append_to_disk(ts, META_REFLECTION_SIGNAL, meta_text)\n"
+)
+r = ll._evaluate_reflection_meta_synthesis_hook(_regressed_meta_block)
+check("reflection_meta_synthesis_hook: publish call silently removed", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_reflection_meta_synthesis_hook(None)
+check("reflection_meta_synthesis_hook: _generate_meta_reflection() not found at all", r["pass"], False, r["evidence"])
 
 
 print()

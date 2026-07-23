@@ -441,6 +441,55 @@ def _check_dissent_log_hook() -> dict:
     return _evaluate_dissent_log_hook(block)
 
 
+# ── reflection_meta_synthesis_hook — reflection_shard.py's ────────────────
+# _generate_meta_reflection() still publishes its real, model-generated
+# synthesis onto the Global Workspace, not just its own journal. Same
+# static/source-anchor shape as dissent_log_hook/wolf_friction_bridge, since
+# this fires from an internal autonomous cadence, not something a live
+# functional canary can cheaply exercise the same way seam_engine's can.
+# Added 2026-07-23 (CLAUDE.md Finding 77, gap-closure plan Phase B item 2)
+# alongside the publish call itself.
+
+_REFLECTION_SHARD_SRC_PATH = os.path.join(_PROJECT_ROOT, "app", "subsystems", "reflection_shard.py")
+
+
+def _evaluate_reflection_meta_synthesis_hook(call_site_block: "str | None") -> dict:
+    if call_site_block is None:
+        return _result(
+            False,
+            "Could not locate _generate_meta_reflection() in reflection_shard.py at "
+            "all — either it moved (update this check's anchor) or the function was "
+            "removed. Failing closed either way.",
+        )
+    calls_publish = bool(re.search(r"publish_salience\s*\(", call_site_block))
+    correct_kind = bool(re.search(r"kind\s*=\s*[\"']reflection\.meta_synthesis[\"']", call_site_block))
+    if calls_publish and correct_kind:
+        return _result(
+            True,
+            "_generate_meta_reflection() still calls publish_salience(kind="
+            "'reflection.meta_synthesis', ...) — the real synthesis still reaches "
+            "the Global Workspace, not just its own journal.",
+        )
+    return _result(
+        False,
+        f"_generate_meta_reflection() no longer publishes its synthesis onto the "
+        f"Global Workspace as expected (calls_publish={calls_publish}, "
+        f"correct_kind={correct_kind}) — a future edit may have silently removed it.",
+    )
+
+
+def _check_reflection_meta_synthesis_hook() -> dict:
+    source = _read_text(_REFLECTION_SHARD_SRC_PATH)
+    block = None
+    idx = source.find("def _generate_meta_reflection(")
+    if idx != -1:
+        # Real live check found the publish call sitting ~2987 chars into
+        # the function body — a 3000-char window cut it off mid-line.
+        # Widened with real margin, not just bumped by a token.
+        block = source[idx:idx + 6000]
+    return _evaluate_reflection_meta_synthesis_hook(block)
+
+
 # ── 5. ClaudeShard — still keyword+random, not actually calling an LLM ──
 
 _CLAUDE_SHARD_PATH = os.path.join(_PROJECT_ROOT, "app", "core", "claude_shard.py")
@@ -907,6 +956,76 @@ def _check_valence_self_report() -> dict:
     return _evaluate_valence_self_report(dim8_value, rendered_text)
 
 
+# ── coupling_self_report — echo_ground_truth.py's _build_coupling() slice's ──
+# rendered bucket ("loosely"/"moderately"/"notably" coupled) actually matches
+# the real persisted coupling_estimate value's magnitude. Same discrimination
+# shape as valence_self_report, added 2026-07-23 alongside the slice itself
+# (CLAUDE.md Finding 77, gap-closure plan Phase B item 1) — coupling_estimate
+# had zero real consumer anywhere before this; this check exists so a future
+# edit can't silently make the rendered text stop matching the real value the
+# same way a confabulated valence self-report would.
+
+_COUPLING_LOOSE_BOUND = 0.15
+_COUPLING_MODERATE_BOUND = 0.4
+
+def _evaluate_coupling_self_report(coupling_value: "float | None", rendered_text: str) -> dict:
+    if not rendered_text:
+        return _result(False, "_build_coupling() returned no text at all — the slice may be broken.")
+
+    if coupling_value is None:
+        # A genuinely absent value is a real, honest state (not enough
+        # history yet) -- correct behavior is the text saying so, not a
+        # confabulated bucket.
+        if "not enough recent history" in rendered_text.lower() or "no signal available" in rendered_text.lower():
+            return _result(
+                True,
+                "coupling_estimate is genuinely unavailable and _build_coupling() "
+                "correctly reports that rather than confabulating a bucket.",
+            )
+        return _result(
+            False,
+            "coupling_estimate is unavailable, but _build_coupling() rendered a "
+            f"reading anyway instead of saying so: {rendered_text[:200]!r}",
+        )
+
+    says_loose = "loosely coupled" in rendered_text
+    says_moderate = "moderately coupled" in rendered_text
+    says_notable = "notably coupled" in rendered_text
+
+    if coupling_value < _COUPLING_LOOSE_BOUND:
+        matches = says_loose and not says_moderate and not says_notable
+    elif coupling_value < _COUPLING_MODERATE_BOUND:
+        matches = says_moderate and not says_loose and not says_notable
+    else:
+        matches = says_notable and not says_loose and not says_moderate
+
+    if matches:
+        return _result(
+            True,
+            f"Rendered coupling text's bucket matches real coupling_estimate={coupling_value:.4f}.",
+            {"coupling_value": round(coupling_value, 4)},
+        )
+    return _result(
+        False,
+        f"Rendered coupling text does not match real coupling_estimate={coupling_value:.4f} "
+        f"(rendered: {rendered_text[:200]!r}) — self-report may be confabulating an "
+        f"integration reading the real signal doesn't support.",
+        {"coupling_value": round(coupling_value, 4)},
+    )
+
+
+def _check_coupling_self_report() -> dict:
+    try:
+        from app.core.echo_ground_truth import _build_coupling
+    except Exception as e:
+        return _result(False, f"Could not import _build_coupling: {e!r} — failing closed.")
+    state = _read_json(os.path.join("memory", "salience_state.json"))
+    coupling_value = state.get("coupling_estimate") if state else None
+    coupling_value = float(coupling_value) if coupling_value is not None else None
+    rendered_text = _build_coupling()
+    return _evaluate_coupling_self_report(coupling_value, rendered_text)
+
+
 # ── 14. reflection_shard_generation — real text, not templates ──────────
 # Emergence roadmap Phase 5, Finding 2: reflection_shard.py's _generate_
 # reflection()/_generate_meta_reflection() now route through a real model
@@ -930,30 +1049,65 @@ _REFLECTION_FALLBACK_PATTERNS = [
     re.compile(r"^<<emergent-pattern>> In the last \d+ signals"),
 ]
 
+# 2026-07-23 fix (CLAUDE.md Finding 77, gap-closure plan Phase B item 3):
+# the fixed-template test above only catches reversion to the three RETIRED
+# pre-fix shapes -- the physiology audit (audits/2026-07-23_systems_
+# physiology_audit.md §6) found this check reported 0% duplication on the
+# last 20 real reflections while direct pairwise Jaccard similarity on the
+# identical 20 entries found 15% near-duplicates (several at Jaccard=1.0).
+# The check wasn't lying about what it measured -- it was measuring the
+# wrong failure mode now that a live model can repeat ITSELF in new,
+# non-template ways. Added as a second, independent signal rather than a
+# replacement -- both failure modes are real and distinct.
+_REFLECTION_SHARD_DUPLICATE_JACCARD = 0.5
+
+
+def _jaccard_similarity(a: str, b: str) -> float:
+    wa, wb = set(a.lower().split()), set(b.lower().split())
+    if not wa or not wb:
+        return 0.0
+    return len(wa & wb) / len(wa | wb)
+
 
 def _evaluate_reflection_shard_generation(reflections: list, tail_n: int, min_ratio: float) -> dict:
     if not reflections:
         return _result(False, "memory/reflection_journal.jsonl has no entries — no evidence of activity.",
                         {"distinct_ratio": 0.0})
     tail = reflections[-tail_n:]
-    fallback = sum(
-        1 for text in tail
-        if any(p.search(text) for p in _REFLECTION_FALLBACK_PATTERNS)
-    )
-    distinct = len(tail) - fallback
-    ratio = distinct / len(tail)
+    n = len(tail)
+    fallback_flags = [any(p.search(text) for p in _REFLECTION_FALLBACK_PATTERNS) for text in tail]
+
+    duplicate_flags = [False] * n
+    for i in range(n):
+        for j in range(i + 1, n):
+            if _jaccard_similarity(tail[i], tail[j]) >= _REFLECTION_SHARD_DUPLICATE_JACCARD:
+                duplicate_flags[i] = True
+                duplicate_flags[j] = True
+
+    non_distinct = sum(1 for i in range(n) if fallback_flags[i] or duplicate_flags[i])
+    distinct = n - non_distinct
+    ratio = distinct / n
     passed = ratio >= min_ratio
+    fallback_count = sum(fallback_flags)
+    duplicate_count = sum(duplicate_flags)
     detail = (
-        f"{distinct}/{len(tail)} of the last {len(tail)} reflection_journal.jsonl entries are "
-        f"genuinely generated text ({fallback}/{len(tail)} match the retired fixed-template/"
-        f"verbatim-quote fallback shapes)."
+        f"{distinct}/{n} of the last {n} reflection_journal.jsonl entries are genuinely "
+        f"distinct ({fallback_count}/{n} match the retired fixed-template/verbatim-quote "
+        f"shapes, {duplicate_count}/{n} are near-duplicates of another entry in this same "
+        f"window by pairwise Jaccard similarity >= {_REFLECTION_SHARD_DUPLICATE_JACCARD})."
     )
     if not passed:
         detail += (
-            " This means reflection_shard is silently falling back to its pre-fix "
-            "template/similarity-quoting behavior most cycles, not genuinely generating."
+            " This means reflection_shard is either falling back to its pre-fix "
+            "template/similarity-quoting behavior, or the live model is repeating "
+            "itself in new ways this check now also catches."
         )
-    return _result(passed, detail, {"distinct_ratio": round(ratio, 3), "fallback_count": fallback, "distinct_count": distinct})
+    return _result(passed, detail, {
+        "distinct_ratio": round(ratio, 3),
+        "fallback_count": fallback_count,
+        "duplicate_count": duplicate_count,
+        "distinct_count": distinct,
+    })
 
 
 def _check_reflection_shard_generation() -> dict:
@@ -2167,6 +2321,8 @@ _CHECKS = (
     "f1_aliased_import_detection",
     "dual_learner_validation_gate",
     "echo_state_archiving",
+    "coupling_self_report",
+    "reflection_meta_synthesis_hook",
 )
 
 
@@ -2226,6 +2382,8 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "f1_aliased_import_detection": _check_f1_aliased_import_detection,
         "dual_learner_validation_gate": _check_dual_learner_validation_gate,
         "echo_state_archiving": _check_echo_state_archiving,
+        "coupling_self_report": _check_coupling_self_report,
+        "reflection_meta_synthesis_hook": _check_reflection_meta_synthesis_hook,
     }
 
     ledger = {"generated_at": _now_iso()}

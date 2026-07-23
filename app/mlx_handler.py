@@ -20,13 +20,58 @@ _MLX_AVAILABLE = False
 try:
     from mlx_lm import load as _mlx_load, generate as _mlx_generate
     from mlx_lm.sample_utils import make_sampler as _mlx_make_sampler
+    import mlx.core as _mx
     _MLX_AVAILABLE = True
     logging.info("[MLX] mlx-lm backend available")
 except ImportError:
     logging.warning("[MLX] mlx-lm not installed — MLX backend disabled")
 
+# 2026-07-22 (CLAUDE.md Finding 73/74) — a real, cheap mitigation for the
+# native mlx::core::gpu::check_error crash, suggested independently by an
+# external AI-council consultation and confirmed available in the
+# installed MLX version before adding it (this repo previously set no
+# memory limit or cache policy at all). This machine has 24GB total
+# unified memory shared with the OS, Ollama's own models, and everything
+# else FeralEcho runs; 8GB is a conservative cap for MLX's own Metal
+# allocations specifically — generous for these 4-bit-quantized models'
+# real footprint, but a real ceiling against the unbounded KV-cache/
+# allocator growth the crash reports point at. Set once, lazily, on first
+# real use rather than at import time (matches _load_mlx_model()'s own
+# lazy-load convention) so importing this module never has a side effect
+# on Metal state before MLX is actually used.
+_memory_limit_set = False
+
+
+def _ensure_mlx_memory_limit() -> None:
+    global _memory_limit_set
+    if _memory_limit_set or not _MLX_AVAILABLE:
+        return
+    try:
+        _mx.set_memory_limit(8 * 1024 ** 3)
+        _memory_limit_set = True
+        logging.info("[MLX] Set Metal memory limit to 8GB")
+    except Exception as e:
+        logging.debug(f"[MLX] set_memory_limit failed, continuing without a cap: {e}")
+
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MLX_MODELS_CONFIG = os.path.join(_PROJECT_ROOT, "mlx_models.json")
+
+# 2026-07-22, decided with Gremlin ahead of an extended (month+) unattended
+# absence, after a real crash-rate escalation (CLAUDE.md Finding 73) and a
+# genuine external-council consultation (ChatGPT/Gemini/Grok/DeepSeek, all
+# converging on "don't retire everything, but the cheap reversible fixes
+# are worth doing"). mlx:gemma3 (mlx-community/gemma-3-12b-it-4bit) is
+# retired here, mirroring _RETIRED_MODELS' exact shape and reasoning in
+# echo_model_orchestrator.py — soft, code-level, trivially reversed by
+# deleting this one line, not an uninstall. Not a like-for-like swap:
+# Ollama's already-pulled gemma3:4b is a smaller 4B variant of the same
+# model family, not the identical 12B weights, but it already carries
+# real, overlapping tags (creative/story/poetry) and needs zero new
+# downloads or setup, which is what made this the obvious first move
+# rather than qwen3 (no comparably-close Ollama equivalent already
+# pulled). qwen3 stays in rotation; see stream_query_mlx() for the real
+# memory-cap mitigation added in the same change instead.
+_RETIRED_MLX_MODELS = {"mlx:gemma3"}
 
 # (model, tokenizer) pairs keyed by mlx_path — loading is expensive (~10s)
 _model_cache: dict = {}
@@ -113,6 +158,7 @@ def stream_query_mlx(
         yield "[ERROR] MLX backend is not available."
         return
     try:
+        _ensure_mlx_memory_limit()
         with _generate_lock:
             model, tokenizer = _load_mlx_model(mlx_path)
             formatted = _format_prompt(tokenizer, prompt, model_name or mlx_path, system=system)
@@ -127,6 +173,17 @@ def stream_query_mlx(
                 verbose=False,
                 **_gen_kwargs,
             )
+            # Same Finding 73/74 mitigation as the memory limit above: clear
+            # MLX's cached Metal buffers after every real generation call,
+            # inside the lock (this is process-wide Metal state, same as
+            # the memory limit — clearing it while another thread could be
+            # mid-generation would be wrong, not just untidy). Best-effort:
+            # a failure here must never lose a real response that already
+            # generated successfully.
+            try:
+                _mx.clear_cache()
+            except Exception as e:
+                logging.debug(f"[MLX] clear_cache failed (non-fatal): {e}")
         # Strip any residual thinking tags (Qwen3 safety net) — pure string
         # work, done outside the lock so it doesn't hold up the next caller.
         response = _THINK_TAG_RE.sub("", response).strip()
@@ -150,6 +207,8 @@ def list_mlx_models() -> dict:
         pool = {}
         for entry in configs:
             name = entry["name"]
+            if name in _RETIRED_MLX_MODELS:
+                continue
             pool[name] = {
                 "name": name,
                 "type": entry.get("type", "general"),

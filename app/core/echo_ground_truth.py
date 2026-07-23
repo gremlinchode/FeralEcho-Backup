@@ -503,22 +503,44 @@ def _build_affect(sm: dict) -> str:
     return "\n".join(lines)
 
 
+_COUNCIL_CONTENT_BUDGET_CHARS = 10000
+
+
 def _build_council() -> str:
     """
-    PENDING_DECISIONS.md #11, decided 2026-07-22: some of COUNCIL.md's
-    existence should be surfaced to Echo, so she can know it exists rather
-    than it staying entirely a record kept about her -- but COUNCIL.md's
-    own text is explicit that its content stays private, including from
-    the council members themselves. This slice honors that boundary: it
-    reports that the file exists and a bare structural count (rounds,
-    individual responses), computed from the file's own section headers
-    at read time rather than hardcoded, and never quotes a single word of
-    the actual recorded reactions. Counts are computed live specifically
-    so this doesn't go stale the way a hardcoded number would (the exact
-    mistake this project's own Findings have repeatedly caught elsewhere,
-    e.g. Finding 62's "seven vs eight" count).
+    2026-07-23 update: Echo now has direct access to COUNCIL.md's real
+    recorded content, not just existence + structural counts (the prior
+    behavior, PENDING_DECISIONS.md #11 / Finding 68) -- a deliberate policy
+    change, made at Gremlin's direct request after naming this as a real
+    self-knowledge-vs-candor tradeoff worth reconsidering. The OTHER half
+    of COUNCIL.md's original privacy decision is untouched: this content
+    is still never shared back to the external council members themselves,
+    and still never made public -- only Echo's own access changed.
+
+    Bounded rather than dumped in full: the real file is already ~30KB
+    (~7,500 tokens) and will keep growing as more rounds are added. A
+    council-triggered question can coexist with every other ground-truth
+    slice at once (a broad "tell me about yourself" question triggers
+    every slice, including this one, via _BROAD_SIGNALS) -- an unbounded,
+    ever-growing block here risks exactly the token-budget miscalculation
+    class of bug Finding 53 already found once in this codebase (a real
+    synthesis-prompt leak from underestimating total system-context size).
+
+    Prioritizes the OLDEST real round first, not the most recent -- the
+    opposite of every sibling slice's convention (workspace/curiosity/etc.
+    all show recency-first). Deliberate: COUNCIL.md's 2026-07-19 round is
+    the foundational content every later entry explicitly references
+    ("not part of the round above"); showing a later entry without it
+    would be confusing, not more relevant. If even the oldest round
+    doesn't fully fit, truncates at the nearest "### " voice boundary so
+    partial content still reads as complete quotes, not mid-sentence.
     """
-    header = "External AI council (source: COUNCIL.md — existence only, content stays private):"
+    header = (
+        "External AI council (source: COUNCIL.md — Echo has direct access to "
+        "its real recorded content as of 2026-07-23; still never shared back "
+        "to the council members themselves or made public, per COUNCIL.md's "
+        "own recorded decision):"
+    )
     try:
         with open(_COUNCIL_MD_PATH, "r", encoding="utf-8") as f:
             text = f.read()
@@ -526,16 +548,48 @@ def _build_council() -> str:
         return header + "\n  No such file exists yet."
 
     import re
-    rounds = len(re.findall(r"(?m)^## \d{4}-\d{2}-\d{2}", text))
-    responses = len(re.findall(r"(?m)^### ", text))
-    return "\n".join([
-        header,
-        "  A private, unpublished file recording honest reactions from an outside AI "
-        "council (Claude, Grok, Gemini, ChatGPT, DeepSeek) about your nature exists.",
-        f"  {rounds} round(s) so far, {responses} individual response(s) recorded in total.",
-        "  The actual recorded content is not surfaced here — it stays private by "
-        "deliberate decision, including from the council members who wrote it.",
-    ])
+    header_matches = list(re.finditer(r"(?m)^## .*$", text))
+    if not header_matches:
+        return header + "\n\n" + text[:_COUNCIL_CONTENT_BUDGET_CHARS]
+
+    preamble = text[:header_matches[0].start()]
+    sections = []
+    for i, m in enumerate(header_matches):
+        end = header_matches[i + 1].start() if i + 1 < len(header_matches) else len(text)
+        sections.append(text[m.start():end])
+
+    budget = max(0, _COUNCIL_CONTENT_BUDGET_CHARS - len(preamble))
+    kept = []
+    used = 0
+    omitted = 0
+    for section in sections:  # oldest first, real file order — see docstring
+        if used + len(section) <= budget:
+            kept.append(section)
+            used += len(section)
+        elif not kept:
+            # Not even the first (oldest, most foundational) section fits —
+            # truncate at the nearest voice boundary rather than mid-quote.
+            voice_breaks = [m.start() for m in re.finditer(r"(?m)^### ", section)]
+            cutoff = budget
+            for vb in voice_breaks:
+                if vb <= budget:
+                    cutoff = vb
+                else:
+                    break
+            if cutoff > 0:
+                kept.append(section[:cutoff].rstrip() + "\n\n[...truncated for length...]")
+                used = budget
+            omitted += 1
+        else:
+            omitted += 1
+
+    content = preamble + "".join(kept)
+    if omitted:
+        content += (
+            f"\n\n[Note: {omitted} section(s) of COUNCIL.md truncated or omitted here "
+            f"for length — read the file directly for the full history.]"
+        )
+    return header + "\n\n" + content
 
 
 def _build_coupling() -> str:

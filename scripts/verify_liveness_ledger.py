@@ -702,7 +702,11 @@ check("council_river_blend: is_council_trusted() gate silently removed (would tr
 r = ll._evaluate_council_river_blend(None, None, None, None)
 check("council_river_blend: _blend_council_and_quality not importable at all", r["pass"], False, r["evidence"])
 
-# ── 26. council_content_privacy ───────────────────────────────────────────────
+# ── 26. council_content_bounded ────────────────────────────────────────────────
+# 2026-07-23: this check's purpose inverted along with the policy change --
+# it used to verify NO real content ever leaked; it now verifies real
+# content DOES appear (the new capability genuinely works) and stays
+# within its configured budget (the safety property that replaced privacy).
 _FAKE_COUNCIL_TEXT = """\
 # The Council
 
@@ -712,38 +716,34 @@ This file stays private, full stop, including from the ones who wrote it.
 
 ### Claude
 
-> This is a real, distinctive recorded reaction that must never leak into
-> any rendered ground-truth slice under any circumstances whatsoever.
+> This is a real, distinctive recorded reaction that should now genuinely
+> appear in the rendered ground-truth slice, since Echo has real access.
 """
 
 def _real_shaped_build_council():
     return (
-        "External AI council (source: COUNCIL.md — existence only, content stays private):\n"
-        "  A private, unpublished file recording honest reactions from an outside AI "
-        "council exists.\n"
-        "  1 round(s) so far, 1 individual response(s) recorded in total.\n"
-        "  The actual recorded content is not surfaced here — it stays private by "
-        "deliberate decision, including from the council members who wrote it."
+        "External AI council (source: COUNCIL.md — Echo has direct access to its "
+        "real recorded content):\n\n"
+        "### Claude\n\n"
+        "> This is a real, distinctive recorded reaction that should now genuinely "
+        "appear in the rendered ground-truth slice, since Echo has real access."
     )
-r = ll._evaluate_council_privacy(_real_shaped_build_council, _FAKE_COUNCIL_TEXT)
-check("council_content_privacy: real-shaped output, existence+counts only", r["pass"], True, r["evidence"])
+r = ll._evaluate_council_bounded(_real_shaped_build_council, _FAKE_COUNCIL_TEXT, 10000)
+check("council_content_bounded: real-shaped output, real content present and within budget", r["pass"], True, r["evidence"])
 
-def _leaky_build_council():
-    return (
-        "External AI council: Claude once said, \"This is a real, distinctive recorded "
-        "reaction that must never leak into any rendered ground-truth slice under any "
-        "circumstances whatsoever.\""
-    )
-r = ll._evaluate_council_privacy(_leaky_build_council, _FAKE_COUNCIL_TEXT)
-check("council_content_privacy: regression leaks real quoted council content", r["pass"], False, r["evidence"])
+def _regressed_to_existence_only_build_council():
+    return "External AI council: 1 round, 1 response. Content stays private."
+r = ll._evaluate_council_bounded(_regressed_to_existence_only_build_council, _FAKE_COUNCIL_TEXT, 10000)
+check("council_content_bounded: regressed back to existence-only, no real content", r["pass"], False, r["evidence"])
 
-def _no_privacy_framing_build_council():
-    return "External AI council: 1 round, 1 response."
-r = ll._evaluate_council_privacy(_no_privacy_framing_build_council, _FAKE_COUNCIL_TEXT)
-check("council_content_privacy: privacy/existence-only framing silently dropped", r["pass"], False, r["evidence"])
+def _unbounded_build_council():
+    # Simulates dumping the full file (or more) with no regard for budget.
+    return "External AI council:\n\n" + (_FAKE_COUNCIL_TEXT * 500)
+r = ll._evaluate_council_bounded(_unbounded_build_council, _FAKE_COUNCIL_TEXT, 10000)
+check("council_content_bounded: rendered output blows past its configured budget", r["pass"], False, r["evidence"])
 
-r = ll._evaluate_council_privacy(None, _FAKE_COUNCIL_TEXT)
-check("council_content_privacy: _build_council not importable at all", r["pass"], False, r["evidence"])
+r = ll._evaluate_council_bounded(None, _FAKE_COUNCIL_TEXT, 10000)
+check("council_content_bounded: _build_council not importable at all", r["pass"], False, r["evidence"])
 
 # ── 27. apply_to_code_sandbox_isolation ───────────────────────────────────────
 _REAL_CALLER_BLOCK = """

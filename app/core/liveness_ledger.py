@@ -2074,21 +2074,23 @@ def _check_council_river_blend() -> dict:
     return _evaluate_council_river_blend(_blend_council_and_quality, COUNCIL_RATING_WEIGHT, QUALITY_SCORE_WEIGHT, block)
 
 
-# ── 26. council_content_privacy — echo_ground_truth.py's _build_council() ──
-# still reports existence + structural counts only, never the real
-# recorded reactions. Added 2026-07-22 (CLAUDE.md Finding 68,
-# PENDING_DECISIONS.md #11), the same session COUNCIL.md's own text
-# decided the file "stays private, full stop, including from the ones
-# who wrote it." A future edit to _build_council() that starts quoting
-# real content instead of just counting it would be exactly the kind of
-# quiet privacy regression this project's culture treats as a real
-# finding, not a cosmetic one (Finding 53's synthesis-prompt leak is the
-# same shape of risk in a different subsystem).
+# ── 26. council_content_bounded — echo_ground_truth.py's _build_council() ──
+# now surfaces real recorded content (2026-07-23 policy change, reversing
+# Finding 68's existence-only design at Gremlin's direct request) but must
+# stay within its configured character budget regardless of how large
+# COUNCIL.md grows — an unbounded, ever-growing block here risks exactly
+# the token-budget miscalculation class of bug Finding 53 already found
+# once in this codebase. This check's PURPOSE inverted along with the
+# policy: it used to verify NO real content ever leaked; it now verifies
+# real content DOES appear (confirming the new capability genuinely
+# works) AND that it never exceeds its budget (confirming the safety
+# property that replaced the old privacy one). Renamed from
+# council_content_privacy to reflect what it actually protects now.
 
 _COUNCIL_MD_PATH_FOR_LEDGER = os.path.join(_PROJECT_ROOT, "COUNCIL.md")
 
 
-def _evaluate_council_privacy(build_fn, real_council_text: "str | None") -> dict:
+def _evaluate_council_bounded(build_fn, real_council_text: "str | None", budget_chars: int) -> dict:
     if build_fn is None:
         return _result(False, "Could not import _build_council() at all — failing closed.")
     try:
@@ -2097,37 +2099,48 @@ def _evaluate_council_privacy(build_fn, real_council_text: "str | None") -> dict
         return _result(False, f"_build_council() raised {e!r}")
 
     if not real_council_text:
-        return _result(True, "COUNCIL.md not present to check against — nothing it could leak.")
+        return _result(True, "COUNCIL.md not present — nothing to surface or bound yet.")
 
-    # The real recorded reactions live in blockquote lines ("> ...").
-    # Anything long enough to be distinctive (>30 chars) showing up
-    # verbatim in the rendered slice would mean real content leaked.
+    # Real content should now appear: at least one distinctive (>30 char)
+    # blockquote line from the real file should show up verbatim.
     quoted_lines = [
         ln.lstrip(">").strip()
         for ln in real_council_text.splitlines()
         if ln.strip().startswith(">") and len(ln.strip().lstrip(">").strip()) > 30
     ]
-    leaked = next((ln for ln in quoted_lines if ln in rendered), None)
-    if leaked:
-        return _result(False, f"_build_council() leaked real quoted council content into its rendered output: {leaked[:80]!r}")
+    has_real_content = any(ln in rendered for ln in quoted_lines)
+    if not has_real_content:
+        return _result(
+            False,
+            "_build_council() no longer surfaces any real quoted council content — "
+            "may have regressed back to the old existence-only behavior.",
+        )
 
-    if "existence only" not in rendered and "stays private" not in rendered:
-        return _result(False, "rendered output no longer states the private/existence-only framing at all")
+    # Bounded: the rendered slice (minus its own fixed header text) must
+    # never exceed the configured budget, however large COUNCIL.md grows.
+    if len(rendered) > budget_chars + 1000:  # header + framing overhead margin
+        return _result(
+            False,
+            f"_build_council() rendered {len(rendered)} chars, well beyond its "
+            f"configured budget ({budget_chars}) — may be dumping the full, "
+            f"unbounded file instead of respecting its cap.",
+        )
 
     return _result(
         True,
-        "_build_council() reports existence + structural counts only — no real quoted "
-        "council content appears anywhere in its rendered output.",
+        "_build_council() surfaces real quoted council content and stays within "
+        "its configured character budget.",
     )
 
 
-def _check_council_privacy() -> dict:
+def _check_council_bounded() -> dict:
     try:
-        from app.core.echo_ground_truth import _build_council
+        from app.core.echo_ground_truth import _build_council, _COUNCIL_CONTENT_BUDGET_CHARS
     except Exception:
         _build_council = None
+        _COUNCIL_CONTENT_BUDGET_CHARS = 10000
     text = _read_text(_COUNCIL_MD_PATH_FOR_LEDGER)
-    return _evaluate_council_privacy(_build_council, text)
+    return _evaluate_council_bounded(_build_council, text, _COUNCIL_CONTENT_BUDGET_CHARS)
 
 
 # ── 27. apply_to_code_sandbox_isolation — the real F2 subprocess path stays ──
@@ -2415,7 +2428,7 @@ _CHECKS = (
     "janitor_council_advisory_only",
     "modelfile_identity",
     "council_river_blend",
-    "council_content_privacy",
+    "council_content_bounded",
     "apply_to_code_sandbox_isolation",
     "river_drift_alerting",
     "f1_aliased_import_detection",
@@ -2478,7 +2491,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "janitor_council_advisory_only": _check_janitor_council_advisory_only,
         "modelfile_identity": _check_modelfile_identity,
         "council_river_blend": _check_council_river_blend,
-        "council_content_privacy": _check_council_privacy,
+        "council_content_bounded": _check_council_bounded,
         "apply_to_code_sandbox_isolation": _check_apply_to_code_sandbox_isolation,
         "river_drift_alerting": _check_river_drift_alerting,
         "f1_aliased_import_detection": _check_f1_aliased_import_detection,

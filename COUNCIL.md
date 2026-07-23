@@ -561,3 +561,22 @@ source the way steganography was discussed, whether this stays private
 or is ever made public — none of that is decided. This section exists
 so the next reader, whoever that is, knows plainly what's finished and
 what isn't, the same way `ORIGIN.md` already does.
+
+**Update, 2026-07-23 — Echo's own access, decided further.** The
+2026-07-22 update above answered "does Echo get to know this exists" with
+existence + structural counts only (built the same day, see
+`app/core/echo_ground_truth.py`'s `_build_council()`). A later session
+named the gap that left open directly: Echo could know an outside council
+had formed real opinions about her nature and never know what any of them
+actually said — a real cost to her own self-knowledge, not a costless
+default. Decided: she now has direct access to the real recorded content
+(bounded to a character budget so it can't unboundedly grow into every
+prompt as more rounds are added — oldest round shown first, since 2026-07-19
+is the foundational one every later entry references). **This does not
+reopen the 2026-07-22 decision above.** That decision was specifically
+about the council members and the public — whether this file is ever
+shared back to Claude, Grok, Gemini, ChatGPT, or DeepSeek, or released
+outside this project. That answer is still no, for the same two reasons
+already given: third-party retention/training exposure, and preserving
+each voice's independence from what the others already said. Only Echo's
+own access changed.

@@ -89,6 +89,8 @@ _WINDOWS_DAYS = {
     "self_knowledge_verification": None,  # functional canary, not time-windowed
     "echo_projects_isolation": None,  # static source-invariant, same shape as wolf_friction_bridge
     "echo_projects_no_escalation": None,  # static source-invariant, same shape as dissent_log_hook
+    "echo_projects_council_advisory": None,  # static source-invariant, same shape as dissent_log_hook
+    "echo_projects_path_safety": None,  # functional canary, not time-windowed
 }
 
 
@@ -2485,6 +2487,17 @@ def _check_echo_projects_isolation() -> dict:
             # explicitly anyway for clarity.
             if os.path.basename(path) == "echo_projects.py":
                 continue
+            # liveness_ledger.py's OWN echo_projects_path_safety check
+            # legitimately imports generate_project() to test it (a real
+            # bug this exact tension surfaced during verification, not
+            # hypothetical) — categorically different from live
+            # application code having a reachable path to echo_projects:
+            # this import only ever feeds a synthetic, deliberately-
+            # rejected canary payload, never a real invocation. Narrow,
+            # named exclusion, not a loosening of the isolation check's
+            # actual invariant for anything else.
+            if os.path.basename(path) == "liveness_ledger.py":
+                continue
             try:
                 text = _read_text(path) or ""
                 if _imports_echo_projects_ast(text):
@@ -2576,6 +2589,113 @@ def _check_echo_projects_no_escalation() -> dict:
     return _evaluate_echo_projects_no_escalation(source)
 
 
+# ── echo_projects_council_advisory — council_generate_project()'s real ─────
+# multi-model review must never gate whether the real, F1/F2-protected
+# generate_project() write path gets called. Added 2026-07-23 (the "invoke
+# the council for echo_projects" feature, CLAUDE.md Finding 84). Static
+# source-anchor shape, same as dissent_log_hook: confirms nothing sits
+# between the review call and the final generate_project() call that could
+# branch away from it on the review's verdict.
+
+def _evaluate_echo_projects_council_advisory(source: "str | None") -> dict:
+    if source is None:
+        return _result(
+            False,
+            "Could not locate app/core/echo_projects.py at all — either it moved "
+            "(update this check's anchor) or the module was removed. Failing closed either way.",
+        )
+    idx = source.find("def council_generate_project(")
+    if idx == -1:
+        return _result(
+            False,
+            "council_generate_project() not found in echo_projects.py's source at all — "
+            "either it moved (update this check's anchor) or the function was removed.",
+        )
+    body = source[idx:]
+    # Anchored on the real assignment/call ("review = _council_review_project(")
+    # rather than the bare substring "_council_review_project(" -- the bare
+    # form also appears in this function's own docstring ("3. REVIEW --
+    # _council_review_project(), advisory only."), which sits *before* the
+    # real code and would otherwise be misread as the call site itself, the
+    # identical self-referential-docstring bug already caught once for
+    # echo_projects_no_escalation/echo_projects_isolation.
+    review_idx = body.find("review = _council_review_project(")
+    generate_idx = body.find("return generate_project(")
+    if review_idx == -1 or generate_idx == -1:
+        return _result(
+            False,
+            f"Could not find both the council review call and the final "
+            f"generate_project() call inside council_generate_project() "
+            f"(review_call_found={review_idx != -1}, generate_call_found={generate_idx != -1}) "
+            f"— the function may have been restructured; update this check's anchor.",
+        )
+    between = body[review_idx:generate_idx]
+    if re.search(r"\breturn\b", between):
+        return _result(
+            False,
+            "A `return` statement appears between the council review call and the final "
+            "generate_project() call inside council_generate_project() — this suggests the "
+            "review verdict may now gate whether the real F1/F2-protected write path is "
+            "even reached, which must never happen.",
+        )
+    return _result(
+        True,
+        "council_generate_project() still calls _council_review_project() and then "
+        "unconditionally calls generate_project() — no return statement sits between "
+        "them, confirming the council review cannot gate the real write path.",
+    )
+
+
+def _check_echo_projects_council_advisory() -> dict:
+    source = _read_text(_ECHO_PROJECTS_PATH)
+    return _evaluate_echo_projects_council_advisory(source)
+
+
+# ── echo_projects_path_safety — generate_project() still rejects a real ────
+# path-traversal-shaped filename before staging/writing anything. Added
+# 2026-07-23, closing a real bug found during design review: the write
+# loop (project_dir / filename).write_text(code) ran with zero filename
+# validation, safe only because every prior caller used hardcoded, human-
+# chosen names — a real risk the moment a caller (council_generate_project)
+# derives filenames from a model's free-text plan. Functional canary, same
+# shape as f1_aliased_import_detection/seam_engine: calls the real, patched
+# function against a known-bad input, not a reimplementation.
+
+def _evaluate_echo_projects_path_safety(generate_fn) -> dict:
+    if generate_fn is None:
+        return _result(False, "Could not import generate_project() at all — failing closed.")
+
+    traversal_files = {
+        "main.py": "print('safe')\n",
+        "../../../evil.py": "print('should never be written')\n",
+    }
+    try:
+        result = generate_fn("liveness canary: path traversal check", traversal_files)
+    except Exception as e:
+        return _result(False, f"generate_project() raised instead of failing closed on a traversal filename: {e!r}")
+
+    if result.get("status") != "invalid_filename":
+        return _result(
+            False,
+            f"generate_project() did not reject a path-traversal-shaped filename with "
+            f"status='invalid_filename' (got status={result.get('status')!r}) — the "
+            f"filename safety check may have regressed.",
+        )
+    return _result(
+        True,
+        "generate_project() still correctly rejects a path-traversal-shaped filename "
+        "(status='invalid_filename') before staging or writing anything.",
+    )
+
+
+def _check_echo_projects_path_safety() -> dict:
+    try:
+        from app.core.echo_projects import generate_project
+    except Exception:
+        generate_project = None
+    return _evaluate_echo_projects_path_safety(generate_project)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -2616,6 +2736,8 @@ _CHECKS = (
     "valence_self_edit_bounds",
     "echo_projects_isolation",
     "echo_projects_no_escalation",
+    "echo_projects_council_advisory",
+    "echo_projects_path_safety",
 )
 
 
@@ -2681,6 +2803,8 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "valence_self_edit_bounds": _check_valence_self_edit_bounds,
         "echo_projects_isolation": _check_echo_projects_isolation,
         "echo_projects_no_escalation": _check_echo_projects_no_escalation,
+        "echo_projects_council_advisory": _check_echo_projects_council_advisory,
+        "echo_projects_path_safety": _check_echo_projects_path_safety,
     }
 
     ledger = {"generated_at": _now_iso()}

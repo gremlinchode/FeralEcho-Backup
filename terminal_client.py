@@ -547,6 +547,41 @@ def request_core_edit_proposal(target_file: str, prompt: str) -> dict:
             "error": str(e)
         }
 
+def request_project_generation(spec: str) -> dict:
+    """
+    !project <spec> — the missing caller for app/core/echo_projects.py's
+    generate_project() (CLAUDE.md Finding 83/84). Mirrors
+    request_core_edit_proposal()'s exact shape: direct in-process import,
+    wraps exceptions. Routes through council_generate_project(), which
+    plans (real multi-model deliberation), generates (single model per
+    file, same pattern self-edit's own code generation already uses), and
+    reviews (real multi-model council, advisory only) a multi-file Python
+    project — never writes outside sandbox/echo_projects/, never loads
+    anything into this running process. Several real model calls chained
+    together; expect this to take a while, the same tradeoff self-edit's
+    own hourly cycle already accepts for generating just one file.
+    """
+
+    try:
+        from app.core.echo_projects import council_generate_project
+        result = council_generate_project(spec)
+
+        return {
+            "status": result.get("status", "unknown"),
+            "result": result,
+        }
+
+    except Exception as e:
+
+        console.print(
+            f"[bold red]Project Generation Error:[/bold red] {e}"
+        )
+
+        return {
+            "status": "failed",
+            "error": str(e)
+        }
+
 def request_manual_probe(model: str, task_type: str, prompt: str) -> dict:
     """
     !ask <model> <task_type> <prompt> — a manual, human-curiosity-driven
@@ -777,6 +812,52 @@ def main():
                         "[bold yellow]"
                         "Usage: !propose <target_file> <prompt> "
                         "— target_file must be one of EDIT_FORBIDDEN_TARGETS."
+                        "[/bold yellow]"
+                    )
+
+            # -----------------------------
+            # Council-invoked multi-file project generation (sandboxed,
+            # never promoted — CLAUDE.md Finding 83/84)
+            # -----------------------------
+            elif msg.startswith("!project "):
+
+                spec = (
+                    msg[len("!project "):]
+                    .strip()
+                )
+
+                if spec:
+
+                    console.print(
+                        "[dim]  (this chains several real model calls — "
+                        "planning, per-file generation, review — expect it "
+                        "to take a while)[/dim]"
+                    )
+
+                    result = request_project_generation(spec)
+                    inner = result.get("result") or {}
+
+                    console.print(
+                        f"[bold magenta]"
+                        f"Project Generation:"
+                        f"[/bold magenta] "
+                        f"{result.get('status', 'unknown')}"
+                    )
+                    if inner.get("project_dir"):
+                        console.print(f"  project_dir: {inner['project_dir']}")
+                    if inner.get("report_path"):
+                        console.print(f"  report:      {inner['report_path']}")
+                    if inner.get("detail"):
+                        console.print(f"  detail:      {inner['detail']}")
+                    if result.get("error"):
+                        console.print(f"  error:       {result['error']}")
+
+                else:
+
+                    console.print(
+                        "[bold yellow]"
+                        "Usage: !project <description of the multi-file "
+                        "project to build>"
                         "[/bold yellow]"
                     )
 

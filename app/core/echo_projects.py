@@ -55,11 +55,39 @@ from app.core.self_edit_manager import (
     _SANDBOX_WRAPPER,
     _extract_sandbox_failure_text,
 )
+# Stable function references, imported at module level (same precedent as
+# self_edit_manager.py's own top-level `rank_models` import). MODEL_POOL
+# itself is deliberately NOT imported here — it's a mutable dict patched in
+# place elsewhere (MLX avoidance, model pool refresh), and this codebase's
+# own established precedent (terminal_client.py's !ask command) imports it
+# lazily, inline, right before use, rather than capturing a module-level
+# reference to it.
+from app.core.echo_model_orchestrator import rank_models, echo_query, get_river_brain
+from app.core.river_deliberation import deliberate_and_learn
+from app.ollama_handler import query_ollama
 
 logger = logging.getLogger(__name__)
 
 _PROJECTS_DIR = Path(_PROJECT_ROOT) / "sandbox" / "echo_projects"
 _MAX_ECHO_PROJECTS = 20
+
+# Bounds for the council-invocation pipeline (council_generate_project() and
+# its helpers, below) — same "explicit cap, not unbounded" discipline as
+# every other budget in this codebase (COUNCIL.md's 10000-char budget,
+# Finding 82; _council_review_core_edit()'s 4000-char diff cap).
+_MAX_PLANNED_FILES = 6
+_MAX_SIBLING_CONTEXT_CHARS = 6000
+_MAX_REVIEW_CONTEXT_CHARS = 6000
+
+# Flat filenames only (V1 scope — see module docstring): no slashes, no
+# ".." traversal, no non-ASCII (excluded by the charset itself, so
+# homoglyph tricks are moot), length-capped the same way _slugify()'s own
+# max_len=40 already is. Real security fix, not council-specific: filenames
+# used to reach generate_project()'s write_text() call with zero
+# validation, safe only because every caller so far used hardcoded, human-
+# chosen names. F2's kernel sandbox provides no backstop here — that write
+# happens in this process, before any subprocess starts.
+_VALID_FILENAME_RE = re.compile(r"^[A-Za-z0-9_\-]{1,40}\.py$")
 
 
 def _slugify(text: str, max_len: int = 40) -> str:
@@ -141,7 +169,9 @@ def _run_f2_multi_file(project_dir: Path, timeout: int = 60) -> dict:
 
 
 def _write_report(project_dir: Path, spec: str, files: dict, f1_results: dict,
-                   f2_result: "dict | None", ts: str) -> Path:
+                   f2_result: "dict | None", ts: str,
+                   council_plan: "str | None" = None,
+                   council_review: "dict | None" = None) -> Path:
     lines = [
         "# ECHO PROJECT — not loaded, not promoted, for human review only.",
         f"# Generated: {ts}",
@@ -165,12 +195,26 @@ def _write_report(project_dir: Path, spec: str, files: dict, f1_results: dict,
         "# Imports used (auditing full-library-access in practice): "
         + (", ".join(all_imports) if all_imports else "(none)")
     )
+    if council_plan:
+        lines.append("#")
+        lines.append("# Council plan (multi-model deliberation, task_type=general):")
+        for line in council_plan.strip().splitlines():
+            lines.append(f"#   {line}")
+    if council_review is not None:
+        lines.append("#")
+        lines.append(f"# Council review (advisory only, never gates a write): {council_review.get('verdict')}")
+        for vote in council_review.get("votes", []):
+            lines.append(f"#   {vote.get('model')}: {vote.get('verdict')} — {vote.get('rationale')}")
+        if council_review.get("truncated_note"):
+            lines.append(f"#   note: {council_review['truncated_note']}")
     report_path = project_dir / "_report.md"
     report_path.write_text("\n".join(lines) + "\n")
     return report_path
 
 
-def generate_project(spec: str, files: dict) -> dict:
+def generate_project(spec: str, files: dict,
+                      council_plan: "str | None" = None,
+                      council_review: "dict | None" = None) -> dict:
     """
     Core pipeline. `files` is a dict of {filename: code}, already generated
     by the caller (this function does not itself call an LLM) — must
@@ -179,19 +223,35 @@ def generate_project(spec: str, files: dict) -> dict:
 
     Runs the real, unmodified F1 (scan_for_unsafe_operations(), including
     the self-edit-escalation-call block) per file, then — only if every
-    file passes F1 — stages all files into one fresh, timestamped project
-    directory under sandbox/echo_projects/ and runs the real, unmodified F2
-    kernel sandbox against main.py. Writes a human-readable report either
-    way. Deliberately stops there: NEVER calls save_code(), NEVER loads
-    anything into the running process — this is the one invariant this
-    whole feature's safety case depends on, verified live by
-    liveness_ledger.py's echo_projects_no_escalation check.
+    file passes F1 AND every filename is safe (see _VALID_FILENAME_RE) —
+    stages all files into one fresh, timestamped project directory under
+    sandbox/echo_projects/ and runs the real, unmodified F2 kernel sandbox
+    against main.py. Writes a human-readable report either way.
+    Deliberately stops there: NEVER calls save_code(), NEVER loads anything
+    into the running process — this is the one invariant this whole
+    feature's safety case depends on, verified live by liveness_ledger.py's
+    echo_projects_no_escalation check.
 
-    Returns {"status": "f1_failed"|"ok"|"f2_failed"|"error", "project_dir":
-    str, "report_path": str, "f1_results": dict, "f2_result": dict|None}.
+    council_plan/council_review are purely additive, optional context from
+    council_generate_project() (below) — when given, they're rendered into
+    the report as advisory context only; they never affect whether this
+    function stages/writes/tests anything. Callers that don't pass them
+    (e.g. a caller supplying hand-written files directly) are unaffected.
+
+    Returns {"status": "invalid_filename"|"f1_failed"|"ok"|"f2_failed"|
+    "error", "project_dir": str, "report_path": str, "f1_results": dict,
+    "f2_result": dict|None}.
     """
     if not files or "main.py" not in files:
         return {"status": "error", "detail": "files must be a non-empty dict including 'main.py' as the entry point"}
+
+    invalid = [name for name in files if not _VALID_FILENAME_RE.match(name)]
+    if invalid:
+        return {
+            "status": "invalid_filename",
+            "detail": f"filename(s) failed the flat-name safety check (no slashes, no '..', ASCII "
+                      f"letters/digits/_/- only, .py, <=40 chars): {invalid}",
+        }
 
     _prune_old_projects()
 
@@ -214,21 +274,245 @@ def generate_project(spec: str, files: dict) -> dict:
             f1_all_ok = False
 
     if not f1_all_ok:
-        report = _write_report(project_dir, spec, files, f1_results, None, ts)
+        report = _write_report(project_dir, spec, files, f1_results, None, ts, council_plan, council_review)
         logger.warning(f"[ECHO-PROJECTS] F1 blocked one or more files in {project_dir.name}")
         return {
             "status": "f1_failed", "project_dir": str(project_dir),
             "report_path": str(report), "f1_results": f1_results, "f2_result": None,
         }
 
-    for filename, code in files.items():
-        (project_dir / filename).write_text(code)
+    try:
+        for filename, code in files.items():
+            (project_dir / filename).write_text(code)
+    except OSError as e:
+        return {"status": "error", "detail": f"failed writing staged file(s): {e}"}
 
     f2_result = _run_f2_multi_file(project_dir)
-    report = _write_report(project_dir, spec, files, f1_results, f2_result, ts)
+    report = _write_report(project_dir, spec, files, f1_results, f2_result, ts, council_plan, council_review)
     status = "ok" if f2_result.get("passed") else "f2_failed"
     logger.info(f"[ECHO-PROJECTS] {project_dir.name}: {status}")
     return {
         "status": status, "project_dir": str(project_dir),
         "report_path": str(report), "f1_results": f1_results, "f2_result": f2_result,
     }
+
+
+# ── Council invocation — the missing caller (2026-07-23) ────────────────
+# generate_project() above only ever had synthetic/hand-written test
+# callers (Finding 83). This section builds the real one, using this
+# codebase's existing, already-trusted multi-model mechanisms rather than
+# inventing a new one: deliberate_and_learn() for planning,
+# _council_review_core_edit()'s exact shape (duplicated, not imported —
+# see below) for review, and echo_query()'s single-model-per-file pattern
+# (the same one self_edit_manager.py's generate_code_from_plan() already
+# uses) for the one step — actual code generation — this codebase has
+# never tried to synthesize across multiple raw model outputs.
+
+_PLAN_LINE_RE = re.compile(r"^\s*(?:[-*]|\d+[.)])?\s*([A-Za-z0-9_\-]{1,40}\.py)\s*[:\-]\s*(.+?)\s*$")
+
+
+def _strip_code_fences(text: str) -> str:
+    """Strip a single leading/trailing markdown code fence if present —
+    models sometimes wrap raw-code output in ```python ... ``` despite
+    being told not to. Minimal, not a general markdown parser (that's
+    self_edit_manager.py's job for its own, different pipeline)."""
+    stripped = (text or "").strip()
+    match = re.match(r"^```[a-zA-Z]*[ \t]*\n(.*?)\n```\s*$", stripped, re.DOTALL)
+    if match:
+        return match.group(1)
+    return stripped
+
+
+def _parse_file_plan(plan_text: str) -> list:
+    """
+    Parses "filename.py: description" lines (optionally list-prefixed, e.g.
+    "- main.py: ..." or "1. main.py: ...") out of the council's free-text
+    plan. Every candidate filename is filtered through the same flat-name
+    safety check generate_project() itself enforces (_VALID_FILENAME_RE) —
+    defense in depth, not redundant: this is the first point a
+    hallucinated or adversarial filename could appear, well before it would
+    otherwise reach generate_project()'s own check.
+
+    Caps at _MAX_PLANNED_FILES, taking the first N in plan order. If
+    "main.py" isn't among the parsed results, prepends a synthesized
+    fallback entry so generate_project()'s existing require-main.py
+    contract is always satisfied without this function needing to change
+    that contract. If main.py IS present but not first, it's moved to the
+    front — council_generate_project() always generates it first so later
+    files are written to match what it already assumes.
+    """
+    seen = set()
+    parsed = []
+    for line in (plan_text or "").splitlines():
+        m = _PLAN_LINE_RE.match(line)
+        if not m:
+            continue
+        filename, description = m.group(1), m.group(2)
+        if not _VALID_FILENAME_RE.match(filename) or filename in seen:
+            continue
+        seen.add(filename)
+        parsed.append((filename, description[:200]))
+        if len(parsed) >= _MAX_PLANNED_FILES:
+            break
+
+    if not parsed:
+        # Genuinely nothing parseable in the raw text -- return empty so
+        # the caller (council_generate_project) fails closed, rather than
+        # unconditionally injecting a main.py fallback here, which would
+        # make that fail-closed check unreachable (a real bug caught
+        # during testing: a garbage/empty plan_text used to silently
+        # produce [("main.py", <generic fallback description>)] instead of
+        # [], masking the failure instead of surfacing it).
+        return []
+
+    if not any(name == "main.py" for name, _ in parsed):
+        parsed.insert(0, ("main.py", "Entry point tying the other generated files together."))
+        parsed = parsed[:_MAX_PLANNED_FILES]
+    else:
+        parsed.sort(key=lambda pair: pair[0] != "main.py")  # stable sort: main.py to front, rest keep order
+
+    return parsed
+
+
+def _council_review_project(spec: str, files: dict) -> dict:
+    """
+    Advisory-only multi-model review of a generated multi-file project.
+    Same shape as self_edit_manager.py's _council_review_core_edit() (rank
+    the top coding models, ask each for one-line APPROVE/REJECT + a
+    rationale) — deliberately duplicated rather than imported, to keep this
+    change's footprint off self_edit_manager.py (see CLAUDE.md Finding 84).
+    NEVER gates a write: generate_project() is always called regardless of
+    verdict, verified live by liveness_ledger.py's
+    echo_projects_council_advisory check.
+    """
+    try:
+        models = rank_models(task_type="coding")[:3]
+    except Exception:
+        models = []
+    if not models:
+        return {"verdict": "NO_COUNCIL_AVAILABLE", "votes": []}
+
+    combined = ""
+    included = []
+    for filename, code in files.items():
+        block = f"# --- {filename} ---\n{code}\n"
+        if len(combined) + len(block) > _MAX_REVIEW_CONTEXT_CHARS:
+            break
+        combined += block
+        included.append(filename)
+
+    truncated_note = None
+    if len(included) < len(files):
+        truncated_note = f"{len(included)} of {len(files)} files shown to reviewers (review context budget)"
+
+    review_prompt = (
+        "You are reviewing a generated multi-file Python project, produced with "
+        "full library access (no import restriction) inside an isolated sandbox. "
+        "It has NOT been loaded anywhere and cannot be without a separate, "
+        "human-reviewed step. Assess correctness and safety risk only, not style.\n\n"
+        f"Spec: {spec}\n\n"
+        f"Files ({', '.join(included)}{' ...' if truncated_note else ''}):\n```\n{combined}\n```\n\n"
+        "Respond with exactly one line: APPROVE or REJECT, followed by a dash "
+        "and one sentence why."
+    )
+
+    votes = []
+    for model in models:
+        try:
+            resp = query_ollama(review_prompt, model=model) or ""
+            first_word = resp.strip().split()[0].upper().strip(".:-") if resp.strip() else "REJECT"
+            verdict = "APPROVE" if first_word.startswith("APPROVE") else "REJECT"
+            votes.append({"model": model, "verdict": verdict, "rationale": resp.strip()[:300]})
+        except Exception as e:
+            votes.append({"model": model, "verdict": "REJECT", "rationale": f"review call failed: {e}"})
+
+    approvals = sum(1 for v in votes if v["verdict"] == "APPROVE")
+    result = {"verdict": f"{approvals}/{len(votes)} APPROVE", "votes": votes}
+    if truncated_note:
+        result["truncated_note"] = truncated_note
+    return result
+
+
+def council_generate_project(spec: str) -> dict:
+    """
+    The missing caller for generate_project(): plans, generates, and
+    reviews a real multi-file project using this codebase's existing,
+    already-trusted council mechanisms. Genuinely multi-model at two of
+    the three steps (planning, review); single-model at the one step
+    (per-file code generation) this codebase has never tried to synthesize
+    across multiple raw model outputs — the same reason self-edit's own
+    code generation doesn't either.
+
+    1. PLAN — deliberate_and_learn(task_type="general", deliberately NOT
+       "coding"): the plan is prose, not code. Scoring prose with the
+       coding task's AST-based quality evaluator would silently
+       contaminate that RiverBrain bucket's learned stats — the same class
+       of cross-training contamination CLAUDE.md's Finding 3 already found
+       and fixed once for a different mechanism.
+    2. GENERATE — one echo_query(task_type="coding") call per planned
+       file, main.py first, each given every previously-generated file's
+       full content (capped) so later files stay consistent with what
+       earlier ones already committed to (the only real cross-file-
+       awareness mechanism in this pipeline — without it, F1/F2 would only
+       catch syntax/import problems, never main.py calling a function
+       helper.py never actually defines).
+    3. REVIEW — _council_review_project(), advisory only.
+
+    Then calls the real, unmodified generate_project() — F1/F2/report,
+    exactly as already shipped and tested (Finding 83). Never calls
+    save_code(), never loads anything into the running process.
+
+    Cost, stated plainly: this is several real model calls (1 planning
+    deliberation + N per-file generations, each of which internally runs
+    its own council deliberation + synthesis, + up to 3 review calls) — a
+    human invoking !project should expect it to take a while, the same
+    tradeoff self-edit's own hourly cycle already accepts for one file.
+    """
+    plan_prompt = (
+        "You are planning a small, multi-file Python project. Given the "
+        "following request, list the files needed as one line per file, in "
+        "the exact format 'filename.py: one-line description of what it "
+        "contains'. Always include a 'main.py' as the real entry point. "
+        f"Keep it to at most {_MAX_PLANNED_FILES} files total, flat (no "
+        "subdirectories), no markdown formatting.\n\n"
+        f"Request: {spec}"
+    )
+    try:
+        from app.core.echo_model_orchestrator import MODEL_POOL  # lazy — see import note above
+        plan_text = deliberate_and_learn(
+            plan_prompt, task_type="general",
+            river_brain=get_river_brain(), model_pool=MODEL_POOL,
+        ) or ""
+    except Exception as e:
+        return {"status": "error", "detail": f"council planning failed: {e}"}
+
+    planned_files = _parse_file_plan(plan_text)
+    if not planned_files:
+        return {"status": "error", "detail": "council failed to produce a usable file plan", "council_plan": plan_text}
+
+    files = {}
+    for filename, description in planned_files:
+        sibling_context = ""
+        if files:
+            joined = "\n\n".join(f"# --- {n} ---\n{c}" for n, c in files.items())
+            sibling_context = (
+                "\n\nFiles already written in this same project (for consistency):\n```\n"
+                f"{joined[:_MAX_SIBLING_CONTEXT_CHARS]}\n```"
+            )
+        file_prompt = (
+            f"You are writing one file, {filename}, as part of a multi-file Python project.\n"
+            f"Overall request: {spec}\n"
+            f"Project plan:\n{plan_text[:_MAX_SIBLING_CONTEXT_CHARS]}\n"
+            f"This file's purpose: {description}"
+            f"{sibling_context}\n\n"
+            f"Write ONLY the real, complete Python source for {filename}. No markdown "
+            f"fences, no prose before or after — just the code."
+        )
+        try:
+            code = echo_query(file_prompt, task_type="coding", source="echo_projects") or ""
+        except Exception as e:
+            code = f"# generation failed: {e}\n"
+        files[filename] = _strip_code_fences(code)
+
+    review = _council_review_project(spec, files)
+    return generate_project(spec, files, council_plan=plan_text, council_review=review)

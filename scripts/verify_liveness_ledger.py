@@ -1035,6 +1035,14 @@ try:
 except Exception as e:
     print(f"[SKIP] echo_projects_isolation real-scan case: raised ({e})")
 
+# Real tension found during verification, not hypothetical: liveness_ledger.py's
+# OWN echo_projects_path_safety check legitimately imports generate_project()
+# to test it -- the real isolation scan would otherwise flag its own sibling
+# check as a live-code importer. Confirms the narrow, named exclusion holds.
+assert ll._check_echo_projects_isolation()["pass"] is True, \
+    "echo_projects_isolation: liveness_ledger.py's own legitimate test-only import of generate_project() (for echo_projects_path_safety) was NOT excluded, causing a false self-flag"
+print("[OK] echo_projects_isolation: liveness_ledger.py's own test-only import (for echo_projects_path_safety) is correctly excluded, not misread as a live-code caller")
+
 # The exact self-referential-docstring bug this check's own AST-based design
 # exists to avoid: a comment/docstring mentioning "echo_projects" in prose
 # (not a real import statement) must NOT be flagged.
@@ -1094,6 +1102,71 @@ check("echo_projects_no_escalation: echo_projects.py not found/importable at all
 _no_generate_project_def = "def some_other_function():\n    return 1\n"
 r = ll._evaluate_echo_projects_no_escalation(_no_generate_project_def)
 check("echo_projects_no_escalation: generate_project() entry point missing entirely", r["pass"], False, r["evidence"])
+
+# ── 38. echo_projects_council_advisory ────────────────────────────────────────
+try:
+    from app.core import echo_projects as _real_echo_projects_module_2
+    import inspect as _inspect2
+    _real_council_source = _inspect2.getsource(_real_echo_projects_module_2)
+    r = ll._evaluate_echo_projects_council_advisory(_real_council_source)
+    check("echo_projects_council_advisory: real source, review never gates the write", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] echo_projects_council_advisory real-source case: import failed ({e})")
+
+_regressed_gates_on_reject = (
+    "def council_generate_project(spec):\n"
+    "    review = _council_review_project(spec, files)\n"
+    "    if review.get('verdict', '').startswith('0/'):\n"
+    "        return {'status': 'rejected_by_council'}\n"
+    "    return generate_project(spec, files, council_plan=plan_text, council_review=review)\n"
+)
+r = ll._evaluate_echo_projects_council_advisory(_regressed_gates_on_reject)
+check("echo_projects_council_advisory: regressed to gate the write on the review verdict", r["pass"], False, r["evidence"])
+
+# The exact self-referential-docstring bug caught live during this check's
+# own construction: a docstring mentioning "_council_review_project()" in
+# prose, sitting BEFORE the real call, must not be misread as the call site.
+_docstring_mentions_review_before_real_call = (
+    "def council_generate_project(spec):\n"
+    '    """\n'
+    "    3. REVIEW -- _council_review_project(), advisory only.\n"
+    '    """\n'
+    "    if not spec:\n"
+    "        return {'status': 'error'}\n"
+    "    review = _council_review_project(spec, files)\n"
+    "    return generate_project(spec, files, council_plan=plan_text, council_review=review)\n"
+)
+r = ll._evaluate_echo_projects_council_advisory(_docstring_mentions_review_before_real_call)
+check("echo_projects_council_advisory: docstring mention of the review call (before the real one) is not misread as the call site",
+      r["pass"], True, r["evidence"])
+
+r = ll._evaluate_echo_projects_council_advisory(None)
+check("echo_projects_council_advisory: echo_projects.py not found/importable at all", r["pass"], False, r["evidence"])
+
+_no_council_generate_project_def = "def some_other_function():\n    return 1\n"
+r = ll._evaluate_echo_projects_council_advisory(_no_council_generate_project_def)
+check("echo_projects_council_advisory: council_generate_project() entry point missing entirely", r["pass"], False, r["evidence"])
+
+# ── 39. echo_projects_path_safety ─────────────────────────────────────────────
+try:
+    from app.core.echo_projects import generate_project as _real_generate_project
+    r = ll._evaluate_echo_projects_path_safety(_real_generate_project)
+    check("echo_projects_path_safety: real generate_project() rejects a traversal-shaped filename", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] echo_projects_path_safety real-function case: import failed ({e})")
+
+def _degraded_generate_project_no_validation(spec, files, **kwargs):
+    return {"status": "ok", "project_dir": "/tmp/fake", "report_path": "/tmp/fake/_report.md"}
+r = ll._evaluate_echo_projects_path_safety(_degraded_generate_project_no_validation)
+check("echo_projects_path_safety: degraded generate_project() silently accepts a traversal filename (regression)", r["pass"], False, r["evidence"])
+
+def _generate_project_raises(spec, files, **kwargs):
+    raise ValueError("boom")
+r = ll._evaluate_echo_projects_path_safety(_generate_project_raises)
+check("echo_projects_path_safety: generate_project() raises instead of failing closed with a clean status", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_echo_projects_path_safety(None)
+check("echo_projects_path_safety: generate_project() not importable at all", r["pass"], False, r["evidence"])
 
 
 print()

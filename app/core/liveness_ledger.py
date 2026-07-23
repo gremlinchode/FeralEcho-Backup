@@ -1176,16 +1176,29 @@ def _evaluate_mlx_avoidance(evaluate_fn) -> dict:
     hour = 3600.0
     cases = [
         # two matching crashes inside the lookback window -> should engage
-        ("two_recent_matches", [(now - 1 * hour, True), (now - 5 * hour, True)], True),
+        ("two_recent_matches", [(now - 1 * hour, True), (now - 5 * hour, True)], None, True),
         # two matching crashes, but outside the lookback window -> should not engage
-        ("two_but_stale", [(now - 20 * hour, True), (now - 22 * hour, True)], False),
+        ("two_but_stale", [(now - 20 * hour, True), (now - 22 * hour, True)], None, False),
         # one matching + one non-matching (e.g. the real KMP crash) -> below trigger count
-        ("one_match_one_unrelated", [(now - 1 * hour, True), (now - 2 * hour, False)], False),
+        ("one_match_one_unrelated", [(now - 1 * hour, True), (now - 2 * hour, False)], None, False),
+        # CLAUDE.md Finding 73 (2026-07-22): a real crash-rate escalation
+        # (12 SIGABRT exits in one day) went undetected because macOS
+        # throttles .ips report generation for repeat crashes -- only 1 of
+        # 12 had a confirmed report. watchdog_timestamps is the fix: real
+        # watchdog-logged SIGABRT exits, signature-unconfirmed but not
+        # throttleable. 3+ within the lookback window should engage even
+        # with zero confirmed-signature matches.
+        ("watchdog_only_cluster_no_signature_confirmation", [], [now - 1 * hour, now - 2 * hour, now - 3 * hour], True),
+        # Below the watchdog path's own trigger count (2, needs 3) -> should not engage
+        ("watchdog_below_threshold", [], [now - 1 * hour, now - 2 * hour], False),
     ]
     failures = []
-    for name, file_infos, expect_engaged in cases:
+    for name, file_infos, watchdog_ts, expect_engaged in cases:
         try:
-            result = evaluate_fn(file_infos, now)
+            if watchdog_ts is None:
+                result = evaluate_fn(file_infos, now)
+            else:
+                result = evaluate_fn(file_infos, now, watchdog_timestamps=watchdog_ts)
         except Exception as e:
             failures.append(f"{name} raised {e!r}")
             continue
@@ -1195,9 +1208,11 @@ def _evaluate_mlx_avoidance(evaluate_fn) -> dict:
     if not failures:
         return _result(
             True,
-            "_evaluate_crash_window() correctly discriminated all 3 canary cases "
-            "(recent cluster engages, stale cluster doesn't, single-signature "
-            "match below trigger count doesn't) — run live against the real function.",
+            "_evaluate_crash_window() correctly discriminated all 5 canary cases "
+            "(recent confirmed cluster engages, stale cluster doesn't, single-signature "
+            "match below trigger count doesn't, an unconfirmed watchdog SIGABRT cluster "
+            "engages on its own, and a sub-threshold watchdog count doesn't) — run live "
+            "against the real function.",
         )
     return _result(
         False,

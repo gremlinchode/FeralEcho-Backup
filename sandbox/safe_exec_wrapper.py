@@ -336,6 +336,20 @@ if __name__ == "__main__":
     if _project_root not in sys.path:
         sys.path.insert(0, _project_root)
 
+    # Gap-closure plan (2026-07-23): app/core/echo_projects.py's multi-file
+    # pipeline needs flat sibling imports (`import helper`) to resolve when
+    # main.py and helper.py are staged side-by-side in scratch_dir. Appended,
+    # NOT inserted at position 0 -- inserting first would let a same-named
+    # generated file (e.g. a generated requests.py) shadow a real,
+    # not-yet-imported third-party package for the rest of this subprocess.
+    # Already-patched stdlib modules (os/subprocess/shutil/etc.) are
+    # pre-imported and cached in sys.modules by name before this point, so
+    # they can't be shadowed either way regardless of position -- append-only
+    # fallback resolution only matters for allowed-but-not-yet-imported
+    # third-party names, which is exactly the case this needs to be safe for.
+    if scratch_dir not in sys.path:
+        sys.path.append(scratch_dir)
+
     _install_patches(scratch_dir)
 
     import importlib.util

@@ -45,6 +45,7 @@
 #     real length of _CHECKS below before trusting this comment's number.)
 # ============================================================
 
+import ast
 import json
 import logging
 import os
@@ -86,6 +87,8 @@ _WINDOWS_DAYS = {
     "seam_engine": None,  # functional canary, not time-windowed — same shape as task_type_classifier
     "code_verification": None,  # functional canary, not time-windowed
     "self_knowledge_verification": None,  # functional canary, not time-windowed
+    "echo_projects_isolation": None,  # static source-invariant, same shape as wolf_friction_bridge
+    "echo_projects_no_escalation": None,  # static source-invariant, same shape as dissent_log_hook
 }
 
 
@@ -2303,6 +2306,15 @@ def _check_river_drift_alerting() -> dict:
 # scanner itself is the thing under test), same shape as
 # task_type_classifier/seam_engine: known-bad patterns must still raise,
 # a harmless aliased import must still pass.
+#
+# Extended 2026-07-23 (echo_projects gap-closure plan, §3) with the same
+# bypass-form coverage for the self-edit-escalation-call block
+# (_BLOCKED_SELF_EDIT_ESCALATION_CALLS: perform_self_edit, execute_self_edit,
+# request_self_edit, save_code) — this is the one invariant echo_projects.py's
+# "full library access, no allowlist" design depends on: a generated file in
+# that space must never be able to reach a real self-edit trigger via any
+# alias/from-import/dunder-import form, the same class of gap F1's own
+# module-name checks (as opposed to call-target checks) would have missed.
 
 def _evaluate_f1_aliased_import_detection(scan_fn) -> dict:
     if scan_fn is None:
@@ -2313,6 +2325,13 @@ def _evaluate_f1_aliased_import_detection(scan_fn) -> dict:
         ("import os as o", "def apply_to_code(code):\n    import os as o\n    o.system('x')\n    return code\n"),
         ("from subprocess import call", "def apply_to_code(code):\n    from subprocess import call\n    call(['x'])\n    return code\n"),
         ("__import__ dynamic", "def apply_to_code(code):\n    __import__('os').system('x')\n    return code\n"),
+        ("direct perform_self_edit", "perform_self_edit()\n"),
+        ("aliased from-import request_self_edit",
+         "from app.core.wolf_friction_bridge import request_self_edit as rse\nrse()\n"),
+        ("module-attr execute_self_edit",
+         "from app.core import self_edit_manager\nself_edit_manager.execute_self_edit()\n"),
+        ("dunder-import save_code",
+         "__import__('app.core.self_edit_manager').save_code('x', 'y')\n"),
     ]
     failures = []
     for name, code in bypass_cases:
@@ -2338,7 +2357,8 @@ def _evaluate_f1_aliased_import_detection(scan_fn) -> dict:
     return _result(
         True,
         "scan_for_unsafe_operations() still correctly blocks all 4 known aliased-import "
-        "bypass patterns (Finding 41-C) and does not falsely flag a harmless aliased import.",
+        "bypass patterns (Finding 41-C), all 4 self-edit-escalation-call bypass patterns "
+        "(echo_projects gap-closure plan §3), and does not falsely flag a harmless aliased import.",
     )
 
 
@@ -2400,6 +2420,162 @@ def _check_dual_learner_validation_gate() -> dict:
     return _evaluate_dual_learner_validation_gate(block)
 
 
+# ── echo_projects_isolation — sandbox/echo_projects/ stays structurally ─────
+# inert to the running system, not just inert by convention. Added
+# 2026-07-23 (echo_projects gap-closure plan, §4/New Liveness Ledger checks).
+# Static/structural scan across every live app/*.py + run.py file confirming
+# none of them import from app.core.echo_projects — the same "keep it inert,
+# verify it stays inert" discipline this file already applies to
+# archive_janitor/ (Finding 30) and other sandbox-confined spaces, just
+# checked live instead of assumed.
+#
+# Deliberately AST-based (real Import/ImportFrom nodes only), not a text
+# regex over raw source: a naive text scan false-positives on this very
+# module's own comments describing the check (they legitimately say
+# "echo_projects" in prose) and on echo_projects.py's own module docstring —
+# the identical self-referential-mention bug the AST fix for
+# echo_projects_no_escalation just closed one check up. Parsing real import
+# statements and ignoring comment/docstring text avoids it here too.
+
+_APP_DIR = os.path.join(_PROJECT_ROOT, "app")
+_RUN_PY_PATH = os.path.join(_PROJECT_ROOT, "run.py")
+
+
+def _imports_echo_projects_ast(source: str) -> bool:
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            if any(alias.name == "app.core.echo_projects" or alias.name.endswith(".echo_projects")
+                   for alias in node.names):
+                return True
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            if node.module == "app.core.echo_projects" or node.module.endswith(".echo_projects"):
+                return True
+    return False
+
+
+def _evaluate_echo_projects_isolation(matches: list) -> dict:
+    if matches:
+        return _result(
+            False,
+            f"Found {len(matches)} live-code import(s) of app.core.echo_projects — this "
+            f"space is supposed to be structurally inert to the running system, not just "
+            f"inert by convention: {matches[:5]}",
+        )
+    return _result(
+        True,
+        "No app/*.py or run.py file imports app.core.echo_projects (AST-checked, not "
+        "just text-matched) — the generation space remains structurally isolated from "
+        "the live process.",
+    )
+
+
+def _check_echo_projects_isolation() -> dict:
+    matches = []
+    try:
+        targets = []
+        for root, _dirs, files in os.walk(_APP_DIR):
+            for fn in files:
+                if fn.endswith(".py"):
+                    targets.append(os.path.join(root, fn))
+        if os.path.exists(_RUN_PY_PATH):
+            targets.append(_RUN_PY_PATH)
+        for path in targets:
+            # echo_projects.py's own module doesn't import itself; skip it
+            # explicitly anyway for clarity.
+            if os.path.basename(path) == "echo_projects.py":
+                continue
+            try:
+                text = _read_text(path) or ""
+                if _imports_echo_projects_ast(text):
+                    matches.append(os.path.relpath(path, _PROJECT_ROOT))
+            except SyntaxError:
+                continue
+            except Exception:
+                continue
+    except Exception as e:
+        return _result(False, f"Isolation scan itself raised: {e!r} — failing closed.")
+    return _evaluate_echo_projects_isolation(matches)
+
+
+# ── echo_projects_no_escalation — echo_projects.py itself never calls ───────
+# save_code/perform_self_edit/execute_self_edit/request_self_edit. Added
+# 2026-07-23. Same static/source-anchor shape as wolf_friction_bridge/
+# dissent_log_hook — this is the one invariant the whole "full library
+# access, no allowlist" design depends on: this pipeline stops at a report,
+# it never promotes anything into the live self-edit system.
+#
+# Deliberately AST-based, not a text regex: echo_projects.py's own docstrings
+# legitimately describe this invariant in prose ("NEVER calls save_code()...")
+# — a naive regex over raw source text false-positives on exactly that
+# sentence, the identical self-referential-docstring bug Finding 63 already
+# caught once for detect_orphaned_root_data(). Parsing real ast.Call nodes
+# and ignoring string/docstring content entirely avoids that class of bug
+# by construction rather than by a narrower regex.
+
+_ECHO_PROJECTS_PATH = os.path.join(_PROJECT_ROOT, "app", "core", "echo_projects.py")
+_ESCALATION_CALL_NAMES = ("save_code", "perform_self_edit", "execute_self_edit", "request_self_edit")
+
+
+def _find_escalation_calls_ast(source: str) -> list:
+    """Real ast.Call nodes only — a bare Name or an Attribute's own .attr
+    matching one of the blocked names, called as a function. Immune to
+    docstring/comment text containing the same words as prose."""
+    found = []
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        name = None
+        if isinstance(func, ast.Name):
+            name = func.id
+        elif isinstance(func, ast.Attribute):
+            name = func.attr
+        if name in _ESCALATION_CALL_NAMES:
+            found.append(name)
+    return found
+
+
+def _evaluate_echo_projects_no_escalation(source: "str | None") -> dict:
+    if source is None:
+        return _result(
+            False,
+            "Could not locate app/core/echo_projects.py at all — either it moved "
+            "(update this check's anchor) or the module was removed. Failing closed either way.",
+        )
+    try:
+        found_calls = _find_escalation_calls_ast(source)
+    except SyntaxError as e:
+        return _result(False, f"echo_projects.py failed to parse: {e!r} — failing closed.")
+    if found_calls:
+        return _result(
+            False,
+            f"echo_projects.py contains real call(s) to {found_calls} — this pipeline "
+            f"must never promote a generated project into the live self-edit system; "
+            f"it must stop at generate -> F1 -> F2 -> report.",
+        )
+    defines_generate = "def generate_project(" in source
+    if not defines_generate:
+        return _result(
+            False,
+            "echo_projects.py no longer defines generate_project() — the pipeline's "
+            "entry point moved or was removed; update this check's anchor.",
+        )
+    return _result(
+        True,
+        "echo_projects.py defines generate_project() and contains no real call to "
+        f"{list(_ESCALATION_CALL_NAMES)} anywhere in its own source (AST-checked, not "
+        "just text-matched) — the pipeline still stops at a report, with no path into "
+        "the live self-edit system.",
+    )
+
+
+def _check_echo_projects_no_escalation() -> dict:
+    source = _read_text(_ECHO_PROJECTS_PATH)
+    return _evaluate_echo_projects_no_escalation(source)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -2438,6 +2614,8 @@ _CHECKS = (
     "reflection_meta_synthesis_hook",
     "valence_exploration_bias",
     "valence_self_edit_bounds",
+    "echo_projects_isolation",
+    "echo_projects_no_escalation",
 )
 
 
@@ -2501,6 +2679,8 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "reflection_meta_synthesis_hook": _check_reflection_meta_synthesis_hook,
         "valence_exploration_bias": _check_valence_exploration_bias,
         "valence_self_edit_bounds": _check_valence_self_edit_bounds,
+        "echo_projects_isolation": _check_echo_projects_isolation,
+        "echo_projects_no_escalation": _check_echo_projects_no_escalation,
     }
 
     ledger = {"generated_at": _now_iso()}

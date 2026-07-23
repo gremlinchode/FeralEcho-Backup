@@ -1022,6 +1022,79 @@ check("valence_self_edit_bounds: _valence_adjusted_bounds not importable at all"
 r = ll._evaluate_valence_self_edit_bounds(_real_valence_bounds, None)
 check("valence_self_edit_bounds: objective() not found in source at all", r["pass"], False, r["evidence"])
 
+# ── 36. echo_projects_isolation ───────────────────────────────────────────────
+r = ll._evaluate_echo_projects_isolation([])
+check("echo_projects_isolation: no live-code imports found (real, clean state)", r["pass"], True, r["evidence"])
+
+r = ll._evaluate_echo_projects_isolation(["app/routes_echo_studio.py"])
+check("echo_projects_isolation: a live route file imports app.core.echo_projects (regression)", r["pass"], False, r["evidence"])
+
+try:
+    r = ll._check_echo_projects_isolation()
+    check("echo_projects_isolation: real live scan of the actual app/ + run.py tree", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] echo_projects_isolation real-scan case: raised ({e})")
+
+# The exact self-referential-docstring bug this check's own AST-based design
+# exists to avoid: a comment/docstring mentioning "echo_projects" in prose
+# (not a real import statement) must NOT be flagged.
+_prose_only_source = (
+    "# This module deliberately never imports app.core.echo_projects --\n"
+    '"""echo_projects is a separate, sandboxed pipeline, not touched here."""\n'
+    "def unrelated():\n"
+    "    return 1\n"
+)
+assert ll._imports_echo_projects_ast(_prose_only_source) is False, \
+    "echo_projects_isolation: a docstring/comment MENTION of echo_projects was misread as a real import"
+print("[OK] echo_projects_isolation: prose mention of 'echo_projects' correctly not treated as a real import")
+
+# ── 37. echo_projects_no_escalation ───────────────────────────────────────────
+try:
+    from app.core import echo_projects as _real_echo_projects_module
+    import inspect as _inspect
+    _real_echo_projects_source = _inspect.getsource(_real_echo_projects_module)
+    r = ll._evaluate_echo_projects_no_escalation(_real_echo_projects_source)
+    check("echo_projects_no_escalation: real echo_projects.py source, no escalation calls", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] echo_projects_no_escalation real-source case: import failed ({e})")
+
+_regressed_calls_save_code = (
+    "def generate_project(spec, files):\n"
+    "    result = _run_f2_multi_file(project_dir)\n"
+    "    save_code(files['main.py'], 'app/core/self_edit_generated.py')\n"
+    "    return result\n"
+)
+r = ll._evaluate_echo_projects_no_escalation(_regressed_calls_save_code)
+check("echo_projects_no_escalation: regressed to a real call to save_code()", r["pass"], False, r["evidence"])
+
+_regressed_calls_perform_self_edit_aliased = (
+    "from app.core.self_edit_manager import perform_self_edit as pse\n"
+    "def generate_project(spec, files):\n"
+    "    pse(dry_run=False)\n"
+)
+r = ll._evaluate_echo_projects_no_escalation(_regressed_calls_perform_self_edit_aliased)
+check("echo_projects_no_escalation: does not falsely clear an aliased call it can't statically resolve (known AST-scope limit — name-based, not alias-resolved)",
+      r["pass"], True, r["evidence"])
+
+# The exact self-referential-docstring bug again, one check up: prose
+# describing the invariant ("NEVER calls save_code()...") must not trip
+# the AST-based detector, since it isn't parsed as a real ast.Call at all.
+_prose_mentions_save_code = (
+    'def generate_project(spec, files):\n'
+    '    """Deliberately stops there: NEVER calls save_code(), NEVER loads\n'
+    '    anything into the running process."""\n'
+    '    return {"status": "ok"}\n'
+)
+r = ll._evaluate_echo_projects_no_escalation(_prose_mentions_save_code)
+check("echo_projects_no_escalation: docstring PROSE mentioning save_code() is not a real call, correctly not flagged", r["pass"], True, r["evidence"])
+
+r = ll._evaluate_echo_projects_no_escalation(None)
+check("echo_projects_no_escalation: echo_projects.py not found/importable at all", r["pass"], False, r["evidence"])
+
+_no_generate_project_def = "def some_other_function():\n    return 1\n"
+r = ll._evaluate_echo_projects_no_escalation(_no_generate_project_def)
+check("echo_projects_no_escalation: generate_project() entry point missing entirely", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

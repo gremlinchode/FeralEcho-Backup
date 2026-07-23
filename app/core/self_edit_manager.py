@@ -115,6 +115,23 @@ _BLOCKED_IO_CLASSES  = frozenset({"FileIO", "RawIOBase", "BufferedWriter", "Buff
 _BLOCKED_IMPORTLIB_ATTRS = frozenset({"reload"})
 _BLOCKED_CTYPES_ATTRS    = frozenset({"CDLL", "cdll", "LibraryLoader"})
 
+# Gap-closure plan (2026-07-23): self-edit escalation calls, added
+# alongside app/core/echo_projects.py's new full-library-access pipeline.
+# Blocked by resolved CALL TARGET, not module name -- a module-name
+# denylist (e.g. "never import self_edit_manager/echo_optuna") would be
+# defeated by "app" already being a blanket-allowed top-level entry in
+# _ALLOWED_TOP_LEVEL: `import app.core.wolf_friction_bridge;
+# wolf_friction_bridge.request_self_edit(...)` would sail past a
+# name-based check without ever naming the specific module a denylist
+# looks for. Checking the attribute/call name alone -- independent of
+# which module or alias resolves to it -- blocks the actual action worth
+# preventing (programmatically triggering a real self-edit cycle from
+# inside a generate-and-test space) rather than trying to enumerate every
+# module path that could reach it.
+_BLOCKED_SELF_EDIT_ESCALATION_CALLS = frozenset({
+    "perform_self_edit", "execute_self_edit", "request_self_edit", "save_code",
+})
+
 _FORBIDDEN_BASENAMES = frozenset(os.path.basename(t) for t in EDIT_FORBIDDEN_TARGETS)
 
 
@@ -386,12 +403,30 @@ def scan_for_unsafe_operations(code: str) -> None:
                 if v:
                     violations.append(v)
                 continue
+            # Self-edit escalation call, direct or unaliased from-import:
+            # `perform_self_edit(...)` after either `import ...
+            # perform_self_edit` in whatever form makes it a bare name.
+            if name in _BLOCKED_SELF_EDIT_ESCALATION_CALLS:
+                violations.append(
+                    f"line {lineno}: {name}() is a self-edit escalation call, unconditionally blocked"
+                )
+                continue
             # Finding 41-C: `from os import system; system(...)` — a bare
             # call whose real origin (resolved via from_aliases) is a
             # blocked module.attr, even though the call site never spells
-            # "os"/"subprocess" literally.
+            # "os"/"subprocess" literally. Also covers an ALIASED escalation
+            # import: `from app.core.self_edit_manager import
+            # perform_self_edit as pse; pse(...)` — origin_attr resolves to
+            # "perform_self_edit" even though the call site only says "pse".
             if name in from_aliases:
                 origin_module, _, origin_attr = from_aliases[name].rpartition(".")
+                if origin_attr in _BLOCKED_SELF_EDIT_ESCALATION_CALLS:
+                    violations.append(
+                        f"line {lineno}: {origin_attr}() is a self-edit escalation call, "
+                        f"unconditionally blocked (aliased via 'from {origin_module} import "
+                        f"{origin_attr}' as '{name}')"
+                    )
+                    continue
                 v = _is_blocked_module_attr(origin_module, origin_attr)
                 if v:
                     violations.append(
@@ -436,6 +471,18 @@ def scan_for_unsafe_operations(code: str) -> None:
             if v:
                 violations.append(f"line {lineno}: {v} (via __import__({obj.args[0].value!r}))")
                 continue
+
+        # Self-edit escalation call, attribute form: `self_edit_manager.
+        # perform_self_edit(...)`, any aliased module name (`sem.
+        # perform_self_edit(...)` after `import ... as sem`), or reached
+        # via __import__(...).perform_self_edit(...) above -- checking attr
+        # alone, independent of what obj resolves to, naturally covers all
+        # three call shapes without needing separate module resolution.
+        if attr in _BLOCKED_SELF_EDIT_ESCALATION_CALLS:
+            violations.append(
+                f"line {lineno}: {attr}() is a self-edit escalation call, unconditionally blocked"
+            )
+            continue
 
         # os.* and posix.* (C backing for os)
         if isinstance(obj, ast.Name) and obj.id in _BLOCKED_POSIX_MODULE:

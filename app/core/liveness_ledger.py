@@ -1308,6 +1308,120 @@ def _check_log_retention() -> dict:
     return _evaluate_log_retention(rotate_if_oversized, _LOG_RETENTION_TARGETS)
 
 
+# ── echo_state_archiving — log_retention.archive_if_due() still correctly ──
+# no-ops when a recent archive already exists and still archives+prunes when
+# one is due/missing, and the real memory/history/ directory isn't stale by
+# more than a few multiples of the configured daily cadence. Added
+# 2026-07-23 (CLAUDE.md Finding 75) alongside the archiving capability
+# itself — closing the exact gap seam_engine.py's own docstring already
+# names this file's standing rule against ("any new autonomous capability
+# does not get to be called done without its own check added here").
+
+_ECHO_STATE_ARCHIVE_STALE_MULTIPLIER = 3
+
+def _evaluate_echo_state_archiving(archive_fn, check_live: bool = True) -> dict:
+    """check_live=False skips the real-directory staleness signal below,
+    isolating pure canary behavior — same escape-hatch role as
+    _evaluate_log_retention()'s targets=[] parameter, needed because a
+    brand-new capability's discrimination test shouldn't fail just because
+    the real daily hook hasn't had a chance to run yet in whatever
+    environment this is invoked from."""
+    if archive_fn is None:
+        return _result(False, "Could not import archive_if_due at all — failing closed.")
+
+    import tempfile
+    failures = []
+    with tempfile.TemporaryDirectory() as td:
+        src_dir = os.path.join(td, "src")
+        dest_dir = os.path.join(td, "dest")
+        os.makedirs(src_dir, exist_ok=True)
+        src_file = os.path.join(src_dir, "fake_state.npy")
+        with open(src_file, "wb") as f:
+            f.write(b"x" * 64)
+        sources = [(src_file, "fake_state_*.npy")]
+
+        # Case 1: nothing archived yet -- should archive.
+        try:
+            archived = archive_fn(sources, dest_dir, interval_hours=24.0, max_snapshots=5)
+            existing = list(Path(dest_dir).glob("fake_state_*.npy")) if os.path.isdir(dest_dir) else []
+            if not archived or not existing:
+                failures.append(f"first call did not archive (archived={archived}, files={len(existing)})")
+        except Exception as e:
+            failures.append(f"first-call case raised {e!r}")
+
+        # Case 2: an archive from moments ago already exists -- should no-op.
+        try:
+            archived_again = archive_fn(sources, dest_dir, interval_hours=24.0, max_snapshots=5)
+            if archived_again:
+                failures.append("second call re-archived a fresh (not-yet-due) snapshot")
+        except Exception as e:
+            failures.append(f"not-yet-due case raised {e!r}")
+
+    if failures:
+        return _result(
+            False,
+            "archive_if_due() failed canary cases: " + "; ".join(failures),
+        )
+
+    if not check_live:
+        return _result(
+            True,
+            "archive_if_due() correctly discriminates both canary cases "
+            "(live-directory check skipped for this call).",
+        )
+
+    # Live ground-truth signal: has the real daily archive actually run
+    # recently, given the real source files exist? A total absence (or one
+    # more than _ECHO_STATE_ARCHIVE_STALE_MULTIPLIER intervals stale) means
+    # the NightCycle hook has stopped firing, not just that it isn't due yet.
+    try:
+        from app.maintenance.night_cycle import (
+            _ECHO_STATE_ARCHIVE_SOURCES, _ECHO_STATE_ARCHIVE_DIR,
+            _ECHO_STATE_ARCHIVE_INTERVAL_HOURS,
+        )
+        real_src_exists = any(Path(src).exists() for src, _ in _ECHO_STATE_ARCHIVE_SOURCES)
+        if real_src_exists:
+            newest = None
+            for _src, pattern in _ECHO_STATE_ARCHIVE_SOURCES:
+                for p in Path(_ECHO_STATE_ARCHIVE_DIR).glob(pattern):
+                    mtime = p.stat().st_mtime
+                    if newest is None or mtime > newest:
+                        newest = mtime
+            if newest is None:
+                return _result(
+                    False,
+                    "archive_if_due() correctly discriminates, but no real echo-state "
+                    "archive exists yet even though the real source file(s) do — the "
+                    "daily NightCycle hook may never have fired.",
+                )
+            age_hours = (datetime.now(timezone.utc).timestamp() - newest) / 3600
+            stale_bound = _ECHO_STATE_ARCHIVE_INTERVAL_HOURS * _ECHO_STATE_ARCHIVE_STALE_MULTIPLIER
+            if age_hours > stale_bound:
+                return _result(
+                    False,
+                    f"archive_if_due() correctly discriminates, but the newest real "
+                    f"echo-state archive is {age_hours:.1f}h old (bound {stale_bound:.1f}h) "
+                    "— the daily rotation hook may have stopped firing.",
+                )
+    except Exception:
+        pass  # absence of the real wiring itself is covered by the canary result above
+
+    return _result(
+        True,
+        "archive_if_due() correctly discriminates both canary cases (no-op when "
+        "not due, archives+prunes when due), and the real echo-state archive "
+        "(if any source file exists) is not stale.",
+    )
+
+
+def _check_echo_state_archiving() -> dict:
+    try:
+        from app.core.log_retention import archive_if_due
+    except Exception:
+        archive_if_due = None
+    return _evaluate_echo_state_archiving(archive_if_due)
+
+
 # ── 21. janitor_safety — echo_janitor.py's echo_review() still only ever ───
 # assigns decision="archive" (the only decision execute_plan() will act on
 # with dry_run=False) to the narrow, reversible categories it's designed
@@ -2052,6 +2166,7 @@ _CHECKS = (
     "river_drift_alerting",
     "f1_aliased_import_detection",
     "dual_learner_validation_gate",
+    "echo_state_archiving",
 )
 
 
@@ -2061,8 +2176,12 @@ def _load_prev_ledger() -> dict:
 
 def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
     """
-    Run all checks in _CHECKS (24 as of 2026-07-22) and write
-    memory/liveness_ledger.json.
+    Run all checks in _CHECKS -- see the module-level comment above _CHECKS
+    for why no fixed count is written here: a hardcoded number in this exact
+    docstring (previously "24 as of 2026-07-22" against a real, then-current
+    count of 30) is precisely the kind of self-referential drift this file
+    exists to catch elsewhere. Call len(_CHECKS) if you need the live count.
+    Writes memory/liveness_ledger.json.
     introspection_memory: the already-computed state["memory"] dict from
     this same introspection cycle (faiss_vector_count/journal_line_count),
     reused rather than re-read so self_model_drift compares against the
@@ -2106,6 +2225,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "river_drift_alerting": _check_river_drift_alerting,
         "f1_aliased_import_detection": _check_f1_aliased_import_detection,
         "dual_learner_validation_gate": _check_dual_learner_validation_gate,
+        "echo_state_archiving": _check_echo_state_archiving,
     }
 
     ledger = {"generated_at": _now_iso()}

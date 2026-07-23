@@ -302,7 +302,15 @@ def rate_one_entry(entry: dict) -> "dict | None":
                 response_preview, score, entry.get("quality_score"),
             )
         except Exception as e:
-            logger.debug("[Council] learn_from_council_rating failed: %s", e)
+            # Was logger.debug (suppressed in production, INFO root logger)
+            # until 2026-07-23 -- made a real failure here indistinguishable
+            # from a successful call that simply never happened, which is
+            # exactly the ambiguity CLAUDE.md Finding 76 flagged (40%
+            # confidence this training path was actually firing, precisely
+            # because a genuine failure and total silence looked identical
+            # in the real log). Bumped to warning so a recurrence is visible
+            # without needing another forensic pass to notice.
+            logger.warning("[Council] learn_from_council_rating failed: %s", e)
 
     return log_entry
 

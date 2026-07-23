@@ -858,6 +858,36 @@ check("dual_learner_validation_gate: validation call silently removed", r["pass"
 r = ll._evaluate_dual_learner_validation_gate(None)
 check("dual_learner_validation_gate: log_event() not found in source at all", r["pass"], False, r["evidence"])
 
+# ── 31. echo_state_archiving ──────────────────────────────────────────────────
+try:
+    from app.core.log_retention import archive_if_due as _real_archive
+    r = ll._evaluate_echo_state_archiving(_real_archive, check_live=False)
+    check("echo_state_archiving: real current archive_if_due() (canary only)", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] echo_state_archiving real-function case: import failed ({e})")
+
+# Separately, confirm the live-directory signal itself against real
+# production state (not skipped this time) -- informational, not asserted
+# pass/fail here, since a brand-new capability legitimately starts "not yet
+# archived" until its first real cycle fires.
+try:
+    r_live = ll._evaluate_echo_state_archiving(_real_archive, check_live=True)
+    print(f"[INFO] echo_state_archiving live signal: pass={r_live['pass']} | {r_live['evidence']}")
+except Exception as e:
+    print(f"[SKIP] echo_state_archiving live-signal case: {e}")
+
+_never_archives = lambda sources, dest_dir, interval_hours, max_snapshots: False
+r = ll._evaluate_echo_state_archiving(_never_archives)
+check("echo_state_archiving: never archives (degraded into a permanent no-op)", r["pass"], False, r["evidence"])
+
+def _claims_archived_but_writes_nothing(sources, dest_dir, interval_hours, max_snapshots):
+    return True  # claims success without ever creating a file in dest_dir
+r = ll._evaluate_echo_state_archiving(_claims_archived_but_writes_nothing)
+check("echo_state_archiving: claims success without ever writing a file (false positive)", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_echo_state_archiving(None)
+check("echo_state_archiving: archive_if_due not importable at all", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

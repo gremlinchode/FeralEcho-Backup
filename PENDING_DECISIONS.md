@@ -27,8 +27,8 @@ so it doesn't need to be duplicated here.
 
 | # | Item | What's being decided | Options on the table | Detail |
 |---|---|---|---|---|
-
-**No open rows right now.** Everything raised through 2026-07-22 has been either decided-and-built or explicitly decided-not-to-build. See the dated notes below for history; check CLAUDE.md's Finding history for the authoritative record of what shipped.
+| 17 | Graduated-trust design for the Dissent Log's gating power | Whether the Dissent Log (`self_edit_manager.py`'s council review on protected-file proposals) should ever gain real gating power, and if so, under what earned-trust mechanism | (a) Leave it advisory-only, permanently, given WOLF's history of a hollow "evaluative" gate that turned out to rubber-stamp raw keystrokes; (b) design a graduated-trust mechanism mirroring `council_baseline_trusted_since`'s proven pattern (track the Dissent Log's own predictive accuracy over time, only grant real power once a comparable trust threshold is independently earned) — design already sketched in `audits/2026-07-23_emergence_architecture_analysis.md` §4.3, not built | CLAUDE.md Finding 75 |
+| 18 | Whether to close `curiosity_engine.py`'s one-directional `WorldModel` read | `curiosity_engine.py` reads `WorldModel.get_topic_distribution()` to pick which topic to ask about, but nothing anywhere feeds curiosity-engine-generated content back into the world model (confirmed via fresh grep from both directions) — closing this loop would let the system's own generated content start influencing what it considers "well-covered" territory, not just external signal | (a) Leave it open/one-directional, as-is; (b) wire curiosity-engine output back into `WorldModel.update()` so genuinely closing the loop — not attempted, since this creates a real self-reinforcing feedback path and deserves the same "don't build authority/feedback loops by momentum" caution as item 17, not a default engineering fix | CLAUDE.md Finding 75 (surfaced during the Finding 75/76 gap-closure plan's own validation pass, not in either original audit) |
 
 ---
 

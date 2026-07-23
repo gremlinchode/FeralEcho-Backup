@@ -26,7 +26,76 @@ one dropped log line, never corruption.
 import gzip
 import logging
 import os
+import shutil
+from datetime import datetime, timezone
 from pathlib import Path
+
+
+def archive_if_due(sources: "list[tuple[str, str]]", dest_dir: "str | Path",
+                    interval_hours: float, max_snapshots: int) -> bool:
+    """Periodic-archive helper — added 2026-07-23 (CLAUDE.md Finding 75/
+    physiology audit): confirmed no historical snapshot of
+    memory/echo_state_history.npy exists anywhere, so a real correlation-
+    structure shift found that session (temporal_phase<->valence:
+    r=+0.83 on 2026-07-18 -> r=-0.93 measured fresh) couldn't be checked
+    against real history — there was none, because the file is a fixed
+    100-row ring buffer (~3.3h horizon) that silently overwrites. This
+    doesn't fix that specific mystery retroactively (impossible); it
+    prevents the same blind spot recurring for future questions like it.
+
+    For each (src_path, glob_pattern) in sources: if the real src file
+    exists and the newest existing archive matching glob_pattern in
+    dest_dir is older than interval_hours (or none exists), copies a
+    timestamped snapshot and prunes that pattern's archives down to
+    max_snapshots. A failure on one source never blocks the others.
+    Never raises. Returns True if anything was actually archived this call
+    — parameterized (not hardcoded to the real echo-state paths/interval)
+    specifically so a liveness check can exercise this real function
+    against synthetic data, same reasoning as self_edit_manager.py's
+    _prune_self_edit_plans() gaining optional params for the identical
+    purpose (CLAUDE.md Finding 58).
+    """
+    archived_any = False
+    dest_dir = Path(dest_dir)
+    try:
+        dest_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        logging.warning(f"[ECHO-STATE-ARCHIVE] Could not create {dest_dir}: {e}")
+        return False
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    for src_path, glob_pattern in sources:
+        try:
+            src = Path(src_path)
+            if not src.exists():
+                continue
+            existing = sorted(dest_dir.glob(glob_pattern))
+            needs_archive = True
+            if existing:
+                age_hours = (
+                    datetime.now(timezone.utc).timestamp() - existing[-1].stat().st_mtime
+                ) / 3600
+                needs_archive = age_hours >= interval_hours
+            if not needs_archive:
+                continue
+
+            prefix = glob_pattern.split("*")[0]
+            dest = dest_dir / f"{prefix}{stamp}{src.suffix}"
+            shutil.copy2(src, dest)
+            archived_any = True
+            logging.info(f"[ECHO-STATE-ARCHIVE] Archived {src.name} -> {dest.name}")
+
+            all_snaps = sorted(dest_dir.glob(glob_pattern))
+            for old in all_snaps[:-max_snapshots]:
+                try:
+                    old.unlink()
+                    logging.info(f"[ECHO-STATE-ARCHIVE] Pruned old snapshot {old.name}")
+                except Exception:
+                    pass
+        except Exception as e:
+            logging.warning(f"[ECHO-STATE-ARCHIVE] Archive failed for {src_path}: {e}")
+            continue
+    return archived_any
 
 
 def rotate_if_oversized(path: "str | Path", max_bytes: int) -> bool:

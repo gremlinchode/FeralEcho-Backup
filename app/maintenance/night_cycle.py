@@ -41,6 +41,19 @@ _LOG_RETENTION_TARGETS = (
 )
 _LOG_RETENTION_STATE = Path("memory/log_retention_state.json")
 _LOG_RETENTION_CHECK_INTERVAL_HOURS = 24
+
+# Added 2026-07-23 (CLAUDE.md Finding 75/physiology audit) — see
+# log_retention.archive_if_due()'s docstring for the full motivation. Daily
+# cadence chosen against the ring buffer's own ~3.3h horizon: frequent
+# enough that a future correlation-drift question has real history to check
+# against, infrequent enough not to accumulate an excessive file count.
+_ECHO_STATE_ARCHIVE_SOURCES = (
+    ("memory/echo_state_history.npy", "echo_state_history_*.npy"),
+    ("memory/salience_state.json", "salience_state_*.json"),
+)
+_ECHO_STATE_ARCHIVE_DIR = Path("memory/history")
+_ECHO_STATE_ARCHIVE_INTERVAL_HOURS = 24
+_MAX_ECHO_STATE_ARCHIVES = 30  # ~1 month at daily cadence
 # Confirmed live on the very first real run (2026-07-21): two overlapping
 # _perform_reflection() calls both read _LOG_RETENTION_STATE, both saw the
 # gate as due, and both proceeded — reflection_shard.jsonl was rotated
@@ -154,6 +167,9 @@ class NightCycle:
         # echo_janitor.py — weekly-gated project-root hygiene scan
         self._maybe_run_janitor()
 
+        # 2026-07-23 — daily-gated echo_state/salience history archiving
+        self._maybe_archive_echo_state_history()
+
         # Shadow accuracy check — compare experimental targets to what actually happened
         try:
             from app.core.shadow_model import log_accuracy, check_and_correct
@@ -195,6 +211,24 @@ class NightCycle:
                     logging.info(f"[NightCycle] Old snapshot removed: {old.name}")
         except Exception as e:
             logging.warning(f"[NightCycle] Snapshot failed: {e}")
+
+    def _maybe_archive_echo_state_history(self) -> None:
+        """Daily-gated archive of echo_state_history.npy + salience_state.json
+        into memory/history/ — see log_retention.archive_if_due()'s docstring
+        for the full motivation (no historical copy of either file existed
+        anywhere before this, confirmed 2026-07-23)."""
+        try:
+            from app.core.log_retention import archive_if_due
+            archived = archive_if_due(
+                _ECHO_STATE_ARCHIVE_SOURCES,
+                _ECHO_STATE_ARCHIVE_DIR,
+                _ECHO_STATE_ARCHIVE_INTERVAL_HOURS,
+                _MAX_ECHO_STATE_ARCHIVES,
+            )
+            if archived:
+                logging.info("[NightCycle] Echo-state/salience history archived.")
+        except Exception as e:
+            logging.warning(f"[NightCycle] Echo-state history archive failed: {e}")
 
     def _maybe_rotate_large_logs(self) -> None:
         """Check memory/*.log and memory/*.jsonl growth once every

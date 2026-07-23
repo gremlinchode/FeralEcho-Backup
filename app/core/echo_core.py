@@ -553,7 +553,10 @@ class EchoCore:
 # later. A module-level function, not an EchoCore method — pure
 # computation, doesn't touch the bus's internal state.
 
-_SALIENCE_URGENCY_WINDOW_HOURS = 2.0
+_SALIENCE_URGENCY_WINDOW_HOURS = 2.0  # fallback only now — see _salience_curiosity_urgency()
+_SALIENCE_URGENCY_RECENT_N = 50
+_SALIENCE_URGENCY_WINDOW_MULTIPLIER = 3.0
+_SALIENCE_URGENCY_MIN_WINDOW_HOURS = 0.1
 _SALIENCE_STREAK_NORMALIZER = 10.0
 _SALIENCE_CONVERGENCE_PATH = os.path.join("app", "core", "self_edit_convergence.json")
 _SALIENCE_GARDEN_PATH = os.path.join("data", "question_garden.jsonl")
@@ -591,9 +594,26 @@ def _salience_curiosity_urgency() -> float:
     the ratio is 99.4% on live data (4475/4502), because very few
     questions ever reach the 4.5 resolution-score threshold to be marked
     resolved. That's a nearly-constant, non-discriminating signal.
-    Recency of the last harvest is genuinely time-varying instead."""
+    Recency of the last harvest is genuinely time-varying instead.
+
+    2026-07-23 fix: the original fixed _SALIENCE_URGENCY_WINDOW_HOURS=2.0
+    window turned out to have the identical disease it was built to avoid.
+    The physiology audit (CLAUDE.md Finding 75) measured this pinned near
+    ceiling (mean 0.974, range 0.864-1.0 across 100 real samples) — traced to
+    five independent call sites (curiosity_engine, seam_engine,
+    self_edit_manager's dissent log, autonomous_awareness's dream cycle, and
+    this same scheduler) all resetting the one shared "last harvest"
+    timestamp via garden_manager.harvest_question(), so hours_since almost
+    never approaches even a 2-hour window before being reset again. Now
+    derives the comparison window from the system's own recent harvest
+    cadence (median gap over the last _SALIENCE_URGENCY_RECENT_N harvests)
+    instead of one fixed constant that can go stale the same way — the exact
+    "measure real cadence before picking a value" discipline this project
+    already applies elsewhere (e.g. the analogous emergent_scheduler.py
+    threshold fix the same day). Falls back to the old fixed window if
+    there's too little history to compute a real median gap yet."""
     try:
-        last_ts = None
+        timestamps = []
         with open(_SALIENCE_GARDEN_PATH, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
@@ -605,13 +625,28 @@ def _salience_curiosity_urgency() -> float:
                     continue
                 ts = entry.get("planted")
                 if ts is not None:
-                    ts = float(ts)
-                    if last_ts is None or ts > last_ts:
-                        last_ts = ts
-        if last_ts is None:
+                    timestamps.append(float(ts))
+        if not timestamps:
             return 0.0
+        timestamps.sort()
+        last_ts = timestamps[-1]
         hours_since = max(0.0, (datetime.now(timezone.utc).timestamp() - last_ts) / 3600)
-        return max(0.0, 1.0 - hours_since / _SALIENCE_URGENCY_WINDOW_HOURS)
+
+        window_hours = _SALIENCE_URGENCY_WINDOW_HOURS
+        recent = timestamps[-_SALIENCE_URGENCY_RECENT_N:]
+        if len(recent) >= 2:
+            gaps = [b - a for a, b in zip(recent[:-1], recent[1:]) if b > a]
+            if gaps:
+                gaps.sort()
+                mid = len(gaps) // 2
+                median_gap_hours = (
+                    gaps[mid] if len(gaps) % 2 else (gaps[mid - 1] + gaps[mid]) / 2.0
+                ) / 3600
+                window_hours = max(
+                    median_gap_hours * _SALIENCE_URGENCY_WINDOW_MULTIPLIER,
+                    _SALIENCE_URGENCY_MIN_WINDOW_HOURS,
+                )
+        return max(0.0, 1.0 - hours_since / window_hours)
     except Exception:
         return 0.0
 

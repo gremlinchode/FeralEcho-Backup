@@ -10,6 +10,8 @@ import threading
 import time
 import logging
 import random
+import os
+import json
 from datetime import datetime
 
 
@@ -74,10 +76,61 @@ except Exception:
 
 # Safe import of echo_state for coherence_tension signal
 try:
-    from app.core.echo_state import load as _echo_state_load
+    from app.core.echo_state import load as _echo_state_load, load_history as _echo_state_load_history
     _ECHO_STATE_AVAILABLE = True
 except Exception:
     _ECHO_STATE_AVAILABLE = False
+
+_SALIENCE_STATE_PATH = os.path.join("memory", "salience_state.json")
+
+
+def _relative_signal_threshold(history_values: "list", percentile: float = 0.85,
+                                min_samples: int = 20, fallback_abs: float = 0.6) -> float:
+    """Threshold for "notably high relative to this signal's own recent real
+    history", not a fixed absolute magic number. Added 2026-07-23 — the
+    physiology audit (CLAUDE.md Finding 75) measured real observed ranges for
+    coherence_tension/world_surprise/valence (0.106-0.156 / 0.0007-0.0081 /
+    0.14-0.19) and found none ever came close to the old fixed 0.6/-0.6
+    thresholds below, so all three boosts were permanently unreachable by
+    data, not by design — the constants were apparently never checked
+    against real signal ranges when chosen. Falls back to the old fixed
+    value if there isn't enough real history yet, so behavior degrades
+    safely to its prior (if inert) shape rather than firing on noise from a
+    thin sample."""
+    clean = [v for v in history_values if v is not None]
+    if len(clean) < min_samples:
+        return fallback_abs
+    s = sorted(clean)
+    idx = min(int(len(s) * percentile), len(s) - 1)
+    return s[idx]
+
+
+def _recent_salience_component_history(key: str) -> "list":
+    """Real historical values for one compute_salience() component, read
+    directly from the persisted rolling history in memory/salience_state.json
+    (same file seam_engine.py and the 2026-07-23 physiology audit both read
+    for this exact purpose) — fails closed to an empty list on any error."""
+    try:
+        with open(_SALIENCE_STATE_PATH, "r", encoding="utf-8") as f:
+            state = json.load(f)
+        history = state.get("history", [])
+        return [float(h.get(key)) for h in history if h.get(key) is not None]
+    except Exception:
+        return []
+
+
+def _recent_valence_history() -> "list":
+    """Real historical valence values (echo_state.npy dim[8]) from the
+    persisted ring buffer — fails closed to an empty list on any error."""
+    if not _ECHO_STATE_AVAILABLE:
+        return []
+    try:
+        hist = _echo_state_load_history()
+        if hist is None or len(hist) == 0 or hist.shape[1] <= 8:
+            return []
+        return [float(v) for v in hist[:, 8]]
+    except Exception:
+        return []
 
 _weak_task_cache: dict = {"focus": "general", "ts": 0.0}
 _WEAK_TASK_TTL = 300.0
@@ -451,6 +504,22 @@ def weighted_prompt_selection():
         except Exception:
             pass
 
+    # 2026-07-23 fix: real recent history for each signal, so the three
+    # thresholds below are relative to what this system actually produces
+    # instead of a fixed absolute constant that turned out to be permanently
+    # unreachable (see _relative_signal_threshold()'s docstring).
+    _coherence_hist = _recent_salience_component_history("coherence_tension")
+    _surprise_hist = _recent_salience_component_history("world_surprise")
+    _valence_hist = _recent_valence_history()
+    _coherence_threshold = _relative_signal_threshold(_coherence_hist, fallback_abs=0.6)
+    _surprise_threshold = _relative_signal_threshold(_surprise_hist, fallback_abs=0.6)
+    # Valence is signed [-1,1] — derive symmetric high/low thresholds from
+    # the same real history rather than two independent percentile calls.
+    _valence_high_threshold = _relative_signal_threshold(_valence_hist, percentile=0.85, fallback_abs=0.6)
+    _valence_low_threshold = -_relative_signal_threshold(
+        [-v for v in _valence_hist], percentile=0.85, fallback_abs=0.6
+    )
+
     weights = []
     for prompt in BASE_THOUGHT_CHEST:
         weight = 1.0
@@ -483,26 +552,29 @@ def weighted_prompt_selection():
             if any(kw in prompt_lower for kw in weak_keywords):
                 weight *= 2.0
         # Coherence tension: when River's task-type confidence is inconsistent,
-        # pull Echo toward self-evaluation and identity prompts to resolve it
-        if coherence_tension > 0.6:
+        # pull Echo toward self-evaluation and identity prompts to resolve it.
+        # Threshold is relative to real recent history (2026-07-23 fix) —
+        # see _relative_signal_threshold()'s docstring for why the old fixed
+        # 0.6 constant was permanently unreachable.
+        if coherence_tension > _coherence_threshold:
             pl = prompt.lower()
             if any(sig in pl for sig in _CONSISTENCY_SIGNALS):
                 weight *= (1.0 + coherence_tension)
         # World surprise (Emergence roadmap Phase 2b): same threshold and
         # multiplier shape as coherence tension above, applied independently
         # — this is a signal about the world, not about the self.
-        if world_surprise > 0.6:
+        if world_surprise > _surprise_threshold:
             pl = prompt.lower()
             if any(sig in pl for sig in _NOVELTY_SIGNALS):
                 weight *= (1.0 + world_surprise)
         # Valence (Emergence roadmap Phase 3): same threshold/multiplier
         # shape as the two boosts above, applied in whichever direction the
         # signed value actually points.
-        if valence < -0.6:
+        if valence < _valence_low_threshold:
             pl = prompt.lower()
             if any(sig in pl for sig in _CONSOLIDATION_SIGNALS):
                 weight *= (1.0 + abs(valence))
-        elif valence > 0.6:
+        elif valence > _valence_high_threshold:
             pl = prompt.lower()
             if any(sig in pl for sig in _NOVELTY_SIGNALS):
                 weight *= (1.0 + valence)

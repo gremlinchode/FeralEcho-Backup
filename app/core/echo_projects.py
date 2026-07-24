@@ -70,7 +70,14 @@ from app.ollama_handler import query_ollama
 logger = logging.getLogger(__name__)
 
 _PROJECTS_DIR = Path(_PROJECT_ROOT) / "sandbox" / "echo_projects"
-_MAX_ECHO_PROJECTS = 20
+# Raised 20 -> 60 (2026-07-24), Gremlin's explicit call, once the autonomous
+# loop (Finding 85) made 20 proportionally tight: at the loop's 6h/4x-per-day
+# cadence, 20 was only ~5 days of history before rotation, for a human who
+# may not check in daily. The cap protects disk bookkeeping only (sandboxed
+# junk that can never reach anything live), not safety, so raising it
+# carries no containment cost -- disk is abundant (723GB free at the time
+# of this change). 60 gives ~15 days of real history before rotation.
+_MAX_ECHO_PROJECTS = 60
 
 # Bounds for the council-invocation pipeline (council_generate_project() and
 # its helpers, below) — same "explicit cap, not unbounded" discipline as

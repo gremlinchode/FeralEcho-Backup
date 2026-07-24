@@ -1,9 +1,0 @@
-# import memory_bridge as mb
-
-def rebuild_vector_memory():
-    vector_memory = []
-    latest_entries = mb.get_last_entries()
-    for entry in latest_entries:
-        # process and transform data as necessary
-        vector_memory.append(entry)
-    return vector_memory

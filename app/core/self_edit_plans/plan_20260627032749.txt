@@ -1,9 +1,0 @@
-1. Import necessary modules from app.core.self_edit_generated.py: `from app.core.self_edit_generated import main_function, modified_main_function`
-2. Open and read the original self_edit_generated module to identify the main_function, modified_main_function, and modified_main_function modifiers.
-3. Modify the main_function to detect prose presence in code output using a regex pattern matching natural-language sentences. For instance, `import re; prose_pattern = r'\b(a|an|the|is|are|am|be)\b';`
-4. Implement a guard function that strips any leading prose sentence before the first valid Python token in the code output. For example, `def strip_leading_natural_language(code): if re.search(prose_pattern, code, re.MULTILINE).group(): return re.sub(prose_pattern, '', code, 1, re.MULTILINE) else: return code`
-5. Update the original self_edit_generated module with the new main_function and guard function implementations.
-6. Verify the correctness of the modified self_edit_generated module by running it through various test cases, ensuring accurate prose detection and stripping.
-7. Save the updated app.core.self_edit_generated.py file.
-
-Note: The approach is based on perspective [1. Echo] with modifications to focus on prose detection and stripping.

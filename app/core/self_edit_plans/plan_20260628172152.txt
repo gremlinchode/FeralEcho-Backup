@@ -1,7 +1,0 @@
-1. From `app.core.self_edit_generated`, import the `score_code_candidate` function into the current scope using `from app.core.self_edit_generated import score_code_candidate`.
-2. Locate and identify the specific function responsible for scoring code candidates, which is `strip_prose`, within the imported module.
-3. Modify this identified function to include a new guard clause that checks for the presence of natural-language sentences at the beginning of the code output by using regular expression pattern matching to strip any detected prose from the code output.
-4. Implement the regular expression pattern to match leading prose sentences, utilizing it to truncate the input string and remove the detected prose up until the first Python token.
-5. Update the scoring mechanism to account for the newly implemented guard clause, ensuring that only valid Python code is considered for evaluation by calling `score_code_candidate` with the processed output from the `strip_prose` function.
-6. Re-export the modified function back into the current scope, ready for integration with the autonomous self-edit system using `return strip_prose`.
-7. Perform a test-run of the modified code to ensure the new prose-detection guard has successfully addressed the most common sandbox failure by executing the modified function and evaluating its output.

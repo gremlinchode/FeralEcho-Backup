@@ -1,6 +1,0 @@
-from app.core.self_edit_generated import strip_prose
-
-def shorten_code(strip_prose):
-    return '\n'.join([line.strip() for line in strip_prose.split('\n') if len(line) < 50])
-
-strip_prose = shorten_code(strip_prose)

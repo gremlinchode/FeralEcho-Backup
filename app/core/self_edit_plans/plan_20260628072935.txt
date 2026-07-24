@@ -1,9 +1,0 @@
-Here is the response:
-
-1. Import the necessary module from `app.core.self_edit_generated` as `strip_prose`.
-2. Open the file `self_edit_generated.py` for modification.
-3. Define a new function within the file named `sanitize_output` that takes a string input and returns the modified output.
-4. Within the `sanitize_output` function, detect the presence of prose (natural-language sentence) at the beginning of the input string using a suitable algorithm or library.
-5. If prose is detected, strip it from the input string by splitting the input at the first Python token (e.g., an opening parenthesis or keyword).
-6. Update the original code with the new `sanitize_output` function, ensuring that all existing functionality remains intact.
-7. Save the modified file `self_edit_generated.py`.

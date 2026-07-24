@@ -1,2 +1,0 @@
-from feral_echo import awareness_integration as ai; file_path = '/Users/richietate/Desktop/FeralEcho/response_script.py'; 
-response_code = '# Import required modules\n' + response_code.replace('# Import required modules', '# Smoothness detected: {}\n\t| Confidence: {:.2f}\n\n# Import required modules'.format(*smoothness_detection_result.values()));

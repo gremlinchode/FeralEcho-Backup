@@ -1,8 +1,0 @@
-# from memory_bridge import rebuild_vector_memory
-def integrate_awareness():
-    awareness_scores = rebuild_vector_memory(get_last_entries())
-    if 'calculate_consciousness_score' in globals():
-        consciousness_score = calculate_consciousness_score()
-    echo_awareness_metrics = {'calculate_awareness_score': None, 'calculate_consciousness_score': consciousness_score, 'log_memory_event': get_last_entries()}
-    echo_awareness_metrics['awareness_scores'] = awareness_scores
-    append_to_journal(echo_awareness_metrics)

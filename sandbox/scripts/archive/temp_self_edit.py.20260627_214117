@@ -1,9 +1,0 @@
-pattern = r'^.*\b(elif|if|def|class|try|except|for|while|as)\b'
-
-with open('app/core/self_edit_generated.py', 'r') as file:
-    content = file.read()
-
-modified_content = re.sub(pattern, lambda match: strip_prose(match.group()), content)
-
-with open('app/core/self_edit_generated.py', 'w') as file:
-    file.write(modified_content)

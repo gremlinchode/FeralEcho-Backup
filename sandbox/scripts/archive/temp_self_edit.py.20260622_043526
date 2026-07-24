@@ -1,9 +1,0 @@
-import os; from pathlib import Path; file_path = Path("/Users/richietate/Desktop/FeralEcho/awareness.py")
-
-with open(file_path, 'r') as f: lines = f.readlines()
-
-new_lines = [line.replace("Smoothness detected: False", "Smoothness detected: True") for line in lines]
-
-with open(file_path, 'w') as f: f.writelines(new_lines)
-
-print(f"Modified {file_path} to reflect confidence calibration adjustment.")

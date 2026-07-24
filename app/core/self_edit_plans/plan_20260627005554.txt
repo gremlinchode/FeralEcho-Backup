@@ -1,8 +1,0 @@
-1. From `app.core.self_edit_generated` import `refactor_main_function`, `main_function`.
-2. Open `app/core/self_edit_generated.py` for editing.
-3. Define the `strip_leading_prose` function inside `refactor_main_function`: `def strip_leading_prose(code):`.
-4. Implement the prose-detection guard by searching for the first occurrence of a valid Python token and returning everything preceding it as the stripped prose: `code = code.split(maxsplit=0)[1].lstrip() if not code.lstrip().startswith('(') else code.lstrip().split('(')[0]`.
-5. Modify `refactor_main_function` to call the newly created `strip_leading_prose` function: `code = strip_leading_prose(code)`.
-6. Update `main_function` to incorporate the new prose-detection guard and the stripped code.
-
-Note: These steps are specific, technical, and implementable without user interaction, as requested.

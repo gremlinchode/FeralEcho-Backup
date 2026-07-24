@@ -1,4 +1,0 @@
-with open(target_file, 'w') as file:
-    file.write(modified_contents)
-
-print(f"Modified line '{modified_contents}' to improve understanding.")

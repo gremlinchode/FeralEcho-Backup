@@ -1,9 +1,0 @@
-project_path = Path("/Users/richietate/Desktop/FeralEcho")
-file_path = project_path / "reflective_journal.py"
-with open(file_path, 'r+') as f:
-    original_contents = f.read()
-modified_contents = original_contents.replace('file_pointe', 'file_pointer')
-with open(file_path, 'w') as f:
-    f.write(modified_contents)
-print("Resolved incorrect variable name in the code.")
-print("Why: to improve smoothness and avoid potential errors.")

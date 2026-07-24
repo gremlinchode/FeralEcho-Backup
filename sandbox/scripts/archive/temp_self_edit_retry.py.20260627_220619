@@ -1,8 +1,0 @@
-from app.core.self_edit_generated import strip_prose
-
-def revised_creative_task_performance(task):
-    output = some_function_that_generates_output(task)
-    if re.search(r'\b(?:\w{1,}\s?){2,}(\w+)\(', output):
-        return strip_prose(output)
-    else:
-        return output

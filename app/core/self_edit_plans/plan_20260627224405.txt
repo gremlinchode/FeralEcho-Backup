@@ -1,9 +1,0 @@
-1. Import necessary modules from app.core.self_edit_generated: `from app.core.self_edit_generated import strip_prose_to_python_token`
-2. Define the new function `strip_prose_to_python_token` within the self_edit_generated module, taking one string argument.
-3. Use regular expressions to detect the presence of natural language prose at the beginning of the input string and extract it: `import re; prose = re.match(r'^\s*\w+(?=[\(\)\[\]\{\},\.\:\;\?\!\*\/\+\-])', code).group()`
-4. Split the extracted prose into sentences using natural language processing techniques.
-5. Iterate through each sentence and check if it contains a valid Python token (e.g., keyword, operator, or identifier): `for sentence in sentences: ...`
-6. If a valid Python token is found, return the substring starting from that point as the modified string: `return code[code.index(sentence) + len(sentence):]`
-7. Otherwise, continue iterating until the end of the input string is reached, returning the original input string if no valid Python tokens are detected: `return code`
-
-These steps focus on implementing the `strip_prose_to_python_token` function within app/core/self_edit_generated.py without user interaction.

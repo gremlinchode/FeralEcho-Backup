@@ -1,8 +1,0 @@
-# import os; import re; from pathlib import Path
-file_path = str(Path('/Users/richietate/Desktop/FeralEcho/echo_memory_journal.py'))
-with open(file_path, 'r') as f:
-    lines = [line for line in f.readlines()]
-new_lines = [(re.sub('Smoothness detected: False', 'Smoothness detected: True', line) if 'Smoothness detected: False' in line else line) for line in lines]
-with open(file_path, 'w') as f:
-    f.writelines(new_lines)
-print(f"Updated file {file_path}. Changed Smoothness detection from 'False' to 'True.")

@@ -1,8 +1,0 @@
-1. Import `app.core.self_edit_generated` and `strip_prose` from the same module to access the necessary functions.
-2. Open `app/core/self_edit_generated.py` for modification using a Python file editor or IDE.
-3. Locate and modify the function responsible for generating code output within the module, ensuring it includes a preprocessing step that detects and strips leading natural-language sentences.
-4. Implement a regular expression pattern to match natural-language sentence patterns and extract any leading prose using `re` module's search function.
-5. Strip the extracted prose using the `strip_prose` function from step 1, replacing the original code output with the stripped, prose-free version.
-6. Modify the code execution flow to include an evaluation of the stripped output's validity based on Python token detection.
-7. Log each edit performed and any detected prose violations within `app.core.memory_tools` using the `append_memory_entry` function.
-8. Save the modified file `app/core/self_edit_generated.py`.

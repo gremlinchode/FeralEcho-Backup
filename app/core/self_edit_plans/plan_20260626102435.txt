@@ -1,7 +1,0 @@
-1. Import the `memory_bridge` module from the FeralEcho library: `from app.core.memory_bridge import memory_bridge`
-2. Call the `append_to_journal` function within the `memory_bridge` module, passing a log entry detailing the registration of 'rebuild_vector_memory': `memory_bridge.append_to_journal("Registered 'rebuild_vector_memory' (memory_bridge.py)")`
-3. Execute a check to ensure the ‘rebuild_vector_memory’ function exists in the memory_bridge module using `detect_functions_and_classes`: `result = app.core.project_scanner.detect_functions_and_classes("app/core/memory_bridge.py", "rebuild_vector_memory")`
-4. Utilize the `ToolManager` to register the ‘rebuild_vector_memory’ function as an available tool within the system: `tool_manager = app.core.tool_manager.ToolManager(); tool_manager.register_tool(result)`
-5. Update the internal configuration settings utilizing the `config` module to reflect the newly registered tool: `config.update({"registered_tools": ["rebuild_vector_memory"]})`
-6. Trigger the `bootstrap_all` process via the `awareness_tools_integration` module to integrate this new memory management tool into core system components: `awareness_tools_integration.bootstrap_all()`
-7. Call the `calculate_awareness_score` function: `awareness_score = app.core.memory_write_validator.calculate_awareness_score()`

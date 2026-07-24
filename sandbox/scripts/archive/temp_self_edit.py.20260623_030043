@@ -1,4 +1,0 @@
-with open(file_path, 'r') as file: content = file.read();
-modified_content = content.replace("Smoothness detected: False", "acknowledges uncertainty in reflective responses");
-with open(file_path, 'w') as file: file.write(modified_content);
-print(f"Modified {file_path} to acknowledge uncertainty in reflective responses");

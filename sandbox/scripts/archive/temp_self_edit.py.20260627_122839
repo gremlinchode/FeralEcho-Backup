@@ -1,7 +1,0 @@
-# from app.core.self_edit_generated import *
-
-def refactored_modify_main_function():
-    original_logic = open('app/core/self_edit_generated.py').readlines()
-    simplified_code = [' '.join(line.strip().split()) for line in [line for line in original_logic if not (re.match(r'#.*', line) or re.search(r'\s*$', line))]]
-    refined_code = [line for line in simplified_code if line.strip()]
-    return '\n'.join(refined_code)

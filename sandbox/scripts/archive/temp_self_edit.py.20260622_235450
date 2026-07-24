@@ -1,8 +1,0 @@
-import pathlib; from pathlib import Path
-project_dir = Path('/Users/richietate/Desktop/FeralEcho/')
-file_to_modify = project_dir.joinpath('file_to_modify.py').open('r')
-file_contents = file_to_modifier.read()
-file_contents = file_contents.replace("pro'", "project_dir / '")
-file_to_modify.write(file_contents)
-print(f"Modified {file_to_modify.name} to use project_dir correctly.")
-file_to_modify.close()

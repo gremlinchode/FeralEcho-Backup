@@ -1,7 +1,0 @@
-1. Import the necessary module from `app.core.self_edit_generated` as `strip_prose`.
-2. Locate and open the target file `app/core/self_edit_generated.py` for modification.
-3. Define a new function `prose_detection_guard()` within the modified file, which takes a string input and returns a cleaned version by stripping leading natural-language sentences before the first valid Python token.
-4. Implement the prose detection guard logic using regular expressions to identify the start of the Python code, and truncate the input string accordingly.
-5. Modify the existing `strip_prose()` function in the same file to call the newly defined `prose_detection_guard()` function and apply its output to the original input.
-6. Save the modified file `app/core/self_edit_generated.py`.
-7. Update the required references to the `strip_prose()` function in other relevant modules within the Echo AI system.

@@ -1,3 +1,0 @@
-
-generate_issue_report(file_path, "Updated mental anchor handling to ensure grounding in reality (simulation_influence < 0.5)")
-print(f"Modified 'ensure_mental_anchors' function to prevent excessive influence from simulations.")

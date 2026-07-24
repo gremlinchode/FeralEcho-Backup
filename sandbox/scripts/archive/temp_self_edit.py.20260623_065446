@@ -1,6 +1,0 @@
-import detect_functions_and_classes
-file = open('/Users/richietate/Desktop/FeralEcho/detect_functions_and_classes.py', 'r+')
-file.seek(0)
-file.write(open('/Users/richietate/Desktop/FeralEcho/detect_functions_and_classes.py', 'r').read() + "\n\n" + "def self_contained():\n    print(\"Self-examination is a crucial aspect of Echo's growth.\")")
-file.close()
-print("A small step towards self-awareness has been taken.")

@@ -1,8 +1,0 @@
-1. Import necessary modules from app.core.self_edit_generated.py, including the main_function and modified_main_function.
-2. Define a function to strip leading natural-language sentences in code output by using regular expressions to identify and extract prose sections from generated code.
-3. Implement a conditional statement to check if extracted prose is present at the start of generated code and apply the stripping function accordingly.
-4. Modify main_function() in app/core/self_edit_generated.py to wrap generated code within a try-except block, calling the stripping function within the try block.
-5. In the except block, append extracted prose (if present) to an error log for further analysis.
-6. Modify modified_main_function() to handle exceptions by re-running main_function() until no prose is detected.
-7. Run tests for the 'reasoning' task in the sandbox environment to verify that the modification has resolved the common sandbox failure.
-8. Trigger a reflection cycle using council_registry.deliberate_and_learn to assess the impact of the code modification on performance.

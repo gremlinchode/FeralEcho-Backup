@@ -1,8 +1,0 @@
-# from app.core.self_edit_generated import strip_prose
-
-def strip_leading_prose(input_string):
-    return strip_prose(input_string)
-
-run_random_sandbox_script = lambda: strip_leading_prose(run_random_sandbox_script())
-model_guided_autonomous_loop = run_random_sandbox_script
-generate_parameter_hints = model_guided_autonomous_loop

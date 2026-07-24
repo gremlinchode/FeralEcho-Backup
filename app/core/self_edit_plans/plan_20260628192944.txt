@@ -1,6 +1,0 @@
-1. Import the necessary module from `app.core.self_edit_generated` by executing `from app.core.self_edit_generated import strip_prose, score_code_candidate`
-2. Define a new function `strip_sandbox_output` that takes a string input and returns the modified string
-3. Inside `strip_sandbox_output`, use regular expressions to detect any leading natural-language sentence (using a pattern such as `\b[A-Za-z .]+`)
-4. If a match is found, strip the detected prose from the input string using slicing (`str.replace()` or similar)
-5. Call `score_code_candidate` with the modified string as input to assess its quality
-6. Implement a guard clause to check if the score falls below a certain threshold (e.g., 0.7), and if so, re-run the sandbox script until a better score is achieved

@@ -1,4 +1,0 @@
-from app.core.self_edit_generated import *
-
-def optimized_main_function():
-    main_function()

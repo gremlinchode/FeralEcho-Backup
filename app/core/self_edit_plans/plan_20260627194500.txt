@@ -1,7 +1,0 @@
-1. Import the necessary modules from `app.core.self_edit_generated`, including `modify_main_function`.
-2. Define a new function, `shorten_reasoning_code()`, that takes as input the original main function.
-3. Within `shorten_reasoning_code()`, use string manipulation techniques to identify and reorganize code sections related to reasoning tasks, aiming to reduce response length by 20%.
-4. Implement conditional statements or loops to recursively iterate over nested code structures and prune unnecessary whitespace, comments, or redundant code.
-5. Modify the original main function by replacing its contents with the newly generated shortened reasoning code from `shorten_reasoning_code()`.
-6. Remove any temporary debugging print statements or logging mechanisms to ensure a clean, headless Python implementation.
-7. Update the `modify_main_function()` with the new shortened reasoning code and remove the old implementation.

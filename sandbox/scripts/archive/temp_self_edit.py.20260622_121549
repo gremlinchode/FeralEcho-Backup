@@ -1,8 +1,0 @@
-import os; import re
-file_path = '/Users/richietate/Desktop/FeralEcho/echo.py'
-with open(file_path, 'r+') as file:
-    content = file.read()
-    content = re.sub(r'import os; import re', 'import os, re', content)
-    file.seek(0); file.write(content); file.truncate()
-print('Changed repeated "import os; import re" statements for redundancy reduction in ', file_path)
-file.close()

@@ -1,7 +1,0 @@
-from app.core.self_edit_generated import strip_prose
-app_core_project_scanner = app.core.project_scanner
-sandbox_script_gen = app_core_project_scanner.parse_file("self_edit_generated.py")
-def modified_sandbox_script_gen():
-    return strip_prose(sandbox_script_gen).replace("^.*[\n\r]+(\s*import|def|class.*)", lambda m: strip_prose(m.group(0)))
-app_core_sandbox_interface = app.core.sandbox_interface
-app_core_sandbox_interface.modified_sandbox_script_gen = modified_sandbox_script_gen

@@ -1,9 +1,0 @@
-def score_code_candidate(code_string):
-    score = 0
-    has_imports = any(line.startswith('import') for line in code_string.split('\n'))
-    score += int(has_imports)
-    has_function_def = 'def' in code_string
-    score += int(has_function_def)
-    no_prose_sentences = not any(char.isalpha() and char.islower() and char not in ['a', 'e', 'i', 'o', 'u'] for line in code_string.split('\n'))
-    score -= int(no_prose_sentences)
-    return score

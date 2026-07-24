@@ -1,8 +1,0 @@
-1. Import the necessary module from `app.core.self_edit_generated` for modifying the self-edit-generated script and define a new helper function `score_candidate_code()` within `app.core/self_edit_generated.py`.
-2. Initialize an integer variable `quality_score` to 0.
-3. Check if the candidate code string contains imports using a regular expression or static analysis; if true, increment `quality_score` by 1.
-4. Detect function definitions within the input code string, filtering out comments and docstrings; if found, increment `quality_score` by 2.
-5. Analyze sentence structure within the code and count sentences that appear to be prose statements; if zero, set `quality_score` to 3.
-6. Calculate a weighted average of the three scores (has_imports, has_function_def, no_prose_sentences) as an integer between 0 and 3 using predefined weights.
-7. Return the calculated `quality_score` from `score_candidate_code()`.
-8. Add a docstring to `score_candidate_code()` explaining its purpose, parameters, and return value, documenting this new scoring mechanism.

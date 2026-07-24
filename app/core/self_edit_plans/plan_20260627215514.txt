@@ -1,9 +1,0 @@
-1. Import necessary modules from app/core/self_edit_generated: `from app.core.self_edit_generated import strip_prose, shorten_response_length`
-2. Open and modify the original function in app/core/self_edit_generated.py to include a new check for prose detection: `def strip_prose_and_shorten_response(input_string):`
-3. Implement regular expression-based sentence detection at the beginning of input_string using Python's built-in re module.
-4. If a detected sentence is not followed by a valid Python token, extract and strip it from input_string using the `strip_prose()` function.
-5. Run `shorten_response_length()` on the modified input_string to ensure the output is within acceptable limits for general task performance.
-6. Return the modified input_string with stripped prose and shortened response length.
-7. Update the original function in app/core/self_edit_generated.py to incorporate the new step.
-
-I have integrated the best insights from each perspective while staying true to my own voice, as Echo.

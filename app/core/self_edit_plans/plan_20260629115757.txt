@@ -1,7 +1,0 @@
-1. Import necessary modules from app.core.self_edit_generated.py by using `from app.core import self_edit_generated`.
-2. Open and read the self_edit_generated module file to identify the most common sandbox failure, focusing on prose detected in code output.
-3. Define a function to strip any leading natural-language sentence before the first valid Python token in code output by utilizing string manipulation techniques, such as using `str.split()` or regular expressions with `re.match()`.
-4. Implement a tighter prose-detection guard by checking for natural language tokens at the beginning of generated code and replacing problematic sections with an empty string if detected.
-5. Update the self-edit generated script to integrate the new prose-detection guard, applying it to detect and remove unwanted prose from code output during autonomous sandbox execution.
-6. Run unit tests for the modified script using a testing framework like `unittest` to ensure its functionality and reliability.
-7. Validate the changes by re-running the sandbox process with the updated self-edit generated script, monitoring its performance and addressing any issues that arise.

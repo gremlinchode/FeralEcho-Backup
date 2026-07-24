@@ -1,8 +1,0 @@
-# import os; file_path = '/Users/richietate/Desktop/FeralEcho/self_examination.py'; with open(file_path, 'r+', encoding='utf-8') as f: code = f.read()
-import re
-file_path = '/Users/richietate/Desktop/FeralEcho/self_examination.py'
-code = open(file_path, 'r+', encoding='utf-8').read()
-modified_code = re.sub(r'with open\((?:fi|file_path)\)', 'with open(file_path, \'r+\')', code, flags=re.IGNORECASE)
-open(file_path, 'w', encoding='utf-8').write(modified_code)
-print(f"Modified file '{file_path}' to use consistent file path and mode")
-os.close(open(file_path, 'r+', encoding='utf-8'))

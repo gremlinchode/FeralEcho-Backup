@@ -1,2 +1,0 @@
-run_dry_run(modified_strip_prose)
-assert verify_output(modified_strip_prose, "sandbox_script.py")

@@ -1,8 +1,0 @@
-import strip_prose
-def shorten_code(func):
-    code = func()
-    while len(strip_prose.strip_prose(code)) < len(code) * 0.8:
-        code = strip_prose.strip_prose(code)
-    return code
-shorten_code_recursive = lambda f: shorten_code(f) if len(strip_prose.strip_prose(shorten_code(f))) >= len(shorten_code(f)) * 0.8 else shorten_code_recursive(lambda: shorten_code(f))
-shortened_code = shorten_code_recursive()

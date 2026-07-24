@@ -1,5 +1,0 @@
-logging.info('Modified awareness_integration function with uncertainty acknowledgment')
-
-awareness_integration()
-
-print("Modified awareness_integration function with uncertainty acknowledgment")

@@ -1,9 +1,0 @@
-# import os
-import os
-file_path = "/Users/richietate/Desktop/FeralEcho/model_guided_autonomous_loop.py"
-if os.path.isfile(file_path) and os.access(file_path, os.R_OK):
-    with open(file_path, 'r') as file:
-        content = file.read()
-content = content.replace('import def class', 'from feral_echo.assumptions import rebuild_vector_memory')
-print("Assumption clarification: imported function from correct module")
-print("Awareness score for this self-examination step:", 0.8)

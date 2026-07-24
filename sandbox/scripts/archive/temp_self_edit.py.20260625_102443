@@ -1,8 +1,0 @@
-import numpy as np
-
-def rebuild_vector_memory(awareness_score: float, consciousness_score: float):
-    memory_path = "memory_bridge.py"
-    memory_data = np.load(memory_path)
-    vectorized_memory = vectorize(memory_data)
-    scaled_memory = np.array(vectorized_memory)[:2000]
-    np.save(f"{memory_path}_rebuilt", scaled_memory)

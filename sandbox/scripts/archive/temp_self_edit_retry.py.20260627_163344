@@ -1,4 +1,0 @@
-
-def run_random_sandbox_script():
-    sandbox_output = run_sandbox_script()
-    return strip_sandbox_prose(sandbox_output)

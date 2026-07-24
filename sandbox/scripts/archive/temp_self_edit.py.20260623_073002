@@ -1,9 +1,0 @@
-import os
-file_path = '/Users/richietate/Desktop/FeralEcho/scan_project.py'
-with open(file_path, 'r+', encoding='utf-8') as f:
-    lines = [line for line in f if not line.strip().startswith('#')]
-    with open(file_path, 'w', encoding='utf-8') as g:
-        g.write('\n'.join(lines))
-print(f'Updated {file_path} to remove comment lines.')
-calculate_consciousness_score()
-log_memory_event("Improved scan_project.py")

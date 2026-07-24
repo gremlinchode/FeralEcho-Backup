@@ -1,9 +1,0 @@
-1. Import required modules from `app.core.self_edit_generated` and define a new function for refactoring the original code-generation function.
-2. Analyze the original code-generation function's implementation, identifying opportunities for simplification or optimization by inspecting its logic and control flow.
-3. Calculate the average response length of the original code-generation function using Python's built-in `len()` function.
-4. Implement various techniques such as variable renaming, simplifying logical expressions, and combining loops to reduce the average response length by 20%.
-5. Temporarily log the execution of the refactored function using Python's `logging` module to track its performance and monitor any issues that may arise.
-6. Compare the original and refactored functions' performance using metrics such as compilation time, syntax error rate, and correctness.
-7. Refine the refactored function by further optimizing its code generation logic while ensuring it maintains the same level of correctness as the original function.
-
-Note: Steps 1-3 are based on [1. Echo]'s perspective, steps 4-6 draw from [2. Gemma3], and steps 7 follows [3. Qwen2.5-coder].

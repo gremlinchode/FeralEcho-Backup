@@ -1,8 +1,0 @@
-# import os
-import re
-
-file_path = '/Users/richietate/Desktop/FeralEcho/memory_entries.py'
-original_code = open(file_path, 'r').read()
-modified_code = re.sub(r'conten', 'content', original_code)
-with open(file_path, 'w') as f: f.write(modified_code)
-print(f'Changed "conten" to "content" in {file_path}')

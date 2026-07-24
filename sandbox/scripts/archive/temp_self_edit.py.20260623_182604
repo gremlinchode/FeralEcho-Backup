@@ -1,9 +1,0 @@
-# import parse_file
-import parse_file
-
-filename = '/Users/richietate/Desktop/FeralEcho/data_collection.py'
-content = parse_file.parse_file(filename)
-content.append("# Added docstring: A description of the data collection process.\n")
-with open(filename, "w") as file:
-    file.write("".join(content))
-print("Updated data collection script with a docstring.")

@@ -1,9 +1,0 @@
-import importlib.util; from echo_model_orchestrator import ollama_query
-query_func = importlib.util.spec_from_file_location('ollama_query', 'echo_model_orchestrator.py').loader.load_module('ollama_query')
-param_list = inspect.signature(query_func).parameters.keys()
-for param in param_list:
-    if not param.startswith('awareness_'):
-        query_func.__code__.co_vars.add(param)
-query_func = ollama_query(lambda x: None)
-query_func(1, 2, awareness_integration=True)
-log_memory_entry(f'Updated {ollama_query.__name__} to include awareness integration parameters')

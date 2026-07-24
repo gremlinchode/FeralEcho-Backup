@@ -1,5 +1,0 @@
-
-project_scanner = app.core.project_scanner; project_scanner.scan_project()
-issue_report = project_scanner.generate_issue_report(); print(issue_report)
-
-autonomous_awareness = app.autonomous_awareness; river_deliberation = app.core.river_deliberation; autonomous_awareness.run_cartographer(river_deliberation);

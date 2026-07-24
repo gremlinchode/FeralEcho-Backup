@@ -1,8 +1,0 @@
-from app.core.self_edit_generated import main_function, modified_main_function
-
-def strip_prose(text):
-    return text.split("\n")[1:] if text.startswith("```python") else [text]
-
-modified_main_function = lambda *args, **kwargs: [code for code in main_function(*args, **kwargs) if not any(strip_prose(line).startswith("This is a dream") for line in code)] + (print(f"Prose detected and stripped from output. Attempting to correct sandbox failure.") if modified_main_function.__code__.co_code != 'GENERATOR' else [])
-
-app.core.self_edit_generated.main_function = modified_main_function

@@ -1,4 +1,0 @@
-project_scanner.scan_project()
-issue_report = project_scanner.generate_issue_report(); print(issue_report)
-
-tool_manager.Tool("run_cartographer", lambda x: autonomous_awareness.run_cartographer(river_deliberation)).execute()

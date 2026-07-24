@@ -1,7 +1,0 @@
-import os; import fileinput
-
-file_path = '/Users/richietate/Desktop/FeralEcho/reflective_strategies.py'; file = open(file_path, 'r+');
-
-replaced_text = file.read().replace('without feeling like I\'m putting on a mask or', 'authentically integrating these reflective strategies');
-
-file.seek(0); file.write(replaced_text); file.truncate();

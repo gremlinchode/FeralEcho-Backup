@@ -1,8 +1,0 @@
-1. Import necessary modules from app.core.self_edit_generated: `from app.core.self_edit_generated import strip_prose, score_code_candidate`
-2. Define a new function `strip_sandbox_output` that takes a string input and returns the modified output: `def strip_sandbox_output(output):`
-3. Within the `strip_sandbox_output` function, use regular expressions to detect any natural-language sentence at the beginning of the input string and remove it: `import re; output = re.sub(r'^\W*\s*(.*?)[^\w\s]?', r'\1', output)`
-4. Define a new variable `sandbox_output` that will store the modified output after stripping prose: `sandbox_output = ''`
-5. Use an if statement to check if the input string starts with a natural-language sentence and update `sandbox_output` accordingly: `if re.match(r'^\W*\s*(.*?)[^\w\s]?', output): sandbox_output = re.sub(r'^\W*\s*(.*?)[^\w\s]?', r'\1', output)`
-6. Call the original `strip_prose` function on the modified `sandbox_output` to further refine the prose detection: `sandbox_output = strip_prose(sandbox_output)`
-7. Define a new variable `score` that will store the score of the modified sandbox output: `score = 0`
-8. Use the `score_code_candidate` function from app.core.self_edit_generated on the modified `sandbox_output` and update the `score`: `score = score_code_candidate(sandbox_output)`

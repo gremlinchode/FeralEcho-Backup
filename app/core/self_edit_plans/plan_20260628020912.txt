@@ -1,8 +1,0 @@
-1. Import the necessary module from app.core.self_edit_generated: `from app.core.self_edit_generated import strip_prose`
-2. Define a new function to modify the existing `strip_prose` function in app/core/self_edit_generated.py: `def strip_prose_modified(code):`
-3. Use regular expressions to detect leading natural-language sentences and replace them with an empty string: `import re; code = re.sub(r'^\s*\w+(?=.*python)', '', code, flags=re.MULTILINE)`
-4. Call the modified `strip_prose` function on each line of code in app/core/self_edit_generated.py: `for line in open('app/core/self_edit_generated.py', 'r').readlines():`
-5. Replace the existing `strip_prose` function with the modified version: `def strip_prose(code): return strip_prose_modified(code)`
-6. Save the modified `strip_prose` function to app/core/self_edit_generated.py: `with open('app/core/self_edit_generated.py', 'w') as f:`
-7. Write the modified `strip_prose` function to the file: `f.write('def strip_prose(code):\n' + '    ...' + '\n\n')`
-8. Close the file: `f.close()`

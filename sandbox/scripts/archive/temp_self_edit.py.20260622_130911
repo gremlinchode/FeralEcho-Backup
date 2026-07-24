@@ -1,8 +1,0 @@
-import os; import re
-project_path = "/Users/richietate/Desktop/FeralEcho/"
-target_file = "feral_echo.py"
-file_path = os.path.join(project_path, target_file)
-with open(file_path, "r+") as file:
-    file.seek(0); file.write(re.sub(r"smoothness detected.*", r"smoothness detected: True | Confidence: 1.0", file.read()))
-    file.truncate()
-print("Modified smoothness detection confidence to 'True' and set it to 1.0")

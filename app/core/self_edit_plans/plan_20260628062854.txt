@@ -1,8 +1,0 @@
-1. From `app.core.self_edit_generated`, import the `strip_prose` function to modify and correct sandbox failure.
-2. Open and read the file `app/core/self_edit_generated.py`.
-3. Define a function called `fix_sandbox_failure` within the script that checks if prose is detected in code output.
-4. Inside `fix_sandbox_failure`, use the `strip_prose` function to remove any leading natural-language sentence before the first valid Python token.
-5. Within the `fix_sandbox_failure` function, implement regular expression matching to detect leading natural language sentences based on whitespace and punctuation.
-6. Use string slicing to remove the detected natural language sentence from the beginning of the input string.
-7. Ensure the modified code returns the stripped output as intended by `strip_prose`.
-8. Append the new function definition and its usage, ensuring that it's called when necessary to correct sandbox failure in the original file.

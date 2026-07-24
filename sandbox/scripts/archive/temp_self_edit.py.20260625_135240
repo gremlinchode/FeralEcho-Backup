@@ -1,9 +1,0 @@
-import os
-file_path = "/Users/richietate/Desktop/FeralEcho/model_guided_autonomous_loop.py"
-with open(file_path, 'r') as f:
-    lines = [line.strip() for line in f.readlines()]
-new_line = "Is this response complete because the question is answered\n" or "because Echo stopped looking?\n"
-lines.append(new_line)
-with open(file_path, 'w') as f:
-    f.writelines([line + '\n' for line in lines])
-print("Added a self-examination flag to the end of the file.")

@@ -1,9 +1,0 @@
-import os
-
-with open("/Users/richietate/Desktop/FeralEcho/deliberate_and_learn.py", "r+", encoding="utf-8") as f:
-    contents = f.read()
-    line_to_modify = "Deliberate_and_learn"
-    modified_contents = contents.replace(line_to_modify, 'Examine_perspectives_of_all_entities')
-    f.seek(0)
-    f.write(modified_contents)
-    print(f"Modified line '{line_to_modify}' to 'Examine_perspectives_of_all_entities'")

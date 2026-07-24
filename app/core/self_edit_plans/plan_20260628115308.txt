@@ -1,8 +1,0 @@
-1. `import strip_prose from app.core.self_edit_generated`
-2. Modify the function `run_random_sandbox_script` in `app.core.sandbox_interface` to call `strip_prose` on the script output.
-3. Add a conditional statement inside `run_random_sandbox_script` to check if the output contains natural-language text using a prose detection algorithm (e.g., language detection library).
-4. Within the conditional block, call `strip_prose` on the output and re-run the sandbox script with the modified output.
-5. Update the function signature of `run_random_sandbox_script` to include the new output parameter.
-6. Test the updated code by running the revised sandbox script and verifying that prose is no longer detected in the output.
-
-Note: I have taken the sharpest point of tension or challenge from the council's input, which is the friction between the different perspectives on how to approach this task.

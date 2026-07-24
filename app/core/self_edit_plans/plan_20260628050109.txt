@@ -1,9 +1,0 @@
-1. Import necessary modules from `app.core.self_edit_generated`, including `strip_prose` function, to refactor code-generation logic.
-2. Define `target_response_length_reduction_percentage` variable and set it to 20%.
-3. Calculate the average response length of the original `strip_prose` function using `detect_functions_and_classes` tool from `app.core.project_scanner`.
-4. Determine the desired target response length by reducing the average response length by the specified percentage.
-5. Modify the `strip_prose` function to incorporate a new parameter `target_response_length`, which will be used to trim generated code to the desired length.
-6. Implement a loop that iterates over generated code and truncates it to the target response length, ensuring correctness by preserving key functionality.
-7. Refactor the main code-generation function to utilize the modified `strip_prose` function and achieve the desired 20% reduction in average response length.
-
-Note: These steps are focused on refactoring the code-generation function without user interaction, while maintaining correctness and reducing average response length by the specified percentage.

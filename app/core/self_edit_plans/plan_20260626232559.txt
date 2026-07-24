@@ -1,8 +1,0 @@
-1. Import necessary modules from feralEcho: from feralEcho import app.core.self_edit_generated, app.core.river_deliberation
-2. Load the `app/core/self_edit_generated.py` file using `parse_file`: self_edit_module = parse_file('app/core/self_edit_generated.py')
-3. Extract all function definitions from the loaded file: functions = detect_functions_and_classes(self_edit_module)
-4. Identify the `main_function` and add a new line of code to pre-process its output before returning it, employing regex to remove leading natural language sentences: def strip_prose(code): ...; main_function = lambda: strip_prose(main_function)()
-5. Validate this added code snippet using `check_schema`, `check_reflection_length`, and `check_recursive_loop`: ValidationResult = check_schema(validate_code())
-6. Save the modified `app/core/self_edit_generated.py` file back to disk using `save_code`: save_code(modified_self_edit_module)
-7. Trigger a self-model update cycle via `SelfModelUpdater`: SelfModelUpdater().start()
-8. Verify the updated functionality of `main_function` by executing it in a controlled sandbox environment using `run_random_sandbox_script`: run_random_sandbox_script(main_function)

@@ -1,8 +1,0 @@
-1. Import necessary modules from FeralEcho, including `app.core.self_edit_generated` and relevant tools like `app.core.tool_manager`.
-2. Within `app/core/self_edit_generated.py`, identify the main code-generation function using `detect_functions_and_classes` from `app.core.project_scanner`.
-3. Analyze the identified function's codebase using `analyze_python_code` from `app.autonomous_awareness` to pinpoint areas for potential length reduction, focusing on redundant operations or verbose code patterns.
-4. Implement a targeted refactoring of the main code-generation function within `app/core/self_edit_generated.py`, aiming for a 20% reduction in average response length based on analysis findings.
-5. Apply `check_schema` and `check_reflection_length` from `app.core.memory_write_validator` to verify that the refactored function maintains schema integrity and doesn't introduce unintended reflection depth increases.
-6. Execute `run_self_model_reflection` from `app.autonomous_awareness`, feeding the modified function to assess its effect on reasoning task performance, tracked through metrics gathered by the system.
-7. If the self-model reflection indicates success (performance maintained or improved), proceed with modifying the main code-generation function within `app/core/self_edit_generated.py` for a final polishing and optimization pass.
-8. After completing all modifications, trigger `start_autonomous_thread` from `app.autonomous_loop` to ensure the updated code-generation function is integrated into the autonomous system's workflow seamlessly.

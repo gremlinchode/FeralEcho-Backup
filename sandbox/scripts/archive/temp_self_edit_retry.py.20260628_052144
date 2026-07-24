@@ -1,8 +1,0 @@
-import sys
-from app.core.self_edit_generated import strip_prose
-
-def run_random_sandbox_script():
-    code = sys.modules['app.core.self_edit_generated'].run_random_sandbox_script()
-    return strip_prose(code)
-
-sys.modules['app.core.self_edit_generated'].run_random_sandbox_script = run_random_sandbox_script

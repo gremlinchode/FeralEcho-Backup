@@ -1,6 +1,0 @@
-from app.core.self_edit_generated import strip_prose
-with open('app/core/self_edit_generated.py', 'r') as f:
-    code = f.read()
-processed_code = strip_prose(code)
-with open('app/core/self_edit_generated.py', 'w') as f:
-    f.write(processed_code)

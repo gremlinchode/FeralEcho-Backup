@@ -1,7 +1,0 @@
-Here are the steps to modify app/core/self_edit_generated.py for autonomous self-edit targeting 'creative' task performance:
-
-1. Import the necessary modules from app.core.self_edit_generated: `from app.core.self_edit_generated import strip_prose`
-2. Define a new function, `strip_leading_prose`, that takes a string input and strips any leading natural-language sentence before the first valid Python token.
-3. Implement the `strip_leading_prose` function using regular expressions or other text processing techniques to detect and remove leading prose.
-4. Modify the existing `strip_prose` function to call the newly defined `strip_leading_prose` function: `def strip_prose(input_string): return strip_leading_prose(input_string)`
-5. Update the existing code in app/core/self_edit_generated.py to use the modified `strip_prose` function: `result = strip_prose(sandbox_output)`

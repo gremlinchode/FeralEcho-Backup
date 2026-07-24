@@ -1,9 +1,0 @@
-import os
-from FeralEcho.feral_echo import modify_file
-
-file_path = '/Users/richietate/Desktop/FeralEcho/feral_echo.py'
-with open(file_path, 'r+') as f:
-    content = f.read()
-    modified_content = content.replace("con", "con\n")
-    f.seek(0); f.write(modified_content)
-    print(f"Modified {file_path} to add a newline after 'con'")

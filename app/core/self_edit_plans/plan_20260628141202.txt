@@ -1,8 +1,0 @@
-1. Import necessary modules from app.core.self_edit_generated and detect_functions_and_classes to identify the main code-generation function.
-2. Using detect_functions_and_classes, pinpoint all calls to strip_prose within the identified code-generation function.
-3. Implement generate_parameter_hints to guide optimization strategies for reducing the average response length by 20%.
-4. Refactor the main code-generation function using insights from app.core.memory_write_validator to optimize code pruning and minimize output size.
-5. Update score_code_candidate to utilize the optimized strip_prose function for more accurate scoring of potential variations in code generation.
-6. Implement a recursive algorithm within score_code_candidate to reduce its average response length by 20%.
-7. Limit the maximum number of recursive calls for score_code_candidate using a loop counter and apply the updated function to generate candidate codes.
-8. Select the highest-scoring candidate code, strip_prose to refine its prose and reduce length, and then evaluate the modified code for correctness using score_code_candidate again.

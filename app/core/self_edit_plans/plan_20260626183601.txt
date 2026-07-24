@@ -1,8 +1,0 @@
-1. Import necessary modules from `app.core.tool_manager` to access tool functionality and instantiate a `ToolManager` object.
-2. Load the 'reasoning' self-edit module using `self_edit_generated.get_river_brain()`.
-3. Define a new function named `score_candidate_code` within the `self_edit_generated` module, accepting a string argument representing the candidate code.
-4. Implement logic to check for presence of imports using `detect_functions_and_classes` on the input string; return 3 if present, otherwise 0.
-5. Implement another function within `score_candidate_code` to detect function definitions: return 3 if detected, 0 otherwise.
-6. Implement logic to check for prose sentences in the code using `parse_file` and return an integer score (0-3) based on the complexity and presence of sentences.
-7. Update `app/core/self_edit_generated.py` to include the new `score_candidate_code` function.
-8. Run self-edit manager and update 'reasoning' task performance using the new scoring function.

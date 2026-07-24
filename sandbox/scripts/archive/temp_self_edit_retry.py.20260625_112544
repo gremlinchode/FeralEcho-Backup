@@ -1,7 +1,0 @@
-import os
-start_orchestrator()
-os.system(f"scan_project('app/core/self_edit_generated.py')")
-detect_functions_and_classes("app/core/self_edit_generated.py")
-generate_parameter_hints("app/core/self_edit_generated.py")
-review_mastery("app/core/self_edit_generated.py")
-append_to_journal()

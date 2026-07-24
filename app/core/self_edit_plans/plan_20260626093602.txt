@@ -1,8 +1,0 @@
-1. Load the `app.ollama_handler` module with `from app.ollama_handler import is_ollama_running, start_ollama_server, stop_ollama_server, query_ollama`.
-2. Check if Ollama is running using `is_ollama_running()` and ensure it's not already active.
-3. Start the Ollama server with `start_ollama_server()` to initialize necessary components.
-4. Register 'ollama_query' as a recognized query handler in Echo with `query_ollama`.
-5. Update awareness integration pipeline by integrating registered 'ollama_query' function with autonomous loop and self-model reflection processes.
-6. Configure Ollama server to listen for incoming queries and process them accordingly.
-7. Run the updated pipeline with `start_orchestrator()` and verify successful registration of 'ollama_query'.
-8. Log the successful registration of 'ollama_query' with timestamps and details using `append_memory_entry()`.

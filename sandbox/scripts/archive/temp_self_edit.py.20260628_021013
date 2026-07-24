@@ -1,8 +1,0 @@
-# from app.core.self_edit_generated import strip_prose
-
-def strip_sandbox_output():
-    output = run_random_sandbox_script()
-    output = strip_prose(output)
-    return output
-
-# Save the modified module file app/core/self_edit_generated.py

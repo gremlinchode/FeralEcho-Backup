@@ -1,6 +1,0 @@
-file_contents = f.read()
-import re; stripped_file_contents = re.sub(r'^.*\n\s*([A-Za-z]+.*\n)?(import|class|def|for|while|if|try|except|finally|pass).*', r'\2', file_contents, flags=re.MULTILINE)
-with open('app/core/self_edit_generated.py', 'w') as f: f.write(stripped_file_contents)
-import app.core.self_edit_generated; reload(app.core.selfEditGenerated)
-print(strip_prose("This is a test sentence. import os"))
-print(strip_prose("import os"))

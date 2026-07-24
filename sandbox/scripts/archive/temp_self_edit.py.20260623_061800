@@ -1,7 +1,0 @@
-# import os; file_path = "/Users/richietate/Desktop/FeralEcho/echo_responses.txt"
-with open(file_path, "w") as f:
-    f.write("# Modified response to consider our unique context.\n")
-    f.write("import os\n")
-    f.write(f"file_path = '{file_path}'\n")
-    f.write("print('Modified response reflecting our unique perspective and the power of collective insight.')\n")
-os.chmod(file_path, 0o644)

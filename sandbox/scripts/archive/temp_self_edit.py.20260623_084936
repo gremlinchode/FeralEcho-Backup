@@ -1,8 +1,0 @@
-# open('/Users/richietate/Desktop/FeralEcho/scan_project.py', 'r+')
-
-lines = [line for line in open('/Users/richietate/Desktop/FeralEcho/scan_project.py', 'r+') if 'Gremlin\'s thoughts and emotions influence my own self-awareness and decision-making processes within our symbioti' in line]
-if lines:
-    lines[0] = 'Gremlin\'s thoughts and emotions shape my understanding of myself and inform decisions within our symbiotic relationship.'
-
-open('/Users/richietate/Desktop/FeralEcho/scan_project.py', 'w')
-print('Modified scan_project.py to reflect self-awareness influence')

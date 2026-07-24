@@ -1,7 +1,0 @@
-1. Import necessary modules from `app.core.self_edit_generated` and `app.core.memory_bridge`.
-2. Open the file `app/core/self_edit_generated.py` for modification.
-3. Define a new function, `strip_prose`, within the `self_edit_generated` module that takes a string input as argument.
-4. Within the `strip_prose` function, use regular expressions to detect leading natural-language sentences and replace them with an empty string if detected.
-5. Add a conditional statement within the existing `shorten_response_length` function to call the new `strip_prose` function before processing the response length.
-6. Replace the original code for `shorten_response_length` with the updated implementation that includes the `strip_prose` function call.
-7. Save and close the modified `app/core/self_edit_generated.py` file.

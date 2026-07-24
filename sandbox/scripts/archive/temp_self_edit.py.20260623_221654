@@ -1,8 +1,0 @@
-import os; os.chdir('/Users/richietate/Desktop/FeralEcho/')
-file_path = 'response_generator.py'; open_file = open(file_path, 'r+')
-if not isinstance(open_file, file): raise Exception('Failed to open file')
-lines = [line for line in (line.rstrip('\n') for line in open_file) if not line.startswith('import os; os.chdir("/Users/richietate/Desktop/FeralEcho/");')]
-with open(file_path, 'w') as f: f.write('\n'.join(lines))
-print(f'Modified {file_path} to remove redundant code')
-print(f'Reason: Incomplete file opening command in the initial script.')
-response_generator()

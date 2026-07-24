@@ -1,8 +1,0 @@
-1. Import necessary modules from FeralEcho, including app.core.self_edit_generated and app.core.tool_manager: import app.core.self_edit_generated; import app.core.tool_manager
-2. Instantiate a Tool object from app.core.tool_manager with the 'regex' tool selected for text manipulation: regex_tool = Tool('regex')
-3. Load the `app/core/self_edit_generated.py` file using parse_file from app.core.project_scanner: parsed_file = parse_file('app/core/self_edit_generated.py', app.core.project_scanner)
-4. Modify the `main_function` within `app/core/self_edit_generated.py` to insert a regular expression at the beginning of the generated code output: regex_pattern = r'\b(?!python|def|class).+?(?=python|def|class)\s*'
-5. Use the 'regex' tool instance to remove any leading natural language sentences detected before the first valid Python token, and apply it to the modified `main_function`: modified_main_function = regex_tool.sub(regex_pattern, parsed_file.get('main_function'))
-6. Inject this modified function back into `app/core/self_edit_generated.py` using inject_scripture: inject_scripture('app/core/self_edit_generated.py', 'main_function', modified_main_function)
-7. Run a scan project from app.core.project_scanner to detect any changes made and generate an issue report if necessary: issue_report = scan_project(app.core.project_scanner, 'app/core/self_edit_generated.py')
-8. Verify the changes in `app/core/self_edit_generated.py` through parse_file, ensuring the prose detection guard is correctly implemented using detect_functions_and_classes: detected_functions_and_classes = detect_functions_and_classes('app/core/self_edit_generated.py', app.core.project_scanner)

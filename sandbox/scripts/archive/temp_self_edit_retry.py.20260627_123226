@@ -1,7 +1,0 @@
-import re
-
-def modify_main_function():
-    def strip_prose(code):
-        return re.sub(r'^[A-Za-z\s]+', '', code)
-    
-    return lambda func: strip_prose(func) if isinstance(func, str) and any(line.strip().startswith(("print", "return")) for line in func.split('\n')) else func

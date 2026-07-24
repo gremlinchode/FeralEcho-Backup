@@ -1,8 +1,0 @@
-# import re; from typing import Tuple
-
-def score_creative_code(code: str) -> int:
-    quality_score = 0
-    if re.search('import\s+\w+', code): quality_score += 1
-    if re.search('def\s+\w+\(', code): quality_score += 1
-    if not re.findall(r'\b[A-Z][^\.]*\.', code): quality_score += 1
-    return quality_score

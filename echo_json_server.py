@@ -1,4 +1,6 @@
 import hmac
+import socket
+import sys
 
 from flask import Flask, request, jsonify, after_this_request
 from pathlib import Path
@@ -119,5 +121,30 @@ def learning_batch():
 def get_ip():
     return jsonify({"mac_ip": "100.82.172.4"}), 200
 
+def _port_already_in_use(host: str, port: int) -> bool:
+    # This is a separate, standalone Flask process (see the module comment at
+    # the top of this file) that happens to bind the same port 5000 run.py
+    # uses. Nothing coordinates the two, so starting this manually while
+    # run.py is already up would silently fail (or, worse, race for the
+    # socket) with no clear signal why. Fail loud instead, same posture as
+    # safe_restart.sh's watchdog-collision check.
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.5)
+        return s.connect_ex((host, port)) == 0
+
+
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    _PORT = 5000
+    if _port_already_in_use("127.0.0.1", _PORT):
+        print(
+            f"[echo_json_server] Port {_PORT} is already in use — refusing to "
+            f"start. This is a separate, standalone server from run.py (the "
+            f"main FeralEcho server), and the two are NOT designed to run "
+            f"together: they would collide on this exact port. If run.py is "
+            f"the process holding it, that's almost certainly what you want "
+            f"running instead. Stop whichever process is using the port "
+            f"first if you specifically need to run this one.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    app.run(debug=True, port=_PORT)

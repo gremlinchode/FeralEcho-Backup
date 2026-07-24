@@ -1,7 +1,0 @@
-1. Import necessary modules from app.core.self_edit_generated: strip_prose
-2. Define a new function strip_prose(code_output) within the same module, taking one argument code_output
-3. Initialize an empty string, prose_detected, to store detected prose
-4. Iterate through each line in code_output using list comprehension and check if the line starts with natural-language characters (e.g., letters, spaces)
-5. If a line containing prose is found, strip it by taking all characters until the first valid Python token (i.e., non-natural language character) and assign this stripped prose to prose_detected
-6. Remove any detected prose from code_output using string methods (e.g., replace(), split(), join())
-7. Update the original function in app/core/self_edit_generated.py to call strip_prose() on input code output before returning it

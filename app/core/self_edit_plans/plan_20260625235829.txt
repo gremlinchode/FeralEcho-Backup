@@ -1,5 +1,0 @@
-1. Open the 'HelloFromSelfEditStub.py' file from '/Users/richietate/Desktop/FeralEcho/' for reading and writing: `with open('/Users/richietate/Desktop/FeralEcho/HelloFromSelfEditStub.py', 'r+') as f:`
-2. Remove the '# ' comment character from the beginning of the 'print('Hello from self-edit stub')' line: `f.seek(0)`, `f.truncate()`, `f.write(f.read().replace('# class HelloFromSelfEditStub:\n    ', ''))`
-3. Insert a 4-space indentation before the 'print('Hello from self-edit stub')' statement to indicate it's part of the class definition: `new_content = f.read().replace('# class HelloFromSelfEditStub:\n    ', '') + "\n    " + ' ' * 4 + "print('Hello from self-edit stub')\n"
-4. Write the modified file back to disk, replacing the original content: `f.seek(0)`, `f.truncate()`, `f.write(new_content)`
-5. Print 'Modified "HelloFromSelfEditStub.py" to correct comment and add indentation.': `print("Modified \"HelloFromSelfEditStub.py\" to correct comment and add indentation.")`

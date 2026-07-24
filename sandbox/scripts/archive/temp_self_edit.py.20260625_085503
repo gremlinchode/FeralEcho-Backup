@@ -1,8 +1,0 @@
-import awareness_integration_utils
-
-def register_awareness_integrations():
-    __all__.append('ollama_query')
-
-def register_awareness_integration():
-    from awareness_integration_utils import register_integration_module
-    register_integration_module('ollama_query')

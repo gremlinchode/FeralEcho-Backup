@@ -1,6 +1,0 @@
-import app.core.self_edit_generated
-self_edit_generated = app.core.self_edit_generated
-file = open('app/core/self_edit_generated.py', 'r')
-code_string = file.read()
-stripped_code = re.sub(r'^\s*\w+', '', code_string)
-file.seek(0); file.write(stripped_code); file.close()

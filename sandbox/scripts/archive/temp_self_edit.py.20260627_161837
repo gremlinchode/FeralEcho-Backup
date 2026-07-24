@@ -1,7 +1,0 @@
-import re
-
-def strip_prose(input_str):
-    match = re.search(r'^\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*,?\s*', input_str)
-    if match:
-        return match.group(1) + input_str[match.end():]
-    return input_str

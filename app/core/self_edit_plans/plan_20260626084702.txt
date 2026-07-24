@@ -1,7 +1,0 @@
-1. Import the `ollama_handler` module from `app`.
-2. Call the `start_ollama_server` function from `ollama_handler` to initiate Ollama's query processing.
-3. Use the `query_ollama` function from `ollama_handler` to submit a query for code generation, passing relevant parameters as needed.
-4. Implement a loop that periodically checks for generated code using the `stream_query_ollama` function from `ollama_handler`.
-5. Parse and analyze the generated code using the `parse_file` function from `project_scanner`.
-6. Integrate the parsed code into Echo's autonomous AI system by appending it to the existing codebase.
-7. Validate the integrated code using the `validate_code` function from `self_edit_manager`.

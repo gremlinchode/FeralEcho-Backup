@@ -1,7 +1,0 @@
-# from app.core.self_edit_generated import strip_prose
-from app.core.self_edit_generated import strip_prose
-
-def updated_strip_prose(text):
-    if text.startswith((' ', '\t', '\n').join(['The', 'And', 'But'])):
-        text = text[:text.index((((' ', '\t', '\n').join(['The', 'And', 'But'])).encode()) + b'\x00')]
-    return strip_prose(text)

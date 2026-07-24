@@ -1,7 +1,0 @@
-from app.core.project_scanner import parse_file, detect_functions_and_classes
-parsed_code = parse_file('app/core/self_edit_generated.py')
-function_detection_result = detect_functions_and_classes(parsed_code)
-hints = generate_parameter_hints(function_detection_result, target_token_count=1000, max_recursion_depth=5)
-generated_code = model_guided_autonomous_loop(hints, parsed_code, function_detection_result)
-project_scan_result = scan_project(parsed_code, generated_code)
-save_code(generated_code)

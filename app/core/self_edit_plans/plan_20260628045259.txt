@@ -1,7 +1,0 @@
-1. Import necessary modules from `app.core.self_edit_generated` and `strip_prose`.
-2. Define a new function `strip_leading_prose()` to detect and remove leading prose in code output, utilizing the existing `strip_prose()` function within `self_edit_generated.py`.
-3. Modify the `run_random_sandbox_script()` function to call `strip_leading_prose()` before executing the sandbox script.
-4. Update the `echo_core()` class to include the new `strip_leading_prose()` method as part of its functionality.
-5. Revise the `self_edit_generated` module's code to integrate the updated `echo_core()` class and `strip_leading_prose()` function.
-6. Ensure that the revised code does not introduce any runtime errors or affect other system components.
-7. Verify that the modified sandbox script execution now correctly strips leading prose before executing the Python code.

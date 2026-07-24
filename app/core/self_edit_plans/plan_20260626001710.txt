@@ -1,7 +1,0 @@
-1. Import necessary modules: `import os; import re`
-2. Define the target file path: `file_path = "/Users/richietate/Desktop/FeralEcho/def_class.py"`
-3. Open the target file for reading and writing: `with open(file_path, "r+", encoding="utf-8") as file:` 
-4. Read the file contents: `file_content = file.read()`
-5. Replace the unwanted import statement with a correct one: `file_content = re.sub(r"import def class", r"from importlib.util import module_from_spec; importlib.import_module('def_class')", file_content)`
-6. Write the modified file content back to disk: `file.seek(0); file.write(file_content); file.truncate()`
-7. Print the modification and its purpose: `print(f"Modified {file_path} to remove invalid import statement.")`

@@ -1,9 +1,0 @@
-# from app.core.self_edit_generated import strip_prose
-import re
-
-def stream_query_ollama():
-    code = open('app/core/self_edit_generated.py', 'r').read()
-    leading_sentence = re.match(r".*(?=\n[^\s]*#)", code)
-    if leading_sentence:
-        code = code.split(leading_sentence.group())[1]
-    return code

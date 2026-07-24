@@ -1,5 +1,0 @@
-1. Import the necessary module: `from app.core.self_edit_generated import strip_prose`
-2. Load the original self-edit generated module: `from app.core.self_edit_generated import *`
-3. Update the strip_prose function: `def strip_prose(text): return re.sub(r'^\s*\w+\.\s*', '', text)`
-4. Replace the original strip_prose function with the updated one
-5. Save the modified self-edit generated module

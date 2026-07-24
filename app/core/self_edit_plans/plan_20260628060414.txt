@@ -1,9 +1,0 @@
-Here is the numbered list of steps to modify `app/core/self_edit_generated.py` for autonomous self-edit targeting 'creative' task performance:
-
-1. Import the necessary module from `app.core.self_edit_generated`, namely `strip_prose`.
-2. Open the file `self_edit_generated.py` for modification.
-3. Locate and edit the function responsible for stripping prose to include a tighter guard that checks for leading natural-language sentences before the first valid Python token.
-4. Within this function, use regular expressions or other suitable methods to identify and remove any detected prose.
-5. Implement a loop to continuously scan the output for creative tasks until no more prose is found.
-6. Once all prose has been removed, return the modified code with the `strip_prose` function updated.
-7. Save the modifications to `self_edit_generated.py`.

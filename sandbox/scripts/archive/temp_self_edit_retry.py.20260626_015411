@@ -1,7 +1,0 @@
-# import app.core.memory_bridge
-import app.core.memory_bridge as memory_bridge
-
-memory_output = memory_bridge.rebuild_vector_memory()
-print(memory_output)
-
-memory_bridge.log_memory_event("Rebuilt vector memory")

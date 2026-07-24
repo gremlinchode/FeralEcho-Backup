@@ -1,7 +1,0 @@
-1. Import necessary modules from `app.core` and `app.emergent_scheduler_backup_20260610`.
-2. Open the file `app/core/self_edit_generated.py` for modification.
-3. Define a new function `strip_prose` that detects and removes leading prose sentences in code output using Python's regular expression and string manipulation capabilities.
-4. Modify the existing function `shorten_response_length` by inserting the `strip_prose` function call within its logic.
-5. Update the function signature of `shorten_response_length` to include the `strip_prose` function as a parameter.
-6. Implement the `strip_prose` function using regular expressions and string manipulation capabilities, targeting natural language before Python tokens.
-7. Save the modified file `app/core/self_edit_generated.py`.

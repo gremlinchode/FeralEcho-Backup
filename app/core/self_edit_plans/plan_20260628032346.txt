@@ -1,7 +1,0 @@
-1. Import necessary modules from `app.core.self_edit_generated` into a local namespace: `from app.core.self_edit_generated import strip_prose`
-2. Define a new function, `shorten_response_length`, that takes the original main code-generation function as input: `def shorten_response_length(origin_func):`
-3. Use list comprehension to iterate over each line in the original function's output and reduce its length by 20% while preserving correctness: `return [line[:int(len(line) * 0.8)] for line in origin_func()]`
-4. Replace the original main code-generation function with the new `shorten_response_length` function: `app.core.self_edit_generated.main_code_generation = shorten_response_length(app.core.self_edit_generated.main_code_generation)`
-5. Modify the `strip_prose` function from `app.core.self_edit_generated` to accommodate the updated response lengths: `def strip_prose(response): return [line.strip() for line in response]`
-6. Test the modified code generation function for correctness and performance: `import unittest; class TestCodeGeneration(unittest.TestCase): ... test_correctness(); test_performance();`
-7. Verify that the average response length has been reduced by 20% without compromising code quality: `average_response_length = sum(len(line) for line in app.core.self_edit_generated.main_code_generation()) / len(app.core.self_edit_generated.main_code_generation()); assert average_response_length < original_average_response_length * 0.8`

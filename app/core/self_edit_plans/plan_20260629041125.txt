@@ -1,8 +1,0 @@
-1. Import the required module `app.core.self_edit_generated` and access its functions and classes.
-2. Define a new function `prose_guard` within `app/core/self_edit_generated.py` that receives code output as input.
-3. Implement regular expression matching inside `prose_guard` to identify leading natural language sentences at least one complete sentence long, at the beginning of the code output.
-4. If a matching sentence is found, truncate the code output by removing this sentence and any subsequent whitespace until the first valid Python token is encountered.
-5. Return the processed code output with the prose removed to the caller.
-6. Modify the `refactored_score_code_candidate` function so that it calls `prose_guard` on the code output before any other processing steps.
-7. Add a new unit test within `app/core/self_edit_generated.py` to verify that the `prose_guard` function correctly removes leading natural language from simulated code output scenarios.
-8. Save the modified `app/core/self_edit_generated.py` file with version control.

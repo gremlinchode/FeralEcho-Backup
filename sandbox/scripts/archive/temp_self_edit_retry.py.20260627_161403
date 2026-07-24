@@ -1,5 +1,0 @@
-def tighten_prose_detection(text):
-    leading_prose = ['The', 'And', 'But']
-    if text.startswith((' ', '\t', '\n').join(leading_prose)):
-        return strip_prose(text)
-    return text

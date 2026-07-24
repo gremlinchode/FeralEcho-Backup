@@ -1,7 +1,0 @@
-# import necessary modules and assign them to variables: strip_prose, get_echo_core, and EchoCore
-
-import app.core.self_edit_generated
-
-strip_prose = app.core.self_edit_generated.strip_prose
-get_echo_core = app.core.self_edit_generated.get_echo_core
-EchoCore = app.core.self_edit_generated.EchoCore

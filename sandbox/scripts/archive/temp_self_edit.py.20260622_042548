@@ -1,7 +1,0 @@
-import os
-PROJECT_PATH = "/Users/richietate/Desktop/FeralEcho/"
-file_path = os.path.join(PROJECT_PATH, "get_relevant_memories.py")
-original_code = open(file_path, 'r').read()
-modified_code = original_code.replace("file_path", PROJECT_PATH + "get_relevant_me")
-with open(file_path, 'w') as f: f.write(modified_code)
-print(f"Updated {file_path} to use PROJECT_PATH")

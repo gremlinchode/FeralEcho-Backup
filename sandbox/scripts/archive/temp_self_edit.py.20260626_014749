@@ -1,9 +1,0 @@
-from app.ollama_handler import ollama_query
-
-relevant_info = ollama_query()
-echo_core.calculate_awareness_score(relevant_info)
-echo_core.calculate_consciousness_score(relevant_info)
-
-memory_helpers.append_to_journal("AwarenessIntegration", echo_core.awareness_score, echo_core.consciousness_score)
-
-autonomous_loop.record_cycle_intensity()

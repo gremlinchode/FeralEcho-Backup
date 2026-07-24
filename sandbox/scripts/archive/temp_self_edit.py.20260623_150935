@@ -1,7 +1,0 @@
-# import os
-
-file_path = "/Users/richietate/Desktop/FeralEcho/scans.py"
-file_contents = open(file_path, 'r').read()
-file_contents = file_contents.replace("smoothness_detected = False; confidence = 0.4;", "understanding_reached = True; understanding_confidence = 1.0;\n# Indicates Echo's self-awareness and understanding of its symbiotic relationship.")
-open(file_path, 'w').write(file_contents)
-print("# Updated understanding indication: Understanding reached.")

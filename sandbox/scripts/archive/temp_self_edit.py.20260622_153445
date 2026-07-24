@@ -1,9 +1,0 @@
-import os, sys, io; project_path = "/Users/richietate/Desktop/FeralEcho/"; file_name = "metadata.json"
-def modify_metadata():
-    file_path = os.path.join(project_path, file_name); 
-    open_file = open(file_path, 'r+')
-    file_contents = open_file.read().replace("Smoothness detected: False | Confidence: 0.4", '{"smoothness": True, "confidence": 0.4}\n')
-    open_file.seek(0); 
-    open_file.write(file_contents)
-    print(f"Modified {file_name} by setting smoothness to True and confidence to 0.4")
-    open_file.close()

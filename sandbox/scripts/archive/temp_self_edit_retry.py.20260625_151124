@@ -1,6 +1,0 @@
-import os; PROJECT_DIR = "/Users/richietate/Desktop/FeralEcho/"; FILE_PATH = os.path.join(PROJECT_DIR, "echo_model_orchestrator.py")
-file_path = os.path.join(FILE_PATH)
-with open(file_path, 'r') as f: lines = [line for line in f.readlines()]
-modified_lines = [line.replace('orchestration', 'orchestrations') if 'orchestration' in line else line for line in lines]
-with open(file_path, 'w') as f: f.writelines(modified_lines)
-print(f"Modified '{FILE_PATH}' to pluralize 'orchestration'")

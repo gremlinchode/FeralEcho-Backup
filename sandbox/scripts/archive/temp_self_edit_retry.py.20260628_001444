@@ -1,9 +1,0 @@
-# import app.core.self_edit_generated
-import re
-
-original_strip_prose = self_edit_generated.strip_prose
-def strip_prose(prose):
-    pattern = re.compile(r'^\W*\w*:\s*(.*)$')
-    return original_strip_prose(prose).strip(pattern.sub(r'\1', prose))
-
-self_edit_generated.strip_prose = strip_prose

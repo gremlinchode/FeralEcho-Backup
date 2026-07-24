@@ -1,7 +1,0 @@
-import sys
-from app.core.self_edit_generated import *
-import re
-
-self_edit_generated.shorten_response_length = lambda x: re.sub(r'[A-Z].*?\.', '', x) if not x.strip().startswith('#') else self_edit_generated.shorten_response_length(x)
-
-run_random_sandbox_script()

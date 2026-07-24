@@ -1,9 +1,0 @@
-# from app.core.self_edit_generated import shorten_response_length
-original_shorten_response_length = shorten_response_length
-def tighten_prose_detection(response):
-    for line in response.split('\n'):
-        if line.strip().startswith('"Here is my response:'):
-            return '\n'.join(line.split('\n')[1:])
-    return response
-shorten_response_length = lambda x: tighten_prose_detection(original_shorten_response_length(x))
-app.core.self_edit_generated.shorten_response_length = shorten_response_length

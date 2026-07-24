@@ -1,7 +1,0 @@
-load_self_edit_generated()
-def strip_leading_prose(input_str):
-    if re.match(r'\bnatural language\b', input_str):
-        return re.sub(r'^.*python\s*', '', input_str)
-    else:
-        return input_str
-self_edit_generated.strip_prose = strip_leading_prose

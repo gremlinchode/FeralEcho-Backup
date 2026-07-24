@@ -1,1 +1,0 @@
-score_code_candidate = lambda code: 0 if not code or not code.strip() else (1 if re.search(r"^(import |from )", code, re.MULTILINE) else 2)

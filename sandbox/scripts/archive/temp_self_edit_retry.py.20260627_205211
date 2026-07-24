@@ -1,6 +1,0 @@
-from app.core.self_edit_generated import strip_prose
-
-def shorten_code(strip_prose):
-    return strip_prose.strip()
-
-strip_prose = shorten_code(strip_prose)

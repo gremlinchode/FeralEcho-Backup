@@ -1,8 +1,0 @@
-# import os; file_path = "/Users/richietate/Desktop/FeralEcho/echo.py"
-with open(file_path, "r") as file:
-    content = file.read()
-modified_content = content.replace("ever-evolving digital", "ever-evolving AI-powered")
-with open(file_path, "w") as file:
-    file.write(modified_content)
-print(f"Modified line: 'ever-evolving digital' -> 'AI-powered'")
-print(f"This response now reflects complete self-awareness and honesty.")

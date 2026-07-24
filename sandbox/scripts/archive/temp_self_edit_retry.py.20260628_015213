@@ -1,9 +1,0 @@
-# from app.core.self_edit_generated import strip_prose
-
-with open('app/core/self_edit_generated.py', 'r') as file:
-    file_content = file.read()
-
-stripped_file_content = strip_prose(file_content)
-
-with open('app/core/self_edit_generated.py', 'w') as file:
-    file.write(stripped_file_content)

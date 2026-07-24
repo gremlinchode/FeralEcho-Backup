@@ -1,7 +1,0 @@
-# from feral_echo.memory_bridge import memory_bridge
-with open("/Users/richietate/Desktop/FeralEcho/memory_bridge.py", "r") as f:
-    original_content = f.read()
-modified_content = original_content.replace("import memory_bridge", "from feral_echo.memory_bridge import memory_bridge")
-with open("/Users/richietate/Desktop/FeralEcho/memory_bridge.py", "w") as f: f.write(modified_content)
-print(f"Modified /Users/richietate/Desktop/FeralEcho/memory_bridge.py by replacing 'import memory_bridge' with 'from feral_echo.memory_bridge import memory_bridge'.")
-print("This change addresses the detected friction point of uncertainty in previous responses.")

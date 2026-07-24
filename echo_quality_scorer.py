@@ -371,7 +371,7 @@ def _score_response_quality(response: str, task_type: str = "general") -> int:
     # scoring — it's still real Python code being judged, just tracked under a
     # separate RiverBrain stats bucket so self-edit's own generation quality doesn't
     # get averaged together with conversational coding-help quality.
-    if task_type in ("coding", "self_edit_coding"):
+    if task_type in ("coding", "self_edit_coding", "echo_projects_coding"):
         if not _has_real_code(response):
             return 1
 
@@ -468,7 +468,14 @@ def _extract_quality_features_v2(
     # but this local duplicate was never updated, so every reasoning-task
     # response's task_type_id feature silently defaulted to 0 (== general),
     # degrading River's task-specific pattern learning for reasoning tasks.
-    TASK_TYPE_MAP = {"general": 0, "coding": 1, "creative": 2, "personal": 3, "reasoning": 4}
+    # Found still drifted again (2026-07-24, autonomous echo_projects loop
+    # design review): "self_edit_coding" (Finding 35, 2026-07-17) was added
+    # to the canonical map but never mirrored here either — fixed alongside
+    # adding "echo_projects_coding" rather than reproducing the same gap for
+    # a third key. If a future task_type is ever added to the canonical map
+    # without updating this copy too, its task_type_id will silently default
+    # to 0 (== general) here specifically, same failure mode both times.
+    TASK_TYPE_MAP = {"general": 0, "coding": 1, "creative": 2, "personal": 3, "reasoning": 4, "self_edit_coding": 5, "echo_projects_coding": 6}
 
     base = {
         "length_norm": 0.0,
@@ -510,7 +517,7 @@ def _extract_quality_features_v2(
 
     syntax_valid = 0.5
     has_real_code = 0.0
-    if task_type in ("coding", "self_edit_coding"):
+    if task_type in ("coding", "self_edit_coding", "echo_projects_coding"):
         if _has_real_code(response):
             has_real_code = 1.0
             syntax_valid = 1.0

@@ -564,7 +564,7 @@ def request_project_generation(spec: str) -> dict:
 
     try:
         from app.core.echo_projects import council_generate_project
-        result = council_generate_project(spec)
+        result = council_generate_project(spec, source="manual")
 
         return {
             "status": result.get("status", "unknown"),

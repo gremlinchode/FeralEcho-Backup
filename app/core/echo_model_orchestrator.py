@@ -705,7 +705,14 @@ _FRICTION_WINDOW_SIZE: int = 50
 # map, confirmed by a full-codebase grep before adding this key, so no real
 # user prompt can ever be classified into this bucket by accident. Populated
 # only by generate_code_from_plan()'s explicit learn() call.
-TASK_TYPE_MAP = {"general": 0, "coding": 1, "creative": 2, "personal": 3, "reasoning": 4, "self_edit_coding": 5}
+# "echo_projects_coding": 6 added (autonomous echo_projects loop, 2026-07-24)
+# for the identical reason: at a several-times-per-day autonomous cadence,
+# per-file code generation would otherwise dump enough volume into "coding"
+# to dominate a bucket meant to reflect real conversational coding help
+# (_MEAN_EFFECTIVE_WINDOW=200 saturates in about a week at this rate) — the
+# same cross-context dilution self_edit_coding was already split out to
+# prevent. Populated only by app/core/echo_projects.py's per-file generation.
+TASK_TYPE_MAP = {"general": 0, "coding": 1, "creative": 2, "personal": 3, "reasoning": 4, "self_edit_coding": 5, "echo_projects_coding": 6}
 
 # Task types that benefit from tool context in the prompt.
 # Personal, creative, general, and spiritual queries do NOT get tool lists —

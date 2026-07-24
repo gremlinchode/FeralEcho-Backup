@@ -1399,6 +1399,79 @@ def start_background_threads():
             time.sleep(10800)  # every 3 hours — conservative default for a new autonomous surface
     safe_start_thread(_ambient_checkin_loop, name="EchoCheckin")
 
+    # --- Autonomous echo_projects generation loop (CLAUDE.md Finding 84/85) ---
+    # !project's real caller, council_generate_project(), is safe by
+    # construction (F1/F2, never promoted, never loaded into this process)
+    # but only fired manually. This loop makes it a standing autonomous
+    # capability, mirroring _ambient_checkin_loop's shape above — but with
+    # one real addition that loop doesn't need: a soft cycle-level timeout.
+    # Its own body chains several real model calls (a planning deliberation
+    # + up to _MAX_PLANNED_FILES per-file generations, each running a full
+    # council + synthesis, + up to 3 review calls) that can genuinely take
+    # minutes, unlike maybe_send_reflection()'s "zero-LLM-call protocol." A
+    # single wedged HTTP call inside that chain would otherwise block this
+    # thread's own sleep() forever, silently killing every future cycle —
+    # fine for !project (a human is watching the terminal and would
+    # notice), not fine for something unattended and recurring.
+    #
+    # A ThreadPoolExecutor(max_workers=1) was tried first and rejected after
+    # direct testing: a stuck first call doesn't just time out on its own
+    # cycle, it also blocks the *next* cycle's submission from ever
+    # starting, since there's only one worker slot and the abandoned call
+    # is still occupying it — the opposite of "abandon and move on." Fixed
+    # with a plain daemon thread + queue.Queue() per cycle instead: each
+    # cycle gets its own fresh thread, so one stuck cycle can never block a
+    # later one, and a daemon thread never blocks process shutdown either
+    # (confirmed relevant: ThreadPoolExecutor's own worker threads are NOT
+    # daemon threads by default and register an atexit join that would hang
+    # shutdown on a genuinely stuck call — a real, if narrow, risk this
+    # avoids entirely). The abandoned thread may keep running its stuck
+    # HTTP call harmlessly in the background — acceptable here since,
+    # unlike Finding 41 B3/Finding 69's apply_to_code timeout problem, what's
+    # being waited on is a normal outbound HTTP request, not untrusted code
+    # whose continued execution itself carries risk.
+    def _run_with_soft_timeout(fn, timeout_s):
+        import queue as _queue
+        result_q = _queue.Queue(maxsize=1)
+
+        def _worker():
+            try:
+                result_q.put(("ok", fn()))
+            except Exception as _we:
+                result_q.put(("error", _we))
+
+        threading.Thread(target=_worker, daemon=True, name="EchoProjectsAutonomyWorker").start()
+        try:
+            kind, value = result_q.get(timeout=timeout_s)
+            if kind == "error":
+                raise value
+            return value
+        except _queue.Empty:
+            return None  # timed out -- caller treats None as "abandoned this cycle"
+
+    def _echo_projects_autonomy_loop():
+        time.sleep(300)  # let everything else settle, same as EchoCheckin
+        while True:
+            try:
+                from app.core.autonomy_coordinator import should_run_cycle
+                if should_run_cycle("echo_projects_autonomy"):
+                    from app.core.echo_projects import autonomous_generate_project
+                    result = _run_with_soft_timeout(autonomous_generate_project, timeout_s=2700)  # 45 min soft ceiling
+                    if result is None:
+                        logger.warning(
+                            "[ECHO-PROJECTS-AUTONOMY] Cycle exceeded 45min soft timeout — "
+                            "abandoning this cycle's result and moving on; the underlying "
+                            "call may still complete harmlessly in the background."
+                        )
+                    else:
+                        logger.info(f"[ECHO-PROJECTS-AUTONOMY] Cycle complete: status={result.get('status')}")
+                else:
+                    logger.debug("[ECHO-PROJECTS-AUTONOMY] Throttled/stillness/conversation-active — skipping")
+            except Exception as _epe:
+                logger.warning(f"[ECHO-PROJECTS-AUTONOMY] Cycle error: {_epe}")
+            time.sleep(21600)  # every 6 hours — conservative starting cadence, several chained model calls per cycle
+    safe_start_thread(_echo_projects_autonomy_loop, name="EchoProjectsAutonomy")
+
 
 # -----------------------------
 # --- Graceful Shutdown -------

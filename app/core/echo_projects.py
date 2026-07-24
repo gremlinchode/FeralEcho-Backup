@@ -39,6 +39,7 @@ must include a main.py entry point; every other file is import-tested only
 (F1 scan + F2 import survives), not executed.
 """
 import ast
+import json
 import logging
 import os
 import re
@@ -171,10 +172,12 @@ def _run_f2_multi_file(project_dir: Path, timeout: int = 60) -> dict:
 def _write_report(project_dir: Path, spec: str, files: dict, f1_results: dict,
                    f2_result: "dict | None", ts: str,
                    council_plan: "str | None" = None,
-                   council_review: "dict | None" = None) -> Path:
+                   council_review: "dict | None" = None,
+                   origin: "str | None" = None) -> Path:
     lines = [
         "# ECHO PROJECT — not loaded, not promoted, for human review only.",
         f"# Generated: {ts}",
+        f"# Origin: {origin or 'unknown'}",
         f"# Spec: {spec}",
         f"# Files: {', '.join(files.keys())}",
         "#",
@@ -214,7 +217,8 @@ def _write_report(project_dir: Path, spec: str, files: dict, f1_results: dict,
 
 def generate_project(spec: str, files: dict,
                       council_plan: "str | None" = None,
-                      council_review: "dict | None" = None) -> dict:
+                      council_review: "dict | None" = None,
+                      origin: "str | None" = None) -> dict:
     """
     Core pipeline. `files` is a dict of {filename: code}, already generated
     by the caller (this function does not itself call an LLM) — must
@@ -232,9 +236,9 @@ def generate_project(spec: str, files: dict,
     feature's safety case depends on, verified live by liveness_ledger.py's
     echo_projects_no_escalation check.
 
-    council_plan/council_review are purely additive, optional context from
-    council_generate_project() (below) — when given, they're rendered into
-    the report as advisory context only; they never affect whether this
+    council_plan/council_review/origin are purely additive, optional context
+    from council_generate_project() (below) — when given, they're rendered
+    into the report as advisory context only; they never affect whether this
     function stages/writes/tests anything. Callers that don't pass them
     (e.g. a caller supplying hand-written files directly) are unaffected.
 
@@ -274,7 +278,7 @@ def generate_project(spec: str, files: dict,
             f1_all_ok = False
 
     if not f1_all_ok:
-        report = _write_report(project_dir, spec, files, f1_results, None, ts, council_plan, council_review)
+        report = _write_report(project_dir, spec, files, f1_results, None, ts, council_plan, council_review, origin)
         logger.warning(f"[ECHO-PROJECTS] F1 blocked one or more files in {project_dir.name}")
         return {
             "status": "f1_failed", "project_dir": str(project_dir),
@@ -288,7 +292,7 @@ def generate_project(spec: str, files: dict,
         return {"status": "error", "detail": f"failed writing staged file(s): {e}"}
 
     f2_result = _run_f2_multi_file(project_dir)
-    report = _write_report(project_dir, spec, files, f1_results, f2_result, ts, council_plan, council_review)
+    report = _write_report(project_dir, spec, files, f1_results, f2_result, ts, council_plan, council_review, origin)
     status = "ok" if f2_result.get("passed") else "f2_failed"
     logger.info(f"[ECHO-PROJECTS] {project_dir.name}: {status}")
     return {
@@ -433,7 +437,8 @@ def _council_review_project(spec: str, files: dict) -> dict:
     return result
 
 
-def council_generate_project(spec: str) -> dict:
+def council_generate_project(spec: str, source: str = "manual",
+                              origin_note: "str | None" = None) -> dict:
     """
     The missing caller for generate_project(): plans, generates, and
     reviews a real multi-file project using this codebase's existing,
@@ -449,24 +454,38 @@ def council_generate_project(spec: str) -> dict:
        contaminate that RiverBrain bucket's learned stats — the same class
        of cross-training contamination CLAUDE.md's Finding 3 already found
        and fixed once for a different mechanism.
-    2. GENERATE — one echo_query(task_type="coding") call per planned
-       file, main.py first, each given every previously-generated file's
-       full content (capped) so later files stay consistent with what
-       earlier ones already committed to (the only real cross-file-
-       awareness mechanism in this pipeline — without it, F1/F2 would only
-       catch syntax/import problems, never main.py calling a function
-       helper.py never actually defines).
+    2. GENERATE — one echo_query(task_type="echo_projects_coding") call
+       per planned file, main.py first, each given every previously-
+       generated file's full content (capped) so later files stay
+       consistent with what earlier ones already committed to (the only
+       real cross-file-awareness mechanism in this pipeline — without it,
+       F1/F2 would only catch syntax/import problems, never main.py
+       calling a function helper.py never actually defines). Deliberately
+       a separate RiverBrain bucket from plain "coding" (not reused, as
+       Finding 84 originally chose for the rare manual-only case) — once
+       this fires autonomously several times a day, volume alone would
+       otherwise let self-directed project code dominate the bucket meant
+       to reflect real conversational coding help.
     3. REVIEW — _council_review_project(), advisory only.
 
     Then calls the real, unmodified generate_project() — F1/F2/report,
     exactly as already shipped and tested (Finding 83). Never calls
     save_code(), never loads anything into the running process.
 
+    `source` ("manual" from !project, or "autonomous" from the background
+    loop) tags echo_query()'s own source field (f"echo_projects_{source}",
+    distinguishing the two in interaction_log.jsonl) and, together with
+    `origin_note`, becomes the report's "Origin" line — a manual call gets
+    a fixed "manual (!project command)" note; the autonomous loop supplies
+    its own note naming the real curiosity-garden question (or fallback
+    theme) that inspired the spec.
+
     Cost, stated plainly: this is several real model calls (1 planning
     deliberation + N per-file generations, each of which internally runs
     its own council deliberation + synthesis, + up to 3 review calls) — a
-    human invoking !project should expect it to take a while, the same
-    tradeoff self-edit's own hourly cycle already accepts for one file.
+    human invoking !project (or the autonomous loop, on its own cadence)
+    should expect it to take a while, the same tradeoff self-edit's own
+    hourly cycle already accepts for one file.
     """
     plan_prompt = (
         "You are planning a small, multi-file Python project. Given the "
@@ -509,10 +528,111 @@ def council_generate_project(spec: str) -> dict:
             f"fences, no prose before or after — just the code."
         )
         try:
-            code = echo_query(file_prompt, task_type="coding", source="echo_projects") or ""
+            code = echo_query(file_prompt, task_type="echo_projects_coding", source=f"echo_projects_{source}") or ""
         except Exception as e:
             code = f"# generation failed: {e}\n"
         files[filename] = _strip_code_fences(code)
 
     review = _council_review_project(spec, files)
-    return generate_project(spec, files, council_plan=plan_text, council_review=review)
+    origin = origin_note or ("manual (!project command)" if source == "manual" else f"{source} cycle")
+    return generate_project(spec, files, council_plan=plan_text, council_review=review, origin=origin)
+
+
+# ── Autonomous invocation — the loop, not just the pipeline (2026-07-24) ────
+# council_generate_project() above was only ever reachable via the manual
+# !project command. Gremlin was direct that manual-invocation-shaped
+# features don't serve continuous, unattended operation — this section is
+# the autonomous caller, run.py's new background thread's only real job
+# being to call autonomous_generate_project() on a gated cadence.
+
+_AUTONOMY_STATE_PATH = os.path.join(_PROJECT_ROOT, "memory", "echo_projects_autonomy_state.json")
+
+# Fallback seed themes, used only if the curiosity garden read fails or is
+# genuinely empty — real garden entries (question_garden.jsonl) are
+# philosophical/relational, not build-project-shaped by nature (confirmed
+# directly: no category cluster there is already code-shaped), so these are
+# a small, real BASE_THOUGHT_CHEST analog for this pipeline specifically,
+# not a disguised default path.
+_FALLBACK_SEED_THEMES = (
+    "a small text-based adventure game with a handful of connected rooms",
+    "a simple command-line tool that tracks and summarizes a list of tasks",
+    "a toy simulation of a small ecosystem with a few interacting species",
+    "a command-line utility that generates simple ASCII art from text input",
+    "a small program that plays a basic guessing or number game with the user",
+)
+
+
+def _build_autonomous_spec() -> tuple:
+    """
+    Returns (spec: str, spec_source: "garden"|"fallback", origin_note: str).
+    select_from_garden() is confirmed read-only (no _save_garden() call,
+    no times_asked/last_asked mutation anywhere in it) — safe to call here
+    with no side effects on the real garden.
+    """
+    try:
+        from app.core.garden_manager import select_from_garden
+        entry = select_from_garden()
+    except Exception:
+        entry = None
+
+    if entry and entry.get("question"):
+        question = entry["question"]
+        spec = (
+            "Design and build a small, self-contained Python program that "
+            "explores, models, or illustrates the following idea in some "
+            "concrete way (a simulation, a toy model, an interactive text "
+            "scenario, a data visualization, etc.) — creative interpretation "
+            f"is expected: {question}"
+        )
+        origin_note = f"autonomous cycle, inspired by curiosity garden entry: {question}"
+        return spec, "garden", origin_note
+
+    import random as _random
+    theme = _random.choice(_FALLBACK_SEED_THEMES)
+    spec = f"Design and build {theme}."
+    origin_note = f"autonomous cycle, fallback seed theme (garden unavailable): {theme}"
+    return spec, "fallback", origin_note
+
+
+def _write_autonomy_state(status: str, spec_source: str) -> None:
+    state = {
+        "last_run_utc": datetime.now(timezone.utc).isoformat(),
+        "last_status": status,
+        "spec_source": spec_source,
+    }
+    try:
+        os.makedirs(os.path.dirname(_AUTONOMY_STATE_PATH), exist_ok=True)
+        tmp = _AUTONOMY_STATE_PATH + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(state, f, indent=2)
+        os.replace(tmp, _AUTONOMY_STATE_PATH)
+    except Exception as e:
+        logger.warning(f"[ECHO-PROJECTS] Failed to write autonomy state file: {e}")
+
+
+def autonomous_generate_project() -> dict:
+    """
+    The real autonomous entry point, called by run.py's new gated
+    background thread. Picks a real spec from Echo's own current curiosity
+    state (or a fixed fallback theme if the garden is unavailable), calls
+    council_generate_project(source="autonomous"), and records the outcome
+    to a small state file (memory/echo_projects_autonomy_state.json) that
+    liveness_ledger.py's echo_projects_autonomy_activity check reads.
+
+    Never raises — a failure here is logged and recorded via the state
+    file rather than propagating into the caller's own thread loop, which
+    would otherwise abort the whole `while True:` cycle rather than just
+    this one gated invocation.
+    """
+    spec, spec_source, origin_note = _build_autonomous_spec()
+    try:
+        result = council_generate_project(spec, source="autonomous", origin_note=origin_note)
+        status = result.get("status", "unknown")
+    except Exception as e:
+        result = {"status": "error", "detail": f"autonomous_generate_project failed: {e}"}
+        status = "error"
+        logger.warning(f"[ECHO-PROJECTS] Autonomous cycle raised: {e}")
+
+    _write_autonomy_state(status, spec_source)
+    logger.info(f"[ECHO-PROJECTS] Autonomous cycle: status={status} spec_source={spec_source}")
+    return result

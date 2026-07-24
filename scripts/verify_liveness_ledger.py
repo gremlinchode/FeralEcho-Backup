@@ -1043,6 +1043,20 @@ assert ll._check_echo_projects_isolation()["pass"] is True, \
     "echo_projects_isolation: liveness_ledger.py's own legitimate test-only import of generate_project() (for echo_projects_path_safety) was NOT excluded, causing a false self-flag"
 print("[OK] echo_projects_isolation: liveness_ledger.py's own test-only import (for echo_projects_path_safety) is correctly excluded, not misread as a live-code caller")
 
+# Third named exclusion, added 2026-07-24 (autonomous echo_projects loop,
+# CLAUDE.md Finding 85): run.py now contains the one deliberate, gated
+# autonomous entry point and genuinely imports app.core.echo_projects for
+# real -- confirm this doesn't trip the isolation check, since the whole
+# point of adding this loop was to make it a real, known caller, not an
+# unexpected one.
+import os as _verify_os
+_run_py_real_source = ll._read_text(ll._RUN_PY_PATH)
+assert "echo_projects" in _run_py_real_source and ll._imports_echo_projects_ast(_run_py_real_source) is True, \
+    "echo_projects_isolation: run.py no longer appears to import app.core.echo_projects at all -- expected the EchoProjectsAutonomy loop's import; this assertion itself may need updating if the loop was intentionally removed"
+assert ll._check_echo_projects_isolation()["pass"] is True, \
+    "echo_projects_isolation: run.py's own real, deliberate import of echo_projects (for the autonomous loop) was NOT excluded, causing a false self-flag"
+print("[OK] echo_projects_isolation: run.py's real import of app.core.echo_projects (the deliberate autonomous loop) is correctly excluded, not misread as an unexpected live-code caller")
+
 # The exact self-referential-docstring bug this check's own AST-based design
 # exists to avoid: a comment/docstring mentioning "echo_projects" in prose
 # (not a real import statement) must NOT be flagged.
@@ -1167,6 +1181,63 @@ check("echo_projects_path_safety: generate_project() raises instead of failing c
 
 r = ll._evaluate_echo_projects_path_safety(None)
 check("echo_projects_path_safety: generate_project() not importable at all", r["pass"], False, r["evidence"])
+
+# ── 40. echo_projects_autonomy_gated ──────────────────────────────────────────
+try:
+    r = ll._check_echo_projects_autonomy_gated()
+    check("echo_projects_autonomy_gated: real run.py source, loop still gated", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] echo_projects_autonomy_gated real-source case: raised ({e})")
+
+_regressed_ungated_loop = (
+    "def _echo_projects_autonomy_loop():\n"
+    "    while True:\n"
+    "        from app.core.echo_projects import autonomous_generate_project\n"
+    "        autonomous_generate_project()\n"
+    "        time.sleep(21600)\n"
+)
+r = ll._evaluate_echo_projects_autonomy_gated(_regressed_ungated_loop)
+check("echo_projects_autonomy_gated: regressed to skip should_run_cycle entirely", r["pass"], False, r["evidence"])
+
+_regressed_no_generate_call = (
+    "def _echo_projects_autonomy_loop():\n"
+    "    while True:\n"
+    "        if should_run_cycle(\"echo_projects_autonomy\"):\n"
+    "            pass  # generation call removed\n"
+    "        time.sleep(21600)\n"
+)
+r = ll._evaluate_echo_projects_autonomy_gated(_regressed_no_generate_call)
+check("echo_projects_autonomy_gated: regressed to no longer call autonomous_generate_project at all", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_echo_projects_autonomy_gated(None)
+check("echo_projects_autonomy_gated: run.py not found/importable at all", r["pass"], False, r["evidence"])
+
+_no_loop_def = "def some_other_function():\n    return 1\n"
+r = ll._evaluate_echo_projects_autonomy_gated(_no_loop_def)
+check("echo_projects_autonomy_gated: _echo_projects_autonomy_loop entry point missing entirely", r["pass"], False, r["evidence"])
+
+# ── 41. echo_projects_autonomy_activity ───────────────────────────────────────
+from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+
+r = ll._evaluate_echo_projects_autonomy_activity(None)
+check("echo_projects_autonomy_activity: no state file yet (fresh deploy, lenient/informational)", r["pass"], True, r["evidence"])
+
+_fresh_now = _dt(2026, 7, 24, 12, 0, 0, tzinfo=_tz.utc)
+_recent_state = {"last_run_utc": (_fresh_now - _td(hours=3)).isoformat(), "last_status": "ok", "spec_source": "garden"}
+r = ll._evaluate_echo_projects_autonomy_activity(_recent_state, now=_fresh_now)
+check("echo_projects_autonomy_activity: real recent cycle (3h ago, within tolerance)", r["pass"], True, r["evidence"])
+
+_stale_state = {"last_run_utc": (_fresh_now - _td(hours=20)).isoformat(), "last_status": "ok", "spec_source": "garden"}
+r = ll._evaluate_echo_projects_autonomy_activity(_stale_state, now=_fresh_now)
+check("echo_projects_autonomy_activity: stale, 20h since last cycle (exceeds 2x the 6h cadence)", r["pass"], False, r["evidence"])
+
+_malformed_state = {"last_status": "ok"}
+r = ll._evaluate_echo_projects_autonomy_activity(_malformed_state, now=_fresh_now)
+check("echo_projects_autonomy_activity: state file missing last_run_utc entirely (malformed)", r["pass"], False, r["evidence"])
+
+_unparseable_state = {"last_run_utc": "not-a-real-timestamp"}
+r = ll._evaluate_echo_projects_autonomy_activity(_unparseable_state, now=_fresh_now)
+check("echo_projects_autonomy_activity: last_run_utc present but unparseable", r["pass"], False, r["evidence"])
 
 
 print()

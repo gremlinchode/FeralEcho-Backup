@@ -91,6 +91,8 @@ _WINDOWS_DAYS = {
     "echo_projects_no_escalation": None,  # static source-invariant, same shape as dissent_log_hook
     "echo_projects_council_advisory": None,  # static source-invariant, same shape as dissent_log_hook
     "echo_projects_path_safety": None,  # functional canary, not time-windowed
+    "echo_projects_autonomy_gated": None,  # static source-invariant, same shape as dissent_log_hook
+    "echo_projects_autonomy_activity": 1,  # lenient multi-cycle tolerance, ~2x the 6h cadence
 }
 
 
@@ -2460,15 +2462,19 @@ def _evaluate_echo_projects_isolation(matches: list) -> dict:
     if matches:
         return _result(
             False,
-            f"Found {len(matches)} live-code import(s) of app.core.echo_projects — this "
-            f"space is supposed to be structurally inert to the running system, not just "
-            f"inert by convention: {matches[:5]}",
+            f"Found {len(matches)} unexpected live-code import(s) of app.core.echo_projects, "
+            f"beyond the known, excluded ones (echo_projects.py itself, liveness_ledger.py's "
+            f"own test, and run.py's one deliberate autonomous loop) — this space is supposed "
+            f"to be reachable only through the manual !project command and that one gated "
+            f"loop, not from anywhere else: {matches[:5]}",
         )
     return _result(
         True,
-        "No app/*.py or run.py file imports app.core.echo_projects (AST-checked, not "
-        "just text-matched) — the generation space remains structurally isolated from "
-        "the live process.",
+        "No app/*.py file outside the known, explicitly-excluded set (echo_projects.py "
+        "itself, liveness_ledger.py's own test import, and run.py's one deliberate "
+        "autonomous loop) imports app.core.echo_projects (AST-checked, not just "
+        "text-matched) — nothing unexpected has gained a reachable path to the generation "
+        "space.",
     )
 
 
@@ -2497,6 +2503,15 @@ def _check_echo_projects_isolation() -> dict:
             # named exclusion, not a loosening of the isolation check's
             # actual invariant for anything else.
             if os.path.basename(path) == "liveness_ledger.py":
+                continue
+            # run.py now contains the one deliberate, gated autonomous
+            # entry point (the EchoProjectsAutonomy loop, CLAUDE.md Finding
+            # 85) — a real, known, accounted-for caller, not an unexpected
+            # one. Same narrow, explicitly-commented exclusion pattern as
+            # the two above; run.py's own gating (should_run_cycle) is
+            # separately verified by echo_projects_autonomy_gated, not by
+            # this check.
+            if os.path.basename(path) == "run.py":
                 continue
             try:
                 text = _read_text(path) or ""
@@ -2696,6 +2711,117 @@ def _check_echo_projects_path_safety() -> dict:
     return _evaluate_echo_projects_path_safety(generate_project)
 
 
+# ── echo_projects_autonomy_gated — run.py's new EchoProjectsAutonomy loop ───
+# still calls should_run_cycle() before invoking generation. Added
+# 2026-07-24 (CLAUDE.md Finding 85, the autonomous echo_projects loop).
+# Static source-anchor, same shape as dissent_log_hook/wolf_friction_bridge:
+# this loop fires only from an internal thread, not something a live
+# functional canary can cheaply exercise the same way a pure function can.
+# Protects the property Finding 45 item 4 built conversation_activity/
+# autonomy_coordinator to guarantee: this loop must keep deferring to real
+# conversations and stillness/throttle state, not run disconnected from the
+# shared coordinator the way a future edit could silently make it.
+
+def _evaluate_echo_projects_autonomy_gated(run_py_source: "str | None") -> dict:
+    if run_py_source is None:
+        return _result(
+            False,
+            "Could not locate run.py at all — either it moved (update this check's "
+            "anchor) or the file was removed. Failing closed either way.",
+        )
+    idx = run_py_source.find("_echo_projects_autonomy_loop")
+    if idx == -1:
+        return _result(
+            False,
+            "_echo_projects_autonomy_loop not found in run.py's source at all — either "
+            "it moved (update this check's anchor) or the autonomous loop was removed.",
+        )
+    body = run_py_source[idx:idx + 3000]
+    calls_gate = bool(re.search(r"should_run_cycle\s*\(\s*[\"']echo_projects_autonomy[\"']\s*\)", body))
+    calls_generate = "autonomous_generate_project" in body
+    if not calls_generate:
+        return _result(
+            False,
+            "_echo_projects_autonomy_loop no longer appears to call autonomous_generate_project "
+            "at all — the loop may have been restructured; update this check's anchor.",
+        )
+    if not calls_gate:
+        return _result(
+            False,
+            "_echo_projects_autonomy_loop no longer calls should_run_cycle(\"echo_projects_autonomy\") "
+            "— this loop must keep deferring to real conversations, stillness, and throttle state "
+            "via the shared autonomy_coordinator; a future edit may have silently disconnected it.",
+        )
+    return _result(
+        True,
+        "run.py's _echo_projects_autonomy_loop still calls "
+        "should_run_cycle(\"echo_projects_autonomy\") before invoking autonomous_generate_project() "
+        "— the loop still defers to the shared conversation/stillness/throttle coordinator.",
+    )
+
+
+def _check_echo_projects_autonomy_gated() -> dict:
+    source = _read_text(_RUN_PY_PATH)
+    return _evaluate_echo_projects_autonomy_gated(source)
+
+
+# ── echo_projects_autonomy_activity — the autonomous loop is actually ──────
+# firing, not just gated correctly in source. Added 2026-07-24 alongside
+# the check above. Reads the small state file autonomous_generate_project()
+# writes after every real cycle. Lenient/informational if the file doesn't
+# exist yet (a fresh deploy hasn't had 6+ hours to fire once) — same
+# "not yet deployed, not a failure" posture as self_edit_apply_to_code's
+# not_deployed state — then alerts only once real elapsed time since the
+# last real cycle exceeds roughly 2x the expected 6h cadence, the same
+# "2x over cap" tolerance log_retention/plan_retention already use — an
+# occasional missed/aborted cycle (e.g. a restart mid-cycle, which this
+# codebase has no resume-after-restart logic for on ANY autonomous loop)
+# should not trip this check; only real, sustained silence should.
+
+_ECHO_PROJECTS_AUTONOMY_STATE_PATH = os.path.join(_MEMORY_DIR, "echo_projects_autonomy_state.json")
+_ECHO_PROJECTS_AUTONOMY_CADENCE_HOURS = 6
+_ECHO_PROJECTS_AUTONOMY_STALE_MULTIPLIER = 2
+
+
+def _evaluate_echo_projects_autonomy_activity(state: "dict | None", now: "datetime | None" = None) -> dict:
+    if state is None:
+        return _result(
+            True,
+            "No echo_projects_autonomy_state.json yet — the autonomous loop hasn't completed "
+            "a real cycle yet (expected on a fresh deploy; not a failure).",
+        )
+    last_run_utc = state.get("last_run_utc")
+    if not last_run_utc:
+        return _result(False, "State file exists but has no last_run_utc field — malformed state, failing closed.")
+    try:
+        last_run = datetime.fromisoformat(last_run_utc)
+    except Exception as e:
+        return _result(False, f"Could not parse last_run_utc={last_run_utc!r}: {e!r} — failing closed.")
+    now = now or datetime.now(timezone.utc)
+    if last_run.tzinfo is None:
+        last_run = last_run.replace(tzinfo=timezone.utc)
+    hours_since = (now - last_run).total_seconds() / 3600.0
+    stale_threshold = _ECHO_PROJECTS_AUTONOMY_CADENCE_HOURS * _ECHO_PROJECTS_AUTONOMY_STALE_MULTIPLIER
+    if hours_since > stale_threshold:
+        return _result(
+            False,
+            f"Last real autonomous cycle was {hours_since:.1f}h ago, exceeding the "
+            f"{stale_threshold}h stale threshold ({_ECHO_PROJECTS_AUTONOMY_STALE_MULTIPLIER}x the "
+            f"expected {_ECHO_PROJECTS_AUTONOMY_CADENCE_HOURS}h cadence) — the loop may have stopped "
+            f"firing (last_status={state.get('last_status')!r}).",
+        )
+    return _result(
+        True,
+        f"Last real autonomous cycle was {hours_since:.1f}h ago (within the {stale_threshold}h "
+        f"tolerance), status={state.get('last_status')!r}, spec_source={state.get('spec_source')!r}.",
+    )
+
+
+def _check_echo_projects_autonomy_activity() -> dict:
+    state = _read_json(_ECHO_PROJECTS_AUTONOMY_STATE_PATH, default=None)
+    return _evaluate_echo_projects_autonomy_activity(state)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -2738,6 +2864,8 @@ _CHECKS = (
     "echo_projects_no_escalation",
     "echo_projects_council_advisory",
     "echo_projects_path_safety",
+    "echo_projects_autonomy_gated",
+    "echo_projects_autonomy_activity",
 )
 
 
@@ -2805,6 +2933,8 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "echo_projects_no_escalation": _check_echo_projects_no_escalation,
         "echo_projects_council_advisory": _check_echo_projects_council_advisory,
         "echo_projects_path_safety": _check_echo_projects_path_safety,
+        "echo_projects_autonomy_gated": _check_echo_projects_autonomy_gated,
+        "echo_projects_autonomy_activity": _check_echo_projects_autonomy_activity,
     }
 
     ledger = {"generated_at": _now_iso()}

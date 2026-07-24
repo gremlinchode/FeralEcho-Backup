@@ -786,6 +786,24 @@ def echo_studio_settings_view():
     from app import routes_echo_studio
     return routes_echo_studio.settings_view()
 
+
+@app.route("/touch/report", methods=["POST"])
+def echo_studio_touch_report():
+    from app import routes_echo_studio
+    return routes_echo_studio.touch_report()
+
+
+@app.route("/vision/report", methods=["POST"])
+def echo_studio_vision_report():
+    from app import routes_echo_studio
+    return routes_echo_studio.vision_report()
+
+
+@app.route("/hearing/report", methods=["POST"])
+def echo_studio_hearing_report():
+    from app import routes_echo_studio
+    return routes_echo_studio.hearing_report()
+
 # -----------------------------
 # --- M5 <-> Air Messaging -----
 # Logic lives in app/routes_messaging.py / app/sync/echo_messaging.py —

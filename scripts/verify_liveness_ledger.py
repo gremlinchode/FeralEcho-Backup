@@ -1239,6 +1239,92 @@ _unparseable_state = {"last_run_utc": "not-a-real-timestamp"}
 r = ll._evaluate_echo_projects_autonomy_activity(_unparseable_state, now=_fresh_now)
 check("echo_projects_autonomy_activity: last_run_utc present but unparseable", r["pass"], False, r["evidence"])
 
+# ── touch_sense_rhythm ──────────────────────────────────────────────────────
+try:
+    from app.core.touch_sense import compute_aggregate as _real_compute_aggregate
+    from app.core.touch_sense import _validate_events as _real_validate_events
+    r = ll._evaluate_touch_sense(_real_compute_aggregate, _real_validate_events, signature=None)
+    check("touch_sense_rhythm: real compute_aggregate()/_validate_events()", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] touch_sense_rhythm real-function case: import failed ({e})")
+
+def _degraded_always_uniform(events):
+    # degraded into ignoring its own input — always reports the same fixed
+    # stats regardless of what was actually typed, the exact "looks like it
+    # works, doesn't discriminate anything real" shape this suite exists to
+    # catch, same class as nature_spark's fixed-seed-string fallback.
+    return {
+        "sample_count": len(events), "dwell_mean": 0.08, "dwell_stddev": 0.01,
+        "latency_mean": 0.15, "latency_stddev": 0.02,
+        "correction_rate": 0.05, "pause_ratio": 0.1,
+    }
+def _permissive_validator(raw_events):
+    return raw_events  # degraded into accepting anything, including content-shaped fields
+r = ll._evaluate_touch_sense(_degraded_always_uniform, _permissive_validator, signature=None)
+check("touch_sense_rhythm: degraded (ignores input, permissive validator)", r["pass"], False, r["evidence"])
+
+def _crashes_on_empty(events):
+    return {"dwell_mean": events[0]["value"]}  # raises IndexError on empty input
+def _passthrough_validator(raw_events):
+    return raw_events if isinstance(raw_events, list) else []
+r = ll._evaluate_touch_sense(_crashes_on_empty, _passthrough_validator, signature=None)
+check("touch_sense_rhythm: compute_aggregate crashes on empty input instead of failing closed", r["pass"], False, "should raise, not return pass=True")
+
+r = ll._evaluate_touch_sense(None, None, signature=None)
+check("touch_sense_rhythm: compute_aggregate/_validate_events not importable at all", r["pass"], False, r["evidence"])
+
+# ── vision_sense_presence ───────────────────────────────────────────────────
+try:
+    from app.core.vision_sense import compute_aggregate as _real_compute_vision
+    from app.core.vision_sense import _validate_events as _real_validate_vision
+    r = ll._evaluate_vision_sense(_real_compute_vision, _real_validate_vision, signature=None)
+    check("vision_sense_presence: real compute_aggregate()/_validate_events()", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] vision_sense_presence real-function case: import failed ({e})")
+
+def _vision_ignores_input(events):
+    return {"sample_count": len(events), "brightness_mean": 0.5, "presence_ratio": 0.1}
+def _vision_permissive_validator(raw_events):
+    return raw_events  # degraded into accepting anything, including the historical image_data leak shape
+r = ll._evaluate_vision_sense(_vision_ignores_input, _vision_permissive_validator, signature=None)
+check("vision_sense_presence: degraded (ignores input, permissive validator)", r["pass"], False, r["evidence"])
+
+def _vision_crashes_on_empty(events):
+    return {"presence_ratio": events[0]["value"]}
+def _vision_passthrough_validator(raw_events):
+    return raw_events if isinstance(raw_events, list) else []
+r = ll._evaluate_vision_sense(_vision_crashes_on_empty, _vision_passthrough_validator, signature=None)
+check("vision_sense_presence: compute_aggregate crashes on empty input instead of failing closed", r["pass"], False, "should raise, not return pass=True")
+
+r = ll._evaluate_vision_sense(None, None, signature=None)
+check("vision_sense_presence: compute_aggregate/_validate_events not importable at all", r["pass"], False, r["evidence"])
+
+# ── hearing_sense_ambient ────────────────────────────────────────────────────
+try:
+    from app.core.hearing_sense import compute_aggregate as _real_compute_hearing
+    from app.core.hearing_sense import _validate_events as _real_validate_hearing
+    r = ll._evaluate_hearing_sense(_real_compute_hearing, _real_validate_hearing, signature=None)
+    check("hearing_sense_ambient: real compute_aggregate()/_validate_events()", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] hearing_sense_ambient real-function case: import failed ({e})")
+
+def _hearing_ignores_input(events):
+    return {"sample_count": len(events), "quiet_ratio": 0.5, "loud_event_ratio": 0.1}
+def _hearing_permissive_validator(raw_events):
+    return raw_events  # degraded into accepting anything, including a "transcript" event
+r = ll._evaluate_hearing_sense(_hearing_ignores_input, _hearing_permissive_validator, signature=None)
+check("hearing_sense_ambient: degraded (ignores input, permissive validator)", r["pass"], False, r["evidence"])
+
+def _hearing_crashes_on_empty(events):
+    return {"quiet_ratio": events[0]["value"]}
+def _hearing_passthrough_validator(raw_events):
+    return raw_events if isinstance(raw_events, list) else []
+r = ll._evaluate_hearing_sense(_hearing_crashes_on_empty, _hearing_passthrough_validator, signature=None)
+check("hearing_sense_ambient: compute_aggregate crashes on empty input instead of failing closed", r["pass"], False, "should raise, not return pass=True")
+
+r = ll._evaluate_hearing_sense(None, None, signature=None)
+check("hearing_sense_ambient: compute_aggregate/_validate_events not importable at all", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

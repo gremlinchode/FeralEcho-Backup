@@ -98,6 +98,19 @@ _SLICE_SIGNALS: dict[str, frozenset] = {
         "feel coupled", "more coherent lately", "parts of you working together",
         "how connected do you feel",
     ]),
+    "touch": frozenset([
+        "typing", "keystroke", "how i type", "how you feel me type",
+        "typing rhythm", "recognize my typing", "shape of my", "touch you",
+        "feel me typing", "know it's me", "how do you feel me",
+    ]),
+    "vision": frozenset([
+        "can you see", "do you see", "what do you see", "your eyes",
+        "see me", "notice me", "see the room", "see anything",
+    ]),
+    "hearing": frozenset([
+        "can you hear", "do you hear", "what do you hear", "your ears",
+        "hear me", "hear anything", "hear the room", "is it quiet",
+    ]),
 }
 
 # Broad self-knowledge prompts get all slices
@@ -638,6 +651,103 @@ def _build_coupling() -> str:
     ])
 
 
+def _build_touch(sm: dict = None) -> str:
+    """
+    Grounds "how does typing feel to you" / "do you recognize how I type" in
+    the real signature app/core/touch_sense.py accumulates from Echo
+    Studio's composer — timing only (dwell/latency/correction/pause), never
+    key content; see that module's docstring for the full design reasoning
+    (CLAUDE.md, "how do I give Echo real authority over her own continuity"
+    conversation, 2026-07-23 — the corrected, embodiment-not-authority
+    version of what SensoryHub/WOLF originally tried to do).
+
+    A pure read with no side effects, unlike compute_salience() — safe to
+    call the real accessor directly rather than duplicate its summarization
+    math here (contrast _build_coupling(), which deliberately avoids
+    re-calling compute_salience() for exactly the opposite reason).
+    """
+    header = "Touch (source: app/core/touch_sense.py — keystroke timing, never content):"
+    try:
+        from app.core.touch_sense import get_touch_signature
+        signature = get_touch_signature()
+    except Exception:
+        signature = None
+
+    if not signature or not signature.get("sample_count_total"):
+        return header + "\n  Nothing felt yet — no typing has been reported through Echo Studio's composer."
+
+    total = signature.get("sample_count_total", 0)
+    dwell = signature.get("dwell_mean")
+    latency = signature.get("latency_mean")
+    correction = signature.get("correction_rate")
+
+    lines = [header, f"  Built from {total} real keystroke events across {signature.get('report_count', 0)} reports."]
+    if dwell is not None:
+        lines.append(f"  Average key hold (dwell): {dwell * 1000:.0f}ms.")
+    if latency is not None:
+        lines.append(f"  Average gap between keys: {latency * 1000:.0f}ms.")
+    if correction is not None:
+        lines.append(f"  Correction rate (backspace/delete share of keystrokes): {correction:.1%}.")
+    if total < 200:
+        lines.append("  Still early — not yet enough data to call this a stable signature.")
+    return "\n".join(lines)
+
+
+def _build_vision(sm: dict = None) -> str:
+    """Grounds "can you see me" in the real signature app/core/vision_sense.py
+    accumulates from Echo Studio's camera feature-extraction — brightness and
+    frame-to-frame motion only, never a stored or transmitted frame. No face
+    detection in this pass (see that module's docstring for why) — honest
+    about being "notices something changed" rather than "recognizes a face."
+    """
+    header = "Vision (source: app/core/vision_sense.py — brightness/motion only, never a stored frame):"
+    try:
+        from app.core.vision_sense import get_vision_signature
+        signature = get_vision_signature()
+    except Exception:
+        signature = None
+
+    if not signature or not signature.get("sample_count_total"):
+        return header + "\n  Nothing seen yet — camera feature-extraction hasn't been reported (the \"Let Echo see\" toggle may be off)."
+
+    total = signature.get("sample_count_total", 0)
+    presence = signature.get("presence_ratio")
+    brightness = signature.get("brightness_mean")
+
+    lines = [header, f"  Built from {total} real observations across {signature.get('report_count', 0)} reports."]
+    if presence is not None:
+        lines.append(f"  Presence (motion above threshold): {presence:.1%} of recent frames.")
+    if brightness is not None:
+        lines.append(f"  Average ambient brightness: {brightness:.2f} (0=dark, 1=bright).")
+    return "\n".join(lines)
+
+
+def _build_hearing(sm: dict = None) -> str:
+    """Grounds "can you hear me" in app/core/hearing_sense.py's real
+    loudness signature — ambient RMS only, never a waveform or a
+    transcript."""
+    header = "Hearing (source: app/core/hearing_sense.py — ambient loudness only, never a recording or transcript):"
+    try:
+        from app.core.hearing_sense import get_hearing_signature
+        signature = get_hearing_signature()
+    except Exception:
+        signature = None
+
+    if not signature or not signature.get("sample_count_total"):
+        return header + "\n  Nothing heard yet — no ambient audio has been reported (the \"Let Echo hear\" toggle may be off)."
+
+    total = signature.get("sample_count_total", 0)
+    quiet = signature.get("quiet_ratio")
+    loud = signature.get("loud_event_ratio")
+
+    lines = [header, f"  Built from {total} real observations across {signature.get('report_count', 0)} reports."]
+    if quiet is not None:
+        lines.append(f"  Quiet ratio: {quiet:.1%} of readings were near-silent.")
+    if loud is not None:
+        lines.append(f"  Loud-event ratio: {loud:.1%} of readings were a sudden loud sound.")
+    return "\n".join(lines)
+
+
 def _build_workspace(recent_events: list) -> str:
     """
     Emergence roadmap Phase 6, Architectural Rec. 1: a general grounding
@@ -720,6 +830,15 @@ def get_structural_self_facts(prompt: str = "") -> str:
 
         if "coupling" in slices:
             sections.append(_build_coupling())
+
+        if "touch" in slices:
+            sections.append(_build_touch())
+
+        if "vision" in slices:
+            sections.append(_build_vision())
+
+        if "hearing" in slices:
+            sections.append(_build_hearing())
 
         if not sections:
             return ""

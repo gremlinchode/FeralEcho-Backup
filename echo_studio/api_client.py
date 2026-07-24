@@ -200,3 +200,47 @@ class ApiClient:
         resp = requests.get(f"{self.base_url}/settings/view", timeout=self.timeout)
         resp.raise_for_status()
         return resp.json()
+
+    # ------------------------------------------------------------------
+    # Touch (see app/core/touch_sense.py) — write, best-effort
+    # ------------------------------------------------------------------
+    def report_touch_events(self, events: list[dict]) -> dict:
+        """POST /touch/report — a small batch of keystroke *timing* events
+        from ComposerInput.drain_touch_events(). Meant to be called from a
+        background thread (see ConversationView's periodic flush timer),
+        never the Qt main thread — same convention as stream_chat(). Never
+        includes a key code or character; see composer_input.py's module
+        docstring for what actually crosses this call."""
+        resp = requests.post(
+            f"{self.base_url}/touch/report",
+            json={"events": events},
+            timeout=self.timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    def report_vision_events(self, events: list[dict]) -> dict:
+        """POST /vision/report — see app/core/vision_sense.py. Only
+        brightness/motion floats, computed and drained by
+        echo_studio/widgets/ambient_capture.py's VisionCapture — never a
+        frame or an image reaches this call."""
+        resp = requests.post(
+            f"{self.base_url}/vision/report",
+            json={"events": events},
+            timeout=self.timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    def report_hearing_events(self, events: list[dict]) -> dict:
+        """POST /hearing/report — see app/core/hearing_sense.py. Only
+        loudness floats, computed and drained by
+        echo_studio/widgets/ambient_capture.py's HearingCapture — never raw
+        audio reaches this call."""
+        resp = requests.post(
+            f"{self.base_url}/hearing/report",
+            json={"events": events},
+            timeout=self.timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()

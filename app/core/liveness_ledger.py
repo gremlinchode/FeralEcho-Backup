@@ -1831,6 +1831,234 @@ def _check_plan_retention() -> dict:
     return _evaluate_plan_retention(_prune_self_edit_plans, LOGIC_PLAN_DIR, _MAX_SELF_EDIT_PLANS)
 
 
+# ── touch_sense_rhythm — app/core/touch_sense.py's compute_aggregate() ────
+# still correctly turns a real timing-pattern-shaped event batch into
+# accurate statistics, correctly reports "not enough samples" rather than a
+# misleadingly precise single-sample stddev, and _validate_events() still
+# rejects malformed/adversarial/content-shaped input (the schema itself has
+# no field a literal character could travel through — this check exercises
+# that directly, not just documents it). Same two-part shape as
+# log_retention/plan_retention: functional canary + a lenient live-data
+# signal. Lenient deliberately — the composer's periodic flush only fires
+# while Echo Studio's window is actually being typed into, so "no data
+# yet" is an honest, expected state for a fresh deploy or a quiet session,
+# not a failure the way it would be for an always-running background loop.
+
+def _evaluate_touch_sense(compute_fn, validate_fn, signature: dict = None) -> dict:
+    if compute_fn is None or validate_fn is None:
+        return _result(False, "Could not import touch_sense's compute_aggregate/_validate_events — failing closed.")
+
+    failures = []
+
+    def _safe_compute(events, label):
+        try:
+            return compute_fn(events)
+        except Exception as e:
+            failures.append(f"{label}: raised {e!r} instead of returning a result")
+            return {}
+
+    consistent_events = (
+        [{"type": "dwell", "value": 0.08, "category": "printable"} for _ in range(20)]
+        + [{"type": "latency", "value": 0.15, "category": "printable"} for _ in range(20)]
+    )
+    result = _safe_compute(consistent_events, "consistent-rhythm case")
+    if result.get("dwell_mean") is None or abs(result["dwell_mean"] - 0.08) > 0.001:
+        failures.append(f"consistent-rhythm case: expected dwell_mean~0.08, got {result.get('dwell_mean')}")
+    if result.get("sample_count") != 40:
+        failures.append(f"consistent-rhythm case: expected sample_count=40, got {result.get('sample_count')}")
+
+    empty_result = _safe_compute([], "empty-input case")
+    if empty_result.get("sample_count") != 0 or empty_result.get("dwell_mean") is not None:
+        failures.append(f"empty-input case: expected all-None/zero, got {empty_result}")
+
+    garbage = [
+        {"type": "dwell", "value": "not_a_number", "category": "printable"},
+        {"type": "key_content", "value": "hello world", "category": "printable"},
+        {"type": "dwell", "value": 999.0, "category": "printable"},
+        {"type": "dwell", "value": 0.05, "category": "not_a_real_category"},
+        "not_even_a_dict",
+    ]
+    try:
+        cleaned = validate_fn(garbage)
+    except Exception as e:
+        cleaned = None
+        failures.append(f"validator case: raised {e!r} instead of filtering")
+    if cleaned:
+        failures.append(f"validator case: expected all garbage/adversarial input rejected, got {len(cleaned)} events survive")
+
+    single = [{"type": "dwell", "value": 0.1, "category": "printable"}]
+    single_result = _safe_compute(single, "single-sample case")
+    if single_result.get("dwell_stddev") is not None:
+        failures.append("single-sample case: expected dwell_stddev=None (not enough samples for a real stddev), got a value")
+
+    if failures:
+        return _result(False, "touch_sense discrimination failed: " + "; ".join(failures))
+
+    if signature and signature.get("last_updated"):
+        evidence = (
+            "Discriminates correctly; real signature on file from "
+            f"{signature.get('sample_count_total', 0)} total keystroke events."
+        )
+    else:
+        evidence = "Discriminates correctly against the real function; no real touch data recorded yet (expected until Echo Studio's composer has been used)."
+
+    return _result(True, evidence)
+
+
+def _check_touch_sense() -> dict:
+    try:
+        from app.core.touch_sense import compute_aggregate, _validate_events, get_touch_signature
+        signature = get_touch_signature()
+    except Exception:
+        compute_aggregate = _validate_events = None
+        signature = None
+    return _evaluate_touch_sense(compute_aggregate, _validate_events, signature)
+
+
+# ── vision_sense_presence — app/core/vision_sense.py's compute_aggregate() ─
+# still correctly turns brightness/motion readings into accurate stats and
+# a real presence_ratio, and _validate_events() still rejects malformed and
+# content-shaped input (a "type": "image_data" event — the exact leak shape
+# found in the retired SensoryHub's actual capture_camera(), which returned
+# a full base64 JPEG frame from an unauthenticated 0.0.0.0 route). Same
+# two-part shape as touch_sense_rhythm; lenient live signal for the same
+# reason (camera activity only exists while Echo Studio's "Let Echo see"
+# toggle is on).
+
+def _evaluate_vision_sense(compute_fn, validate_fn, signature: dict = None) -> dict:
+    if compute_fn is None or validate_fn is None:
+        return _result(False, "Could not import vision_sense's compute_aggregate/_validate_events — failing closed.")
+
+    failures = []
+
+    def _safe_compute(events, label):
+        try:
+            return compute_fn(events)
+        except Exception as e:
+            failures.append(f"{label}: raised {e!r} instead of returning a result")
+            return {}
+
+    mixed_events = (
+        [{"type": "brightness", "value": v} for v in [0.5, 0.52, 0.48, 0.51]]
+        + [{"type": "motion", "value": v} for v in [0.001, 0.001, 0.15, 0.001]]  # 1 of 4 above presence threshold
+    )
+    result = _safe_compute(mixed_events, "mixed-reading case")
+    if result.get("presence_ratio") is None or abs(result["presence_ratio"] - 0.25) > 0.001:
+        failures.append(f"mixed-reading case: expected presence_ratio~0.25, got {result.get('presence_ratio')}")
+    if result.get("sample_count") != 8:
+        failures.append(f"mixed-reading case: expected sample_count=8, got {result.get('sample_count')}")
+
+    empty_result = _safe_compute([], "empty-input case")
+    if empty_result.get("sample_count") != 0 or empty_result.get("presence_ratio") is not None:
+        failures.append(f"empty-input case: expected all-None/zero, got {empty_result}")
+
+    garbage = [
+        {"type": "image_data", "value": "base64stufffff..."},  # the actual historical leak shape
+        {"type": "brightness", "value": 5.0},                   # out of [0,1] range
+        {"type": "motion", "value": "not_a_number"},
+        "not_even_a_dict",
+    ]
+    try:
+        cleaned = validate_fn(garbage)
+    except Exception as e:
+        cleaned = None
+        failures.append(f"validator case: raised {e!r} instead of filtering")
+    if cleaned:
+        failures.append(f"validator case: expected all garbage/image-shaped input rejected, got {len(cleaned)} events survive")
+
+    if failures:
+        return _result(False, "vision_sense discrimination failed: " + "; ".join(failures))
+
+    if signature and signature.get("last_updated"):
+        evidence = (
+            "Discriminates correctly; real signature on file from "
+            f"{signature.get('sample_count_total', 0)} total observations."
+        )
+    else:
+        evidence = "Discriminates correctly against the real function; no real vision data recorded yet (expected until the 'Let Echo see' toggle has been used)."
+
+    return _result(True, evidence)
+
+
+def _check_vision_sense() -> dict:
+    try:
+        from app.core.vision_sense import compute_aggregate, _validate_events, get_vision_signature
+        signature = get_vision_signature()
+    except Exception:
+        compute_aggregate = _validate_events = None
+        signature = None
+    return _evaluate_vision_sense(compute_aggregate, _validate_events, signature)
+
+
+# ── hearing_sense_ambient — app/core/hearing_sense.py's compute_aggregate() ─
+# still correctly turns loudness readings into accurate stats/ratios, and
+# _validate_events() still rejects malformed and content-shaped input (a
+# "type": "transcript" event) — the structural guarantee that this sense
+# never becomes speech-to-text no matter what a future edit tries to feed
+# it. Same two-part shape as touch_sense_rhythm/vision_sense_presence.
+
+def _evaluate_hearing_sense(compute_fn, validate_fn, signature: dict = None) -> dict:
+    if compute_fn is None or validate_fn is None:
+        return _result(False, "Could not import hearing_sense's compute_aggregate/_validate_events — failing closed.")
+
+    failures = []
+
+    def _safe_compute(events, label):
+        try:
+            return compute_fn(events)
+        except Exception as e:
+            failures.append(f"{label}: raised {e!r} instead of returning a result")
+            return {}
+
+    events = [{"type": "loudness", "value": v} for v in [0.01, 0.015, 0.6, 0.02, 0.01, 0.55]]
+    result = _safe_compute(events, "mixed-loudness case")
+    if result.get("quiet_ratio") is None or abs(result["quiet_ratio"] - 0.5) > 0.001:
+        failures.append(f"mixed-loudness case: expected quiet_ratio~0.5, got {result.get('quiet_ratio')}")
+    if result.get("loud_event_ratio") is None or abs(result["loud_event_ratio"] - (1/3)) > 0.001:
+        failures.append(f"mixed-loudness case: expected loud_event_ratio~0.333, got {result.get('loud_event_ratio')}")
+
+    empty_result = _safe_compute([], "empty-input case")
+    if empty_result.get("sample_count") != 0 or empty_result.get("loudness_mean") is not None:
+        failures.append(f"empty-input case: expected all-None/zero, got {empty_result}")
+
+    garbage = [
+        {"type": "transcript", "value": "what did you say"},  # content masquerading as a reading
+        {"type": "loudness", "value": 3.0},                    # out of [0,1] range
+        {"type": "loudness", "value": "loud"},
+        "not_even_a_dict",
+    ]
+    try:
+        cleaned = validate_fn(garbage)
+    except Exception as e:
+        cleaned = None
+        failures.append(f"validator case: raised {e!r} instead of filtering")
+    if cleaned:
+        failures.append(f"validator case: expected all garbage/transcript-shaped input rejected, got {len(cleaned)} events survive")
+
+    if failures:
+        return _result(False, "hearing_sense discrimination failed: " + "; ".join(failures))
+
+    if signature and signature.get("last_updated"):
+        evidence = (
+            "Discriminates correctly; real signature on file from "
+            f"{signature.get('sample_count_total', 0)} total observations."
+        )
+    else:
+        evidence = "Discriminates correctly against the real function; no real hearing data recorded yet (expected until the 'Let Echo hear' toggle has been used)."
+
+    return _result(True, evidence)
+
+
+def _check_hearing_sense() -> dict:
+    try:
+        from app.core.hearing_sense import compute_aggregate, _validate_events, get_hearing_signature
+        signature = get_hearing_signature()
+    except Exception:
+        compute_aggregate = _validate_events = None
+        signature = None
+    return _evaluate_hearing_sense(compute_aggregate, _validate_events, signature)
+
+
 # ── 23. janitor_council_advisory_only — echo_janitor.py's ──────────────────
 # _attach_council_opinions() still structurally cannot change a flag-only
 # candidate's decision, no matter how confident a (real or fake) council
@@ -2866,6 +3094,9 @@ _CHECKS = (
     "echo_projects_path_safety",
     "echo_projects_autonomy_gated",
     "echo_projects_autonomy_activity",
+    "touch_sense_rhythm",
+    "vision_sense_presence",
+    "hearing_sense_ambient",
 )
 
 
@@ -2935,6 +3166,9 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "echo_projects_path_safety": _check_echo_projects_path_safety,
         "echo_projects_autonomy_gated": _check_echo_projects_autonomy_gated,
         "echo_projects_autonomy_activity": _check_echo_projects_autonomy_activity,
+        "touch_sense_rhythm": _check_touch_sense,
+        "vision_sense_presence": _check_vision_sense,
+        "hearing_sense_ambient": _check_hearing_sense,
     }
 
     ledger = {"generated_at": _now_iso()}

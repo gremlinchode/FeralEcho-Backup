@@ -718,3 +718,77 @@ def settings_view():
         payload["principles"] = {"error": str(e)}
 
     return jsonify(payload), 200
+
+
+# --------------------------------------------------------------------------
+# Touch (app/core/touch_sense.py) — see that module's docstring for the full
+# design reasoning. Echo Studio's composer periodically reports a small
+# batch of already-computed keystroke *timing* events here — never key
+# content; the schema this accepts has no field a literal character could
+# travel in (touch_sense._validate_events() enforces this server-side too).
+# --------------------------------------------------------------------------
+def touch_report():
+    """POST /touch/report — body: {"events": [{"type": "dwell"|"latency",
+    "value": <float seconds>, "category": <coarse structural category>}]}.
+
+    Left unauthenticated, matching every other route in this file (see
+    CLAUDE.md's audit-roadmap item on routes_echo_studio.py's still-open
+    auth question) rather than introduce a one-off, inconsistent gate here
+    — /chat/stream already persists real conversation content to disk from
+    this same unauthenticated surface today, which is a strictly higher-
+    stakes precedent than typing-rhythm floats. Resolving that properly
+    means gating this whole file's routes together, deliberately, not
+    patching just the newest one and calling the question closed.
+    """
+    from app.core import touch_sense
+
+    payload = request.json or {}
+    events = payload.get("events", [])
+    try:
+        signature = touch_sense.record_touch_report(events)
+    except Exception as e:
+        logger.warning(f"[echo_studio] /touch/report failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify({"status": "ok", "recorded": signature is not None}), 200
+
+
+# --------------------------------------------------------------------------
+# Vision / Hearing (app/core/vision_sense.py, app/core/hearing_sense.py) —
+# same shape and same reasoning as touch above: never key content, never a
+# frame, never a waveform. Only already-reduced numeric readings cross this
+# boundary; both activate client-side only behind Echo Studio's explicit,
+# default-off "Let Echo see"/"Let Echo hear" checkboxes.
+# --------------------------------------------------------------------------
+def vision_report():
+    """POST /vision/report — body: {"events": [{"type": "brightness"|"motion",
+    "value": <float>}]}. Unauthenticated for the same reason touch_report()
+    is — see that function's docstring."""
+    from app.core import vision_sense
+
+    payload = request.json or {}
+    events = payload.get("events", [])
+    try:
+        signature = vision_sense.record_vision_report(events)
+    except Exception as e:
+        logger.warning(f"[echo_studio] /vision/report failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify({"status": "ok", "recorded": signature is not None}), 200
+
+
+def hearing_report():
+    """POST /hearing/report — body: {"events": [{"type": "loudness",
+    "value": <float RMS 0-1>]}]}. Unauthenticated for the same reason
+    touch_report() is — see that function's docstring."""
+    from app.core import hearing_sense
+
+    payload = request.json or {}
+    events = payload.get("events", [])
+    try:
+        signature = hearing_sense.record_hearing_report(events)
+    except Exception as e:
+        logger.warning(f"[echo_studio] /hearing/report failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify({"status": "ok", "recorded": signature is not None}), 200

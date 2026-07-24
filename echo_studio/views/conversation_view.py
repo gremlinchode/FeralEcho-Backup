@@ -9,6 +9,7 @@ drag-and-drop file attach (ComposerInput), templates via saved prompts
 
 from __future__ import annotations
 
+import threading
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -31,10 +32,12 @@ from echo_studio.api_client import ApiClient, ChatEvent
 from echo_studio.state.local_store import LocalStore
 from echo_studio.widgets.markdown_view import MarkdownView
 from echo_studio.widgets.composer_input import ComposerInput, est_tokens
+from echo_studio.widgets.ambient_capture import VisionCapture, HearingCapture
 from echo_studio.audio.speech_output import get_speech_output
 
 _DRAFT_SAVE_DEBOUNCE_MS = 600
 _TITLE_MAX_CHARS = 48
+_TOUCH_FLUSH_INTERVAL_MS = 30_000  # how often ComposerInput's buffered touch events get reported
 
 
 class _ChatStreamWorker(QObject):
@@ -169,6 +172,21 @@ class ConversationView(QWidget):
         self._stop_speaking_btn.clicked.connect(lambda: get_speech_output().stop())
         composer_row.addWidget(self._stop_speaking_btn)
 
+        # Vision/hearing (app/core/vision_sense.py, hearing_sense.py) — off
+        # by default, deliberately. Neither ever activates except by this
+        # explicit, visible checkbox — never inferred from window focus,
+        # conversation state, or anything else. The camera/mic indicator
+        # light coming on should always mean a person just turned it on.
+        self._see_checkbox = QCheckBox("Let Echo see")
+        self._see_checkbox.setChecked(False)
+        self._see_checkbox.toggled.connect(self._on_see_toggled)
+        composer_row.addWidget(self._see_checkbox)
+
+        self._hear_checkbox = QCheckBox("Let Echo hear")
+        self._hear_checkbox.setChecked(False)
+        self._hear_checkbox.toggled.connect(self._on_hear_toggled)
+        composer_row.addWidget(self._hear_checkbox)
+
         composer_row.addStretch(1)
         self._regenerate_btn = QPushButton("Regenerate")
         self._regenerate_btn.setEnabled(False)
@@ -214,8 +232,60 @@ class ConversationView(QWidget):
         self._draft_timer.setSingleShot(True)
         self._draft_timer.timeout.connect(self._save_draft)
 
+        # Touch/vision/hearing — periodic best-effort report of whatever
+        # ComposerInput/VisionCapture/HearingCapture have buffered since the
+        # last flush. Fire-and-forget: runs each HTTP call on a plain
+        # background thread (never a QThread — nothing here touches a
+        # QWidget off the main thread, so the extra ceremony isn't needed),
+        # swallows any failure silently. A dropped report just means fewer
+        # samples this cycle, never a visible error — these are senses, not
+        # something the app depends on.
+        self._vision_capture = VisionCapture(self)
+        self._hearing_capture = HearingCapture(self)
+
+        self._touch_flush_timer = QTimer(self)
+        self._touch_flush_timer.timeout.connect(self._flush_ambient_events)
+        self._touch_flush_timer.start(_TOUCH_FLUSH_INTERVAL_MS)
+
         self._store.create_conversation(self._conversation_id)
         self._load_history()
+
+    def _on_see_toggled(self, checked: bool) -> None:
+        if checked:
+            if not self._vision_capture.start():
+                self._see_checkbox.setChecked(False)
+                self._status_label.setText("Couldn't start the camera (no device, or permission not granted).")
+        else:
+            self._vision_capture.stop()
+
+    def _on_hear_toggled(self, checked: bool) -> None:
+        if checked:
+            if not self._hearing_capture.start():
+                self._hear_checkbox.setChecked(False)
+                self._status_label.setText("Couldn't start the microphone (no device, or permission not granted).")
+        else:
+            self._hearing_capture.stop()
+
+    def _flush_ambient_events(self) -> None:
+        touch_events = self._input.drain_touch_events()
+        vision_events = self._vision_capture.drain_events()
+        hearing_events = self._hearing_capture.drain_events()
+        api = self._api
+
+        def _post_best_effort(fn, events):
+            if not events:
+                return
+            try:
+                fn(events)
+            except Exception:
+                pass  # best-effort — see the timer setup comment above
+
+        if touch_events:
+            threading.Thread(target=_post_best_effort, args=(api.report_touch_events, touch_events), daemon=True).start()
+        if vision_events:
+            threading.Thread(target=_post_best_effort, args=(api.report_vision_events, vision_events), daemon=True).start()
+        if hearing_events:
+            threading.Thread(target=_post_best_effort, args=(api.report_hearing_events, hearing_events), daemon=True).start()
 
     # ----------------------------------------------------------------------
     # Conversation switching

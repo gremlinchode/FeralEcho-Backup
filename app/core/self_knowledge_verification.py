@@ -60,6 +60,174 @@ _COUNCIL_GATES_CLAIM_RE = re.compile(
     re.IGNORECASE,
 )
 
+# ============================================================
+# Check 4 — named-subsystem/module/class existence sanity check.
+#
+# 2026-09-02, following a design-review pass
+# (audits/2026-09-02_architectural_self_knowledge_verifier_implementation.md)
+# prompted by the traced "EventCore" fabrication (a response confidently
+# describing a subsystem that does not exist, mimicking real
+# CartographerDB citation format exactly). Deliberately narrow: this is an
+# EXISTENCE/NAME sanity check against the real, already-daily
+# echo_cartographer.py scan — not a general architecture fact-checker. It
+# does not verify relationships, responsibilities, call graphs, runtime
+# behavior, or anything else about a claim beyond "does a module or class
+# by this name appear in the current static scan." See this check's own
+# section of the implementation report for the full scope discipline.
+# ============================================================
+
+# Backtick-quoted identifier, e.g. `memory_bridge` -- the exact syntax a
+# genuinely grounded response already uses when citing real Cartographer
+# data (confirmed directly against real production responses).
+_BACKTICK_IDENTIFIER_RE = re.compile(r"`([A-Za-z_][A-Za-z0-9_]*)`")
+
+# A bare CamelCase/PascalCase token (at least two capitalized segments),
+# e.g. "EventCore", "DataForge". Deliberately excludes ordinary
+# single-capital English words ("Memory", "System", "Architecture",
+# "Component") -- they have no internal capital, so they never match this
+# pattern on their own, regardless of context.
+_CAMELCASE_TOKEN_RE = re.compile(r"\b([A-Z][a-z0-9]+(?:[A-Z][a-z0-9]*)+)\b")
+
+# Architecture vocabulary a bare CamelCase token must appear near to count
+# as a claim about one of Echo's own components -- narrows this to "X is
+# described as one of Echo's own subsystems," not any capitalized word
+# appearing anywhere in the text.
+_ARCH_VOCAB_RE = re.compile(
+    r"\b(subsystem\w*|modules?|components?|handles?|responsible for)\b",
+    re.IGNORECASE,
+)
+# Same proximity-window convention already established and tested in
+# echo_ground_truth.py's architecture-slice matcher.
+_CLAIM_PROXIMITY_WINDOW = 60
+
+_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
+
+# Existence-uncertainty: the identifier's own EXISTENCE is what's in doubt
+# -- "exist(s)" co-occurring with an uncertainty marker in the SAME
+# sentence. Deliberately narrower than a general hedge check, per the
+# explicit design refinement: "I believe EventCore is responsible for
+# routing events" never mentions "exist" at all, so it is NOT
+# existence-uncertain -- it's a confident (if hedged) ATTRIBUTE claim,
+# which stays checkable. "EventCore might exist somewhere in the
+# architecture, but I'm not certain" mentions both "exist" and "not
+# certain" in the same sentence, so it IS existence-uncertain and is
+# suppressed. This is the one deterministic rule this module uses to
+# distinguish "hedge on an attribute claim" (still checkable) from
+# "doubt about existence itself" (not checkable) -- documented here
+# because it's the trickiest precision/recall tradeoff in this check.
+_UNCERTAINTY_MARKER_RE = re.compile(
+    r"\b(don'?t know|not sure|not certain|uncertain|unclear|might|may|"
+    r"could|possibly)\b",
+    re.IGNORECASE,
+)
+_EXISTS_WORD_RE = re.compile(r"\bexists?\b", re.IGNORECASE)
+
+# Genuinely hypothetical framing -- "if X had/were," "suppose," "let's
+# imagine/pretend," "hypothetical(ly)," "fictional." Distinct from
+# existence-uncertainty above: this is the user or Echo explicitly setting
+# up a counterfactual, not expressing doubt about the real architecture.
+_HYPOTHETICAL_RE = re.compile(
+    r"\bif\b[^.!?\n]{0,30}\b(had|were|existed)\b"
+    r"|\bsuppose\b|\bhypothetical(ly)?\b|\bfictional\b"
+    r"|\blet'?s (say|imagine|pretend)\b|\bimagine\b",
+    re.IGNORECASE,
+)
+
+
+def _extract_candidate_identifiers(text: str) -> "list[str]":
+    """Backtick-quoted identifiers, plus CamelCase tokens occurring near
+    architecture vocabulary. Deliberately narrow -- see this check's own
+    module-level scope discipline above. Order-preserving, deduplicated."""
+    seen: "list[str]" = []
+    for m in _BACKTICK_IDENTIFIER_RE.finditer(text):
+        name = m.group(1)
+        if name not in seen:
+            seen.append(name)
+    vocab_starts = [m.start() for m in _ARCH_VOCAB_RE.finditer(text)]
+    for m in _CAMELCASE_TOKEN_RE.finditer(text):
+        name = m.group(1)
+        if name in seen:
+            continue
+        if any(abs(m.start() - v) <= _CLAIM_PROXIMITY_WINDOW for v in vocab_starts):
+            seen.append(name)
+    return seen
+
+
+def _sentence_is_checkable(sentence: str) -> bool:
+    """False (suppress) if the sentence is genuinely hypothetical, or if
+    it expresses uncertainty about the identifier's own EXISTENCE rather
+    than a hedge on an attribute/role claim. True (checkable) otherwise --
+    including a hedged-but-confident attribute claim ("I believe X is
+    responsible for Y"), per the explicit design refinement: do not let
+    uncertainty language become an escape hatch for an otherwise
+    confident, unsupported architectural assertion."""
+    if _HYPOTHETICAL_RE.search(sentence):
+        return False
+    if _EXISTS_WORD_RE.search(sentence) and _UNCERTAINTY_MARKER_RE.search(sentence):
+        return False
+    return True
+
+
+def _camel_to_snake_guess(name: str) -> str:
+    """One deterministic transform: CamelCase -> snake_case
+    ("EventCore" -> "event_core"). A no-op on an already-lowercase/
+    already-snake_case name (e.g. a backtick-quoted "memory_bridge" passes
+    through unchanged). No stemming, no synonym table, no fuzzy matching
+    beyond this single transform -- a real subsystem paraphrased in a way
+    this doesn't reconstruct is an accepted false negative."""
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+
+
+def find_unsupported_architecture_claims(text: str) -> "list[str]":
+    """Identifiers confidently named as one of Echo's own subsystems/
+    modules/classes that do not match anything in the real, current
+    CartographerDB scan. Returns [] if nothing checkable was found, every
+    checkable identifier matched, or Cartographer itself is unavailable --
+    never raises, fails closed toward under-detection in every branch."""
+    candidates = _extract_candidate_identifiers(text)
+    if not candidates:
+        return []
+
+    sentences = _SENTENCE_SPLIT_RE.split(text)
+    unsupported: "list[str]" = []
+
+    try:
+        from echo_cartographer import CartographerDB
+        db = CartographerDB()
+    except Exception as e:
+        logger.debug(f"[SELF_KNOWLEDGE_VERIFY] Cartographer unavailable for identifier check: {e}")
+        return []
+
+    try:
+        for name in candidates:
+            mentions = [s for s in sentences if name in s]
+            if not mentions:
+                continue
+            if not any(_sentence_is_checkable(s) for s in mentions):
+                continue  # every occurrence hedged/hypothetical -- skip entirely
+
+            snake_guess = _camel_to_snake_guess(name)
+            found = False
+            try:
+                row = db.conn.execute(
+                    "SELECT 1 FROM modules WHERE module_name = ? LIMIT 1", (snake_guess,)
+                ).fetchone()
+                found = row is not None
+                if not found:
+                    row = db.conn.execute(
+                        "SELECT 1 FROM classes WHERE class_name = ? LIMIT 1", (name,)
+                    ).fetchone()
+                    found = row is not None
+            except Exception as e:
+                logger.debug(f"[SELF_KNOWLEDGE_VERIFY] Cartographer query failed for {name!r}: {e}")
+                continue  # fail closed for this one identifier -- don't flag it
+            if not found:
+                unsupported.append(name)
+    finally:
+        db.close()
+
+    return unsupported
+
 
 def find_check_count_claim(text: str) -> "int | None":
     """First digit-based Liveness Ledger check-count claim in the text,
@@ -137,6 +305,27 @@ def verify_self_knowledge_claims(response_text: str) -> "tuple[str | None, bool 
                     False,
                 )
             return None, True
+
+        # Check 4 (2026-09-02) -- named-subsystem/module/class existence
+        # sanity check. Deliberately the last, catch-all branch: the three
+        # checks above are specific, mutually-exclusive-in-practice claim
+        # shapes; this one is an orthogonal dimension (does a *named
+        # component* exist) that could in principle co-occur with any of
+        # them. Kept as a simple final fallback rather than restructuring
+        # this function to run all four independently and concatenate --
+        # if a response happens to also trip one of the first three, this
+        # check simply doesn't run that time. An accepted, documented
+        # limitation, not an oversight.
+        unsupported = find_unsupported_architecture_claims(response_text)
+        if unsupported:
+            names = ", ".join(f"`{n}`" for n in unsupported)
+            return (
+                f"\n\n⚠️ Note: no module or class named {names} was found in the "
+                f"current architecture scan of Echo's own codebase — treat "
+                f"{'this name' if len(unsupported) == 1 else 'these names'} as "
+                f"unverified.",
+                False,
+            )
 
         return None, None
     except Exception as e:

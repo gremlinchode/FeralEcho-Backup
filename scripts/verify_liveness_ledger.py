@@ -1325,6 +1325,190 @@ check("hearing_sense_ambient: compute_aggregate crashes on empty input instead o
 r = ll._evaluate_hearing_sense(None, None, signature=None)
 check("hearing_sense_ambient: compute_aggregate/_validate_events not importable at all", r["pass"], False, r["evidence"])
 
+# ── awareness_scan_hygiene ───────────────────────────────────────────────────
+try:
+    _real_awareness_source = open("app/autonomous_awareness.py").read()
+    from app.autonomous_awareness import (
+        _load_code_scan_hash_cache as _real_load_hash_cache,
+        _save_code_scan_hash_cache as _real_save_hash_cache,
+    )
+    r = ll._evaluate_awareness_scan_hygiene(_real_awareness_source, _real_load_hash_cache, _real_save_hash_cache)
+    check("awareness_scan_hygiene: real current source + real hash cache functions", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] awareness_scan_hygiene real-function case: import failed ({e})")
+
+_awareness_source_no_staging = '''
+def awareness_loop():
+    SKIP_DIRS = {
+        "self_edit_backups", "sandbox", "__pycache__", ".git",
+    }
+    for root, dirs, files in os.walk(os.getcwd()):
+        pass
+'''
+r = ll._evaluate_awareness_scan_hygiene(_awareness_source_no_staging, _real_load_hash_cache, _real_save_hash_cache)
+check("awareness_scan_hygiene: SKIP_DIRS regressed, no longer excludes staging", r["pass"], False, r["evidence"])
+
+_awareness_source_with_staging = '''
+def awareness_loop():
+    SKIP_DIRS = {
+        "self_edit_backups", "sandbox", "__pycache__", ".git", "staging",
+    }
+'''
+_broken_load = lambda path: {}  # degraded into always returning empty, never actually reading back
+_broken_save = lambda cache, path: None  # degraded into a silent no-op that never persists anything
+r = ll._evaluate_awareness_scan_hygiene(_awareness_source_with_staging, _broken_load, _broken_save)
+check("awareness_scan_hygiene: hash cache functions degraded (save is a no-op, load never reflects it)", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_awareness_scan_hygiene(None, None, None)
+check("awareness_scan_hygiene: autonomous_awareness.py source / hash cache functions not importable at all", r["pass"], False, r["evidence"])
+
+# ── code_analysis_retrieval_exclusion ────────────────────────────────────────
+try:
+    _real_memory_bridge_source = open("app/core/memory_bridge.py").read()
+    r = ll._evaluate_code_analysis_retrieval_exclusion(_real_awareness_source, _real_memory_bridge_source)
+    check("code_analysis_retrieval_exclusion: real current source of both files", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] code_analysis_retrieval_exclusion real-source case: read failed ({e})")
+
+_awareness_source_no_exclusion = '''
+def _load_waking_memories() -> list:
+    with open("memory_meta.json") as f:
+        meta = json.load(f)
+    return [
+        {"id": uid, "text": v.get("text", ""), "meta": v.get("meta", {})}
+        for uid, v in meta.items()
+        if v.get("meta", {}).get("role") != "dream"
+        and v.get("meta", {}).get("memory_source") != "dream_v2"
+        and v.get("text")
+    ]
+'''
+r = ll._evaluate_code_analysis_retrieval_exclusion(_awareness_source_no_exclusion, _real_memory_bridge_source)
+check("code_analysis_retrieval_exclusion: _load_waking_memories() regressed, no longer excludes code_analysis", r["pass"], False, r["evidence"])
+
+# 2026-09-02: retrieve_relevant_memories() now checks membership in a
+# shared, named constant rather than inlining each category's literal
+# string — updated fakes below match that real mechanism instead of the
+# old inline-literal shape.
+_memory_bridge_source_conditional_only = '''
+_ALWAYS_EXCLUDED_MEMORY_CATEGORIES = frozenset({"code_analysis", "self_model_reflection"})
+
+def retrieve_relevant_memories(query, top_k=5, source_filter=None):
+    results = vector_memory.search(qvec, k=fetch_k)
+    records = [{"text": r[0], "score": r[1], "meta": r[2]} for r in results]
+    if source_filter:
+        filtered = [r for r in records if r["meta"].get("memory_source") == source_filter]
+        filtered = [r for r in filtered if r["meta"].get("role") not in _ALWAYS_EXCLUDED_MEMORY_CATEGORIES]
+        return filtered[:top_k]
+    return records[:top_k]
+'''
+r = ll._evaluate_code_analysis_retrieval_exclusion(_real_awareness_source, _memory_bridge_source_conditional_only)
+check(
+    "code_analysis_retrieval_exclusion: retrieve_relevant_memories() only references the "
+    "exclusion constant inside the source_filter branch, not unconditionally",
+    r["pass"], False, r["evidence"],
+)
+
+_memory_bridge_source_incomplete_constant = '''
+_ALWAYS_EXCLUDED_MEMORY_CATEGORIES = frozenset({"code_analysis"})
+
+def retrieve_relevant_memories(query, top_k=5, source_filter=None):
+    results = vector_memory.search(qvec, k=fetch_k)
+    records = [{"text": r[0], "score": r[1], "meta": r[2]} for r in results]
+    records = [
+        r for r in records
+        if r["meta"].get("role") not in _ALWAYS_EXCLUDED_MEMORY_CATEGORIES
+        and r["meta"].get("memory_source") not in _ALWAYS_EXCLUDED_MEMORY_CATEGORIES
+    ]
+    if source_filter:
+        filtered = [r for r in records if r["meta"].get("memory_source") == source_filter]
+        return filtered[:top_k]
+    return records[:top_k]
+'''
+r = ll._evaluate_code_analysis_retrieval_exclusion(_real_awareness_source, _memory_bridge_source_incomplete_constant)
+check(
+    "code_analysis_retrieval_exclusion: exclusion constant silently dropped self_model_reflection "
+    "(regressed back to a single-category set)",
+    r["pass"], False, r["evidence"],
+)
+
+r = ll._evaluate_code_analysis_retrieval_exclusion(None, None)
+check("code_analysis_retrieval_exclusion: neither source file importable at all", r["pass"], False, r["evidence"])
+
+# ── architecture_slice_bounded ────────────────────────────────────────────────
+try:
+    _real_echo_ground_truth_source = open("app/core/echo_ground_truth.py").read()
+    r = ll._evaluate_architecture_slice_bounded(_real_echo_ground_truth_source)
+    check("architecture_slice_bounded: real current source", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] architecture_slice_bounded real-source case: read failed ({e})")
+
+_arch_source_no_cartographer_ref = '''
+def _build_architecture() -> str:
+    return "Architecture: unavailable."
+'''
+r = ll._evaluate_architecture_slice_bounded(_arch_source_no_cartographer_ref)
+check(
+    "architecture_slice_bounded: no longer references CartographerDB at all",
+    r["pass"], False, r["evidence"],
+)
+
+_arch_source_no_graceful_degrade = '''
+def _build_architecture() -> str:
+    from echo_cartographer import CartographerDB
+    db = CartographerDB()
+    summary = db.architecture_summary()
+    db.close()
+    return "Architecture (heuristic role labels, no call graph, do not invent facts): " + summary
+'''
+r = ll._evaluate_architecture_slice_bounded(_arch_source_no_graceful_degrade)
+check(
+    "architecture_slice_bounded: references CartographerDB but no longer catches "
+    "FileNotFoundError (would crash instead of degrading gracefully)",
+    r["pass"], False, r["evidence"],
+)
+
+_arch_source_no_honesty_language = '''
+def _build_architecture() -> str:
+    from echo_cartographer import CartographerDB
+    try:
+        db = CartographerDB()
+    except FileNotFoundError:
+        return "No scan yet."
+    summary = db.architecture_summary()
+    db.close()
+    return "Architecture: " + summary
+'''
+r = ll._evaluate_architecture_slice_bounded(_arch_source_no_honesty_language)
+check(
+    "architecture_slice_bounded: wired correctly but silently dropped the epistemic-honesty "
+    "disclaimer (heuristic/call graph/invent language)",
+    r["pass"], False, r["evidence"],
+)
+
+r = ll._evaluate_architecture_slice_bounded(None)
+check("architecture_slice_bounded: echo_ground_truth.py not importable at all", r["pass"], False, r["evidence"])
+
+# ── echo_messaging_auth_classification ──────────────────────────────────
+try:
+    from app.sync.echo_messaging import _classify_delivery_status as _real_classify
+    r = ll._evaluate_echo_messaging_auth_classification(_real_classify)
+    check("echo_messaging_auth_classification: real current _classify_delivery_status()", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] echo_messaging_auth_classification real-function case: import failed ({e})")
+
+def _always_transient(status_code):
+    return "transient"
+r = ll._evaluate_echo_messaging_auth_classification(_always_transient)
+check("echo_messaging_auth_classification: always transient (403 silently treated as retryable again)", r["pass"], False, r["evidence"])
+
+def _always_auth_failure(status_code):
+    return "auth_failure"
+r = ll._evaluate_echo_messaging_auth_classification(_always_auth_failure)
+check("echo_messaging_auth_classification: always auth_failure (a real timeout/5xx would be wrongly blocked)", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_echo_messaging_auth_classification(None)
+check("echo_messaging_auth_classification: _classify_delivery_status not importable at all", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

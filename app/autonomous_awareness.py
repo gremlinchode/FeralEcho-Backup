@@ -9,6 +9,7 @@ Autonomous Awareness for FeralEcho – Upgraded
 """
 
 import ast
+import hashlib
 import json
 from datetime import datetime, timezone
 import platform
@@ -47,10 +48,47 @@ DREAM_STATE_PATH = os.path.join(config.MEMORY_DIR, "dream_state.json")
 DREAM_MIN_NEW_MEMORIES = 3   # accumulated non-dream memories needed before dreaming again
 DREAM_MODEL_NAME = "mlx:gemma3"   # already tagged "reflection" in mlx_models.json
 
+# Persisted per-file content-hash cache for the daily code scan below —
+# {relative_file_path: sha1_of_content}. Added 2026-09-02 (staging/
+# memory-duplication forensic pass) so a file is only ever re-logged as a
+# "new" memory when its content actually changed since the last scan,
+# rather than every single day forever regardless of change.
+CODE_SCAN_HASH_CACHE_PATH = os.path.join(config.MEMORY_DIR, "code_scan_hash_cache.json")
+
 _last_code_scan: float = 0.0       # tracks last file-walk timestamp
 _env_learned_this_boot: bool = False  # learn_environment() runs once per server start
 
 logger = logging.getLogger(__name__)
+
+
+def _load_code_scan_hash_cache(path: str = None) -> dict:
+    """Load the persisted per-file hash cache. Returns {} on any error
+    (missing file, corrupt JSON, wrong shape) — a cold/empty cache just
+    means the next scan re-logs everything once, same as first boot."""
+    path = path or CODE_SCAN_HASH_CACHE_PATH
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _save_code_scan_hash_cache(cache: dict, path: str = None) -> None:
+    """Persist the hash cache atomically (temp file + os.replace), matching
+    the same write-safety convention already used elsewhere in this
+    codebase (memory_write_validator.py's _save_hash_cache(),
+    vector_memory.py's _persist()). `path` is overridable so the Liveness
+    Ledger's awareness_scan_hygiene check can round-trip the real function
+    against a temp path without touching the live cache file."""
+    path = path or CODE_SCAN_HASH_CACHE_PATH
+    try:
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(cache, f)
+        os.replace(tmp, path)
+    except Exception as e:
+        logger.warning(f"[AwarenessLoop] Failed to save code scan hash cache: {e}")
 
 
 # ============================================================
@@ -177,6 +215,27 @@ def _load_waking_memories() -> list:
     memory_source="dream_v2"/role="synthesis" entry was sitting unexcluded
     in memory_meta.json before this fix. Excluding on memory_source keeps
     role's role/synthesis distinction intact while closing the gap.
+
+    Fixed 2026-09-02 (staging/ memory-duplication forensic pass): also
+    excludes role == "code_analysis" OR memory_source == "code_analysis"
+    — the daily code-scan's AST-parse summaries (see the code-scan block
+    below). Confirmed live: this category had grown to 59,438 of 121,959
+    total memory entries (48.7%, the single largest category in the whole
+    store — this file's own SKIP_DIRS gap let 137 adversarial sandbox-escape
+    test files under staging/ get scanned as if they were ordinary project
+    code) before this fix. Parser output about function/class/import names
+    is not genuine experience or reflection material and should never have
+    been eligible for dream sampling in the first place.
+
+    Extended same day (architectural self-knowledge investigation): also
+    excludes role == "self_model_reflection" OR memory_source ==
+    "self_model_reflection" — app/emergent_scheduler.py's
+    run_self_model_reflection() writes a free, unverified LLM interpretation
+    of its own architecture with no post-hoc verification pass (the
+    investigation's own named highest-confabulation-risk surface). Dreaming
+    on top of an already-unverified self-interpretation would compound the
+    risk, not just resample it — same reasoning as the code_analysis
+    exclusion immediately above, applied to a second contaminating category.
     """
     try:
         with open(os.path.join(config.MEMORY_DIR, "memory_meta.json"), "r", encoding="utf-8") as f:
@@ -185,11 +244,16 @@ def _load_waking_memories() -> list:
         logger.debug(f"[Dream] Failed to read memory_meta.json: {e}")
         return []
 
+    _excluded_roles_and_sources = frozenset({
+        "dream", "code_analysis", "self_model_reflection",
+    })
+
     return [
         {"id": uid, "text": v.get("text", ""), "meta": v.get("meta", {})}
         for uid, v in meta.items()
-        if v.get("meta", {}).get("role") != "dream"
+        if v.get("meta", {}).get("role") not in _excluded_roles_and_sources
         and v.get("meta", {}).get("memory_source") != "dream_v2"
+        and v.get("meta", {}).get("memory_source") not in _excluded_roles_and_sources
         and v.get("text")
     ]
 
@@ -384,8 +448,24 @@ def awareness_loop():
         # 3. Analyze all project Python code — at most once per day.
         # Previously ran every 1800s with time.sleep(2) per file, producing
         # 907 FAISS writes per cycle (145K entries per day). Now gated to
-        # CODE_SCAN_INTERVAL (86400s) with no inter-file sleep — dedup in
-        # _try_register() and analyze_python_code() prevents redundant entries.
+        # CODE_SCAN_INTERVAL (86400s) with no inter-file sleep.
+        #
+        # Fixed 2026-09-02 (staging/ memory-duplication forensic pass): the
+        # comment that used to be here claimed "dedup in _try_register() and
+        # analyze_python_code() prevents redundant entries" — false on both
+        # counts. _try_register() belongs to a completely different
+        # subsystem (tool discovery, awareness_tools_integration.py) and
+        # analyze_python_code() has no dedup logic at all. The real dedup
+        # gate (memory_write_validator.py's check_duplicate_signal()) shares
+        # one global 50-entry rolling cache across every autonomous
+        # subsystem's writes — measured live at ~2h10m of wall-clock span,
+        # nowhere near enough to catch a file re-scanned 24h later. Net
+        # effect: every scanned file (569 of them, 137 under staging/ alone,
+        # which was ALSO missing from SKIP_DIRS below) got logged as a fresh
+        # "new" memory every single day, forever — confirmed live at 59,438
+        # of 121,959 total memory entries (48.7%) tagged role=="code_analysis".
+        # Fixed with a persisted per-file content-hash cache (below) so a
+        # file is only re-logged when its content actually changes.
         now = time.time()
         from app.core.autonomy_coordinator import should_run_cycle
         if now - _last_code_scan >= CODE_SCAN_INTERVAL and should_run_cycle("awareness_code_scan"):
@@ -394,21 +474,38 @@ def awareness_loop():
                 "self_edit_backups", "sandbox", "__pycache__", ".git",
                 "lexpredict-lexnlp", "llama.cpp", "chatbot", "calculator",
                 "archive_optional_files", "archived_files", "backup",
+                "staging",
             }
+            old_hash_cache = _load_code_scan_hash_cache()
+            new_hash_cache = {}
             scanned = 0
+            skipped_unchanged = 0
             for root, dirs, files in os.walk(os.getcwd()):
                 dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
                 for file in files:
                     if file.endswith(".py"):
                         try:
                             path = os.path.join(root, file)
+                            rel_path = os.path.relpath(path, os.getcwd())
                             with open(path, "r", encoding="utf-8") as f:
                                 code = f.read()
+                            content_hash = hashlib.sha1(code.encode("utf-8")).hexdigest()
+                            new_hash_cache[rel_path] = content_hash
+                            if old_hash_cache.get(rel_path) == content_hash:
+                                skipped_unchanged += 1
+                                continue
                             analyze_python_code(code)
                             scanned += 1
                         except Exception as e:
                             logger.debug(f"[AwarenessLoop] Failed reading {file}: {e}")
-            logger.info("[AwarenessLoop] Code scan complete — %d files analyzed.", scanned)
+            # Fresh cache each cycle (not a mutation of old_hash_cache) — files
+            # deleted/renamed since the last scan naturally drop out, no
+            # separate pruning logic needed.
+            _save_code_scan_hash_cache(new_hash_cache)
+            logger.info(
+                "[AwarenessLoop] Code scan complete — %d files analyzed, %d unchanged (skipped).",
+                scanned, skipped_unchanged,
+            )
         else:
             remaining = int(CODE_SCAN_INTERVAL - (now - _last_code_scan))
             logger.debug("[AwarenessLoop] Code scan skipped — next in %ds.", remaining)

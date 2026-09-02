@@ -790,9 +790,26 @@ def run_self_model_reflection():
 
         if response and "[ERROR]" not in response:
             if MEMORY_AVAILABLE:
+                # Fixed 2026-09-02 (architectural self-knowledge investigation,
+                # audits/2026-09-02_*.md, Phase 1 item B): this text is a free
+                # LLM interpretation of a coarse architecture summary, with no
+                # post-hoc verification pass — the investigation's own worst
+                # case (see this function's docstring/comment above). It must
+                # never be retrievable with the same epistemic weight as a
+                # real ground-truth fact. Tagged distinctly (role AND
+                # memory_source both "self_model_reflection", matching the
+                # established code_analysis exclusion shape exactly) so
+                # retrieve_relevant_memories()/_load_waking_memories() exclude
+                # it from both conversational retrieval and dream sampling —
+                # same mechanism, same convention, no new taxonomy invented.
                 add_to_vector_memory(
-                    text=f"[SELF-MODEL] {response}",
-                    meta={"type": "self_model", "timestamp": time.time(), "memory_source": "autonomous"}
+                    text=f"[SELF-MODEL-REFLECTION, UNVERIFIED INTERPRETATION] {response}",
+                    meta={
+                        "type": "self_model_reflection",
+                        "role": "self_model_reflection",
+                        "memory_source": "self_model_reflection",
+                        "timestamp": time.time(),
+                    }
                 )
 
             # Refresh the structured self-model after the codebase scan

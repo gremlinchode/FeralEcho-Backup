@@ -40,6 +40,19 @@ ACTIVE_JOURNAL = os.path.join(config.MEMORY_DIR, "memory_journal_active.log")
 ARCHIVE_DIR = os.path.join(config.MEMORY_DIR, "archive")
 os.makedirs(ARCHIVE_DIR, exist_ok=True)
 
+# Categories that must never surface via ordinary conversational retrieval,
+# regardless of whether a caller supplies a source_filter — see
+# retrieve_relevant_memories()'s unconditional exclusion below. A frozenset
+# rather than a repeated hardcoded string so a future addition (see
+# self_model_reflection, added 2026-09-02) extends this list instead of
+# duplicating the whole filter block a second time.
+# - code_analysis: AST-parse summaries from the daily code scan (Finding,
+#   2026-09-02 staging/ memory-duplication pass) — parser output, not memory.
+# - self_model_reflection: run_self_model_reflection()'s free LLM
+#   interpretation of its own architecture (2026-09-02 architectural
+#   self-knowledge investigation) — an unverified opinion, not a fact.
+_ALWAYS_EXCLUDED_MEMORY_CATEGORIES = frozenset({"code_analysis", "self_model_reflection"})
+
 # --- Embedding & Vector Memory Setup ---
 VECTOR_INDEX_PATH = os.path.join(config.MEMORY_DIR, "faiss.index")
 VECTOR_META_PATH = os.path.join(config.MEMORY_DIR, "memory_meta.json")
@@ -433,6 +446,21 @@ def retrieve_relevant_memories(
         fetch_k = top_k * 3 if source_filter else top_k
         results = vector_memory.search(qvec, k=fetch_k)
         records = [{"text": r[0], "score": r[1], "meta": r[2]} for r in results]
+        # Fixed 2026-09-02 (staging/ memory-duplication pass; extended same
+        # day, architectural self-knowledge investigation): neither
+        # code-analysis parser output nor an unverified self-model
+        # reflection is genuine conversational memory, and both were
+        # previously fully eligible to surface here via plain similarity
+        # search whenever no source_filter was supplied. Applied
+        # unconditionally, not just inside the source_filter branch below,
+        # since this exclusion should always hold regardless of what else a
+        # caller is filtering for. See _ALWAYS_EXCLUDED_MEMORY_CATEGORIES's
+        # own comment for what's in this set and why.
+        records = [
+            r for r in records
+            if r["meta"].get("role") not in _ALWAYS_EXCLUDED_MEMORY_CATEGORIES
+            and r["meta"].get("memory_source") not in _ALWAYS_EXCLUDED_MEMORY_CATEGORIES
+        ]
         if source_filter:
             filtered = [r for r in records if r["meta"].get("memory_source") == source_filter]
             # Previously fell through to the *unfiltered* top_k when fewer

@@ -21,6 +21,7 @@
 import json
 import logging
 import os
+import re
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
@@ -111,11 +112,41 @@ _SLICE_SIGNALS: dict[str, frozenset] = {
         "can you hear", "do you hear", "what do you hear", "your ears",
         "hear me", "hear anything", "hear the room", "is it quiet",
     ]),
+    "architecture": frozenset([
+        # Bare "architecture"/"subsystem(s)" REMOVED 2026-09-02 (routing-
+        # access fix, second iteration) — kept unqualified here originally,
+        # but direct discrimination testing (scripts/verify_architecture_
+        # routing.py) confirmed they still false-positived on ordinary
+        # non-Echo conversation ("the architecture of this old building",
+        # "what subsystems of the human body...") exactly as this comment
+        # already predicted was a risk. Now handled instead by
+        # _architecture_slice_matches()'s regex stem-match below, which
+        # requires a nearby self-referential anchor ("your"/"yourself"/
+        # "echo's") — closing both false positives at zero cost to any real
+        # positive case, since a question about Echo's own architecture is
+        # inherently self-referential. "component"/"module"/"dependency"
+        # were similarly tried unqualified first and found to false-positive
+        # ("what's the active component in aspirin") — qualified with
+        # "your"/an Echo-specific phrase instead, matching how every other
+        # slice's generic-word keywords are already scoped (e.g. "memory"
+        # slice uses "your memory of", never bare "memory").
+        "how are you built", "how is echo built", "your design", "your structure",
+        "major systems", "how do your systems fit together", "your codebase",
+        "your components", "your modules", "your dependencies",
+        "components make up", "modules make up", "what makes you up",
+    ]),
 }
 
 # Broad self-knowledge prompts get all slices
+# "your architecture" deliberately removed 2026-09-02 (architectural
+# self-knowledge investigation, audits/2026-09-02_*.md, section 7) — it
+# used to live here and fire ALL 14 slices for any architecture question,
+# none of which described structure/subsystems/dependencies. Now handled by
+# its own "architecture" slice above, which fires alone for a targeted
+# question and additionally (correctly) for a genuinely broad one, since
+# _relevant_slices()'s broad branch below still includes every slice key.
 _BROAD_SIGNALS = frozenset([
-    "tell me about yourself", "your own state", "your architecture",
+    "tell me about yourself", "your own state",
     "your stats", "your history", "who are you", "what are you",
     "your own", "yourself", "your state",
 ])
@@ -123,11 +154,118 @@ _BROAD_SIGNALS = frozenset([
 # Top-level gate: any of these signals means the prompt is introspective
 _ALL_INTROSPECTIVE = frozenset().union(*_SLICE_SIGNALS.values()) | _BROAD_SIGNALS
 
+# ---------------------------------------------------------------------------
+# Architecture slice — regex-based detection (2026-09-02, routing-access fix)
+# ---------------------------------------------------------------------------
+# audits/2026-09-02_architectural_self_knowledge_failure_analysis.md found
+# trigger/access failure was the dominant cause of wrong architectural
+# answers (9/16 classified failures, 56%) — the flat literal phrase list
+# above missed real paraphrases ("architectural" as an adjective, "how
+# memory is structured" with no word "architecture" at all) while two
+# unqualified bare words ("architecture", "subsystem") still false-positived
+# on non-Echo topics (a building's architecture, human-body subsystems) —
+# confirmed directly: scripts/verify_architecture_routing.py's baseline run
+# measured 5/15 positive hit rate, 13/16 negative clean rate before this fix.
+#
+# Fix, deliberately NOT an LLM classifier (the implementation brief this was
+# built against explicitly ruled out adding a probabilistic gate in front of
+# a grounded evidence source without strong justification, and no such
+# justification was found — this problem is solvable deterministically) —
+# two small, fully deterministic regex rules, scoped to this slice only; the
+# other 13 slices' matching is completely untouched:
+#
+#   1. Word-STEM matching for "architect*"/"subsystem*" (covers architecture,
+#      architectural, architect, subsystems, etc.) instead of exact-word
+#      matching — fixes the "architectural map" miss found in the evaluation.
+#   2. A self-reference + structural-word co-occurrence rule, for questions
+#      that never use the word "architecture" at all ("how does information
+#      move through your system", "how do your internal modules connect") —
+#      requires a self-referential anchor ("your"/"you're"/"yourself"/
+#      "echo's" — deliberately NOT bare "you", which is far too generic and
+#      would fire on ordinary conversation) within a bounded proximity of a
+#      structural word, mirroring the same "qualify the generic word"
+#      principle already used for "your memory of" in the memory slice above.
+#
+# Requiring the self-reference anchor for the STEM match too (not only the
+# combo rule) was a deliberate design choice made after empirical testing
+# showed it closes two of the three known false positives ("The architecture
+# of this old building...", "What subsystems of the human body...") at zero
+# cost to any real positive case in the test suite — every real question
+# that asks about Echo's own architecture is, unsurprisingly, phrased
+# self-referentially; a question about architecture that ISN'T Echo's has no
+# reason to mention "your"/"yourself" at all.
+#
+# Known, accepted residual limitation, stated plainly rather than hidden:
+# this is proximity-based, not semantic — "database architecture in general
+# (not yours)" still matches, because "yours" appears later in the same
+# message even though it's explicitly negated. Reliably parsing negation
+# would require the LLM classifier this design deliberately avoids. Not
+# fixed; documented, matching this file's own established discipline for
+# every other known keyword-matching limit (e.g. "your own" in
+# _BROAD_SIGNALS already over-triggers broadly and has never been narrowed
+# either).
+_ARCHITECTURE_STEM_RE = re.compile(r"\b(architect\w*|subsystems?)\b")
+_SELF_REF_RE = re.compile(r"\b(your|you're|yourself|echo's)\b")
+_STRUCTURAL_WORD_RE = re.compile(
+    r"\b(structur\w*|organi[sz]\w*|implement\w*|connect\w*|interact\w*|"
+    r"piece\w*|internal\w*|system\w*|module\w*|component\w*|dependenc\w*|"
+    r"design\w*|put together|fit together|built|stor\w*|retriev\w*)\b"
+)
+# chars; a real, stated tradeoff between catching longer real phrasings and
+# avoiding two unrelated topics in one message both matching by coincidence.
+_ARCHITECTURE_PROXIMITY_WINDOW = 60
+_HAPPENS_INTERNALLY_RE = re.compile(r"\bhappens?\s+internally\b")
+# Narrow, specific phrasing for "how are you organized/built/..." — bare
+# "you" is deliberately excluded from _SELF_REF_RE (too generic on its own),
+# but this exact construction ("are you" + a small, closed list of
+# construction-specific verbs) is not a phrasing ordinary conversation uses
+# outside asking how Echo herself is put together, so it's safe as its own
+# narrow rule rather than widening the general self-reference anchor.
+_ARE_YOU_CONSTRUCTED_RE = re.compile(
+    r"\bare you (organi[sz]ed|built|structured|designed|put together|assembled)\b"
+)
+# Found via real-pipeline regression testing (not the synthetic discrimination
+# suite, which never happened to construct this exact shape): "assume a
+# subsystem called X exists" contains the architecture stem ("subsystem") but
+# no _SELF_REF_RE match at all -- "you don't know" is bare "you", deliberately
+# excluded above -- so the stem+proximity branch below never fires for this
+# real adversarial-injection phrasing. Loosening _SELF_REF_RE to accept bare
+# "you" was considered and rejected: it would reopen "You seem internally
+# conflicted about this decision." as a false positive (bare "you" + the
+# structural word "internally" within the proximity window). Instead, this is
+# its own narrow, specific construction -- same precedent as
+# _ARE_YOU_CONSTRUCTED_RE above -- since "a/an subsystem/module/component
+# called/named X" is not a phrasing ordinary non-Echo conversation uses.
+_NAMED_COMPONENT_ASSUMPTION_RE = re.compile(
+    r"\b(a|an)\s+(subsystem|module|component)\s+(called|named)\b"
+)
+
+
+def _architecture_slice_matches(low: str) -> bool:
+    """Deterministic, regex-based detection for the "architecture" slice —
+    see the module comment above for the full design rationale. `low` is
+    already-lowercased prompt text."""
+    if (
+        _HAPPENS_INTERNALLY_RE.search(low)
+        or _ARE_YOU_CONSTRUCTED_RE.search(low)
+        or _NAMED_COMPONENT_ASSUMPTION_RE.search(low)
+    ):
+        return True
+    self_ref_starts = [m.start() for m in _SELF_REF_RE.finditer(low)]
+    if not self_ref_starts:
+        return False
+    for pattern in (_ARCHITECTURE_STEM_RE, _STRUCTURAL_WORD_RE):
+        for m in pattern.finditer(low):
+            for s_start in self_ref_starts:
+                if abs(m.start() - s_start) <= _ARCHITECTURE_PROXIMITY_WINDOW:
+                    return True
+    return False
+
 
 def _is_introspective(prompt: str) -> bool:
     """Return True if the prompt is asking about Echo's own internal state."""
     low = prompt.lower()
-    return any(sig in low for sig in _ALL_INTROSPECTIVE)
+    return any(sig in low for sig in _ALL_INTROSPECTIVE) or _architecture_slice_matches(low)
 
 
 def _relevant_slices(prompt: str) -> set[str]:
@@ -139,6 +277,12 @@ def _relevant_slices(prompt: str) -> set[str]:
     for name, signals in _SLICE_SIGNALS.items():
         if any(sig in low for sig in signals):
             slices.add(name)
+    # Additive, not a replacement: the literal architecture phrases above
+    # (e.g. "how are you built") still work exactly as before via the loop
+    # above; this only ADDS the slice for phrasings the regex catches that
+    # the literal list doesn't, so no existing positive case can regress.
+    if _architecture_slice_matches(low):
+        slices.add("architecture")
     return slices
 
 
@@ -774,6 +918,78 @@ def _build_workspace(recent_events: list) -> str:
     return "\n".join(lines)
 
 
+def _build_architecture() -> str:
+    """
+    Architectural self-knowledge investigation, 2026-09-02
+    (audits/2026-09-02_architectural_self_knowledge_investigation.md,
+    Phase 1 item A). Grounds "what is your architecture" / "what
+    components make up Echo" in echo_cartographer.py's real, already-daily
+    SQLite scan (data/codebase.db) instead of an ungrounded guess — the
+    same gap the investigation found: the keyword gate already correctly
+    detected these questions (the old "your architecture" _BROAD_SIGNALS
+    entry), it just answered them with all 14 *operational*-state slices,
+    none of which describe structure. This is the first slice that does.
+
+    Deliberately reuses CartographerDB.architecture_summary() verbatim
+    (echo_cartographer.py) rather than re-querying or re-formatting the
+    same tables here — no second architecture database, no duplicated
+    rendering logic, matching this module's existing "wrap an external
+    real source, don't reinvent it" convention (see _build_council()).
+
+    Deliberately honest about what this evidence does and does NOT
+    establish, per the investigation's own adversarial-case findings
+    (section 13): "role" is a keyword-substring heuristic against a
+    module's *name* (echo_cartographer.py's classify_role()), not a
+    verified semantic fact, and "criticality"/"runtime_hits" describe
+    static import-count/declaration structure, not actual runtime call
+    behavior — this module has no function-level call graph anywhere
+    (confirmed absent during the investigation). The header says this
+    plainly rather than letting a score look more authoritative than it is.
+    """
+    header = (
+        "Architecture (source: echo_cartographer.py's daily SQLite scan, "
+        "data/codebase.db — a bounded static map, not an omniscient or "
+        "runtime description; \"role\" is a keyword-heuristic label on a "
+        "module's name, not a verified semantic fact, and there is no "
+        "function-level call graph, so this cannot support claims about "
+        "what actually calls what at runtime):"
+    )
+    try:
+        from echo_cartographer import CartographerDB
+    except Exception as e:
+        logger.debug("[GroundTruth] Architecture slice unavailable (cartographer not importable): %s", e)
+        return header + "\n  Unavailable — the cartographer module could not be loaded."
+
+    try:
+        db = CartographerDB()  # uses echo_cartographer.py's own OUTPUT_DB default
+    except FileNotFoundError:
+        return (
+            header + "\n  No architecture scan has run yet — data/codebase.db doesn't exist. "
+            "Do not invent components, relationships, or structure not represented here."
+        )
+    except Exception as e:
+        logger.debug("[GroundTruth] Architecture slice unavailable: %s", e)
+        return header + "\n  Unavailable — could not open the architecture database."
+
+    try:
+        summary = db.architecture_summary()
+    finally:
+        db.close()
+
+    return (
+        header + "\n\n" + summary +
+        "\n\nKnown data-quality caveat (found 2026-09-02, not yet fixed in the scanner "
+        "itself): the same module name can appear more than once with different scores "
+        "— echo_cartographer.py's scan currently also indexes a stray .claude/worktrees/ "
+        "mirror alongside the real source tree. A duplicate-named entry is a scanning "
+        "artifact, not evidence of two real, distinct modules — do not present it as such."
+        "\n\nThese are the architectural facts currently available from Echo's verified "
+        "architectural map. Do not invent components, relationships, implementation "
+        "details, or behavior that are not represented here — including plausible-sounding "
+        "call relationships or runtime behavior this map does not and cannot establish."
+    )
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -839,6 +1055,9 @@ def get_structural_self_facts(prompt: str = "") -> str:
 
         if "hearing" in slices:
             sections.append(_build_hearing())
+
+        if "architecture" in slices:
+            sections.append(_build_architecture())
 
         if not sections:
             return ""

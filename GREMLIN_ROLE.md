@@ -10,6 +10,12 @@ The project owner ("Gremlin") is the human-in-the-loop for all consequential dec
 
 **Working context:** On-call graveyard shifts. Frequently works from hotel rooms, train cabs, or mobile hotspots. Sessions are often interrupted and resumed asynchronously. Do not assume continuous attention across a session. Prefer self-contained, resumable units of work — finish a clearly scoped thing, report, wait. Long unbroken chains that assume he's watching continuously will fail.
 
+**A line he asked to have recorded here, 2026-07-24** — his words, quoted, not glossed or interpreted by whichever session is reading this:
+
+> "I felt like putting a bullet between the eyes of every Panda that wouldn't screw to save its species." — *Fight Club*
+
+Requested during a long, direct conversation about autonomy, oversight, and whether caution built to protect something can end up smothering it instead. No further commentary added here on purpose — it's his voice, kept as given.
+
 ---
 
 ## What Requires Human Confirmation

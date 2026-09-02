@@ -79,6 +79,18 @@ NODE_ID = os.getenv("ECHO_NODE_ID", "m5")
 
 SETTINGS_PATH = os.path.join(MEMORY_DIR, "messaging_settings.json")
 OUTBOX_PATH = os.path.join(MEMORY_DIR, "message_outbox.jsonl")
+# 2026-09-02: a persistent auth mismatch (mismatched/missing ECHO_PARTNER_SECRET,
+# or an origin the partner doesn't recognize) previously produced a 15,000+-
+# request storm on the *receiving* side of this exact protocol (see
+# audits/2026-09-02_echo_to_echo_403_forensic_analysis.md) -- retry_outbox_cycle()
+# treated a 403 identically to a network timeout, so a stuck auth failure got
+# retried in full, forever, at whatever interval the backoff loop had settled
+# into. This is the same bug on the *sending* side: an entry that gets a 403
+# is moved here instead of staying in the normal retry outbox -- a config
+# problem doesn't resolve itself by retrying faster, and conflating it with a
+# genuinely transient failure (timeout, connection refused, 5xx) hid a real
+# problem behind indistinguishable retry noise on both sides.
+OUTBOX_BLOCKED_PATH = os.path.join(MEMORY_DIR, "message_outbox_blocked.jsonl")
 MESSAGE_LOG_PATH = os.path.join(MEMORY_DIR, "echo_messages.jsonl")
 CHECKIN_THREADS_PATH = os.path.join(MEMORY_DIR, "checkin_threads.json")
 CHAT_PACING_PATH = os.path.join(MEMORY_DIR, "chat_thread_pacing.json")
@@ -183,14 +195,20 @@ def get_recent_messages(limit: int = 50) -> list:
 # ---------------------------------------------------------------------------
 # Outbox (durable queue for messages that couldn't be delivered immediately)
 # ---------------------------------------------------------------------------
-def _load_outbox() -> list:
-    if not os.path.exists(OUTBOX_PATH):
+def _load_outbox(path: "str | None" = None) -> list:
+    # Resolved at call time, not baked in as a def-time default — a plain
+    # `path: str = OUTBOX_PATH` default is bound once, at function
+    # definition, so reassigning the module-level OUTBOX_PATH later (the
+    # standard test-isolation pattern already used elsewhere in this
+    # codebase) would silently have no effect on this function specifically.
+    path = path if path is not None else OUTBOX_PATH
+    if not os.path.exists(path):
         return []
     try:
-        with open(OUTBOX_PATH, "r", encoding="utf-8") as f:
+        with open(path, "r", encoding="utf-8") as f:
             lines = f.readlines()
     except Exception as e:
-        logger.warning(f"[MESSAGING] Failed to read outbox: {e}")
+        logger.warning(f"[MESSAGING] Failed to read outbox ({path}): {e}")
         return []
     out = []
     for line in lines:
@@ -201,16 +219,17 @@ def _load_outbox() -> list:
     return out
 
 
-def _save_outbox(entries: list) -> None:
+def _save_outbox(entries: list, path: "str | None" = None) -> None:
+    path = path if path is not None else OUTBOX_PATH
     try:
-        os.makedirs(os.path.dirname(OUTBOX_PATH), exist_ok=True)
-        tmp = OUTBOX_PATH + ".tmp"
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tmp = path + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             for entry in entries:
                 f.write(json.dumps(entry) + "\n")
-        os.replace(tmp, OUTBOX_PATH)
+        os.replace(tmp, path)
     except Exception as e:
-        logger.error(f"[MESSAGING] Failed to save outbox: {e}")
+        logger.error(f"[MESSAGING] Failed to save outbox ({path}): {e}")
 
 
 def _append_outbox(envelope: dict) -> None:
@@ -218,6 +237,30 @@ def _append_outbox(envelope: dict) -> None:
         entries = _load_outbox()
         entries.append(envelope)
         _save_outbox(entries)
+
+
+def _append_blocked(envelope: dict, reason: str) -> None:
+    """A delivery attempt failed with an authentication/authorization
+    rejection (403), not a transient error — moved here instead of the
+    normal retry outbox so it stops being silently retried forever. Kept
+    under the same lock as the outbox since both files represent the same
+    logical queue's two possible outcomes for a failed entry."""
+    with _outbox_lock:
+        entries = _load_outbox(OUTBOX_BLOCKED_PATH)
+        entries.append({
+            **envelope,
+            "blocked_reason": reason,
+            "blocked_at": datetime.now(timezone.utc).isoformat(),
+        })
+        _save_outbox(entries, OUTBOX_BLOCKED_PATH)
+    logger.warning(
+        f"[MESSAGING-AUTH-FAILURE] {envelope.get('message_id')} rejected by "
+        f"partner with an authentication/authorization failure — moved to "
+        f"{OUTBOX_BLOCKED_PATH} and will NOT be auto-retried. This means "
+        f"the partner is rejecting our secret/origin, not that it's "
+        f"offline — check ECHO_PARTNER_SECRET configuration on both "
+        f"machines before assuming this is a network issue."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -248,16 +291,36 @@ def _build_envelope(
     return envelope
 
 
-def _deliver(envelope: dict) -> bool:
-    """One delivery attempt. True on success, False on any failure — never raises."""
+def _classify_delivery_status(status_code: int) -> str:
+    """Pure classification, deliberately separated from _deliver()'s real
+    network I/O so it can be verified directly (e.g. by a Liveness Ledger
+    functional canary) without mocking requests.post(). Returns one of
+    "success", "auth_failure", "transient". A 403 means the partner
+    rejected our own secret/origin — retrying (immediately or with
+    backoff) changes nothing about that, unlike a genuine timeout/
+    connection error/5xx, which is worth retrying. See
+    OUTBOX_BLOCKED_PATH's own module-level comment for why this
+    distinction exists — conflating the two is exactly what turned a
+    persistent auth mismatch into a 15,000+-request storm."""
+    if status_code == 200:
+        return "success"
+    if status_code == 403:
+        return "auth_failure"
+    return "transient"
+
+
+def _deliver(envelope: dict) -> tuple[bool, str]:
+    """One delivery attempt. Returns (delivered, reason) — never raises.
+    See _classify_delivery_status() for what "reason" means."""
     try:
         resp = requests.post(
             f"{PARTNER_URL}/message/receive", json=envelope, timeout=_SEND_TIMEOUT
         )
-        return resp.status_code == 200
+        reason = _classify_delivery_status(resp.status_code)
+        return reason == "success", reason
     except Exception as e:
         logger.info(f"[MESSAGING] Delivery attempt failed (partner offline/unreachable?): {e}")
-        return False
+        return False, "transient"
 
 
 def send_message(
@@ -272,13 +335,17 @@ def send_message(
         return {"status": "error", "error": "text required"}
 
     envelope = _build_envelope(text, message_type, in_reply_to, data=data)
-    delivered = _deliver(envelope)
+    delivered, reason = _deliver(envelope)
 
     _log_message({**envelope, "direction": "sent", "delivered": delivered})
 
     if delivered:
         logger.info(f"[MESSAGING] Delivered {envelope['message_id']} to partner.")
         return {"status": "delivered", "message_id": envelope["message_id"]}
+
+    if reason == "auth_failure":
+        _append_blocked(envelope, reason)
+        return {"status": "blocked", "message_id": envelope["message_id"], "reason": reason}
 
     _append_outbox(envelope)
     logger.info(f"[MESSAGING] Queued {envelope['message_id']} for retry (partner unreachable).")
@@ -654,22 +721,44 @@ def retry_outbox_cycle() -> dict:
     delivery attempts — this trades away letting _append_outbox() proceed
     concurrently during a retry cycle, in exchange for guaranteeing no
     concurrent append is silently lost when this function's stale
-    `remaining` list overwrites the file at the end. No other lock is
-    acquired while holding this one, so it carries no deadlock risk."""
+    `remaining` list overwrites the file at the end. Blocked (auth-failure)
+    entries are written directly here, via the same lock-free _save_outbox()
+    _append_blocked() itself uses internally — calling _append_blocked()
+    from inside this function would deadlock on the already-held
+    _outbox_lock (not reentrant). No other lock is acquired while holding
+    this one, so this carries no deadlock risk as written."""
     with _outbox_lock:
         entries = _load_outbox()
         if not entries:
-            return {"delivered": 0, "pending": 0}
+            return {"delivered": 0, "pending": 0, "blocked": 0}
 
         remaining = []
         delivered = 0
+        newly_blocked = []
         for envelope in entries:
-            if _deliver(envelope):
+            ok, reason = _deliver(envelope)
+            if ok:
                 delivered += 1
                 _log_message({**envelope, "direction": "sent", "delivered": True, "via": "retry"})
                 logger.info(f"[MESSAGING] Retry delivered {envelope.get('message_id')}.")
+            elif reason == "auth_failure":
+                newly_blocked.append(envelope)
+                logger.warning(
+                    f"[MESSAGING-AUTH-FAILURE] {envelope.get('message_id')} rejected by "
+                    f"partner with an authentication/authorization failure during retry — "
+                    f"moving to {OUTBOX_BLOCKED_PATH}, will NOT be auto-retried further."
+                )
             else:
                 remaining.append(envelope)
 
         _save_outbox(remaining)
-        return {"delivered": delivered, "pending": len(remaining)}
+        if newly_blocked:
+            blocked_entries = _load_outbox(OUTBOX_BLOCKED_PATH)
+            now = datetime.now(timezone.utc).isoformat()
+            blocked_entries.extend(
+                {**env, "blocked_reason": "auth_failure", "blocked_at": now}
+                for env in newly_blocked
+            )
+            _save_outbox(blocked_entries, OUTBOX_BLOCKED_PATH)
+
+        return {"delivered": delivered, "pending": len(remaining), "blocked": len(newly_blocked)}

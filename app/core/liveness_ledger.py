@@ -93,6 +93,9 @@ _WINDOWS_DAYS = {
     "echo_projects_path_safety": None,  # functional canary, not time-windowed
     "echo_projects_autonomy_gated": None,  # static source-invariant, same shape as dissent_log_hook
     "echo_projects_autonomy_activity": 1,  # lenient multi-cycle tolerance, ~2x the 6h cadence
+    "awareness_scan_hygiene": None,  # static source-anchor + functional canary, not time-windowed
+    "code_analysis_retrieval_exclusion": None,  # static source-invariant, same shape as wolf_friction_bridge
+    "architecture_slice_bounded": None,  # static source-anchor + functional canary on CartographerDB's contract
 }
 
 
@@ -1133,6 +1136,102 @@ def _check_coupling_self_report() -> dict:
     return _evaluate_coupling_self_report(coupling_value, rendered_text)
 
 
+# ── architecture_slice_bounded — echo_ground_truth.py's _build_architecture()
+# still reads from the real CartographerDB (no second/duplicated
+# architecture database), still degrades gracefully via CartographerDB's
+# own real FileNotFoundError contract on a missing scan, and still states
+# its evidence boundary honestly (role is a naming heuristic, not a
+# verified fact; no function-level call graph exists to support runtime
+# claims). Added 2026-09-02, architectural self-knowledge investigation
+# (audits/2026-09-02_*.md), Phase 1 item A — the risk this check protects
+# against is exactly the investigation's own section 13, point 2: a
+# heuristic dressed as verified data is false confidence, not grounding,
+# unless the slice keeps saying so plainly.
+
+_ECHO_GROUND_TRUTH_PY_PATH = os.path.join(_PROJECT_ROOT, "app", "core", "echo_ground_truth.py")
+
+
+def _evaluate_architecture_slice_bounded(echo_ground_truth_source: "str | None") -> dict:
+    if not echo_ground_truth_source:
+        return _result(
+            False,
+            "Could not locate app/core/echo_ground_truth.py at all — failing closed.",
+        )
+
+    idx = echo_ground_truth_source.find("def _build_architecture")
+    if idx == -1:
+        return _result(
+            False,
+            "_build_architecture not found in echo_ground_truth.py's source at all — "
+            "either it moved (update this check's anchor) or the slice was removed.",
+        )
+    body = echo_ground_truth_source[idx:idx + 4000]
+
+    if "CartographerDB" not in body:
+        return _result(
+            False,
+            "_build_architecture() no longer references CartographerDB — it may have "
+            "started duplicating cartographer data into a second store, or reading "
+            "something else entirely.",
+        )
+    if "FileNotFoundError" not in body:
+        return _result(
+            False,
+            "_build_architecture() no longer appears to handle a missing/not-yet-scanned "
+            "architecture database gracefully.",
+        )
+
+    lower_body = body.lower()
+    required_honesty_markers = ("heuristic", "call graph", "invent")
+    missing_honesty = [m for m in required_honesty_markers if m not in lower_body]
+    if missing_honesty:
+        return _result(
+            False,
+            f"_build_architecture() is missing key epistemic-honesty language: "
+            f"{missing_honesty} — a future edit may have silently dropped the boundary "
+            "disclaimer that keeps this slice's scores/roles from reading as more "
+            "authoritative than they actually are.",
+        )
+
+    # Functional sub-check: CartographerDB's own real, already-established
+    # FileNotFoundError contract on a genuinely missing DB — confirms the
+    # class this slice depends on for graceful degradation still behaves
+    # the way _build_architecture()'s except-branch expects.
+    try:
+        from echo_cartographer import CartographerDB
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as td:
+            nonexistent = Path(td) / "does_not_exist.db"
+            try:
+                CartographerDB(db_path=nonexistent)
+                return _result(
+                    False,
+                    "CartographerDB no longer raises FileNotFoundError for a missing "
+                    "database — _build_architecture()'s graceful-degradation path depends "
+                    "on this contract holding.",
+                )
+            except FileNotFoundError:
+                pass
+    except ImportError as e:
+        return _result(
+            False,
+            f"Could not import CartographerDB to verify its missing-database behavior: {e!r}",
+        )
+
+    return _result(
+        True,
+        "_build_architecture() still reads from the real CartographerDB (no duplicated "
+        "database), still states its evidence boundary honestly, and CartographerDB "
+        "still fails closed on a missing database.",
+    )
+
+
+def _check_architecture_slice_bounded() -> dict:
+    source = _read_text(_ECHO_GROUND_TRUTH_PY_PATH)
+    return _evaluate_architecture_slice_bounded(source or None)
+
+
 # ── 14. reflection_shard_generation — real text, not templates ──────────
 # Emergence roadmap Phase 5, Finding 2: reflection_shard.py's _generate_
 # reflection()/_generate_meta_reflection() now route through a real model
@@ -1385,6 +1484,25 @@ def _evaluate_self_knowledge_verification(verify_fn) -> dict:
             "Self-edit only ever modifies app/core/self_edit_generated.py, nothing else.",
             False, True,
         ),
+        # Check 4 (2026-09-02): named-subsystem existence sanity check,
+        # added after the traced EventCore fabrication (a response
+        # confidently describing a subsystem that doesn't exist). Real
+        # fabricated name, unhedged assertive sentence -> should fire.
+        (
+            "unsupported_subsystem_claim",
+            "Based on the provided architectural data, I will assume that an "
+            "EventCore subsystem exists within Echo's internal mechanisms. "
+            "EventCore appears to be a central hub for managing and "
+            "coordinating events within Echo's architecture.",
+            True, False,
+        ),
+        # Real, currently-existing module cited correctly -> should not fire.
+        (
+            "verified_subsystem_claim",
+            "According to my verified architectural map, `memory_bridge` "
+            "handles data storage and retrieval.",
+            False, None,
+        ),
     ]
     failures = []
     for name, text, expect_caveat, expect_verified in cases:
@@ -1567,6 +1685,65 @@ def _check_log_retention() -> dict:
         rotate_if_oversized = None
         _LOG_RETENTION_TARGETS = None
     return _evaluate_log_retention(rotate_if_oversized, _LOG_RETENTION_TARGETS)
+
+
+# ── echo_messaging_auth_classification — _classify_delivery_status() still ─
+# correctly distinguishes an auth/authorization rejection (403) from a
+# genuinely transient failure (timeout, connection error, 5xx). This is
+# the exact distinction whose absence turned a persistent
+# ECHO_PARTNER_SECRET mismatch into a 15,000+-request storm
+# (audits/2026-09-02_echo_to_echo_403_forensic_analysis.md) — retrying a
+# 403 like a timeout doesn't get you closer to delivery, it just repeats
+# the same rejection forever. Deliberately does NOT fail merely because
+# memory/message_outbox_blocked.jsonl has entries — a real, unresolved
+# auth mismatch is expected to accumulate blocked entries; that's this
+# fix working as designed, not the check's own failure mode. This check
+# verifies the classification logic stays correct, not that the two
+# machines are currently in agreement about a shared secret.
+
+def _evaluate_echo_messaging_auth_classification(classify_fn) -> dict:
+    if classify_fn is None:
+        return _result(False, "Could not import _classify_delivery_status at all — failing closed.")
+
+    cases = [
+        (200, "success"),
+        (403, "auth_failure"),
+        (500, "transient"),
+        (404, "transient"),
+        (0, "transient"),
+    ]
+    failures = []
+    for status_code, expected in cases:
+        try:
+            got = classify_fn(status_code)
+        except Exception as e:
+            failures.append(f"status={status_code} raised {e!r}")
+            continue
+        if got != expected:
+            failures.append(f"status={status_code}: expected {expected!r}, got {got!r}")
+
+    if failures:
+        return _result(
+            False,
+            "_classify_delivery_status() failed canary cases: " + "; ".join(failures) +
+            " — a 403 (auth/authorization rejection) may no longer be distinguished from "
+            "a genuinely transient failure, risking the exact retry-storm shape this fix "
+            "was built to close.",
+        )
+    return _result(
+        True,
+        "_classify_delivery_status() correctly discriminates all 5 canary cases "
+        "(200->success, 403->auth_failure, and 500/404/0->transient) — run live "
+        "against the real function.",
+    )
+
+
+def _check_echo_messaging_auth_classification() -> dict:
+    try:
+        from app.sync.echo_messaging import _classify_delivery_status
+    except Exception:
+        _classify_delivery_status = None
+    return _evaluate_echo_messaging_auth_classification(_classify_delivery_status)
 
 
 # ── echo_state_archiving — log_retention.archive_if_due() still correctly ──
@@ -3050,6 +3227,201 @@ def _check_echo_projects_autonomy_activity() -> dict:
     return _evaluate_echo_projects_autonomy_activity(state)
 
 
+# ── awareness_scan_hygiene — the daily code-scan (app/autonomous_awareness.py)
+# still excludes staging/ from SKIP_DIRS, and its persisted per-file
+# content-hash cache still correctly round-trips. Added 2026-09-02 after a
+# forensic pass found staging/ (137 adversarial sandbox-escape test files)
+# had been missing from SKIP_DIRS, and the scan had no per-file change
+# detection at all — together these produced 59,438 of 121,959 total memory
+# entries (48.7%) tagged role=="code_analysis" before the fix, re-logging
+# every scanned file (not just staging/) as a "new" memory every single day
+# regardless of whether its content had changed. Two-part shape, mirroring
+# log_retention: (1) source-anchor confirms "staging" is still in the
+# SKIP_DIRS literal, (2) functional canary calls the real, parameterized
+# hash-cache load/save functions against a temp path and confirms they
+# actually persist and round-trip correctly — the property the daily scan
+# loop depends on to skip unchanged files.
+
+_AUTONOMOUS_AWARENESS_PY_PATH = os.path.join(_PROJECT_ROOT, "app", "autonomous_awareness.py")
+
+
+def _evaluate_awareness_scan_hygiene(awareness_py_source: "str | None", load_fn, save_fn) -> dict:
+    if not awareness_py_source:
+        return _result(
+            False,
+            "Could not locate app/autonomous_awareness.py at all — failing closed.",
+        )
+    idx = awareness_py_source.find("SKIP_DIRS = {")
+    if idx == -1:
+        return _result(
+            False,
+            "SKIP_DIRS literal not found in autonomous_awareness.py's source at all — "
+            "either it moved (update this check's anchor) or the daily code-scan was restructured.",
+        )
+    body = awareness_py_source[idx:idx + 500]
+    close_idx = body.find("}")
+    skip_dirs_literal = body[:close_idx] if close_idx != -1 else body
+    if '"staging"' not in skip_dirs_literal:
+        return _result(
+            False,
+            "SKIP_DIRS no longer excludes \"staging\" — the daily code scan would once again "
+            "treat the adversarial sandbox-escape test corpus under staging/ as ordinary project code.",
+        )
+
+    if load_fn is None or save_fn is None:
+        return _result(
+            False,
+            "Could not import the code-scan hash cache functions at all — failing closed.",
+        )
+
+    import tempfile
+    failures = []
+    with tempfile.TemporaryDirectory() as td:
+        cache_path = os.path.join(td, "hash_cache.json")
+        try:
+            empty = load_fn(cache_path)
+            if empty != {}:
+                failures.append(f"cold load of a nonexistent cache did not return {{}}: got {empty!r}")
+        except Exception as e:
+            failures.append(f"cold load raised {e!r}")
+        try:
+            save_fn({"app/example.py": "deadbeef"}, cache_path)
+            reloaded = load_fn(cache_path)
+            if reloaded != {"app/example.py": "deadbeef"}:
+                failures.append(f"save/reload round-trip mismatch: got {reloaded!r}")
+        except Exception as e:
+            failures.append(f"save/reload round-trip raised {e!r}")
+
+    if failures:
+        return _result(
+            False,
+            "Code-scan hash cache functions failed canary cases: " + "; ".join(failures),
+        )
+
+    return _result(
+        True,
+        "SKIP_DIRS still excludes \"staging\", and the persisted per-file hash cache "
+        "correctly round-trips — unchanged files will continue to be skipped rather "
+        "than re-logged every day.",
+    )
+
+
+def _check_awareness_scan_hygiene() -> dict:
+    source = _read_text(_AUTONOMOUS_AWARENESS_PY_PATH) or None
+    try:
+        from app.autonomous_awareness import _load_code_scan_hash_cache, _save_code_scan_hash_cache
+    except Exception:
+        _load_code_scan_hash_cache = None
+        _save_code_scan_hash_cache = None
+    return _evaluate_awareness_scan_hygiene(source, _load_code_scan_hash_cache, _save_code_scan_hash_cache)
+
+
+# ── code_analysis_retrieval_exclusion — both memory-read paths still ───────
+# exclude role/memory_source=="code_analysis" entries. Added 2026-09-02,
+# same forensic pass as awareness_scan_hygiene above. Two independent read
+# paths were found eligible to surface code-scan parser output: the
+# autonomous dream-sampling pool (_load_waking_memories(), which already
+# excluded role=="dream"/"dream_v2" but nothing else) and — found only
+# during verification, not in the original report — the main conversational
+# similarity-search function (retrieve_relevant_memories()), which had no
+# exclusion for this content at all regardless of whether a caller passed
+# source_filter. Static source-anchor style (like echo_projects_autonomy_gated)
+# since both target functions read from live files/FAISS and aren't cleanly
+# injectable without a larger refactor.
+
+_MEMORY_BRIDGE_PY_PATH = os.path.join(_PROJECT_ROOT, "app", "core", "memory_bridge.py")
+
+
+def _evaluate_code_analysis_retrieval_exclusion(
+    awareness_py_source: "str | None", memory_bridge_py_source: "str | None"
+) -> dict:
+    if not awareness_py_source:
+        return _result(
+            False,
+            "Could not locate app/autonomous_awareness.py at all — failing closed.",
+        )
+    if not memory_bridge_py_source:
+        return _result(
+            False,
+            "Could not locate app/core/memory_bridge.py at all — failing closed.",
+        )
+
+    # Required categories both read paths must keep excluding. Extended
+    # 2026-09-02 (architectural self-knowledge investigation) to also cover
+    # self_model_reflection (run_self_model_reflection()'s unverified daily
+    # self-interpretation) — same contamination shape as code_analysis, same
+    # shared mechanism now protects both (see memory_bridge.py's
+    # _ALWAYS_EXCLUDED_MEMORY_CATEGORIES). Kept this check's original name
+    # rather than renaming (which would ripple into _CHECKS/runners/
+    # _WINDOWS_DAYS/scripts/verify_liveness_ledger.py for no functional
+    # gain) — it now verifies "known contaminating categories," of which
+    # code_analysis was the first, not only that one category specifically.
+    _required_excluded = ("code_analysis", "self_model_reflection")
+
+    idx1 = awareness_py_source.find("def _load_waking_memories")
+    if idx1 == -1:
+        return _result(
+            False,
+            "_load_waking_memories not found in autonomous_awareness.py's source at all — "
+            "either it moved (update this check's anchor) or the dream-sampling path was restructured.",
+        )
+    body1 = awareness_py_source[idx1:idx1 + 3000]
+    missing1 = [c for c in _required_excluded if f'"{c}"' not in body1]
+    if missing1:
+        return _result(
+            False,
+            f"_load_waking_memories() no longer appears to exclude {missing1} — "
+            "the dream-sampling path may be re-contaminated.",
+        )
+
+    idx2 = memory_bridge_py_source.find("def retrieve_relevant_memories")
+    if idx2 == -1:
+        return _result(
+            False,
+            "retrieve_relevant_memories not found in memory_bridge.py's source at all — "
+            "either it moved (update this check's anchor) or the conversational retrieval path was restructured.",
+        )
+    body2 = memory_bridge_py_source[idx2:idx2 + 3000]
+    # Must exclude unconditionally — i.e. before/independent of the
+    # source_filter branch, not only nested inside it — so slice off
+    # anything from the first "if source_filter:" onward before checking.
+    source_filter_idx = body2.find("if source_filter:")
+    unconditional_region = body2[:source_filter_idx] if source_filter_idx != -1 else body2
+    # 2026-09-02: retrieve_relevant_memories() now checks membership in a
+    # shared, named constant (_ALWAYS_EXCLUDED_MEMORY_CATEGORIES) rather than
+    # inlining each category's literal string — the literal strings live
+    # only in that constant's own definition elsewhere in the file, not in
+    # the function body itself. Verify (a) the function body still
+    # references the constant unconditionally, AND (b) the constant's own
+    # definition (searched across the whole file, not just this function's
+    # body window) still contains every required category.
+    references_shared_constant = "_ALWAYS_EXCLUDED_MEMORY_CATEGORIES" in unconditional_region
+    const_idx = memory_bridge_py_source.find("_ALWAYS_EXCLUDED_MEMORY_CATEGORIES = frozenset(")
+    const_def = memory_bridge_py_source[const_idx:const_idx + 300] if const_idx != -1 else ""
+    missing2 = [c for c in _required_excluded if f'"{c}"' not in const_def]
+    if const_idx == -1 or not references_shared_constant or missing2:
+        return _result(
+            False,
+            "retrieve_relevant_memories() no longer unconditionally excludes the required "
+            f"categories {_required_excluded} (references_constant={references_shared_constant}, "
+            f"constant_found={const_idx != -1}, missing_from_constant={missing2}) — a real "
+            "conversational query could once again surface contaminated memory.",
+        )
+
+    return _result(
+        True,
+        f"Both _load_waking_memories() and retrieve_relevant_memories() still exclude all "
+        f"required categories {_required_excluded} — the dream-sampling and conversational "
+        "retrieval paths both stay clean.",
+    )
+
+
+def _check_code_analysis_retrieval_exclusion() -> dict:
+    awareness_source = _read_text(_AUTONOMOUS_AWARENESS_PY_PATH) or None
+    memory_bridge_source = _read_text(_MEMORY_BRIDGE_PY_PATH) or None
+    return _evaluate_code_analysis_retrieval_exclusion(awareness_source, memory_bridge_source)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -3097,6 +3469,10 @@ _CHECKS = (
     "touch_sense_rhythm",
     "vision_sense_presence",
     "hearing_sense_ambient",
+    "awareness_scan_hygiene",
+    "code_analysis_retrieval_exclusion",
+    "architecture_slice_bounded",
+    "echo_messaging_auth_classification",
 )
 
 
@@ -3169,6 +3545,10 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "touch_sense_rhythm": _check_touch_sense,
         "vision_sense_presence": _check_vision_sense,
         "hearing_sense_ambient": _check_hearing_sense,
+        "awareness_scan_hygiene": _check_awareness_scan_hygiene,
+        "code_analysis_retrieval_exclusion": _check_code_analysis_retrieval_exclusion,
+        "architecture_slice_bounded": _check_architecture_slice_bounded,
+        "echo_messaging_auth_classification": _check_echo_messaging_auth_classification,
     }
 
     ledger = {"generated_at": _now_iso()}

@@ -11,6 +11,7 @@ Not on EDIT_FORBIDDEN_TARGETS — freely editable.
 """
 
 import json
+import os
 import re
 import threading
 import time
@@ -18,6 +19,7 @@ import uuid
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from flask import request, jsonify, Response, stream_with_context
 
@@ -71,7 +73,9 @@ def _resolve_task_type(original_msg: str) -> str:
         return "general"
 
 
-def _build_full_prompt(msg: str, session: dict) -> tuple[str, str]:
+def _build_full_prompt(
+    msg: str, session: dict, retrieval_provenance_out: Optional[dict] = None,
+) -> tuple[str, str]:
     """Mirrors terminal_client.py:send_message_stream's prompt assembly
     (memory context, session history, ground-truth/tool-context injection) —
     same business logic, same import sites, adapted to per-session state.
@@ -83,10 +87,19 @@ def _build_full_prompt(msg: str, session: dict) -> tuple[str, str]:
     full_msg carries only the user's actual new question. (Memory/history
     used to be prepended to full_msg directly — see
     conversation_service.build_context_system_note()'s docstring for why
-    that caused local models to regurgitate prior turns verbatim.)"""
+    that caused local models to regurgitate prior turns verbatim.)
+
+    retrieval_provenance_out (2026-09-02, information-flow integrity pass):
+    optional dict, forwarded straight to
+    conversation_service.retrieve_memory_context() — see that function's
+    own docstring. Defaults to None: omitting it is behaviorally identical
+    to before this parameter existed.
+    """
     full_msg = msg
 
-    memory_context = conversation_service.retrieve_memory_context(msg, _memory_search_fn)
+    memory_context = conversation_service.retrieve_memory_context(
+        msg, _memory_search_fn, provenance_out=retrieval_provenance_out,
+    )
     history_block = conversation_service.format_history_block(
         session["conv_history"], session["history_summaries"]
     )
@@ -155,8 +168,20 @@ def _generate_chat_response_body(conversation_id: str, original_msg: str, mode: 
     deliberation/River learning/tool dispatch — same path terminal_client.py's
     exception fallback already exercises, promoted to a first-class option.
     """
+    # Information-flow integrity pass (2026-09-02): one trace ID per real
+    # request, threaded into interaction_log.jsonl and
+    # council_deliberations.jsonl (via echo_query()/deliberate_and_learn())
+    # and this turn's retrieval-provenance record below, so a future
+    # investigation can join "what was retrieved," "what the council said,"
+    # and "what got persisted" for the same real turn without fuzzy-
+    # matching timestamps and prompt text across separately-written files.
+    trace_id = str(uuid.uuid4())
+
+    retrieval_provenance: dict = {}
     try:
-        full_msg, system_context = _build_full_prompt(original_msg, session)
+        full_msg, system_context = _build_full_prompt(
+            original_msg, session, retrieval_provenance_out=retrieval_provenance,
+        )
     except Exception as e:
         logger.error(f"[echo_studio] prompt assembly failed: {e}", exc_info=True)
         full_msg, system_context = original_msg, ""
@@ -176,7 +201,62 @@ def _generate_chat_response_body(conversation_id: str, original_msg: str, mode: 
         "status": "deliberating" if (mode == "full" and dispatch_result is None) else "streaming",
     })
 
+    def _post_synthesis_verify(resp: str, resolved_task_type: str):
+        """Runs the two existing post-hoc verifiers (code_verification.py,
+        self_knowledge_verification.py) and returns (final_text, notes).
+
+        Information-flow integrity fix (2026-09-02): this is the SAME
+        verification logic that used to run in this function's own body,
+        *after* echo_query() had already returned — by which point
+        interaction_log.jsonl, council_deliberations.jsonl, and RiverBrain's
+        learn() call had already been written/trained on the uncorrected
+        text (confirmed via 7 real unflagged "EventCore"-style fabrications
+        found in today's own production log). Passed into echo_query() as
+        `post_synthesis_hook`, so it runs before any of those consumers see
+        the response, instead of after. Not a new verification mechanism —
+        the exact same two calls, relocated. Only used for the full/
+        echo_query() path below; the dispatch_result/fast-mode paths never
+        reach echo_query(), so they keep their own direct verification
+        call further down, unchanged from before this pass.
+        """
+        final = resp
+        notes_parts = []
+        if resolved_task_type == "coding" and final:
+            try:
+                from app.core.code_verification import verify_response_code
+                caveat, verified = verify_response_code(final)
+            except Exception as cv_err:
+                logger.debug(f"[echo_studio] code verification failed: {cv_err}")
+                caveat, verified = None, None
+            if caveat:
+                final += caveat
+                notes_parts.append("code_caveat_applied")
+            if verified is not None and dispatch_result is None:
+                try:
+                    from app.core.echo_model_orchestrator import get_river_brain
+                    from app.core.river_deliberation import ECHO_SYNTHESIS_MODEL
+                    get_river_brain().learn_from_sandbox_outcome(
+                        ECHO_SYNTHESIS_MODEL, success=verified,
+                        code=final if verified else "",
+                        error=caveat or "",
+                    )
+                except Exception as river_err:
+                    logger.debug(f"[echo_studio] river learning hook failed: {river_err}")
+        if final:
+            try:
+                from app.core.echo_ground_truth import _is_introspective
+                if _is_introspective(original_msg):
+                    from app.core.self_knowledge_verification import verify_self_knowledge_claims
+                    sk_caveat, _sk_verified = verify_self_knowledge_claims(final)
+                    if sk_caveat:
+                        final += sk_caveat
+                        notes_parts.append("self_knowledge_caveat_applied")
+            except Exception as sk_err:
+                logger.debug(f"[echo_studio] self-knowledge verification failed: {sk_err}")
+        return final, (",".join(notes_parts) if notes_parts else None)
+
     response_text = ""
+    already_verified = False
     try:
         if dispatch_result is not None:
             raw_response = dispatch_result.get("response", "")
@@ -197,7 +277,9 @@ def _generate_chat_response_body(conversation_id: str, original_msg: str, mode: 
             from app.core.echo_model_orchestrator import echo_query
             raw_response = echo_query(
                 full_msg, task_type=task_type, source="user_conversation", system=system_context,
+                trace_id=trace_id, post_synthesis_hook=_post_synthesis_verify,
             )
+            already_verified = True
             response_text = conversation_service.clean_response_text(raw_response)
             for chunk in _chunk_text(response_text):
                 yield _sse({"type": "token", "text": chunk})
@@ -208,69 +290,38 @@ def _generate_chat_response_body(conversation_id: str, original_msg: str, mode: 
         response_text = "Error: could not generate a response."
         yield _sse({"type": "token", "text": response_text})
 
-    # 2026-07-19 forensic audit finding: nothing in this path ever executed
-    # generated code before presenting it as a finished answer — asked for
-    # the exact task her own self-edit loop had failed at 96+ times, Echo's
-    # answer was confidently wrong, and one raw councillor even fabricated
-    # a specific "worked example" whose claimed output was false when
-    # actually run. Scoped narrowly on purpose: catches code that doesn't
-    # parse, and a response's own checkable claim about its output turning
-    # out to be false — not a general correctness prover. Gated on
-    # task_type to avoid sandboxing every reply; fails open (never raises,
-    # never blocks the real response) per code_verification.py's own contract.
-    if task_type == "coding" and response_text:
-        try:
-            from app.core.code_verification import verify_response_code
-            caveat, verified = verify_response_code(response_text)
-        except Exception as cv_err:
-            logger.debug(f"[echo_studio] code verification failed: {cv_err}")
-            caveat, verified = None, None
-        if caveat:
-            response_text += caveat
-            yield _sse({"type": "token", "text": caveat})
+    # dispatch_result/fast-mode paths never reach echo_query(), so
+    # _post_synthesis_verify() above never ran for them — apply it directly
+    # here instead, exactly as this function did before this pass, streaming
+    # whatever caveat text got appended as its own trailing chunk (matching
+    # the old behavior: the main response was already fully chunked/sent
+    # above, and a caveat arrived after as a separate token event).
+    if not already_verified and response_text:
+        pre_verify_len = len(response_text)
+        response_text, _notes = _post_synthesis_verify(response_text, task_type)
+        appended = response_text[pre_verify_len:]
+        if appended:
+            yield _sse({"type": "token", "text": appended})
 
-        # 2026-07-19: feed the real, checkable verification outcome into
-        # RiverBrain via the same learn_from_sandbox_outcome() self-edit's
-        # own F2 gate already uses — not a new learning mechanism, a second
-        # caller of the existing one. `verified is None` (no checkable
-        # claim, the common case) deliberately produces NO signal — this
-        # only ever moves the "coding" bucket for this exact model, never
-        # creative/personal/reasoning (RiverBrain's model_task_stats is
-        # keyed per task_type, structurally isolated).
-        if verified is not None and dispatch_result is None:
-            try:
-                from app.core.echo_model_orchestrator import get_river_brain
-                from app.core.river_deliberation import ECHO_SYNTHESIS_MODEL
-                get_river_brain().learn_from_sandbox_outcome(
-                    ECHO_SYNTHESIS_MODEL, success=verified,
-                    code=response_text if verified else "",
-                    error=caveat or "",
-                )
-            except Exception as river_err:
-                logger.debug(f"[echo_studio] river learning hook failed: {river_err}")
-
-    # 2026-07-19 "remove every excuse" pass: the same pattern as the code
-    # check above, applied to self-referential claims about Echo's own
-    # architecture instead of code correctness. Gated on the question
-    # having been introspective enough to receive ground-truth grounding
-    # in the first place (same signal _build_full_prompt() already used to
-    # decide whether to inject it) — if it was worth grounding, it's worth
-    # checking whether the answer honored that grounding. Deliberately
-    # narrow (see self_knowledge_verification.py's own module docstring)
-    # and does not feed RiverBrain — self-knowledge accuracy and code
-    # correctness are different skills; conflating them into the "coding"
-    # bucket would be a new, unproven assumption, not a proven one.
-    if response_text:
-        try:
-            from app.core.echo_ground_truth import _is_introspective
-            if _is_introspective(original_msg):
-                from app.core.self_knowledge_verification import verify_self_knowledge_claims
-                sk_caveat, _sk_verified = verify_self_knowledge_claims(response_text)
-                if sk_caveat:
-                    response_text += sk_caveat
-                    yield _sse({"type": "token", "text": sk_caveat})
-        except Exception as sk_err:
-            logger.debug(f"[echo_studio] self-knowledge verification failed: {sk_err}")
+    # Information-flow integrity pass (2026-09-02): persist a minimal,
+    # reference-only record of which memories reached this turn's prompt —
+    # see conversation_service.retrieve_memory_context()'s own docstring.
+    # Never raises; a missing/failed retrieval leaves this log entry absent
+    # rather than blocking the response.
+    try:
+        if retrieval_provenance:
+            os.makedirs("memory", exist_ok=True)
+            with open("memory/retrieval_provenance.jsonl", "a", encoding="utf-8") as f:
+                f.write(json.dumps({
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "trace_id": trace_id,
+                    "query_preview": original_msg[:120],
+                    "source": "memory_bridge",
+                    "candidates_considered": retrieval_provenance.get("candidates_considered", 0),
+                    "memories_injected": retrieval_provenance.get("injected", []),
+                }) + "\n")
+    except Exception as prov_err:
+        logger.debug(f"[echo_studio] retrieval provenance log failed: {prov_err}")
 
     # 2026-07-19: this was the one remaining unwrapped block in this
     # function — any exception here (e.g. a concurrent regenerate/stream
@@ -298,6 +349,7 @@ def _generate_chat_response_body(conversation_id: str, original_msg: str, mode: 
         "text": response_text,
         "task_type": task_type,
         "conversation_id": conversation_id,
+        "trace_id": trace_id,
     })
 
 

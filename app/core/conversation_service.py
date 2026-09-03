@@ -80,6 +80,7 @@ def retrieve_memory_context(
     search_fn: Callable[[str, int], list],
     k: int = 5,
     exclude_recent_minutes: float = 30.0,
+    provenance_out: Optional[dict] = None,
 ) -> str:
     """
     Retrieve semantically relevant memories and format them for prompt injection.
@@ -98,10 +99,22 @@ def retrieve_memory_context(
     settled precedent and repeating it (confirmed live 2026-07-05: a deflected
     answer got retrieved as [past interaction] context on the very next
     attempt at a similar question, reinforcing the same deflection).
+
+    provenance_out (2026-09-02, information-flow integrity pass): optional
+    dict, populated as a side effect — {"candidates_considered": int,
+    "injected": [{"source", "role", "timestamp", "text_hash"}, ...]} — a
+    reference, not a copy of the text, so a future investigation can
+    answer "which memories were retrieved as candidates vs. which actually
+    reached the prompt for this turn" without this function needing to
+    store full content twice. Defaults to None, so every existing caller
+    (terminal_client.py) that doesn't pass it sees byte-identical behavior.
     """
     try:
         raw_memories = search_fn(msg, k * 3)
         if not raw_memories:
+            if provenance_out is not None:
+                provenance_out["candidates_considered"] = 0
+                provenance_out["injected"] = []
             return ""
 
         if exclude_recent_minutes > 0:
@@ -111,6 +124,9 @@ def retrieve_memory_context(
                 if not ((_parse_ts(meta.get("timestamp", "")) or cutoff) > cutoff)
             ]
             if not raw_memories:
+                if provenance_out is not None:
+                    provenance_out["candidates_considered"] = 0
+                    provenance_out["injected"] = []
                 return ""
 
         conv_memories = [
@@ -139,6 +155,19 @@ def retrieve_memory_context(
                 return "[reference]"
             else:
                 return "[system log]"
+
+        if provenance_out is not None:
+            import hashlib
+            provenance_out["candidates_considered"] = len(raw_memories)
+            provenance_out["injected"] = [
+                {
+                    "source": meta.get("memory_source"),
+                    "role": meta.get("role"),
+                    "timestamp": meta.get("timestamp"),
+                    "text_hash": hashlib.sha1(text.encode("utf-8", errors="replace")).hexdigest()[:12],
+                }
+                for text, score, meta in relevant_memories
+            ]
 
         return "\n".join([
             f"- {_source_label(meta)}: {text}"

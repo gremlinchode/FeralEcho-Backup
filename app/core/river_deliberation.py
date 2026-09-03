@@ -626,6 +626,8 @@ def _log_council_deliberation(
     synth_model: str,
     final_response: str,
     source: str = "real_deliberation",
+    trace_id: "str | None" = None,
+    notes: "str | None" = None,
 ) -> None:
     """
     Purely additive/observational (2026-07-17) — persists every councillor's
@@ -677,6 +679,8 @@ def _log_council_deliberation(
             "councillors": entries,
             "synthesis_model": synth_model,
             "final_response": final_response,
+            "trace_id": trace_id,
+            "notes": notes,
         }
         os.makedirs(os.path.dirname(_COUNCIL_DELIBERATION_LOG), exist_ok=True)
         with _council_log_lock:
@@ -725,6 +729,8 @@ def deliberate_and_learn(
     temperature: Optional[float] = None,
     system: Optional[str] = None,
     max_tokens: Optional[int] = None,
+    trace_id: Optional[str] = None,
+    post_synthesis_hook=None,
 ) -> str:
     """
     Full deliberation pipeline.
@@ -753,6 +759,32 @@ def deliberate_and_learn(
                       stream_query_ollama()'s own default, exactly as
                       before this parameter existed.
 
+    post_synthesis_hook : optional (response, task_type) -> (final_response,
+                      notes) callable (2026-09-02, information-flow
+                      integrity pass). If supplied, called once, at the
+                      point the response is genuinely final for THIS
+                      function's own two real, instrumented paths (the
+                      direct-Echo bypass and the full multi-councillor
+                      synthesis) — before river_brain.learn() and
+                      _log_council_deliberation() run, not after. This is
+                      the actual root cause of a real, confirmed bug:
+                      routes_echo_studio.py's post-hoc verification used
+                      to run only after echo_query() (a layer above this
+                      function) had already returned, by which point this
+                      function had already trained River and persisted
+                      council_deliberations.jsonl on the pre-verification
+                      text — one layer too late to help either. Applying
+                      it here, not just in echo_query(), is what actually
+                      closes the gap for both. Not applied to the
+                      already-documented, already-uninstrumented edge-case
+                      return points below (empty council, all-councillors-
+                      errored, synthesis-failed) — those never called
+                      _log_council_deliberation() either, a pre-existing
+                      scope boundary this change preserves rather than
+                      widens. Any exception from the hook is caught and
+                      logged; the uncorrected response is used rather than
+                      ever raising.
+
     Returns
     -------
     The synthesised response string.  Never raises — degrades to a
@@ -768,6 +800,14 @@ def deliberate_and_learn(
             f"[DELIBERATION] Direct Echo path for task={task_type} — bypassing council"
         )
         response = _ollama_query(synth_model, _direct_response_prompt(prompt, system, max_tokens, synth_model), timeout=SYNTHESIS_TIMEOUT, temperature=temperature, system=system, max_tokens=max_tokens, task_type=task_type)
+
+        hook_notes = None
+        if post_synthesis_hook is not None:
+            try:
+                response, hook_notes = post_synthesis_hook(response, task_type)
+            except Exception as _hook_err:
+                logging.debug(f"[DELIBERATION] post_synthesis_hook failed on direct path, using uncorrected response: {_hook_err}")
+
         river_brain.learn(synth_model, task_type, response)
         # 2026-07-19: log this too, via the same function the real
         # multi-councillor path already uses — a genuine "council of one."
@@ -779,7 +819,7 @@ def deliberate_and_learn(
             _log_council_deliberation(
                 task_type, prompt, [synth_model], {synth_model: response},
                 {synth_model: temperature}, None, synth_model, response,
-                source="direct_echo_task",
+                source="direct_echo_task", trace_id=trace_id, notes=hook_notes,
             )
         except Exception:
             pass
@@ -988,6 +1028,21 @@ def deliberate_and_learn(
         river_brain.learn(synth_model, task_type, best)
         return best
 
+    # Information-flow integrity fix (2026-09-02): apply any supplied
+    # correction to the real, final synthesis text — before it trains
+    # River (below) or gets persisted to council_deliberations.jsonl (via
+    # _log_council_deliberation() below) — not to each raw per-councillor
+    # opinion (those are deliberately left as the genuine, uncorrected
+    # individual inputs; only the synthesis is the "response" a caveat is
+    # about). See this function's own docstring for why this must happen
+    # here rather than one layer up in echo_query().
+    hook_notes = None
+    if post_synthesis_hook is not None:
+        try:
+            final_response, hook_notes = post_synthesis_hook(final_response, task_type)
+        except Exception as _hook_err:
+            logging.debug(f"[DELIBERATION] post_synthesis_hook failed on synthesis path, using uncorrected response: {_hook_err}")
+
     # ── 7. Post-synthesis learning ────────────────────────────
     # Each councillor learns from its OWN response — not the synthesis.
     # Crediting all models with the synthesized output inflated every
@@ -1008,6 +1063,7 @@ def deliberate_and_learn(
         _log_council_deliberation(
             task_type, prompt, list(opinions.keys()), opinions, councillor_temps,
             _per_opinion, synth_model, final_response,
+            trace_id=trace_id, notes=hook_notes,
         )
     except Exception as _log_err:
         logging.debug(f"[DELIBERATION] deliberation logging step failed: {_log_err}")

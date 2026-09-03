@@ -52,7 +52,7 @@ import math
 import pickle
 import fcntl
 import logging
-from typing import Optional
+from typing import Optional, Callable
 from datetime import datetime
 import subprocess
 import time
@@ -212,7 +212,8 @@ def log_interaction(
     river_influence: float,
     sandbox_outcome: str = None,
     notes: str = None,
-    source: str = "autonomous"
+    source: str = "autonomous",
+    trace_id: Optional[str] = None,
 ):
     os.makedirs(os.path.dirname(INTERACTION_LOG_PATH), exist_ok=True)
     entry = {
@@ -228,6 +229,7 @@ def log_interaction(
         "sandbox_outcome": sandbox_outcome,
         "notes": notes,
         "source": source,
+        "trace_id": trace_id,
     }
     with open(INTERACTION_LOG_PATH, "a") as f:
         f.write(json.dumps(entry) + "\n")
@@ -959,9 +961,26 @@ class RiverBrain:
             stats["count"] += 1
             effective_n = min(stats["count"], self._MEAN_EFFECTIVE_WINDOW)
             stats["mean"] += (blended - stats["mean"]) / effective_n
+            # Information-flow integrity fix (2026-09-02): a lightweight,
+            # purely-additive provenance counter — once a council-vetted
+            # observation blends into `mean`, it becomes indistinguishable
+            # from an ordinary auto-scored one in that rolling average.
+            # This doesn't undo that (the mean itself isn't split-tracked —
+            # a fuller fix would mean a second parallel mean per model/task,
+            # more surface area on a hot, pickled data structure than this
+            # pass justifies), but it does let anyone reading model_task_stats
+            # answer "how many of this model's observations were ever
+            # council-vetted at all" via stats.get("council_vetted_count", 0)
+            # vs stats["count"] — a ratio, not a full split. Only incremented
+            # here, never in the ordinary learn() path, and defaults to
+            # absent (.get(..., 0)) for every pre-existing entry, so this is
+            # fully backward-compatible with the live, already-pickled
+            # river_brain.pkl.
+            stats["council_vetted_count"] = stats.get("council_vetted_count", 0) + 1
         logging.info(
             f"[RIVER] Council rating {council_rating}/5 blended with quality_score={quality_score} "
-            f"→ blended={blended:.3f} label={label} | model={model_name} | task={task_type}"
+            f"→ blended={blended:.3f} label={label} | model={model_name} | task={task_type} "
+            f"| council_vetted_count={stats['council_vetted_count']}/{stats['count']}"
         )
 
     _MIN_MODEL_OBSERVATIONS = 5
@@ -1348,7 +1367,41 @@ def ollama_query(model_name, prompt, max_tokens: int = 1024, system: Optional[st
 def echo_query(
     prompt, use_all=False, task_type=None, temperature=None, source: str = "autonomous",
     system: Optional[str] = None,
+    trace_id: Optional[str] = None,
+    post_synthesis_hook: Optional[Callable[[str, str], "tuple[str, Optional[str]]"]] = None,
 ):
+    """trace_id (2026-09-02, information-flow integrity pass): optional,
+    threaded through to log_interaction() and deliberate_and_learn()'s
+    council_deliberations.jsonl write so a single real request's canonical
+    record and raw council transcript can be joined later. Purely additive
+    — every existing caller that doesn't pass it gets None, identical to
+    today's behavior.
+
+    post_synthesis_hook (same pass): optional (response, task_type) ->
+    (final_response, notes) callable, passed straight through to
+    deliberate_and_learn() (NOT invoked a second time here — see that
+    function's own docstring for exactly where and why it runs: inside
+    its own two instrumented return paths, before ITS internal
+    river_brain.learn()/_log_council_deliberation() calls, since those
+    complete before this function's call to it even returns). By the time
+    `response` reaches this scope, it is already the same corrected text
+    every internal consumer saw, so this function's own quality scoring/
+    RiverBrain training/log_interaction()/save_reflection() below get it
+    too, with no separate application needed.
+
+    Exists to close a real, confirmed gap: routes_echo_studio.py's
+    post-hoc verification (code_verification.py,
+    self_knowledge_verification.py) used to run *after* echo_query() had
+    already returned, so a verifier-appended caveat reached the live user
+    but never reached interaction_log.jsonl, council_deliberations.jsonl,
+    or any RiverBrain learn() call — confirmed via 7 real unflagged
+    "EventCore"-style fabrications in today's own production log, each
+    one independently re-verified to be caught by the current verifier
+    when called directly. Defaults to None: every other caller
+    (terminal_client.py, self-edit, curiosity_engine, emergent_scheduler,
+    echo_messaging, echo_projects, sandbox/experiment_runner) is
+    completely unaffected.
+    """
     global _query_count
     _query_count += 1
 
@@ -1486,6 +1539,21 @@ def echo_query(
                 # flat 1024-token default regardless (audit finding: council
                 # token budget dead on the real path).
                 max_tokens=_TASK_TOKEN_LIMITS.get(task_type, 1024),
+                trace_id=trace_id,
+                # Information-flow integrity fix (2026-09-02): the hook is
+                # applied INSIDE deliberate_and_learn(), not here — that
+                # function has its own internal river_brain.learn() and
+                # _log_council_deliberation() calls (for both the direct-
+                # Echo bypass and the full multi-councillor synthesis),
+                # both of which complete BEFORE this call returns. Applying
+                # the hook a second time here, on text it already
+                # corrected, would be exactly the verifier duplication this
+                # fix is required not to introduce (and is not idempotency-
+                # safe: a caveat that names the fabricated identifier could
+                # itself be re-flagged by a second pass). By the time
+                # `response` comes back here, it is already the same
+                # semantically final text every internal consumer saw.
+                post_synthesis_hook=post_synthesis_hook,
             )
             quality = _score_response_quality(response, task_type)
 
@@ -1494,6 +1562,12 @@ def echo_query(
             # were training the coding classifier when prompts mentioned functions.
             get_river_brain().learn(ECHO_SYNTHESIS_MODEL, task_type, response)
 
+            # notes intentionally omitted here: any post_synthesis_hook
+            # correction was already applied and recorded (via its own
+            # "notes" field) by deliberate_and_learn()'s internal
+            # _log_council_deliberation() write, joinable to this entry via
+            # trace_id — not duplicated here to avoid two divergent
+            # "was this corrected" signals for the same real turn.
             log_interaction(
                 model_name=ECHO_SYNTHESIS_MODEL,
                 task_type=task_type,
@@ -1502,6 +1576,7 @@ def echo_query(
                 quality_score=quality,
                 river_influence=get_river_brain().influence_weight,
                 source=source,
+                trace_id=trace_id,
             )
 
             # echo_self_assess() removed: trained River on self-issued stylistic markers

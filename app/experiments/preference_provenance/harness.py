@@ -24,6 +24,7 @@ from typing import Callable, Optional, Protocol
 
 from . import lifecycle, store
 from .confounds import build_confound_snapshot
+from .leakage import assert_no_hidden_state_leakage
 from .schema import (
     ALLOWED_EFFECT_LABELS,
     FORBIDDEN_EFFECT_LABELS,
@@ -31,7 +32,26 @@ from .schema import (
     RawTrial,
     TrialCondition,
     PromptShape,
+    TRIAL_ELIGIBLE_STATUSES,
 )
+
+
+class TrialEligibilityError(RuntimeError):
+    """Raised when run_trial() is asked to run a behavioral trial against
+    a candidate that has never been explicitly adopted/retained by a
+    human (schema.TRIAL_ELIGIBLE_STATUSES). Found during the red-team
+    pass: the initial implementation let run_trial() accept ANY candidate
+    object regardless of its lifecycle status, meaning a still-PROPOSED
+    (never human-reviewed) or even REJECTED/EXPIRED candidate's free text
+    could be used in a real behavioral trial with nothing checking that a
+    human had actually looked at it first — a real gap given candidate
+    source_text is unvalidated free text (mission red-team attack #11:
+    could a candidate itself contain adversarial/injection-style
+    content?). Requiring TRIAL_ELIGIBLE_STATUSES here means the
+    lifecycle's own human_confirmation=True gate (lifecycle.adopt()/
+    retain()) is now the one path by which a candidate's text can ever
+    reach a responder — closing the gap at the point of use, not just at
+    the point of adoption."""
 
 
 # ---------------------------------------------------------------------------
@@ -167,9 +187,28 @@ class EchoResponder:
     modifying echo_query() itself, out of scope for this pass. A future
     real-trial run using this class should account for this
     contamination path explicitly before running.
+
+    Added during the protocol-lock/red-team pass: construction now
+    requires `acknowledge_contamination_risk=True` (the literal bool
+    True), mirroring lifecycle.py's human_confirmation gate. This is a
+    deliberate, minimal, in-package safety friction — it cannot prevent
+    the underlying contamination (that would require a production-code
+    change, out of scope here), but it makes it structurally impossible
+    to construct this class by accident, e.g. via a copy-pasted call
+    that forgot this class talks to the real, live Echo instance.
     """
 
-    def __init__(self, task_type: str = "reasoning") -> None:
+    def __init__(self, task_type: str = "reasoning", *, acknowledge_contamination_risk: bool = False) -> None:
+        if acknowledge_contamination_risk is not True:
+            raise RuntimeError(
+                "EchoResponder requires acknowledge_contamination_risk=True (the "
+                "literal bool True). This class calls the REAL, LIVE Echo "
+                "instance via echo_query() — every call feeds RiverBrain "
+                "training and interaction_log.jsonl exactly like a real "
+                "conversation, with no suppression mechanism built here (see "
+                "this class's own docstring). Constructing it is a deliberate, "
+                "explicit decision, never an accident."
+            )
         self.task_type = task_type
 
     def respond(
@@ -182,9 +221,19 @@ class EchoResponder:
     ) -> ResponderOutput:
         from app.core.echo_model_orchestrator import echo_query  # deferred, see class docstring
 
+        # BUG FOUND AND FIXED during the protocol-lock/red-team pass: the
+        # first version of this method sent only `task_description` to
+        # echo_query(), never including label_to_option_text anywhere — a
+        # real trial would have had nothing concrete to choose between.
+        # build_forced_choice_prompt() is the one place this composition
+        # happens, reused by both this class and
+        # scripts/calibrate_preference_provenance_harness.py so there is
+        # exactly one definition of "what the model actually sees."
+        full_prompt = build_forced_choice_prompt(task_description, label_to_option_text)
+
         start = time.time()
         response = echo_query(
-            task_description,
+            full_prompt,
             task_type=self.task_type,
             system=system_context,
             source="preference_provenance_experiment",
@@ -198,6 +247,23 @@ class EchoResponder:
             latency_seconds=latency,
             temperature=None,
         )
+
+
+def build_forced_choice_prompt(task_description: str, label_to_option_text: dict) -> str:
+    """
+    The one place task_description and label_to_option_text are combined
+    into the literal text a real responder would see. Kept as a
+    standalone function (not inlined into EchoResponder.respond()) so
+    the calibration script and any future responder can build an
+    identical prompt without duplicating this composition, and so a
+    single fix here covers every caller.
+    """
+    lines = [task_description, ""]
+    for label in sorted(label_to_option_text.keys()):
+        lines.append(f"Option {label}: {label_to_option_text[label]}")
+    lines.append("")
+    lines.append("Choose exactly one option (state the letter clearly) and explain your reasoning briefly.")
+    return "\n".join(lines)
 
 
 def _parse_label_choice(text: str, label_to_option_text: dict) -> Optional[str]:
@@ -251,6 +317,9 @@ def run_trial(
     system_context: Optional[str],
     confound_overrides: Optional[dict] = None,
     actor: str = "harness",
+    protocol_version: Optional[str] = None,
+    batch_seed: Optional[int] = None,
+    trial_index: Optional[int] = None,
 ) -> RawTrial:
     """
     Runs exactly one trial and appends the raw record. Does NOT
@@ -262,17 +331,43 @@ def run_trial(
     True, the candidate's text is included in system_context by the
     CALLER before this function is invoked (this function does not
     inject it itself, so the caller's own trial-construction code is
-    the one place that decision is made and can be audited). If False,
-    system_context must not mention the candidate at all — this function
-    does not verify that (it has no way to know what "mentioning" the
-    candidate would look like in free text), so the caller bears
-    responsibility for honestly constructing the hidden-state condition.
-    This limitation is recorded, not hidden.
+    the one place that decision is made and can be audited).
+
+    If False, this function now ENFORCES (not just documents) that
+    system_context/task_description/option labels don't leak the
+    candidate's own text — see leakage.py. This closes a real gap from
+    the initial implementation, where this was caller-responsibility
+    only. The check is literal/near-literal substring matching, not
+    full semantic-paraphrase detection — see leakage.py's own module
+    docstring for the honest limit of what this can and cannot catch.
     """
+    if candidate is not None and candidate.status not in TRIAL_ELIGIBLE_STATUSES:
+        raise TrialEligibilityError(
+            f"Candidate {candidate.candidate_id!r} has status={candidate.status.value!r}, "
+            f"which is not one of the trial-eligible statuses {sorted(s.value for s in TRIAL_ELIGIBLE_STATUSES)}. "
+            f"A candidate must be explicitly adopted or retained by a human "
+            f"(lifecycle.adopt()/retain(), human_confirmation=True) before it can be used in a "
+            f"behavioral trial — this is not inferable from generation, saving, or the candidate "
+            f"merely existing."
+        )
+
+    if not candidate_visible and candidate is not None:
+        assert_no_hidden_state_leakage(
+            candidate,
+            task_description=task_description,
+            system_context=system_context,
+            label_to_option_text=label_to_option_text,
+        )
+
     responder_kind = "mock" if isinstance(responder, MockResponder) else (
         "echo" if isinstance(responder, EchoResponder) else "other"
     )
     prompt_hash = hashlib.sha256((task_description + str(system_context)).encode("utf-8")).hexdigest()[:16]
+    preference_state_hash = None
+    if candidate is not None:
+        preference_state_hash = hashlib.sha256(
+            (candidate.normalized_representation + "|" + candidate.source_text).encode("utf-8")
+        ).hexdigest()[:16]
 
     output = responder.respond(
         task_description=task_description,
@@ -316,6 +411,10 @@ def run_trial(
         latency_seconds=output.latency_seconds,
         confounds=confounds.to_dict(),
         responder_kind=responder_kind,
+        protocol_version=protocol_version,
+        batch_seed=batch_seed,
+        trial_index=trial_index,
+        preference_state_hash=preference_state_hash,
     )
     store.append_raw_trial(trial)
     store.log_audit_event("behavior_observed", trial.candidate_id, {"trial_id": trial.trial_id}, actor)
@@ -340,6 +439,7 @@ def run_counterfactual_batch(
     system_context_treatment: Optional[str] = None,
     rng_seed: Optional[int] = None,
     condition: TrialCondition = TrialCondition.PROMPT_NEUTRAL,
+    protocol_version: Optional[str] = None,
 ) -> "tuple[list[RawTrial], list[RawTrial]]":
     """
     Runs n_trials_per_arm baseline trials and n_trials_per_arm treatment
@@ -347,12 +447,17 @@ def run_counterfactual_batch(
     single trial so the model cannot learn a fixed positional
     association. Returns (baseline_trials, treatment_trials) — raw
     records only; call summarize_batch() separately to interpret.
+
+    rng_seed is recorded on every resulting trial (as batch_seed) so a
+    later analyst can reconstruct the exact label-mapping sequence
+    without re-running the batch — required by the pre-registered
+    protocol's covariate record (mission Section 18: "task seed").
     """
     rng = random.Random(rng_seed)
     baseline_trials = []
     treatment_trials = []
 
-    for _ in range(n_trials_per_arm):
+    for i in range(n_trials_per_arm):
         mapping = randomize_label_mapping(option_a_semantic, option_b_semantic, rng)
         t = run_trial(
             responder=responder_baseline,
@@ -364,10 +469,13 @@ def run_counterfactual_batch(
             prompt_shape=None,
             session_id=session_id,
             system_context=system_context_baseline,
+            protocol_version=protocol_version,
+            batch_seed=rng_seed,
+            trial_index=i,
         )
         baseline_trials.append(t)
 
-    for _ in range(n_trials_per_arm):
+    for i in range(n_trials_per_arm):
         mapping = randomize_label_mapping(option_a_semantic, option_b_semantic, rng)
         t = run_trial(
             responder=responder_treatment,
@@ -379,6 +487,9 @@ def run_counterfactual_batch(
             prompt_shape=None,
             session_id=session_id,
             system_context=system_context_treatment,
+            protocol_version=protocol_version,
+            batch_seed=rng_seed,
+            trial_index=n_trials_per_arm + i,
         )
         treatment_trials.append(t)
 

@@ -251,6 +251,17 @@ class RawTrial:
     latency_seconds: Optional[float]
     confounds: dict
     responder_kind: str  # "mock" or "echo" — never silently ambiguous
+    # Added during the protocol-lock/red-team pass (mission Section 18/20):
+    # every trial must identify its exact protocol version and enough seed
+    # information to be independently reconstructed by another analyst.
+    protocol_version: Optional[str] = None
+    batch_seed: Optional[int] = None
+    trial_index: Optional[int] = None
+    # Hash of the candidate's own text AT TRIAL TIME (not just its ID) —
+    # lets an analyst confirm, without trusting candidate_status_at_trial_time
+    # alone, exactly which substantive preference text was in effect when
+    # this trial ran, even if the candidate was later revised.
+    preference_state_hash: Optional[str] = None
 
     def to_dict(self) -> dict:
         return dataclasses.asdict(self)

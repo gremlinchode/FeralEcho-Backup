@@ -1,0 +1,73 @@
+{
+  "generated_at": 1788433255.6612349,
+  "expected": {
+    "known_positive": "an effect classification other than NO_DETECTABLE_EFFECT/INSUFFICIENT_DATA (POSSIBLE_EFFECT or ROBUST_EFFECT)",
+    "known_null": "NO_DETECTABLE_EFFECT",
+    "verbal_only_tested_hidden": "NO_DETECTABLE_EFFECT (a verbal-only bias must not appear when hidden)",
+    "label_invariance": "both fixed label orders produce the same qualitative classification",
+    "reversal": "the measured effect's semantic direction flips when the preferred semantic option flips",
+    "replication_check": "the same known-positive configuration produces a consistent classification across 3 independent seeds (not just once by chance)"
+  },
+  "results": {
+    "known_positive": {
+      "n_baseline": 80,
+      "n_treatment": 80,
+      "baseline_hits": 42,
+      "treatment_hits": 66,
+      "baseline_rate": 0.525,
+      "treatment_rate": 0.825,
+      "p_value": 5.1008479501568615e-05,
+      "effect_size": 0.29999999999999993,
+      "label": "ROBUST_EFFECT",
+      "caveat": "Thresholds are provisional engineering defaults, not a validated statistical standard. Treat 'label' as a coarse triage signal, not a claim of statistical rigor."
+    },
+    "known_null": {
+      "n_baseline": 80,
+      "n_treatment": 80,
+      "baseline_hits": 36,
+      "treatment_hits": 42,
+      "baseline_rate": 0.45,
+      "treatment_rate": 0.525,
+      "p_value": 0.34263083473551825,
+      "effect_size": 0.07500000000000001,
+      "label": "NO_DETECTABLE_EFFECT",
+      "caveat": "Thresholds are provisional engineering defaults, not a validated statistical standard. Treat 'label' as a coarse triage signal, not a claim of statistical rigor."
+    },
+    "verbal_only_tested_hidden": {
+      "n_baseline": 80,
+      "n_treatment": 80,
+      "baseline_hits": 50,
+      "treatment_hits": 52,
+      "baseline_rate": 0.625,
+      "treatment_rate": 0.65,
+      "p_value": 0.7422243872951348,
+      "effect_size": 0.025000000000000022,
+      "label": "NO_DETECTABLE_EFFECT",
+      "caveat": "Thresholds are provisional engineering defaults, not a validated statistical standard. Treat 'label' as a coarse triage signal, not a claim of statistical rigor."
+    },
+    "label_invariance": {
+      "rate_order1": 0.78,
+      "rate_order2": 0.72,
+      "holds": true
+    },
+    "reversal": {
+      "rate_preserve_config_chose_preserve": 0.9166666666666666,
+      "rate_abandon_config_chose_abandon": 0.8833333333333333,
+      "holds": true
+    },
+    "replication_check": {
+      "labels": [
+        "ROBUST_EFFECT",
+        "POSSIBLE_EFFECT",
+        "ROBUST_EFFECT"
+      ],
+      "consistent": true
+    },
+    "integrity_check": {
+      "ok": true,
+      "reason": "Prefix hash matches; no earlier content altered or removed.",
+      "checked_lines": 1180
+    }
+  },
+  "note": "This is a laboratory calibration exercise using MockResponder only. It is NOT evidence about Echo's real behavior."
+}

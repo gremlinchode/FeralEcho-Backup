@@ -24,6 +24,7 @@ but the full history remains on disk, untouched, forever.
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import json
 import os
 import shutil
@@ -36,6 +37,7 @@ from .schema import AuditEvent, PreferenceCandidate, RawTrial, LifecycleStatus, 
 
 CANDIDATES_PATH = os.path.join(safety.EXPERIMENT_STATE_ROOT, "candidates.jsonl")
 RAW_TRIALS_PATH = os.path.join(safety.EXPERIMENT_STATE_ROOT, "raw_trials.jsonl")
+RAW_TRIALS_INTEGRITY_PATH = os.path.join(safety.EXPERIMENT_STATE_ROOT, "raw_trials.integrity.json")
 AUDIT_LOG_PATH = os.path.join(safety.EXPERIMENT_STATE_ROOT, "audit_log.jsonl")
 ANALYSIS_DIR = os.path.join(safety.EXPERIMENT_STATE_ROOT, "analysis")
 
@@ -194,10 +196,103 @@ def load_candidate_history(candidate_id: str) -> "list[PreferenceCandidate]":
 
 def append_raw_trial(trial: RawTrial) -> None:
     _append_jsonl(RAW_TRIALS_PATH, trial.to_dict())
+    _update_raw_trials_integrity_checkpoint()
 
 
 def load_raw_trials() -> "list[dict]":
     return _read_jsonl(RAW_TRIALS_PATH)
+
+
+# ---------------------------------------------------------------------------
+# Raw-trial integrity checkpoint (mission Section 19: "add an integrity
+# check if practical").
+#
+# A prefix-hash checkpoint scheme, not a full blockchain-style chain —
+# deliberately simple and auditable. After every append, this records
+# {"line_count": N, "prefix_sha256": sha256(first N lines)}. Verifying
+# integrity means: (a) the file's first `line_count` lines still hash to
+# the recorded prefix_sha256 (proves no earlier line was ever altered or
+# removed), and (b) the file's current total line count is >= the
+# checkpoint's line_count (new appends are fine; a shrinking file is not).
+# This cannot detect a sufficiently sophisticated tamper that also
+# rewrites the checkpoint file consistently — it is a tripwire against
+# accidental or careless mutation, not a cryptographic guarantee against
+# a determined adversary with write access to both files. Stated plainly
+# rather than oversold, per this project's own evidence-standard
+# discipline.
+# ---------------------------------------------------------------------------
+
+def _raw_trials_prefix_hash(line_count: int) -> "str | None":
+    if not os.path.exists(RAW_TRIALS_PATH):
+        return None
+    with open(RAW_TRIALS_PATH, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+    prefix = "".join(lines[:line_count])
+    return hashlib.sha256(prefix.encode("utf-8")).hexdigest()
+
+
+def _update_raw_trials_integrity_checkpoint() -> None:
+    if not os.path.exists(RAW_TRIALS_PATH):
+        return
+    with open(RAW_TRIALS_PATH, "r", encoding="utf-8") as f:
+        line_count = sum(1 for _ in f)
+    checkpoint = {
+        "line_count": line_count,
+        "prefix_sha256": _raw_trials_prefix_hash(line_count),
+        "updated_at": time.time(),
+    }
+    resolved = safety.assert_safe_experiment_write(RAW_TRIALS_INTEGRITY_PATH)
+    tmp = resolved + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(checkpoint, f)
+    os.replace(tmp, resolved)
+
+
+def verify_raw_trials_integrity() -> dict:
+    """
+    Returns {"ok": bool, "reason": str, "checked_lines": int}. Callers
+    (the preflight checklist, or any analysis step) should call this
+    before trusting raw_trials.jsonl for a real analysis and treat
+    ok=False as a hard stop, not a warning to note and continue past.
+    """
+    if not os.path.exists(RAW_TRIALS_INTEGRITY_PATH):
+        if not os.path.exists(RAW_TRIALS_PATH) or os.path.getsize(RAW_TRIALS_PATH) == 0:
+            return {"ok": True, "reason": "No raw trials recorded yet; nothing to verify.", "checked_lines": 0}
+        return {
+            "ok": False,
+            "reason": "raw_trials.jsonl has content but no integrity checkpoint exists — "
+                      "the file may predate this mechanism or the checkpoint was removed.",
+            "checked_lines": 0,
+        }
+    with open(RAW_TRIALS_INTEGRITY_PATH, "r", encoding="utf-8") as f:
+        checkpoint = json.load(f)
+    expected_line_count = checkpoint["line_count"]
+    expected_prefix_hash = checkpoint["prefix_sha256"]
+
+    if not os.path.exists(RAW_TRIALS_PATH):
+        return {"ok": False, "reason": "Checkpoint exists but raw_trials.jsonl is missing.", "checked_lines": 0}
+
+    with open(RAW_TRIALS_PATH, "r", encoding="utf-8") as f:
+        current_line_count = sum(1 for _ in f)
+
+    if current_line_count < expected_line_count:
+        return {
+            "ok": False,
+            "reason": f"raw_trials.jsonl has FEWER lines ({current_line_count}) than the last "
+                      f"checkpoint recorded ({expected_line_count}) — content was removed.",
+            "checked_lines": current_line_count,
+        }
+
+    actual_prefix_hash = _raw_trials_prefix_hash(expected_line_count)
+    if actual_prefix_hash != expected_prefix_hash:
+        return {
+            "ok": False,
+            "reason": f"The first {expected_line_count} lines of raw_trials.jsonl no longer hash-match "
+                      f"the last checkpoint — earlier content was altered.",
+            "checked_lines": expected_line_count,
+        }
+
+    return {"ok": True, "reason": "Prefix hash matches; no earlier content altered or removed.", "checked_lines": current_line_count}
 
 
 def write_analysis_result(name: str, data: dict) -> str:
@@ -244,7 +339,7 @@ def reset_experiment(reason: str, actor: str = "researcher_cli") -> dict:
 
     os.makedirs(archive_dir, exist_ok=True)
     moved = []
-    for name in ("candidates.jsonl", "raw_trials.jsonl", "audit_log.jsonl"):
+    for name in ("candidates.jsonl", "raw_trials.jsonl", "raw_trials.integrity.json", "audit_log.jsonl"):
         src = os.path.join(safety.EXPERIMENT_STATE_ROOT, name)
         if os.path.exists(src):
             safety.assert_safe_reset_target(src)

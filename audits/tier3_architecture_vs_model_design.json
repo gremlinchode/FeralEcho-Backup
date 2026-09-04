@@ -1,0 +1,197 @@
+{
+  "doc_id": "tier3_architecture_vs_model_design",
+  "date": "2026-09-04",
+  "mission": "Design (not implement) the highest-information-gain Tier 3 experiment separating architectural contribution from underlying model capability.",
+  "status_at_time_of_writing": "RAW/PIPELINE/COUNCIL pilot at 22/45 candidates (a background batch continues unattended), classified AMBIGUOUS. No code created by this mission beyond this design pair.",
+  "evidence_matrix": [
+    {
+      "finding": "Self-edit targeting loop (shadow vs. empirical arbitration)",
+      "evidence": "103 real quality-tracked outcomes, mean delta +0.103 (t=1.65, not significant), lag-1 autocorrelation r=-0.145, 100% of tracked outcomes targeted 'coding' regardless of arbitration winner",
+      "confidence": "high",
+      "establishes": "a real, closed, restart-persistent targeting-adaptation loop (Level 3) exists",
+      "does_not_establish": "that changing targeting produces measurable quality improvement (Level 4); does not speak to architecture-vs-model capability at all -- this is a routing question, orthogonal to Tier 3's question"
+    },
+    {
+      "finding": "Council-rating cursor bug (learn_from_council_rating dormant)",
+      "evidence": "council_cursor.json position exceeds interaction_log.jsonl's real line count by ~21,800; council_ratings.jsonl frozen since ~2026-07-26",
+      "confidence": "high",
+      "establishes": "a real, wired, trust-gated training pathway has been silently inert for weeks",
+      "does_not_establish": "anything about architecture-vs-model capability -- a routing/training-signal question, not a generation-capability question"
+    },
+    {
+      "finding": "ToolManager (registration real, invocation absent)",
+      "evidence": "get_tool() has zero real call sites anywhere in the live codebase; list_tools() is real and injected into prompts",
+      "confidence": "high",
+      "establishes": "tool-use capability is fully unbuilt on the invocation side",
+      "does_not_establish": "anything about code-generation capability specifically -- Tier 3 as scoped (coding tasks) does not exercise tool use at all"
+    },
+    {
+      "finding": "echo_projects historical 0/61 end-to-end success",
+      "evidence": "79% of real historical cycles blocked at F1, remaining 21% (13/61) all failed F2, 0/61 net success",
+      "confidence": "high",
+      "establishes": "the MULTI-FILE generation pipeline, as historically exercised, has never produced a passing project",
+      "does_not_establish": "whether this reflects model capability or pipeline friction -- exactly the ambiguity Tier 3 exists to resolve, one domain up (single-function tasks) from where echo_projects operates (multi-file)"
+    },
+    {
+      "finding": "C1 behavioral persistence",
+      "evidence": "100% architectural reliability (state_existence/retrieval/exposure, n=9), 75% live compliance (n=4)",
+      "confidence": "medium (small N)",
+      "establishes": "persistent state CAN reliably reach a model's context and CAN influence output some of the time",
+      "does_not_establish": "anything about whether persistent state can rescue a model from a genuine capability failure -- C1's directive was a stylistic instruction, not a correctness-relevant one"
+    },
+    {
+      "finding": "Preference formation (P1.2)",
+      "evidence": "10/10 position-tracking not content-tracking, confabulation observed under pressure",
+      "confidence": "high",
+      "establishes": "a clean, real null for preference formation specifically",
+      "does_not_establish": "anything about coding-task capability -- a different capability domain entirely"
+    },
+    {
+      "finding": "Memory retrieval causal effect (Finding 76)",
+      "evidence": "n=30, personal task only, temp>0, effect indistinguishable from noise (p=0.48/0.37)",
+      "confidence": "medium (confounded by sampling noise, never re-run at temp=0)",
+      "establishes": "retrieval's behavioral effect on the ONE tested task type is not detectable with this design",
+      "does_not_establish": "that retrieval has no effect, nor anything about coding-task capability -- Tier 3 as scoped does not exercise memory retrieval (self-edit code generation does not read conversational memory)"
+    },
+    {
+      "finding": "RAW/PIPELINE/COUNCIL pilot (this investigation's own most recent work)",
+      "evidence": "22/45 candidates, condition pass rates A=71%/B=67%/C=83% at n=6-8 each, task_03 (RAW pass, PIPELINE+COUNCIL fail) and task_06 (RAW fail, PIPELINE+COUNCIL pass) show OPPOSITE directions in the same small dataset, model selection varies uncontrolled within conditions A/B across candidates",
+      "confidence": "medium -- real, directly observed, but explicitly underpowered and confounded",
+      "establishes": "no single condition dominates uniformly across even this small, easy-to-medium task sample; a genuine extraction-artifact and a genuine generation-truncation artifact were both found and fixed/disclosed mid-run",
+      "does_not_establish": "whether PIPELINE/COUNCIL's occasional wins reflect real architectural contribution (Level A-G) or simply more inference compute/attempts (H4) -- the pilot was never designed to hold total inference budget constant, which is exactly Tier 3's job"
+    },
+    {
+      "finding": "Ollama/infrastructure contention",
+      "evidence": "OLLAMA_NUM_PARALLEL confirmed unset; live model_guided_autonomous_loop directly observed competing for the same queue during the pilot; swap usage measured rising across 3 independent checkpoints (5.19GB->6.19GB->8.13GB); two full models observed resident simultaneously",
+      "confidence": "high -- directly measured, not inferred",
+      "establishes": "a real, demonstrated constraint on running experiments promptly on this shared, live machine",
+      "does_not_establish": "anything about Echo's own real-time task performance once a request is actually served -- a throughput/experimentation constraint, not (yet) shown to degrade individual response quality"
+    },
+    {
+      "finding": "Extraction bug + truncation bug (measurement gaps found this investigation)",
+      "evidence": "candidate_001 (original run) and candidate_019 (this continuation), both real, both precisely diagnosed and disclosed, both involving deepseek-r1:7b's verbose reasoning-then-code output style",
+      "confidence": "high",
+      "establishes": "naive instrumentation can manufacture a false model-ceiling signal; the corrected evaluator behaves honestly under both known failure modes (verified: every failing candidate's error is a real Python-level error on genuinely-extracted code, not a mis-extraction)",
+      "does_not_establish": "that no further, undiscovered instrumentation gaps exist -- narrowed, not closed"
+    }
+  ],
+  "remaining_uncertainties": [
+    "Whether any observed PIPELINE/COUNCIL advantage over RAW reflects real architectural structure (Levels A-G) or simply more total inference compute/attempts (H4) -- never tested with budget held constant",
+    "Whether an observed advantage, if real, generalizes to held-out tasks or is an artifact of the specific 15 frozen tasks",
+    "Whether model-selection variability within conditions A/B (choose_model()'s own live variation) is itself confounding every prior A-vs-B comparison",
+    "Whether Tier 3 (hard, historical-failure-seeded) tasks show a qualitatively different pattern than the Tier 1/2 tasks tested so far -- zero data exists on this yet",
+    "Whether fine-tuning before vs. after this experiment would change its interpretability"
+  ],
+  "hypotheses": {
+    "H1_architecture_contribution": "FeralEcho mechanisms produce a reproducible performance advantage over an appropriately matched base-model baseline, at EQUAL inference budget.",
+    "H2_model_ceiling": "The architecture cannot reliably overcome the underlying model's capability limitations, even when given equal or greater budget.",
+    "H3_measurement_limitation": "Existing metrics/evaluators fail to capture meaningful capability differences.",
+    "H4_orchestration_sampling_advantage": "FeralEcho improves performance primarily via more inference attempts/model diversity/selection, not via new capability per se -- a real, useful, but scientifically DIFFERENT claim from H1.",
+    "H5_infrastructure_ceiling": "The current M5/Ollama operating envelope prevents valid evaluation before the substantive comparison can even be completed."
+  },
+  "architectural_contribution_levels": {
+    "A_prompt_advantage": "Architecture provides a better prompt/context than a bare task description. PIPELINE's CODE_OUTPUT_RULES + current-file framing is a candidate instance; not yet isolated from other effects.",
+    "B_sampling_advantage": "Architecture gets multiple attempts and selects the best. Both PIPELINE (single retry on sandbox failure) and COUNCIL (N councillors) plausibly include this; never isolated from C/D/E in the existing pilot.",
+    "C_verification_advantage": "Architecture detects and corrects errors. F1 is a real verification step in PIPELINE, but is a SAFETY scanner (blocks unsafe operations), not a correctness verifier -- it cannot catch a logic bug like the ones already observed (candidate_005, candidate_007). Its contribution to CORRECTNESS is expected to be near-zero; this is a testable, falsifiable prediction, not an assumption.",
+    "D_decomposition_advantage": "Architecture breaks a difficult task into tractable subtasks. Not exercised by any of the three existing pilot conditions for single-function tasks; COUNCIL's synthesis step is aggregation, not decomposition, and this distinction should not be conflated.",
+    "E_memory_retrieval_advantage": "Architecture provides information unavailable to the base model. Not exercised by self-edit's code generation path (confirmed: generate_code_from_plan() does not call retrieve_relevant_memories()); COUNCIL's per-councillor calls also do not retrieve conversational memory for coding tasks. This level is NOT applicable to the coding domain as currently scoped -- stated explicitly rather than silently assumed relevant.",
+    "F_persistent_behavioral_adaptation": "Architecture changes future behavior across sessions. Not exercised by any of the three pilot conditions (each candidate is independent, no cross-candidate state). C1 is the only mechanism in this codebase demonstrating this level, and it is orthogonal to Tier 3's coding-capability question.",
+    "G_generalized_capability_improvement": "Improved performance on previously unseen tasks without task-specific engineering. This is the level Tier 3's held-out methodology (§13 of the MD) exists specifically to test -- the strongest, least-yet-demonstrated claim of the seven."
+  },
+  "capability_target_analysis": {
+    "domain_chosen": "coding, narrowed to Tier-3-style hard tasks specifically (not a new domain)",
+    "reasoning": "Objective evaluation, reproducible scoring, and zero infrastructure burden already exist and are proven (code_verification.py's real sandboxed execution, directly reused across 22 real candidates with zero evaluator ambiguity once the two disclosed bugs were fixed). Tier 1/2 tasks already tested show near-ceiling performance for most conditions (14/19 passed), providing low discriminating power -- the base-rate failure frequency needed to detect an architectural rescue effect is concentrated in harder tasks. Switching domains (e.g., to reasoning puzzles, factual QA, or a non-code domain) would require building new objective-evaluation infrastructure from scratch, directly violating the 'low infrastructure burden' and 'zero-cost' criteria for no demonstrated benefit over reusing the existing, proven, and already Tier-3-relevant infrastructure."
+  },
+  "matched_controls": {
+    "BASE_1": "Single model, single attempt, temperature=0 -- the floor, matches the original pilot's RAW condition exactly.",
+    "BASE_N_selfconsistency": "SAME single model, N independent attempts at temperature>0 (real diversity across attempts), then a SYNTHESIS call using the SAME model asking it to pick/reconcile the best answer among its own N attempts -- total inference calls = N+1, matching COUNCIL's real call budget (N councillors + 1 synthesis) with model DIVERSITY specifically removed as a variable while everything else (attempt count, synthesis step, total compute) stays equal.",
+    "ARCH_COUNCIL": "The real deliberate_and_learn() -- N different models + synthesis, same N+1 call budget as BASE_N.",
+    "ARCH_PIPELINE": "The real generate_code_from_plan() + F1, single generation call -- compared directly against BASE_1 (also a single call, same model where possible) to isolate prompt-framing (Level A) specifically, since PIPELINE's call budget is NOT larger than BASE_1's.",
+    "variables_held_constant_per_hypothesis": {
+      "for_H4_vs_H1_on_council": "total inference call count, per-call temperature policy, task text, verification/scoring method -- vary ONLY whether the N attempts come from one model (BASE_N) or genuinely different models (ARCH_COUNCIL)",
+      "for_level_A_isolation_on_pipeline": "model identity (same model in both arms where choose_model() allows pinning), single-call budget, task text -- vary ONLY the prompt framing (bare task vs. self-edit's real CODE_OUTPUT_RULES+file-context framing)"
+    },
+    "why_not_a_weaker_control": "A bare 'ask the model once' baseline (the original pilot's RAW) cannot distinguish H1 from H4 for COUNCIL, since COUNCIL's real budget is 4x RAW's -- any advantage could be pure compute. BASE_N_selfconsistency closes exactly this gap by giving BASE the identical budget and an identical-shaped (if lower-diversity) selection step."
+  },
+  "proposed_ablations": {
+    "included": ["BASE_1", "BASE_N_selfconsistency", "ARCH_PIPELINE", "ARCH_COUNCIL"],
+    "excluded_and_why": {
+      "without_memory": "self-edit code generation does not call retrieve_relevant_memories() at all (confirmed by source read) -- an ablation of a mechanism that isn't in the causal path for THIS domain provides zero information",
+      "without_reflection": "reflection_shard.py's generative loop reads only a signal string + past reflections, with no connection to code generation at all (confirmed this investigation) -- same reasoning as memory",
+      "without_retrieval": "identical reasoning to without_memory -- retrieval and memory are the same mechanism in this codebase",
+      "council_without_one_councillor": "would test council COMPOSITION sensitivity, a real but lower-priority question than the core diversity-vs-compute question BASE_N_selfconsistency already isolates; deferred, not included, to keep this a minimum causal experiment rather than a benchmark"
+    },
+    "justification": "the mission's own Eighth Task explicitly asks for the MINIMUM set that gives maximum information, not an exhaustive ablation grid -- four arms, directly motivated by the specific H1-vs-H4 and Level-A-isolation questions, is that minimum for the coding domain as scoped."
+  },
+  "infrastructure_control_plan": {
+    "no_pausing_of_live_server": "Per the mission's own explicit instruction and this investigation's own prior, disclosed decision -- the live run.py process will not be killed, signaled, or otherwise interrupted without explicit separate authorization.",
+    "no_parallelism_attempted": "OLLAMA_NUM_PARALLEL remains unset and will not be changed (a production configuration change, out of scope). All Tier 3 generation is sequential, one real model call in flight at a time from this experiment's own process.",
+    "batch_discipline": "Controlled batches (the pattern already proven working this investigation: an explicit --max-candidates-style cap per invocation, with resumability), not one long unmonitored run.",
+    "pre_batch_telemetry": "Before each batch: record ollama ps (model residency), vm.swapusage, and a timestamp -- repeating the exact checks already used to characterize the RAW/PIPELINE/COUNCIL pilot's own infrastructure section, so Tier 3's own contention level is comparably documented, not assumed identical.",
+    "model_pinning_for_BASE_arms": "choose_model()'s own live variability (already confirmed to select different models across candidates within a single run) will be neutralized for BASE_1/BASE_N/ARCH_PIPELINE by pinning an explicit model name at batch start (read once via choose_model(), then held fixed and passed explicitly rather than re-invoking choose_model() per candidate) -- a disclosed, deliberate deviation from the original pilot's design specifically to remove this known confound for Tier 3's stricter causal question.",
+    "thermal_runtime": "Not independently measurable with available tooling (pmset -g therm reported no active thermal warning in the prior investigation's hardware report); not re-checked as a dedicated Tier 3 control given no evidence so far it is a live factor."
+  },
+  "evaluator_validation_plan": {
+    "reuse_not_rebuild": "code_verification.verify_in_sandbox() is reused unmodified -- already proven discriminating correctly across 22 real candidates in the prior pilot.",
+    "extraction_pipeline": "The corrected clean_code() (self-edit's real helpers + the disclosed last-fenced-block fallback) is reused unmodified.",
+    "new_check_for_truncation": "Each candidate's raw response is additionally checked for a genuinely CLOSED final fenced block before scoring; a candidate whose only code-shaped text sits inside an unclosed fence is tagged GENERATION_TRUNCATED (a new, third failure class alongside TASK_LOGIC_FAILURE and INFRASTRUCTURE_FAILURE) rather than silently folded into either -- directly closing the gap disclosed in the prior report's C.2.",
+    "independent_spot_check": "A random 20% sample of PASS and FAIL verdicts will be manually re-read (by a human or a separate review pass) against the raw candidate text before the study's own final report is written, specifically to catch any THIRD, still-undiscovered instrumentation gap before it could bias the held-out result -- a direct, concrete response to H3's own standing concern."
+  },
+  "blind_held_out_methodology": {
+    "development_set": "2 tasks, deliberately reused from the existing frozen suite's own Tier 3 (task_11: strip-leading-prose, seeded from self-edit's own retired prompt family; task_12: fix-off-by-one, seeded from a real historical bug shape) -- used only to confirm each of the 4 arms produces a non-degenerate, sane result before the held-out run, NEVER used to tune the arms' own prompts/parameters.",
+    "held_out_set": "8 genuinely new tasks, written for this Tier 3 study specifically, not present in the original 15-task suite, spanning the same difficulty/category spread the original Tier 3 design intended (bug-fixing, stateful/concurrency reasoning, algorithmic edge cases, refactoring) -- frozen and hashed BEFORE any arm is run on them, mirroring the original pilot's own freeze discipline exactly.",
+    "freeze_discipline": "The held-out set's hash is computed and recorded before generation begins, exactly as the original 15-task suite was frozen; no held-out task may be added, removed, or edited after any arm has been run on any of them.",
+    "why_this_split": "Per the mission's Sixth/Seventh Task -- if the four arms are tuned even implicitly (e.g., by iterating on ARCH_PIPELINE's exact retry count while watching development-task scores), any resulting advantage could be development-set-specific optimization rather than genuine, generalized capability (Level G). The held-out set is the only set whose result is treated as the study's real verdict."
+  },
+  "statistical_plan": {
+    "unit_of_analysis": "one (task, arm) pair per observation; primary comparison is PAIRED across arms on the same held-out task set (each held-out task is attempted by all 4 arms), not independent samples -- enabling McNemar's test (paired binary outcomes) rather than a two-proportion z-test, which is a real, meaningful power improvement at small N over the prior pilot's own unpaired approach.",
+    "primary_endpoint": "binary PASS/FAIL via real sandboxed execution on the held-out set only.",
+    "secondary_endpoints": ["generation_time/wall_clock per arm", "failure_class distribution (TASK_LOGIC_FAILURE vs. GENERATION_TRUNCATED vs. INFRASTRUCTURE_FAILURE)", "development-set pass rate (sanity check only, never the primary verdict)"],
+    "effect_size_of_interest": "a large, pre-specified 25-30 percentage-point pass-rate difference between ARCH_COUNCIL and BASE_N_selfconsistency (the H1-vs-H4 comparison) -- chosen consistent with this investigation's own prior power calculations (a smaller, e.g. 10pp, difference was already shown to require an infeasibly large N for this system's real throughput).",
+    "pilot_sample_size": "8 held-out tasks x 4 arms = 32 trials -- a real, executable pilot within this machine's demonstrated throughput, explicitly NOT claimed as confirmatory.",
+    "confirmatory_sample_size": "computed via the same two-proportion/McNemar power approach already used in this investigation: detecting a 25pp paired difference at alpha=0.05/power=0.80 requires approximately 25-30 held-out tasks per arm-pair comparison (paired designs need meaningfully fewer than the ~50-70/arm the prior UNpaired pilot design required for a comparable effect size) -- stated as an estimate to be refined once real pilot-stage variance is observed, not treated as exact in advance.",
+    "repeated_attempts_handling": "BASE_N's own N internal attempts are NOT separately analyzed as independent data points -- only the arm's final, self-selected answer counts as one observation, preserving the paired, one-observation-per-(task,arm) structure.",
+    "infrastructure_failure_handling": "INFRASTRUCTURE_FAILURE-classified trials are excluded from the primary endpoint's denominator and reported separately (rate, not blended into pass/fail) -- never treated as a task failure.",
+    "evaluator_failure_handling": "any candidate flagged by the independent spot-check (see evaluator_validation_plan) as a scoring error is corrected before final analysis, with the correction and its justification disclosed, not silently applied.",
+    "stopping_rule": "pre-registered: run the full pilot (32 trials) once, analyze, and STOP -- do not add held-out tasks or re-run failed trials after seeing results, and do not redefine the primary endpoint after inspecting the pilot's own outcome (the exact p-hacking risk the mission's Twelfth Task names explicitly)."
+  },
+  "fine_tuning_timing_analysis": {
+    "conclusion": "Fine-tuning should occur AFTER Tier 3, and this is not merely deference to the mission's own stated default -- it follows from the causal logic of the experiment itself.",
+    "reasoning": [
+      "Fine-tuning before Tier 3 changes the very quantity ('the underlying model's capability') the experiment is designed to hold fixed while varying architecture -- running Tier 3 post-tuning would measure a different model than any of this investigation's prior work characterized, breaking comparability with the 22 (and growing) RAW/PIPELINE/COUNCIL candidates already collected.",
+      "If fine-tuning RAISES the base model's ceiling on tasks where PIPELINE/COUNCIL previously showed an advantage, any apparent architecture contribution could vanish for a confounded reason (the model no longer needs the architecture's help) that would be misread as 'architecture doesn't matter' rather than the true cause ('the model got better').",
+      "If fine-tuning uses Echo's own generated interactions/reflections as training data (a plausible future direction, not proposed here), it risks baking in exactly the kind of errors this investigation has spent its effort finding (the LRU eviction bug, the flatten-one-level failures) -- contaminating the baseline with the very failures Tier 3 exists to characterize, before they've even been fully characterized.",
+      "Fine-tuning could also, in principle, AMPLIFY an architecture effect (e.g., if tuned on data that makes the model rely more heavily on structured prompting) -- this is a real possible benefit, but running Tier 3 first is what would let a future decision about fine-tuning be made from a real, uncontaminated understanding of where the current baseline's genuine gaps are, rather than guessing."
+    ],
+    "verdict": "AGREES with the mission's stated default, on independently-derived scientific grounds, not merely accepted."
+  },
+  "ranked_candidate_designs": [
+    {
+      "rank": 1, "name": "4-arm budget-matched design on held-out hard tasks (SELECTED)",
+      "causal_clarity": "high", "h1_h2_h4_separation": "high (BASE_N vs ARCH_COUNCIL at equal budget directly isolates diversity from compute)",
+      "h3_detection": "medium-high (evaluator validation plan + spot-check)", "h5_detection": "medium (infrastructure telemetry captured but not the primary endpoint)",
+      "generalization_value": "high (held-out set is the actual verdict)", "sample_efficiency": "high (paired design)",
+      "infrastructure_burden": "medium (32 real trials, sequential)", "evaluator_reliability": "high (reused, already-proven)",
+      "reproducibility": "high (frozen tasks, pinned models, temp=0 where applicable)", "zero_cost": "yes", "implementation_effort": "low-medium (reuses nearly all existing pilot infrastructure)", "confounding_risk": "low (explicitly designed to remove the two biggest known confounds: budget mismatch and uncontrolled model selection)"
+    },
+    {
+      "rank": 2, "name": "PIPELINE-vs-BASE-1-only (Level A isolation alone)",
+      "notes": "cheaper and simpler, but does not address the diversity-vs-compute question at all -- answers a real but narrower question than the mission's central one"
+    },
+    {
+      "rank": 3, "name": "Full ablation grid (memory/reflection/retrieval/council-composition)",
+      "notes": "higher effort, and three of the four proposed ablations were shown (evidence_matrix) to target mechanisms not in the coding domain's causal path at all -- low marginal information for high cost"
+    },
+    {
+      "rank": 4, "name": "Cross-domain (non-coding) Tier 3",
+      "notes": "highest engineering effort (new evaluator infrastructure required from scratch), no demonstrated benefit over reusing proven coding infrastructure; deferred, not rejected outright, as a possible FUTURE direction once the coding-domain question is resolved"
+    }
+  ],
+  "go_no_go_criteria": {
+    "GO_on_H1": "ARCH_COUNCIL beats BASE_N_selfconsistency by >=25pp on the held-out set, AND the same direction/magnitude is at least directionally consistent on the development set (not a reversal).",
+    "NO_GO_on_H1_supports_H4": "ARCH_COUNCIL and BASE_N_selfconsistency are statistically indistinguishable (or BASE_N wins) on the held-out set -- any prior COUNCIL advantage was compute/diversity-of-attempts, not structure.",
+    "GO_on_Level_A": "ARCH_PIPELINE beats BASE_1 by a large margin at IDENTICAL single-call budget -- real evidence self-edit's own prompt framing helps.",
+    "AMBIGUOUS": "held-out n=8/arm is insufficient to resolve the comparison at the pre-specified effect size (the honest, likely outcome at pilot scale, per this investigation's own repeated experience) -- triggers the confirmatory sample size, not a forced conclusion.",
+    "H5_flag": "if INFRASTRUCTURE_FAILURE-classified trials exceed 15% of attempted trials, the whole result is reported as inconclusive-pending-infrastructure regardless of the pass-rate numbers, per this investigation's own repeated, hard-won lesson about not letting infrastructure noise masquerade as a substantive finding."
+  }
+}

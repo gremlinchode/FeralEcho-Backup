@@ -1,0 +1,232 @@
+{
+  "mission": "tier3_final_execution_gate",
+  "constraints_honored": {
+    "held_out_experiment_run": false,
+    "held_out_task_suite_modified": false,
+    "held_out_task_content_inspected": false,
+    "unrelated_production_changes_made": false
+  },
+  "step1_locked_experiment_contract": {
+    "BASE_1": {
+      "generative_calls": 1,
+      "real_ollama_calls": 1,
+      "max_tokens": 2048,
+      "model_identity": "pinned model, verified real",
+      "temperature": 0.0,
+      "prompt_context": "bare task prompt",
+      "synthesis": "none",
+      "retry": "none",
+      "memory_rag_access": "none",
+      "riverbrain_access": "none",
+      "production_write_behavior": "none reachable",
+      "objective_scoring": "shared verify_in_sandbox() via objective_verify(), blind to arm"
+    },
+    "BASE_N": {
+      "generative_calls": 4,
+      "real_ollama_calls": 4,
+      "max_tokens": 2048,
+      "model_identity": "pinned model, reused across all 4 calls",
+      "temperature": "jittered per attempt (recorded in call_log), 0.3 for synthesis",
+      "prompt_context": "bare task prompt x3, then own attempts synthesized via neutral harness-only template",
+      "synthesis": "same-model, neutral template",
+      "retry": "none (fixed-N attempt loop, not retry-on-failure)",
+      "memory_rag_access": "none",
+      "riverbrain_access": "none",
+      "production_write_behavior": "none reachable",
+      "objective_scoring": "shared verify_in_sandbox() via objective_verify(), blind to arm"
+    },
+    "ARCH_PIPELINE_ISOLATED": {
+      "generative_calls": 1,
+      "real_ollama_calls": 1,
+      "max_tokens": 2048,
+      "model_identity": "pinned model, verified real (not cosmetic, per the isolation fix)",
+      "temperature": 0.0,
+      "prompt_context": "CODE_OUTPUT_RULES + live self_edit_generated.py contents + task (one intentional difference from BASE_1)",
+      "synthesis": "none",
+      "retry": "none",
+      "memory_rag_access": "none",
+      "riverbrain_access": "none -- verified 0 side-effect attempts, not merely blocked",
+      "production_write_behavior": "none reachable",
+      "objective_scoring": "shared verify_in_sandbox() via objective_verify(), blind to arm"
+    },
+    "ARCH_COUNCIL": {
+      "generative_calls": 4,
+      "real_ollama_calls": 5,
+      "real_ollama_calls_note": "5, not 4 -- includes 1 real, previously-undisclosed warm-up call to the synthesis model (river_deliberation._warm_up_echo(), production code, untouched), caught live during this gate's own verification. Disclosed, not eliminated. total_calls field kept at 4 (generative/comparable count) for continuity with BASE_N; total_real_ollama_calls_including_warmup=5 added as a new, explicit field.",
+      "max_tokens": "2048 for the 4 generative calls; the warm-up call has NO max_tokens limit set in production code (real, disclosed asymmetry)",
+      "model_identity": "3 real, diverse models selected live by production's own _select_council()/rank_models(), synthesized by echo:latest",
+      "temperature": "governed entirely by production's own internal jitter logic -- NOT captured by the harness (intentional, disclosed)",
+      "prompt_context": "production's real council system-prompt assembly",
+      "synthesis": "real, heterogeneous",
+      "retry": "none reachable from this harness",
+      "memory_rag_access": "none",
+      "riverbrain_access": "real attempts, correctly intercepted by install_isolation()'s proxy",
+      "production_write_behavior": "real attempts at log_interaction/save_reflection/RiverBrain learn()/save(), all intercepted -- confirmed via side_effects_detected advancing by exactly 4 per real execution",
+      "objective_scoring": "shared verify_in_sandbox() via objective_verify(), blind to arm"
+    },
+    "preserved_boundaries_verbatim": [
+      "ARCH_PIPELINE_ISOLATED tests the isolated self-edit generation mechanism/framing, not Echo's literal current production self-edit call path.",
+      "This four-arm design cannot separate heterogeneous model diversity from Council-specific orchestration as competing explanations for a Council win."
+    ]
+  },
+  "step2_held_out_integrity": {
+    "file_exists": true,
+    "file_size_bytes": 11379,
+    "expected_hash": "2d78cbdb3657755f65779d010590ae348ded22d6d32d300bddacfd0aaa0e912a",
+    "live_hash_match_confirmed_twice": true,
+    "heldout_results_file_exists": false,
+    "premature_task_content_references_found": 0
+  },
+  "step3_window_telemetry": {
+    "capture_1": {
+      "ollama_ps_resident_models": [
+        "qwen2.5-coder:7b (5.0GB)",
+        "echo:latest (5.5GB)"
+      ],
+      "load_avg": [
+        2.64,
+        2.24,
+        1.85
+      ],
+      "swap_used_mb": 4557.38,
+      "swap_total_mb": 5120.0,
+      "concurrent_autonomous_deliberation_observed": true,
+      "concurrent_loops": [
+        "model_guided_autonomous_loop",
+        "EchoProjectsAutonomyWorker"
+      ],
+      "direct_effect_evidence": "verify_arch_pipeline_isolation.py (2 real live calls) timed out at 120s and had to be re-run in the background"
+    },
+    "capture_2": {
+      "ollama_ps_resident_models": [
+        "echo:latest (5.7GB)"
+      ],
+      "load_avg": [
+        1.75,
+        1.86,
+        1.78
+      ],
+      "swap_used_mb": 5220.12,
+      "swap_total_mb": 6144.0,
+      "direct_effect_evidence": "a real, deliberate live ARCH_COUNCIL test call took 206.83s, within the range of contended (not clearly uncontended) historical timings"
+    },
+    "window_status": "NOT_CLEAR",
+    "window_status_note": "NOT_CLEAR at capture_1; borderline/improving at capture_2 but not re-confirmed against the watchdog log for renewed concurrent-loop activity -- this report's own snapshots are not treated as sufficient clearance for a future run"
+  },
+  "step4_low_contention_threshold": {
+    "definition": "reproducible measurement window, not zero activity",
+    "clear_criteria": [
+      "at most 1 model resident in ollama ps",
+      "no two autonomous loops observed issuing real council/deliberation calls within the same ~2-minute window in the live watchdog log",
+      "load average (1-minute) at or below ~2.0",
+      "swap usage not pinned near its own total"
+    ],
+    "activity_that_can_coexist": [
+      "guardian_loop heartbeat",
+      "crash-avoidance/liveness collectors",
+      "occasional single-model dashboard polling"
+    ],
+    "activity_that_cannot_coexist": "two or more concurrent real council/deliberation cycles -- directly observed, not hypothetical"
+  },
+  "step5_bundled_production_changes": {
+    "self_edit_manager_py": "untouched, mtime predates this thread",
+    "echo_model_orchestrator_py": "untouched, mtime predates this thread's Tier-3 work",
+    "river_deliberation_py": "untouched, mtime predates this thread's Tier-3 work",
+    "production_memory_systems": "untouched",
+    "production_learning_systems": "untouched",
+    "autonomous_loop_implementations": "untouched -- observed activity in step3 is real, unmodified production behavior",
+    "files_changed_by_this_gate": [
+      "scripts/run_tier3_apparatus.py",
+      "scripts/verify_tier3_truncation_repair.py",
+      "scripts/verify_tier3_apparatus_readiness_audit.py"
+    ],
+    "preexisting_unrelated_app_changes_explained": "from earlier, separate, already-completed missions (C1/behavioral-persistence, preference-provenance) and the live production self-edit loop's own real writes -- not touched by this gate"
+  },
+  "step6_apparatus_reverification": {
+    "verify_tier3_truncation_repair": {
+      "total": 23,
+      "passed": 23,
+      "note": "fixed a stale arm-name reference during this gate"
+    },
+    "verify_tier3_apparatus_readiness_audit": {
+      "verified": 30,
+      "open": 1,
+      "failed": 0,
+      "total": 31,
+      "note": "fixed a stale held-out-randomization check during this gate"
+    },
+    "verify_arch_pipeline_isolation": {
+      "verified": 19,
+      "open": 0,
+      "failed": 0,
+      "total": 19
+    },
+    "findings_caught_and_fixed_this_gate": [
+      "stale ARCH_PIPELINE arm-name reference broke verify_tier3_truncation_repair.py's Test G -- fixed",
+      "stale held-out-randomization check in verify_tier3_apparatus_readiness_audit.py -- fixed to check the real, current suite",
+      "ARCH_COUNCIL makes a real, previously-undisclosed 5th call (a warm-up ping, production code, content always discarded) -- disclosed via new harness fields (total_real_ollama_calls_including_warmup, warmup_model, corrected councillor_models/synthesis_model slicing), not eliminated (production file not touched)"
+    ]
+  },
+  "step7_randomization_verification": {
+    "distinct_orders_among_8_held_out_tasks": 7,
+    "deterministic_given_seed_and_task_id": true,
+    "seed_recorded": 20260904,
+    "order_inferable_from_task_numbering": false,
+    "first_arm_per_task_in_task_id_order": [
+      "ARCH_COUNCIL",
+      "ARCH_PIPELINE_ISOLATED",
+      "ARCH_PIPELINE_ISOLATED",
+      "ARCH_PIPELINE_ISOLATED",
+      "BASE_1",
+      "BASE_N",
+      "BASE_N",
+      "ARCH_PIPELINE_ISOLATED"
+    ]
+  },
+  "step8_logging_completeness": {
+    "task_id": "present (task_id)",
+    "condition_arm": "present (arm)",
+    "arm_order": "present (arm_order)",
+    "models": "present (model_used + new ARCH_COUNCIL fields: real_calls_made/councillor_models/synthesis_model/warmup_model)",
+    "call_count": "present (total_calls + new total_real_ollama_calls_including_warmup for ARCH_COUNCIL)",
+    "max_tokens": "present (requested_max_tokens_per_call)",
+    "temperature": "present for BASE_1/ARCH_PIPELINE_ISOLATED (added this gate) and BASE_N (call_log); NOT captured for ARCH_COUNCIL (disclosed, accepted limitation -- would require instrumenting river_deliberation.py, out of scope)",
+    "generation_timing": "present (generation_time + BASE_N call_log per-attempt timings)",
+    "truncation_status": "present (truncation_evidence_type)",
+    "infrastructure_status": "present (classification)",
+    "candidate_extraction_status": "present (raw_response + candidate_code both stored)",
+    "sandbox_result": "present (ran_ok, output_tail, passed, verification_time)",
+    "failure_classification": "present (classification)",
+    "trace_correlation_id": "present (call_id, harness-local); production trace_id is N/A for this fully-isolated harness",
+    "held_out_task_text_logged_prematurely": false
+  },
+  "step9_stop_conditions": [
+    "unexpected model selection",
+    "unexpected call count",
+    "hidden retry",
+    "truncation classification ambiguity (NO_GROUND_TRUTH_AVAILABLE occurring at all, now anomalous)",
+    "infrastructure failure exceeding the pre-registered 15% threshold (H5 override rule)",
+    "Ollama contention beyond the Step 4 threshold detected mid-run",
+    "unexpected production side effect (side_effects_detected advancing for any arm other than ARCH_COUNCIL, or by any amount other than exactly 4)",
+    "task-suite hash mismatch (auto-checked by load_and_verify_held_out_suite())",
+    "candidate contamination",
+    "sandbox malfunction"
+  ],
+  "stop_condition_policy": "preserve all collected data untouched; do not retroactively fix-and-continue; require a fresh explicit decision before resuming",
+  "final_verdict": "CLEARED_WITH_EXPLICIT_CONDITIONS",
+  "explicit_conditions": [
+    "Capture fresh telemetry immediately before generating a single held-out candidate -- do not rely on this report's own snapshots",
+    "Re-run development-sanity confirmation if any further code change occurs between this gate and execution",
+    "Enforce every stop condition live, halt immediately on first trigger, preserve all data",
+    "Any report of results must state both preserved boundaries and the ARCH_COUNCIL warm-up disclosure verbatim",
+    "No production change, autonomy repair, or fine-tuning should be bundled into or precede the held-out run"
+  ],
+  "next_mission_protocol_not_executed": [
+    "Capture and evaluate fresh telemetry (ollama ps, uptime, swapusage, watchdog tail) against the Step 4 threshold",
+    "Re-confirm held-out suite hash one final time",
+    "Execute: python3 scripts/run_tier3_apparatus.py --heldout",
+    "Monitor for every stop condition throughout; halt on any trigger without resuming without a fresh decision",
+    "On clean completion, score/spot-check/unblind per audits/current_capability_synthesis.md's own \u00a711 protocol, reporting both boundary statements verbatim"
+  ],
+  "held_out_experiment_executed_by_this_mission": false
+}

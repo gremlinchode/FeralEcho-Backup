@@ -1,0 +1,6 @@
+2d78cbdb3657755f65779d010590ae348ded22d6d32d300bddacfd0aaa0e912a  audits/tier3_apparatus/held_out_task_suite.json
+frozen_at: 2026-09-04T05:10:00Z
+frozen_by: current_capability_synthesis NEXT MISSION, held-out task authoring step
+verified_before_freeze: all 8 reference solutions pass their own test_code; both bug-fixing tasks'
+buggy originals confirmed to genuinely fail their own tests; zero overlap with
+audits/capability_pilot/task_suite.json (task_ids and prompts both checked)

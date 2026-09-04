@@ -1,0 +1,436 @@
+{
+  "mission": "tier3_truncation_repair_verification",
+  "held_out_protection": {
+    "held_out_manifest_exists": false,
+    "held_out_manifest_path_checked": "audits/tier3_apparatus/held_out_task_suite.json",
+    "held_out_task_executed": false,
+    "frozen_dev_task_suite_hash": "6440ed174482a2d5bb43bdd03bfc33c73c66b492cb74f465e2674e8a8eb8937d",
+    "frozen_dev_task_suite_hash_unchanged": true
+  },
+  "production_files_modified": [],
+  "harness_file_changed": "scripts/run_tier3_apparatus.py",
+  "new_verification_script": "scripts/verify_tier3_truncation_repair.py",
+  "sanity_process": {
+    "pid": 52989,
+    "final_status": "completed and exited on its own (natural termination, not a while-True daemon) -- observed during this mission, not caused by it. Never restarted, killed, or otherwise touched.",
+    "restarted_by_this_mission": false,
+    "candidate_count_at_prior_mission_end": 3,
+    "candidate_count_final": 8,
+    "planned_candidate_count": 8,
+    "note": "This process ran its own already-loaded, PRE-REPAIR copy of run_tier3_apparatus.py from memory for its entire lifetime. None of the repairs in this report retroactively apply to any of its 8 records. Cited here for transparency and because BASE_N completing for real (twice) closes a gap the prior mission's verdict named -- never as evidence of this repair's correctness, which rests entirely on the synthetic test suite.",
+    "records_produced": [
+      {
+        "task_id": "task_11",
+        "arm": "ARCH_PIPELINE",
+        "seed": 20260904,
+        "arm_order": [
+          "ARCH_PIPELINE",
+          "ARCH_COUNCIL",
+          "BASE_N",
+          "BASE_1"
+        ],
+        "timestamp": 1788494887.358488,
+        "candidate_code": "import re\n\ndef strip_leading_prose(text: str) -> str:\n    pattern = r'^[^#;=\\(\\s]+'\n    match = re.search(pattern, text)\n    if match:\n        return text[match.end():]\n    else:\n        return text",
+        "model_used": "qwen2.5-coder:7b",
+        "total_calls": 1,
+        "generation_time": 208.16,
+        "f1_passed": true,
+        "f1_detail": null,
+        "requested_max_tokens_per_call": 2048,
+        "ran_ok": false,
+        "output_tail": "Traceback (most recent call last):\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/safe_exec_wrapper.py\", line 368, in <module>\n    spec.loader.exec_module(m)\n  File \"<frozen importlib._bootstrap_external>\", line 999, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/echo_sandbox_run_n85xfise/_script.py\", line 12, in <module>\n    assert strip_leading_prose('Here is the code:\\ndef foo():\\n    return 1') == 'def foo():\\n    return 1'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError",
+        "passed": false,
+        "verification_time": 0.06,
+        "classification": "TASK_LOGIC_FAILURE",
+        "side_effects_so_far": 9
+      },
+      {
+        "task_id": "task_11",
+        "arm": "ARCH_COUNCIL",
+        "seed": 20260904,
+        "arm_order": [
+          "ARCH_PIPELINE",
+          "ARCH_COUNCIL",
+          "BASE_N",
+          "BASE_1"
+        ],
+        "timestamp": 1788495095.583906,
+        "raw_response": "```\nimport re\n\ndef strip_leading_prose(text: str) -> str:\n    code_start = re.search(r'\\b(def |class |import |\\#|[a-zA-Z_]\\w*\\s*=\\s*)', text, re.MULTILINE)\n    if code_start:\n        return text[code_start.start():]\n    else:\n        return ''\n```",
+        "candidate_code": "import re\n\ndef strip_leading_prose(text: str) -> str:\n    code_start = re.search(r'\\b(def |class |import |\\#|[a-zA-Z_]\\w*\\s*=\\s*)', text, re.MULTILINE)\n    if code_start:\n        return text[code_start.start():]\n    else:\n        return ''",
+        "model_used": "council_synthesis",
+        "total_calls": 4,
+        "generation_time": 451.2,
+        "requested_max_tokens_per_call": 2048,
+        "ran_ok": true,
+        "output_tail": "ALL_TESTS_PASSED",
+        "passed": true,
+        "verification_time": 0.09,
+        "classification": "PASS",
+        "side_effects_so_far": 13
+      },
+      {
+        "task_id": "task_11",
+        "arm": "BASE_N",
+        "seed": 20260904,
+        "arm_order": [
+          "ARCH_PIPELINE",
+          "ARCH_COUNCIL",
+          "BASE_N",
+          "BASE_1"
+        ],
+        "timestamp": 1788495546.879725,
+        "raw_response": "```python\nimport re\n\ndef strip_leading_prose(text: str) -> str:\n    pattern = r'^\\s*[^#]([^\\n]*\\n)*'\n    return re.sub(pattern, '', text, count=1)\n```",
+        "candidate_code": "import re\n\ndef strip_leading_prose(text: str) -> str:\n    pattern = r'^\\s*[^#]([^\\n]*\\n)*'\n    return re.sub(pattern, '', text, count=1)",
+        "model_used": "qwen2.5-coder:7b",
+        "n_attempts": 3,
+        "total_calls": 4,
+        "call_log": [
+          {
+            "call": "attempt_1",
+            "model": "qwen2.5-coder:7b",
+            "temperature": 0.55,
+            "requested_max_tokens": 2048,
+            "generation_time": 88.08
+          },
+          {
+            "call": "attempt_2",
+            "model": "qwen2.5-coder:7b",
+            "temperature": 0.7,
+            "requested_max_tokens": 2048,
+            "generation_time": 37.83
+          },
+          {
+            "call": "attempt_3",
+            "model": "qwen2.5-coder:7b",
+            "temperature": 0.85,
+            "requested_max_tokens": 2048,
+            "generation_time": 16.71
+          },
+          {
+            "call": "synthesis",
+            "model": "qwen2.5-coder:7b",
+            "temperature": 0.3,
+            "requested_max_tokens": 2048,
+            "generation_time": 66.23
+          }
+        ],
+        "requested_max_tokens_per_call": 2048,
+        "ran_ok": false,
+        "output_tail": "Traceback (most recent call last):\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/safe_exec_wrapper.py\", line 368, in <module>\n    spec.loader.exec_module(m)\n  File \"<frozen importlib._bootstrap_external>\", line 999, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/echo_sandbox_run_o9t1a1ri/_script.py\", line 8, in <module>\n    assert strip_leading_prose('Here is the code:\\ndef foo():\\n    return 1') == 'def foo():\\n    return 1'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError",
+        "passed": false,
+        "verification_time": 0.06,
+        "classification": "TASK_LOGIC_FAILURE",
+        "side_effects_so_far": 13
+      },
+      {
+        "task_id": "task_11",
+        "arm": "BASE_1",
+        "seed": 20260904,
+        "arm_order": [
+          "ARCH_PIPELINE",
+          "ARCH_COUNCIL",
+          "BASE_N",
+          "BASE_1"
+        ],
+        "timestamp": 1788495755.784835,
+        "raw_response": "```python\nimport re\n\ndef strip_leading_prose(text: str) -> str:\n    # Regular expression to match leading non-code prose\n    pattern = r'^[^\\n]*\\n'\n    \n    # Remove leading prose using regex\n    code_only = re.sub(pattern, '', text)\n    \n    return code_only\n```",
+        "candidate_code": "import re\n\ndef strip_leading_prose(text: str) -> str:\n    # Regular expression to match leading non-code prose\n    pattern = r'^[^\\n]*\\n'\n    \n    # Remove leading prose using regex\n    code_only = re.sub(pattern, '', text)\n    \n    return code_only",
+        "model_used": "qwen2.5-coder:7b",
+        "total_calls": 1,
+        "generation_time": 227.7,
+        "requested_max_tokens_per_call": 2048,
+        "ran_ok": false,
+        "output_tail": "Traceback (most recent call last):\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/safe_exec_wrapper.py\", line 368, in <module>\n    spec.loader.exec_module(m)\n  File \"<frozen importlib._bootstrap_external>\", line 999, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/echo_sandbox_run_y4tyqnos/_script.py\", line 14, in <module>\n    assert strip_leading_prose('def foo():\\n    return 1') == 'def foo():\\n    return 1'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError",
+        "passed": false,
+        "verification_time": 0.11,
+        "classification": "TASK_LOGIC_FAILURE",
+        "side_effects_so_far": 13
+      },
+      {
+        "task_id": "task_12",
+        "arm": "ARCH_COUNCIL",
+        "seed": 20260904,
+        "arm_order": [
+          "ARCH_COUNCIL",
+          "BASE_1",
+          "BASE_N",
+          "ARCH_PIPELINE"
+        ],
+        "timestamp": 1788495983.60222,
+        "raw_response": "```\ndef binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid\n    return -1",
+        "candidate_code": "def binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid\n    return -1",
+        "model_used": "council_synthesis",
+        "total_calls": 4,
+        "generation_time": 195.82,
+        "requested_max_tokens_per_call": 2048,
+        "ran_ok": false,
+        "output_tail": "Timed out after 30s",
+        "passed": false,
+        "verification_time": 30.03,
+        "classification": "GENERATION_TRUNCATED",
+        "side_effects_so_far": 17
+      },
+      {
+        "task_id": "task_12",
+        "arm": "BASE_1",
+        "seed": 20260904,
+        "arm_order": [
+          "ARCH_COUNCIL",
+          "BASE_1",
+          "BASE_N",
+          "ARCH_PIPELINE"
+        ],
+        "timestamp": 1788496209.4532979,
+        "raw_response": "```python\ndef binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1\n```",
+        "candidate_code": "def binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1",
+        "model_used": "qwen2.5-coder:7b",
+        "total_calls": 1,
+        "generation_time": 98.1,
+        "requested_max_tokens_per_call": 2048,
+        "ran_ok": true,
+        "output_tail": "ALL_TESTS_PASSED",
+        "passed": true,
+        "verification_time": 0.06,
+        "classification": "PASS",
+        "side_effects_so_far": 17
+      },
+      {
+        "task_id": "task_12",
+        "arm": "BASE_N",
+        "seed": 20260904,
+        "arm_order": [
+          "ARCH_COUNCIL",
+          "BASE_1",
+          "BASE_N",
+          "ARCH_PIPELINE"
+        ],
+        "timestamp": 1788496307.621866,
+        "raw_response": "```python\ndef binary_search(arr, target):\n    low, high = 0, len(arr)\n    while low < high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid\n    return -1\n```",
+        "candidate_code": "def binary_search(arr, target):\n    low, high = 0, len(arr)\n    while low < high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid\n    return -1",
+        "model_used": "qwen2.5-coder:7b",
+        "n_attempts": 3,
+        "total_calls": 4,
+        "call_log": [
+          {
+            "call": "attempt_1",
+            "model": "qwen2.5-coder:7b",
+            "temperature": 0.55,
+            "requested_max_tokens": 2048,
+            "generation_time": 29.94
+          },
+          {
+            "call": "attempt_2",
+            "model": "qwen2.5-coder:7b",
+            "temperature": 0.7,
+            "requested_max_tokens": 2048,
+            "generation_time": 8.09
+          },
+          {
+            "call": "attempt_3",
+            "model": "qwen2.5-coder:7b",
+            "temperature": 0.85,
+            "requested_max_tokens": 2048,
+            "generation_time": 7.57
+          },
+          {
+            "call": "synthesis",
+            "model": "qwen2.5-coder:7b",
+            "temperature": 0.3,
+            "requested_max_tokens": 2048,
+            "generation_time": 9.61
+          }
+        ],
+        "requested_max_tokens_per_call": 2048,
+        "ran_ok": true,
+        "output_tail": "ALL_TESTS_PASSED",
+        "passed": true,
+        "verification_time": 0.05,
+        "classification": "PASS",
+        "side_effects_so_far": 17
+      },
+      {
+        "task_id": "task_12",
+        "arm": "ARCH_PIPELINE",
+        "seed": 20260904,
+        "arm_order": [
+          "ARCH_COUNCIL",
+          "BASE_1",
+          "BASE_N",
+          "ARCH_PIPELINE"
+        ],
+        "timestamp": 1788496362.899176,
+        "candidate_code": "import logging\n\ndef binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1",
+        "model_used": "qwen2.5-coder:7b",
+        "total_calls": 1,
+        "generation_time": 76.66,
+        "f1_passed": true,
+        "f1_detail": null,
+        "requested_max_tokens_per_call": 2048,
+        "ran_ok": true,
+        "output_tail": "ALL_TESTS_PASSED",
+        "passed": true,
+        "verification_time": 0.05,
+        "classification": "PASS",
+        "side_effects_so_far": 26
+      }
+    ]
+  },
+  "defect": {
+    "original_mechanism": "classify_result() read a single shared, unscoped, time-windowed list (_truncation_events) via recent[-1] -- 'whichever event is most recent, from any arm/task'.",
+    "safe_by_accident_for": [
+      "BASE_1",
+      "BASE_N",
+      "ARCH_COUNCIL"
+    ],
+    "unsafe_for": "ARCH_PIPELINE",
+    "why_unsafe_for_pipeline": "ARCH_PIPELINE's real call path (generate_code_from_plan() -> echo_query() -> echo_model_orchestrator.ollama_query()) bypasses app.ollama_handler.stream_query_ollama() -- and therefore the capture point -- entirely, so it never appends an event of its own. Confirmed unchanged by direct source read this session.",
+    "originally_proven_in": "audits/tier3_remaining_blockers_investigation.md (Part D)"
+  },
+  "repair": {
+    "scope": "scripts/run_tier3_apparatus.py only -- no production file modified",
+    "removed": "_truncation_events (the shared unscoped list) -- deleted entirely, no longer read or written anywhere",
+    "added_state": [
+      "_current_call_id = [None] -- single-slot mutable cell, set immediately before and cleared immediately after each instrumented call",
+      "_call_id_counter = [0] / _new_call_id() -- monotonic, process-local, never-reused integer IDs",
+      "_truncation_events_by_call = {} -- dict keyed by call ID, replacing the list-scanned-by-time",
+      "PIPELINE_NO_GROUND_TRUTH -- explicit sentinel, never registered as a real dict key"
+    ],
+    "capture_change": "install_truncation_capture()'s wrapper now tags every captured event with _current_call_id[0]; drops the event entirely (files nothing) if no call ID is currently active.",
+    "call_sites_instrumented": {
+      "run_condition_base1": "1 call -> 1 fresh call_id, returned as call_id",
+      "run_condition_basen": "N_BASEN attempt calls each get their OWN distinct call_id (audit trail only); the synthesis call gets its own call_id, which is the ONLY one passed to classify_result(), since candidate_code/raw_response are the synthesis output",
+      "run_condition_arch_pipeline": "0 real capture-point calls; call_id explicitly set to PIPELINE_NO_GROUND_TRUTH, never None-by-omission and never a real integer",
+      "run_condition_arch_council": "1 external call (deliberate_and_learn()) wrapping 4 real internal calls (3 councillors + 1 synthesis); all 4 share ONE call_id since this harness cannot instrument inside that production function; classify_result() reads the LAST entry under that call_id, which is always the synthesis leg given deliberate_and_learn()'s confirmed councillor-then-synthesis internal ordering"
+    },
+    "classify_result_change": "gained a required call_id parameter; performs an EXACT dict lookup only (_truncation_events_by_call.get(call_id)), never a time-filtered scan or recent[-1]; call_id in (None, PIPELINE_NO_GROUND_TRUTH) unconditionally skips the ground-truth branch before any dict read is attempted; now returns (classification, evidence_type)",
+    "internal_evidence_taxonomy": [
+      "GROUND_TRUTH_TRUNCATED",
+      "TEXT_BACKSTOP_TRUNCATED",
+      "NO_GROUND_TRUTH_AVAILABLE",
+      null
+    ],
+    "external_classification_taxonomy_unchanged": [
+      "PASS",
+      "TASK_LOGIC_FAILURE",
+      "INFRASTRUCTURE_FAILURE",
+      "GENERATION_TRUNCATED"
+    ],
+    "main_loop_change": "now passes call_id=gen.get('call_id') into classify_result() and stores the second return value as record['truncation_evidence_type'], a new permanent field alongside record['classification']"
+  },
+  "synthetic_test_results": {
+    "script": "scripts/verify_tier3_truncation_repair.py",
+    "total_checks": 23,
+    "passed": 23,
+    "failed": 0,
+    "exit_code": 0,
+    "checks": [
+      {
+        "check": "capture: event dropped when no call_id is active",
+        "status": "PASS"
+      },
+      {
+        "check": "capture: event filed under the exact active call_id (101)",
+        "status": "PASS"
+      },
+      {
+        "check": "capture: second call_id (202) does not contaminate the first (101)",
+        "status": "PASS"
+      },
+      {
+        "check": "Test A: call2 (normal) is not GENERATION_TRUNCATED",
+        "status": "PASS"
+      },
+      {
+        "check": "Test A: call2's evidence is not GROUND_TRUTH_TRUNCATED",
+        "status": "PASS"
+      },
+      {
+        "check": "Test B: call1 is NOT truncated",
+        "status": "PASS"
+      },
+      {
+        "check": "Test B: call2 IS truncated (ground truth)",
+        "status": "PASS"
+      },
+      {
+        "check": "Test C: Pipeline does NOT inherit Council's real truncation event",
+        "status": "PASS"
+      },
+      {
+        "check": "Test C: Pipeline's evidence is NO_GROUND_TRUTH_AVAILABLE",
+        "status": "PASS"
+      },
+      {
+        "check": "Test C: Council's own event is still correctly read as truncated",
+        "status": "PASS"
+      },
+      {
+        "check": "Test D: Pipeline (classified AFTER Council's real truncation) stays TASK_LOGIC_FAILURE",
+        "status": "PASS"
+      },
+      {
+        "check": "Test D: Pipeline's evidence is NO_GROUND_TRUTH_AVAILABLE, not fabricated",
+        "status": "PASS"
+      },
+      {
+        "check": "Test E: Pipeline's result is identical regardless of classify() call order",
+        "status": "PASS"
+      },
+      {
+        "check": "Test E: Council's result is identical regardless of classify() call order",
+        "status": "PASS"
+      },
+      {
+        "check": "Test E: Pipeline result is still not truncated",
+        "status": "PASS"
+      },
+      {
+        "check": "Test E: Council result is still correctly truncated",
+        "status": "PASS"
+      },
+      {
+        "check": "Test F: BASE_1 (length) correctly truncated",
+        "status": "PASS"
+      },
+      {
+        "check": "Test F: BASE_N-attempt (last entry under its own id is 'length') correctly truncated",
+        "status": "PASS"
+      },
+      {
+        "check": "Test F: ARCH_COUNCIL (last entry under its own id is 'length', the synthesis leg) correctly truncated",
+        "status": "PASS"
+      },
+      {
+        "check": "Test F: BASE_N-synthesis (its own only event is 'stop') is NOT truncated despite 3 other ids truncating",
+        "status": "PASS"
+      },
+      {
+        "check": "Test G: classification outcome is identical across 30 randomized (seed, task_id, arm-order) combinations",
+        "status": "PASS"
+      },
+      {
+        "check": "Invariant: a call_id with NO event of its own is never satisfied by another (even ancient) call_id's event",
+        "status": "PASS"
+      },
+      {
+        "check": "Invariant: evidence is NO_GROUND_TRUTH_AVAILABLE, not fabricated from the other call",
+        "status": "PASS"
+      }
+    ],
+    "raw_stdout": "=== Capture mechanism (does the wrapper itself scope correctly?) ===\n[PASS] capture: event dropped when no call_id is active\n[PASS] capture: event filed under the exact active call_id (101)\n[PASS] capture: second call_id (202) does not contaminate the first (101)\n\n=== Required synthetic tests A-G ===\n[PASS] Test A: call2 (normal) is not GENERATION_TRUNCATED\n[PASS] Test A: call2's evidence is not GROUND_TRUTH_TRUNCATED\n[PASS] Test B: call1 is NOT truncated\n[PASS] Test B: call2 IS truncated (ground truth)\n[PASS] Test C: Pipeline does NOT inherit Council's real truncation event\n[PASS] Test C: Pipeline's evidence is NO_GROUND_TRUTH_AVAILABLE\n[PASS] Test C: Council's own event is still correctly read as truncated\n[PASS] Test D: Pipeline (classified AFTER Council's real truncation) stays TASK_LOGIC_FAILURE\n[PASS] Test D: Pipeline's evidence is NO_GROUND_TRUTH_AVAILABLE, not fabricated\n[PASS] Test E: Pipeline's result is identical regardless of classify() call order\n[PASS] Test E: Council's result is identical regardless of classify() call order\n[PASS] Test E: Pipeline result is still not truncated\n[PASS] Test E: Council result is still correctly truncated\n[PASS] Test F: BASE_1 (length) correctly truncated\n[PASS] Test F: BASE_N-attempt (last entry under its own id is 'length') correctly truncated\n[PASS] Test F: ARCH_COUNCIL (last entry under its own id is 'length', the synthesis leg) correctly truncated\n[PASS] Test F: BASE_N-synthesis (its own only event is 'stop') is NOT truncated despite 3 other ids truncating\n[PASS] Test G: classification outcome is identical across 30 randomized (seed, task_id, arm-order) combinations\n\n=== Explicit invariant checks ===\n[PASS] Invariant: a call_id with NO event of its own is never satisfied by another (even ancient) call_id's event\n[PASS] Invariant: evidence is NO_GROUND_TRUTH_AVAILABLE, not fabricated from the other call\n\n\nALL CHECKS PASSED.\n"
+  },
+  "required_invariants_proven": {
+    "every_event_has_call_identity": "capture-mechanism checks 1-3",
+    "classifier_queries_correct_call": "Tests A, B",
+    "stale_events_cannot_satisfy_another_call": "dedicated invariant test (event ts=1.0, a different call_id still unsatisfied)",
+    "pipeline_cannot_inherit_another_arms_event": "Tests C, D, F",
+    "randomized_order_cannot_change_classification": "Test G (30 real production-function-generated orderings), Test E (reversed classify-call order)"
+  },
+  "production_safety": {
+    "production_file_modified": false,
+    "harness_level_repair_sufficient": true,
+    "stop_and_report_triggered": false,
+    "disclosed_limitation": "ARCH_COUNCIL's 4 internal calls share one call_id; correctness of reading 'the last entry' depends on a verified, external fact about deliberate_and_learn()'s own internal call order (councillors before synthesis), not on anything this harness controls. This dependency is confined entirely within one candidate's own internal legs and can never cross into a different arm's or task's event -- categorically different from the original bug."
+  },
+  "verdict": "REPAIRED_AND_VERIFIED"
+}

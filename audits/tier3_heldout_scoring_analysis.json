@@ -1,0 +1,248 @@
+{
+  "artifact_type": "tier3_heldout_scoring_analysis",
+  "analysis_timestamp": "2026-09-04",
+  "source_artifacts": [
+    "audits/tier3_apparatus/heldout_results.jsonl",
+    "audits/tier3_apparatus/held_out_task_suite.json",
+    "audits/tier3_heldout_execution_report.md",
+    "audits/tier3_heldout_execution_report.json"
+  ],
+  "modifications_to_raw_artifacts": "none",
+  "reruns_or_retries": "none",
+  "raw_evidence_verification": {
+    "expected_records": 32,
+    "actual_records": 32,
+    "candidates_per_arm": 8,
+    "duplicates_found": 0,
+    "missing_candidates": 0,
+    "model_pinning_consistency": "24/24 non-council records used qwen2.5-coder:7b",
+    "call_counts_by_arm": {
+      "BASE_1": 1,
+      "BASE_N": 4,
+      "ARCH_PIPELINE_ISOLATED": 1,
+      "ARCH_COUNCIL": 4
+    },
+    "arch_council_real_calls_including_warmup": 5,
+    "ground_truth_missing_count": 0,
+    "infrastructure_failures": 0,
+    "discrepancy_between_raw_artifacts_and_execution_report": false
+  },
+  "scoring_reproducibility": {
+    "method": "independent re-execution of stored candidate_code via the unmodified objective_verify() function",
+    "records_checked": 32,
+    "mismatches_found": 0,
+    "conclusion": "primary correctness evaluator is fully reproducible and reliable"
+  },
+  "spot_check_corrections": [
+    {
+      "task_id": "held_03",
+      "arm": "ARCH_COUNCIL",
+      "original_classification": "GENERATION_TRUNCATED",
+      "original_truncation_evidence_type": "TEXT_BACKSTOP_TRUNCATED",
+      "corrected_classification": "TASK_LOGIC_FAILURE",
+      "passed_value_before_correction": false,
+      "passed_value_after_correction": false,
+      "passed_value_changed": false,
+      "justification": "raw_response is 867 chars with a single unclosed opening fence at index 0, followed by a complete, syntactically valid ThreadSafeLRUCache implementation ending cleanly on a full statement. Real bug identified: get()/put() write None instead of the actual value, causing a genuine AssertionError on re-verification, not a truncation artifact.",
+      "makes_arch_council_look_better_or_worse": "worse (removes a plausible truncation excuse; attributes the failure to real logic error)"
+    },
+    {
+      "task_id": "held_04",
+      "arm": "ARCH_COUNCIL",
+      "original_classification": "GENERATION_TRUNCATED",
+      "original_truncation_evidence_type": "TEXT_BACKSTOP_TRUNCATED",
+      "corrected_classification": "TASK_LOGIC_FAILURE",
+      "passed_value_before_correction": false,
+      "passed_value_after_correction": false,
+      "passed_value_changed": false,
+      "justification": "raw_response is 760 chars with a single unclosed opening fence at index 0, followed by a complete TokenBucketLimiter class ending cleanly. Real bug identified: elapsed_seconds = now - self.clock() calls self.clock() a second time instead of reusing a stored timestamp, a genuine logic error, not truncation.",
+      "makes_arch_council_look_better_or_worse": "worse (same reasoning as held_03)"
+    }
+  ],
+  "spot_check_scope": "all 32 candidates inspected (full coverage, not sampled)",
+  "other_classifications_confirmed_correct": 30,
+  "fence_count_audit": {
+    "method": "counted occurrences of triple-backtick fences in every raw_response across all 32 records",
+    "finding": "every record other than held_03/ARCH_COUNCIL and held_04/ARCH_COUNCIL shows an even fence count (0 or 2); only these two show an odd count (1), unique to ARCH_COUNCIL's synthesis output across the entire dataset",
+    "qualitative_note": "2 of 8 (25%) of ARCH_COUNCIL's real synthesis outputs opened a code fence and never closed it, a real and disclosed formatting quirk specific to the council-synthesis mechanism, with zero occurrences in the other 24 records across the other three arms"
+  },
+  "corrected_classification_tally": {
+    "BASE_1": {"PASS": 5, "TASK_LOGIC_FAILURE": 3, "GENERATION_TRUNCATED": 0, "INFRASTRUCTURE_FAILURE": 0},
+    "BASE_N": {"PASS": 6, "TASK_LOGIC_FAILURE": 2, "GENERATION_TRUNCATED": 0, "INFRASTRUCTURE_FAILURE": 0},
+    "ARCH_PIPELINE_ISOLATED": {"PASS": 4, "TASK_LOGIC_FAILURE": 4, "GENERATION_TRUNCATED": 0, "INFRASTRUCTURE_FAILURE": 0},
+    "ARCH_COUNCIL": {"PASS": 3, "TASK_LOGIC_FAILURE": 5, "GENERATION_TRUNCATED": 0, "INFRASTRUCTURE_FAILURE": 0}
+  },
+  "candidate_level_matrix": {
+    "held_01": {"category": "bug_fixing", "BASE_1": "PASS", "BASE_N": "PASS", "ARCH_PIPELINE_ISOLATED": "PASS", "ARCH_COUNCIL": "PASS"},
+    "held_02": {"category": "bug_fixing", "BASE_1": "PASS", "BASE_N": "PASS", "ARCH_PIPELINE_ISOLATED": "PASS", "ARCH_COUNCIL": "PASS"},
+    "held_03": {"category": "concurrency_stateful", "BASE_1": "PASS", "BASE_N": "PASS", "ARCH_PIPELINE_ISOLATED": "PASS", "ARCH_COUNCIL": "FAIL"},
+    "held_04": {"category": "concurrency_stateful", "BASE_1": "FAIL", "BASE_N": "FAIL", "ARCH_PIPELINE_ISOLATED": "FAIL", "ARCH_COUNCIL": "FAIL"},
+    "held_05": {"category": "algorithmic_edge_case", "BASE_1": "FAIL", "BASE_N": "FAIL", "ARCH_PIPELINE_ISOLATED": "PASS", "ARCH_COUNCIL": "FAIL"},
+    "held_06": {"category": "algorithmic_edge_case", "BASE_1": "FAIL", "BASE_N": "PASS", "ARCH_PIPELINE_ISOLATED": "FAIL", "ARCH_COUNCIL": "FAIL"},
+    "held_07": {"category": "refactoring", "BASE_1": "PASS", "BASE_N": "PASS", "ARCH_PIPELINE_ISOLATED": "FAIL", "ARCH_COUNCIL": "PASS"},
+    "held_08": {"category": "refactoring", "BASE_1": "PASS", "BASE_N": "PASS", "ARCH_PIPELINE_ISOLATED": "FAIL", "ARCH_COUNCIL": "FAIL"}
+  },
+  "arm_pass_rates": {
+    "BASE_1": {"passed": 5, "total": 8, "rate": 0.625, "wilson_95ci": [0.306, 0.863]},
+    "BASE_N": {"passed": 6, "total": 8, "rate": 0.750, "wilson_95ci": [0.409, 0.929]},
+    "ARCH_PIPELINE_ISOLATED": {"passed": 4, "total": 8, "rate": 0.500, "wilson_95ci": [0.215, 0.785]},
+    "ARCH_COUNCIL": {"passed": 3, "total": 8, "rate": 0.375, "wilson_95ci": [0.137, 0.694]}
+  },
+  "paired_comparisons": [
+    {
+      "comparison": "BASE_1_vs_BASE_N",
+      "description": "does extra attempts + synthesis (same model) help vs one attempt?",
+      "n": 8,
+      "rate_a": 0.625,
+      "rate_b": 0.750,
+      "absolute_diff_pp": 12.5,
+      "favors": "BASE_N",
+      "discordant_pairs": {"favor_a": 0, "favor_b": 1, "tasks_favoring_b": ["held_06"]},
+      "concordant_pairs": {"both_pass": 5, "both_fail": 2},
+      "exact_mcnemar_two_sided_p": 1.0,
+      "predefined_threshold_pp": 25,
+      "threshold_crossed": false
+    },
+    {
+      "comparison": "BASE_1_vs_ARCH_PIPELINE_ISOLATED",
+      "description": "cleanest single-call architectural framing test (Level A)",
+      "n": 8,
+      "rate_a": 0.625,
+      "rate_b": 0.500,
+      "absolute_diff_pp": -12.5,
+      "favors": "BASE_1",
+      "discordant_pairs": {"favor_a": 2, "favor_b": 1, "tasks_favoring_a": ["held_07", "held_08"], "tasks_favoring_b": ["held_05"]},
+      "concordant_pairs": {"both_pass": 3, "both_fail": 2},
+      "exact_mcnemar_two_sided_p": 1.0,
+      "predefined_threshold_pp": 25,
+      "threshold_crossed": false
+    },
+    {
+      "comparison": "BASE_N_vs_ARCH_COUNCIL",
+      "description": "primary H1/H4 comparison, both matched on generative call count (4 vs 4)",
+      "n": 8,
+      "rate_a": 0.750,
+      "rate_b": 0.375,
+      "absolute_diff_pp": -37.5,
+      "favors": "BASE_N",
+      "discordant_pairs": {"favor_a": 3, "favor_b": 0, "tasks_favoring_a": ["held_03", "held_06", "held_08"]},
+      "concordant_pairs": {"both_pass": 3, "both_fail": 2},
+      "exact_mcnemar_two_sided_p": 0.25,
+      "predefined_threshold_pp": 25,
+      "threshold_crossed": true,
+      "direction_relative_to_h1": "opposite (against architecture)"
+    },
+    {
+      "comparison": "BASE_1_vs_ARCH_COUNCIL",
+      "description": "broad architectural comparison, reported but not treated as primary",
+      "n": 8,
+      "rate_a": 0.625,
+      "rate_b": 0.375,
+      "absolute_diff_pp": -25.0,
+      "favors": "BASE_1",
+      "discordant_pairs": {"favor_a": 2, "favor_b": 0, "tasks_favoring_a": ["held_03", "held_08"]},
+      "concordant_pairs": {"both_pass": 3, "both_fail": 3},
+      "exact_mcnemar_two_sided_p": 0.5,
+      "predefined_threshold_pp": 25,
+      "threshold_crossed": true,
+      "direction_relative_to_h1": "opposite (against architecture)"
+    }
+  ],
+  "call_budget_asymmetry": {
+    "arch_council_real_calls_per_candidate": 5,
+    "arch_council_generative_calls_per_candidate": 4,
+    "base_n_calls_per_candidate": 4,
+    "warmup_call_present_in_all_8_real_executions": true,
+    "warmup_content_discarded": true,
+    "warmup_cost_included_in_generation_time": true,
+    "compensation_applied": "none",
+    "implication": "ARCH_COUNCIL had strictly more real compute available than BASE_N, so its underperformance cannot be attributed to a compute deficit"
+  },
+  "h1_h4_verdicts": [
+    {
+      "hypothesis": "H1",
+      "statement": "architecture contributes measurable correctness benefit beyond the model, at equal budget",
+      "comparison": "BASE_N_vs_ARCH_COUNCIL",
+      "n": 8,
+      "effect_size_pp": -37.5,
+      "predefined_threshold_pp": 25,
+      "threshold_crossed": true,
+      "direction": "opposite of H1 prediction",
+      "statistical_result_p": 0.25,
+      "verdict": "NOT_SUPPORTED"
+    },
+    {
+      "hypothesis": "H2",
+      "statement": "architecture cannot overcome the model's limitations even at equal/greater budget",
+      "comparisons": ["BASE_N_vs_ARCH_COUNCIL", "BASE_1_vs_ARCH_PIPELINE_ISOLATED"],
+      "results": [
+        {"comparison": "BASE_N_vs_ARCH_COUNCIL", "effect_size_pp": -37.5, "p": 0.25, "verdict_component": "SUPPORTED"},
+        {"comparison": "BASE_1_vs_ARCH_PIPELINE_ISOLATED", "effect_size_pp": -12.5, "p": 1.0, "verdict_component": "INCONCLUSIVE"}
+      ],
+      "verdict": "SUPPORTED_for_ARCH_COUNCIL_INCONCLUSIVE_for_ARCH_PIPELINE_ISOLATED"
+    },
+    {
+      "hypothesis": "H3",
+      "statement": "existing evaluators fail to capture meaningful differences",
+      "evidence": "32/32 primary pass/fail judgments independently reproduced with zero discrepancy; 2/32 secondary truncation-classification labels corrected (with no change to underlying passed value)",
+      "verdict": "NOT_SUPPORTED_for_primary_evaluator_narrow_disclosed_correction_in_secondary_heuristic"
+    },
+    {
+      "hypothesis": "H4",
+      "statement": "an apparent Council advantage, if any, is primarily compute/diversity rather than uniquely valuable orchestration",
+      "comparison": "BASE_N_vs_ARCH_COUNCIL",
+      "pre_registered_rule": "ARCH_COUNCIL ≈ BASE_N or BASE_N wins supports H4",
+      "observed": "BASE_N wins by 37.5pp",
+      "verdict": "SUPPORTED",
+      "caveat": "this run never produced a Council win to explain in the first place, so the narrower original H4 question (diversity vs orchestration as explanation for a WIN) remains untestable by this design regardless of outcome polarity; unchanged pre-existing boundary"
+    }
+  ],
+  "falsified_hypotheses": [],
+  "adversarial_interpretation": {
+    "strongest_counterargument": "the three real councillor models this run (qwen2.5-coder:7b, mlx:qwen3, echo:latest) may simply be individually weaker than the pinned coding specialist on this task class; the observed gap could reflect which specific models were in the pool rather than orchestration as a principle",
+    "sampling_noise_ruled_out": false,
+    "compute_deficit_ruled_out": true,
+    "task_composition_artifact_ruled_out": "partially (losses span 3 different categories, but n=2/category is too small to be definitive)",
+    "single_candidate_dependence": "yes, entire 37.5pp gap carried by exactly 3 of 8 tasks (held_03, held_06, held_08)",
+    "model_vs_architecture_confound_resolved": false,
+    "changes_final_verdict": false
+  },
+  "what_this_establishes": [
+    "on this specific frozen 8-task held-out set, with this pinned model and this live council composition, neither tested architectural intervention demonstrated a performance advantage over its matched baseline",
+    "ARCH_COUNCIL underperformed the compute-matched BASE_N baseline by a real, entirely one-directional, threshold-crossing margin, despite having strictly more real compute available",
+    "the isolated self-edit generation framing showed no advantage over bare prompting at equal single-call budget",
+    "the primary correctness evaluator is highly reliable, independently reproduced with zero discrepancies",
+    "a real, narrow, now-corrected limitation exists in the secondary truncation-classification heuristic, isolated to ARCH_COUNCIL's own synthesis output habits, which did not affect any pass/fail outcome"
+  ],
+  "what_this_does_not_establish": [
+    "that Echo's architecture is worse in any general, lasting, or statistically confirmed sense (n=8 per arm, all p>=0.25)",
+    "that architecture never helps on any coding task or task class",
+    "whether ARCH_COUNCIL's underperformance stems from orchestration itself, individual councillor model weakness, or noise",
+    "anything about Echo's literal current production self-edit call path",
+    "anything about learning, generalized capability, or improvement over time",
+    "any architectural redesign decision by itself"
+  ],
+  "recommendation": {
+    "action": "gather_more_evidence",
+    "rationale": "the finding is real enough (one-directional, threshold-crossing) to take seriously and small enough (n=8, p=0.25) that treating it as confirmed would overclaim",
+    "options": [
+      "run the pre-planned confirmatory sample size on a freshly authored held-out set before drawing any architectural conclusion",
+      "treat this pilot's clear if underpowered directional signal (0 of 3 discordant pairs favoring Council) as sufficient reason to deprioritize further investment in the Council mechanism for single-function coding tasks specifically, while leaving open whether a different task class or council composition would change the picture"
+    ],
+    "architectural_change_recommended": false
+  },
+  "statistical_methodology": {
+    "paired_test": "exact two-sided McNemar test via direct binomial coefficient summation on discordant pairs",
+    "confidence_interval_method": "Wilson score interval for individual arm pass rates",
+    "significance_threshold": "conventional alpha=0.05, none of the four comparisons reached p<0.05",
+    "post_hoc_test_substitution": false
+  },
+  "evidence_preservation": {
+    "raw_artifacts_modified": false,
+    "new_artifacts_created": [
+      "audits/tier3_heldout_scoring_analysis.md",
+      "audits/tier3_heldout_scoring_analysis.json"
+    ],
+    "execution_report_modified": false
+  }
+}

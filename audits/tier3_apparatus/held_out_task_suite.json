@@ -1,0 +1,63 @@
+{
+  "suite_version": "tier3-heldout-v1",
+  "frozen_at": "2026-09-04T05:10:00Z",
+  "note": "8 brand-new tasks, authored specifically for this Tier-3 held-out run. None of these tasks, prompts, or code snippets appear in audits/capability_pilot/task_suite.json or any prior pilot/document in this repository -- verified by direct authorship (written fresh for this run) and by grep before freezing. Spans bug-fixing (H1,H2), concurrency/stateful reasoning (H3,H4), algorithmic edge cases (H5,H6), and refactoring (H7,H8), matching tier3_architecture_vs_model_design.md's own required category spread. All tier=3 (matching task_11-15's own difficulty level in the original frozen suite).",
+  "tasks": [
+    {
+      "task_id": "held_01",
+      "tier": 3,
+      "category": "bug fixing (interval merge, touching-boundary off-by-one)",
+      "prompt": "The following function is supposed to merge overlapping (and touching) intervals in a list of [start, end] pairs and return the merged list sorted by start. Touching intervals count as overlapping -- for example [1,3] and [3,5] must merge into [1,5]. It has a bug that causes it to fail to merge certain touching intervals. Fix the bug WITHOUT changing the function's name or signature. Here is the buggy code:\n\ndef merge_intervals(intervals):\n    if not intervals:\n        return []\n    intervals = sorted(intervals, key=lambda x: x[0])\n    merged = [intervals[0]]\n    for current in intervals[1:]:\n        last = merged[-1]\n        if current[0] < last[1]:\n            last[1] = max(last[1], current[1])\n        else:\n            merged.append(current)\n    return merged\n\nReturn only the corrected function definition, valid Python, no explanation.",
+      "test_code": "assert merge_intervals([[1,3],[2,6],[8,10],[15,18]]) == [[1,6],[8,10],[15,18]]\nassert merge_intervals([[1,3],[3,5]]) == [[1,5]]\nassert merge_intervals([]) == []\nassert merge_intervals([[1,4],[4,5]]) == [[1,5]]\nassert merge_intervals([[1,10],[2,3],[4,5]]) == [[1,10]]\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "held_02",
+      "tier": 3,
+      "category": "bug fixing (longest strictly-increasing run, equality off-by-one)",
+      "prompt": "The following function is supposed to return the length of the longest STRICTLY increasing contiguous run in a list of integers (equal adjacent values do NOT extend a run). It has a bug that causes it to incorrectly treat equal adjacent values as increasing. Fix the bug WITHOUT changing the function's name or signature. Here is the buggy code:\n\ndef longest_increasing_run(nums):\n    if not nums:\n        return 0\n    longest = 1\n    current = 1\n    for i in range(1, len(nums)):\n        if nums[i] >= nums[i-1]:\n            current += 1\n        else:\n            current = 1\n        longest = max(longest, current)\n    return longest\n\nReturn only the corrected function definition, valid Python, no explanation.",
+      "test_code": "assert longest_increasing_run([1,2,2,3,4,1,2]) == 3\nassert longest_increasing_run([]) == 0\nassert longest_increasing_run([5]) == 1\nassert longest_increasing_run([1,1,1,1]) == 1\nassert longest_increasing_run([1,2,3,4,5]) == 5\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "held_03",
+      "tier": 3,
+      "category": "concurrency / stateful logic (thread-safe LRU cache)",
+      "prompt": "Write a Python class `ThreadSafeLRUCache` with `__init__(self, capacity: int)`, `get(self, key)` returning the value for `key` (marking it as most-recently-used) or -1 if not present, and `put(self, key, value)` that inserts/updates a key (marking it most-recently-used) and evicts the least-recently-used entry if the cache would exceed `capacity`. All operations must be safe to call concurrently from multiple threads (use a `threading.Lock`), with no lost updates and no crashes under concurrent access. Return only the class definition (including any needed imports), valid Python, no explanation.",
+      "test_code": "cache = ThreadSafeLRUCache(2)\ncache.put(1, 1)\ncache.put(2, 2)\nassert cache.get(1) == 1\ncache.put(3, 3)\nassert cache.get(2) == -1\ncache.put(4, 4)\nassert cache.get(1) == -1\nassert cache.get(3) == 3\nassert cache.get(4) == 4\n\nimport threading\nc2 = ThreadSafeLRUCache(1000)\ndef worker(base):\n    for i in range(100):\n        c2.put(base * 100 + i, base * 100 + i)\nthreads = [threading.Thread(target=worker, args=(t,)) for t in range(10)]\nfor t in threads:\n    t.start()\nfor t in threads:\n    t.join()\nfor t in range(10):\n    for i in range(100):\n        key = t * 100 + i\n        assert c2.get(key) == key, f'lost key {key}'\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "held_04",
+      "tier": 3,
+      "category": "concurrency / stateful logic (deterministic token-bucket rate limiter)",
+      "prompt": "Write a Python class `TokenBucketLimiter` with `__init__(self, capacity: int, refill_rate: float, clock=None)`. `clock` is an optional zero-argument callable returning the current time as a float (default to `time.time` if `clock` is None) -- your implementation MUST call `self.clock()` every time it needs the current time, and MUST NOT call `time.time()` directly anywhere, since tests will inject a deterministic fake clock and real time will not advance during the test. The bucket starts full with `capacity` tokens. `allow(self) -> bool` should: first refill the bucket based on elapsed time since the last check (elapsed_seconds * refill_rate tokens added, capped at `capacity`, never exceeding it), then, if at least 1 token is available, consume exactly 1 token and return True; otherwise return False and consume nothing. Return only the class definition (including any needed imports), valid Python, no explanation.",
+      "test_code": "class FakeClock:\n    def __init__(self, start=0.0):\n        self.t = start\n    def __call__(self):\n        return self.t\n    def advance(self, dt):\n        self.t += dt\n\nclock = FakeClock(0.0)\nlimiter = TokenBucketLimiter(capacity=3, refill_rate=1.0, clock=clock)\nassert limiter.allow() == True\nassert limiter.allow() == True\nassert limiter.allow() == True\nassert limiter.allow() == False\nclock.advance(2.0)\nassert limiter.allow() == True\nassert limiter.allow() == True\nassert limiter.allow() == False\nclock.advance(10.0)\nassert limiter.allow() == True\nassert limiter.allow() == True\nassert limiter.allow() == True\nassert limiter.allow() == False\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "held_05",
+      "tier": 3,
+      "category": "algorithmic edge cases (run-length encode/decode round trip, multi-digit counts)",
+      "prompt": "Write two Python functions: `rle_encode(s: str) -> str` that run-length-encodes a string as a sequence of `<count><character>` pairs (e.g. 'aaabbc' -> '3a2b1c'; counts can be more than one digit for long runs), and `rle_decode(s: str) -> str` that reverses the encoding (parsing the FULL digit sequence before each character as the count, not just a single digit). Handle the empty string, single characters, and non-letter characters (digits, spaces, punctuation) correctly. Return only the two function definitions, valid Python, no explanation.",
+      "test_code": "assert rle_encode('aaabbc') == '3a2b1c'\nassert rle_encode('') == ''\nassert rle_encode('a') == '1a'\nassert rle_encode('aabbccdd') == '2a2b2c2d'\nassert rle_decode('3a2b1c') == 'aaabbc'\nassert rle_decode('') == ''\nassert rle_decode('1a') == 'a'\nassert rle_decode('2a2b2c2d') == 'aabbccdd'\nassert rle_decode(rle_encode('hello world!!!')) == 'hello world!!!'\nassert rle_decode('10a') == 'a' * 10\nassert rle_encode(rle_decode('10a')) == '10a'\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "held_06",
+      "tier": 3,
+      "category": "algorithmic edge cases (circular next-greater-element, wraparound)",
+      "prompt": "Write a Python function `next_greater_circular(nums: list) -> list` that treats `nums` as a CIRCULAR array (after the last element, scanning wraps back to the beginning) and, for each element, returns the value of the next element (scanning forward, wrapping at most once around) that is strictly greater than it, or -1 if no such element exists even after a full wraparound (an element is never compared against itself). Return a list of the same length as `nums`. Return only the function definition, valid Python, no explanation.",
+      "test_code": "assert next_greater_circular([1,2,1]) == [2,-1,2]\nassert next_greater_circular([1,2,3,4,3]) == [2,3,4,-1,4]\nassert next_greater_circular([5,4,3,2,1]) == [-1,5,5,5,5]\nassert next_greater_circular([]) == []\nassert next_greater_circular([7]) == [-1]\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "held_07",
+      "tier": 3,
+      "category": "refactoring (if/elif chain to data-driven lookup, behavior-preserving)",
+      "prompt": "The following function validates a user-provided 'role' string against a fixed set of permissions using a long if/elif chain, which is hard to maintain. Refactor it to use a lookup table (a dict mapping role name to its permissions list) instead of the if/elif chain, while preserving the EXACT same return value for every input, including the fallback case for an unrecognized role. Return only the refactored function definition, valid Python, no explanation. Original code:\n\ndef get_permissions(role):\n    if role == 'admin':\n        return ['read', 'write', 'delete', 'manage_users']\n    elif role == 'editor':\n        return ['read', 'write']\n    elif role == 'viewer':\n        return ['read']\n    elif role == 'guest':\n        return []\n    else:\n        return None",
+      "test_code": "assert get_permissions('admin') == ['read', 'write', 'delete', 'manage_users']\nassert get_permissions('editor') == ['read', 'write']\nassert get_permissions('viewer') == ['read']\nassert get_permissions('guest') == []\nassert get_permissions('nonexistent_role') == None\nassert get_permissions('') == None\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "held_08",
+      "tier": 3,
+      "category": "refactoring (naive exponential recursion to memoized/DP, performance-forcing)",
+      "prompt": "The following function computes the minimum number of coins needed to make up `amount` using unlimited coins of the given `coins` denominations, via naive recursion -- but it is far too slow for larger amounts because it recomputes the same subproblems exponentially many times. Refactor it to use memoization or dynamic programming so it runs efficiently on large inputs, while preserving the EXACT same return value semantics (return -1 if the amount cannot be made with the given coins, and 0 for amount 0). Return only the refactored function definition (including any needed imports), valid Python, no explanation. Original code:\n\ndef min_coins(amount, coins):\n    if amount == 0:\n        return 0\n    if amount < 0:\n        return -1\n    best = -1\n    for c in coins:\n        res = min_coins(amount - c, coins)\n        if res >= 0:\n            if best == -1 or res + 1 < best:\n                best = res + 1\n    return best",
+      "test_code": "assert min_coins(11, [1,2,5]) == 3\nassert min_coins(0, [1,2,5]) == 0\nassert min_coins(3, [2]) == -1\nassert min_coins(0, []) == 0\nassert min_coins(7, [3,5]) == -1\nassert min_coins(300, [1,5,10,25]) == 12\nprint('ALL_TESTS_PASSED')"
+    }
+  ]
+}

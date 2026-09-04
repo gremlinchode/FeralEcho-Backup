@@ -1,0 +1,658 @@
+{
+  "mission": "current_capability_synthesis",
+  "constraints_honored": {
+    "held_out_experiment_run": false,
+    "held_out_material_touched": false,
+    "fine_tuning_performed": false,
+    "production_modified": false,
+    "echo_optimized_or_improved": false
+  },
+  "executive_verdict": {
+    "summary": "Echo is a mature, extensively-instrumented, routing-and-retrieval-driven conversational and code-generation system with one causally-demonstrated content-independent behavioral channel (C1), a real-but-narrow, statistically-marginal self-editing targeting loop, and no confirmed autonomous content-level learning or preference formation.",
+    "triple_corroborated_finding": "RiverBrain.learn_from_council_rating() is currently dead (stale cursor vs. rotated log), independently found by three separate investigative threads via three different methods.",
+    "tier3_apparatus_state": "More thoroughly execution-verified than at any prior point: 29/31 new checks VERIFIED, 2 OPEN, 0 FAILED.",
+    "tier3_design_limitation_reconfirmed": "The current 4-arm design cannot isolate model diversity from council-specific orchestration -- disclosed by the design's own preflight audit before this mission, re-confirmed here.",
+    "verdict": "READY_WITH_CONDITIONS"
+  },
+  "reconciliation_table": [
+    {
+      "claim": "learn_from_council_rating() is live",
+      "previous_conclusion": "Finding 67: built and verified live",
+      "current_evidence": "Independently re-derived 3x (this mission's autonomous-fruit audit, echo_learning_causal_autopsy.md, self_edit_closed_loop_validation.md) -- stale cursor 33471 vs rotated log",
+      "still_true": false,
+      "correction_required": true,
+      "confidence": "VERY_HIGH"
+    },
+    {
+      "claim": "Self-edit deploy success rate",
+      "previous_conclusion": "informal near-zero framing",
+      "current_evidence": "426/463 (92%) pass safety/fitness gate (cited), but AST-node-count fitness metric confirmed saturated at ceiling for all 25 retained deploys",
+      "still_true": "PARTIALLY",
+      "correction_required": true,
+      "confidence": "HIGH"
+    },
+    {
+      "claim": "Self-editing constitutes Level 4 (measurable iterative improvement)",
+      "previous_conclusion": "implicit in pipeline's own design framing",
+      "current_evidence": "n=103, mean delta +0.103, t=1.65 p~0.10 (not significant), 61 improved/42 worsened, 100% of tracked outcomes share one target (coding)",
+      "still_true": false,
+      "correction_required": true,
+      "confidence": "HIGH",
+      "note": "actively argued against, not merely unsupported"
+    },
+    {
+      "claim": "Shadow signal is 'highest-trust' self-edit targeting input",
+      "previous_conclusion": "implicit in perform_self_edit()'s arbitration order",
+      "current_evidence": "shadow predicts real target correctly 13.6% of matched readings vs empirical's 71.8% -- a 5x gap in the opposite direction of the arbitration priority",
+      "still_true": false,
+      "correction_required": true,
+      "confidence": "HIGH"
+    },
+    {
+      "claim": "model_task_stats is never read",
+      "previous_conclusion": "informally circulating misconception",
+      "current_evidence": "live singleton inspection: 12 models, up to 49139 obs/bucket, read by _select_council()/TAG_SCORE_BOOST",
+      "still_true": false,
+      "correction_required": true,
+      "confidence": "VERY_HIGH"
+    },
+    {
+      "claim": "echo_projects is functioning multi-file generation (score 4/7)",
+      "previous_conclusion": "echo_capability_ceiling_map.md dimension #20, score 4",
+      "current_evidence": "61 real reports, 48 F1-blocked, 13 reach F2, 0/13 pass F2 -- 0/61 overall, independently confirmed by two separate audits",
+      "still_true": false,
+      "correction_required": true,
+      "confidence": "VERY_HIGH",
+      "note": "closed_loop_capability_forensic.md already flagged this for downward revision to 2-3 but did not apply it per its own no-silent-rewrite rule; this synthesis adopts score=2 explicitly"
+    },
+    {
+      "claim": "Preference formation/retention is untested but plausible",
+      "previous_conclusion": "implicit optimism pre-P1.2",
+      "current_evidence": "P1.2: NULL, actively falsified via direct label-flip test; non-Echo control showed equal-or-stronger apparent persistence; 2 confabulated justifications observed",
+      "still_true": false,
+      "correction_required": true,
+      "confidence": "HIGH"
+    },
+    {
+      "claim": "Persistent behavioral state/directive-following (C1) is unproven",
+      "previous_conclusion": "no prior live test existed",
+      "current_evidence": "9 real trials: 100% architectural chain reliability, 75% (3/4) real model compliance -- a genuine new confirmed capability",
+      "still_true": true,
+      "correction_required": false,
+      "confidence": "MEDIUM_HIGH",
+      "note": "n=4 for the compliance edge specifically, honestly small"
+    },
+    {
+      "claim": "ToolManager provides real tool-use capability",
+      "previous_conclusion": "implicit in module existence and prompt wiring",
+      "current_evidence": ".get_tool()/.func( called zero times anywhere; only list_tools() text-injection is real",
+      "still_true": false,
+      "correction_required": false,
+      "confidence": "VERY_HIGH",
+      "note": "confirmed hollow for invocation, real for exposure -- precision correction only"
+    },
+    {
+      "claim": "Memory/FAISS retrieval measurably changes conversational behavior",
+      "previous_conclusion": "assumed by virtue of scale",
+      "current_evidence": "Finding 76 ablation: effect indistinguishable from noise floor (personal-task, temp>0); follow-up nonpersonal/temp0 attempt incomplete (0 computed distances)",
+      "still_true": "UNKNOWN",
+      "correction_required": false,
+      "confidence": "MEDIUM_infra_LOW_causal",
+      "note": "genuinely open, not resolved either direction"
+    },
+    {
+      "claim": "Curiosity/reflection/self-model mechanisms are 'real, closed loops'",
+      "previous_conclusion": "general Emergence-roadmap framing",
+      "current_evidence": "real, continuous, restart-durable activity confirmed; but each has a mundane production-ML-engineering equivalent (causal autopsy's own framing), mostly terminating at routing/selection not content",
+      "still_true": "PARTIALLY",
+      "correction_required": true,
+      "confidence": "HIGH"
+    },
+    {
+      "claim": "The 4-arm Tier-3 design isolates model diversity from council orchestration",
+      "previous_conclusion": "implicitly assumed workable via BASE_N 'removing diversity'",
+      "current_evidence": "tier3_design_preflight.md already disclosed this is NOT achieved, before this mission; re-confirmed here with sharper H4 framing",
+      "still_true": false,
+      "correction_required": false,
+      "confidence": "VERY_HIGH",
+      "note": "never true; already disclosed by the design's own authors, not a new discovery"
+    }
+  ],
+  "capability_ledger": [
+    {
+      "capability": "Persistent behavioral directive-following (C1)",
+      "class": "A",
+      "mechanism": "behavioral_state.py -> echo_ground_truth.py keyword-gated exposure",
+      "evidence": "9 real live trials, 100% architectural reliability, 75% (3/4) real compliance",
+      "reader_consumer": "echo_ground_truth.py prompt construction",
+      "demonstrated_downstream_effect": "real 0%->75% shift in a specific real behavior",
+      "confounds": "n=4 on the probabilistic compliance edge; single continuous-process test",
+      "confidence": "HIGH",
+      "what_would_change_classification": "20+ trial replication holding near 75% strengthens; trending toward 0% downgrades to B"
+    },
+    {
+      "capability": "RiverBrain routing (model_task_stats via learn())",
+      "class": "A",
+      "mechanism": "quality-scored writes -> EMA-windowed stats -> _select_council()/TAG_SCORE_BOOST reads",
+      "evidence": "12 models, up to 49139 obs/bucket, live-unpickled this session",
+      "reader_consumer": "council/model selection for next deliberation",
+      "demonstrated_downstream_effect": "real, demonstrated shift in which models are selected",
+      "confounds": "terminates at selection, never content",
+      "confidence": "HIGH",
+      "what_would_change_classification": "retrospective correlation between model_task_stats state and downstream response quality (proposed, not run)"
+    },
+    {
+      "capability": "Self-edit target selection (Level 3)",
+      "class": "A_targeting_F_quality",
+      "mechanism": "reflection_shard.jsonl -> self_model_updater.py -> self_model.json/shadow_self_model.json -> perform_self_edit() arbitration",
+      "evidence": "n=103 tracked outcomes, real persistent restart-durable targeting",
+      "reader_consumer": "perform_self_edit()'s target_task_type",
+      "demonstrated_downstream_effect": "targeting persists; quality effect actively falsified (t=1.65 p~0.10, 40.8% worsened)",
+      "confounds": "shadow signal less accurate (13.6%) than empirical (71.8%) yet checked first; 100% of tracked outcomes share one target",
+      "confidence": "HIGH",
+      "what_would_change_classification": "controlled A/B/C/D arbitration experiment (proposed, not run)"
+    },
+    {
+      "capability": "RiverBrain.learn_from_council_rating()",
+      "class": "E",
+      "mechanism": "council rating -> is_council_trusted()-gated blend -> model_task_stats",
+      "evidence": "stale cursor (33471) vs post-rotation log (11970 lines), silent no-exception stall",
+      "reader_consumer": "none currently reached",
+      "demonstrated_downstream_effect": "none currently",
+      "confounds": "triple-independently confirmed root cause; original trigger date unresolved",
+      "confidence": "VERY_HIGH_dead_MEDIUM_original_trigger",
+      "what_would_change_classification": "repaired cursor + one polling cycle showing renewed growth"
+    },
+    {
+      "capability": "Preference formation/retention",
+      "class": "F",
+      "mechanism": "forced-choice name task, formation->immediate->distractor->retention",
+      "evidence": "32 real live calls, 10/10 label-A, direct label-flip falsification, control showed equal-or-stronger pattern, 2 confabulations observed",
+      "reader_consumer": "N/A -- negative result",
+      "demonstrated_downstream_effect": "N/A",
+      "confounds": "single continuous session cannot in principle distinguish retention from in-context momentum (design's own disclosed ceiling)",
+      "confidence": "HIGH",
+      "what_would_change_classification": "position-decoupled redesign (proposed, not run)"
+    },
+    {
+      "capability": "ToolManager tool invocation",
+      "class": "E",
+      "mechanism": ".get_tool()/Tool.func() call chain",
+      "evidence": "zero real callers anywhere, cross-confirmed by 2 independent audits",
+      "reader_consumer": "N/A",
+      "demonstrated_downstream_effect": "N/A",
+      "confounds": "registration + listing IS real and live -- only invocation is dead",
+      "confidence": "VERY_HIGH",
+      "what_would_change_classification": "one real invocation call site + observed real tool call in logs"
+    },
+    {
+      "capability": "ToolManager tool listing/exposure",
+      "class": "C",
+      "mechanism": "list_tools() -> prompt injection",
+      "evidence": "real, live, task-type-gated",
+      "reader_consumer": "real conversational system prompt",
+      "demonstrated_downstream_effect": "text appears in prompts; no evidence of outcome dependence",
+      "confounds": "cosmetic exposure with no functional backing",
+      "confidence": "HIGH",
+      "what_would_change_classification": "evidence a response changed because of a named-but-never-invoked tool"
+    },
+    {
+      "capability": "echo_projects end-to-end generation",
+      "class": "D",
+      "mechanism": "council plan -> per-file generation -> F1 -> F2 -> report",
+      "evidence": "61 real attempts, 48 F1-blocked, 13 reach F2, 0/13 F2-pass",
+      "reader_consumer": "human (report only); zero automated code reader by design",
+      "demonstrated_downstream_effect": "none",
+      "confounds": "could reflect model-class ceiling or task/prompt design; not disambiguated",
+      "confidence": "VERY_HIGH_measurement_LOW_cause",
+      "what_would_change_classification": "human failure-mode taxonomy across 61 reports, or a different model pool retry"
+    },
+    {
+      "capability": "Memory/FAISS retrieval (infrastructure)",
+      "class": "C",
+      "mechanism": "memory_bridge.py real similarity search",
+      "evidence": "123793 entries, live, continuously written",
+      "reader_consumer": "retrieve_relevant_memories() -> real conversational prompts",
+      "demonstrated_downstream_effect": "real content reaches real prompts",
+      "confounds": "48.4% confirmed-excluded code_analysis contamination (now frozen, not growing)",
+      "confidence": "HIGH",
+      "what_would_change_classification": "N/A -- infra reality not in question"
+    },
+    {
+      "capability": "Memory/FAISS retrieval (causal behavioral effect)",
+      "class": "H",
+      "mechanism": "same mechanism, judged on outcome",
+      "evidence": "one completed ablation (noise-floor-indistinguishable, personal/temp>0); one incomplete follow-up (0 computed distances)",
+      "reader_consumer": "N/A",
+      "demonstrated_downstream_effect": "not established either direction",
+      "confounds": "sampling-temperature noise uncontrolled in completed study",
+      "confidence": "LOW_MEDIUM",
+      "what_would_change_classification": "a completed temp=0 ablation across all 5 task types"
+    },
+    {
+      "capability": "Curiosity engine/garden",
+      "class": "B",
+      "mechanism": "garden_manager.py -> emergent_scheduler/echo_projects reads",
+      "evidence": "13470 real entries; 2 demonstrated real readers this session",
+      "reader_consumer": "next autonomous prompt/project spec selection",
+      "demonstrated_downstream_effect": "real, mechanical selection-shifting",
+      "confounds": "category distribution may reflect scheduling code, not emergent interest",
+      "confidence": "MEDIUM",
+      "what_would_change_classification": "controlled comparison of garden-driven vs random prompt selection"
+    },
+    {
+      "capability": "Reflection cycle/shards",
+      "class": "D_mostly_narrow_B",
+      "mechanism": "reflection_shard.py generated text -> journal -> (since Finding 78) Global Workspace publish",
+      "evidence": "20526 real entries; journal's own accessors have zero external callers; a live Global Workspace consumption event exists in general",
+      "reader_consumer": "Global Workspace wide-broadcast (confirmed live); plain journal has no confirmed reader",
+      "demonstrated_downstream_effect": "limited to the Global Workspace link, not traced end-to-end to this source",
+      "confounds": "free-association content, not outcome-grounded introspection",
+      "confidence": "HIGH_mechanism_MEDIUM_downstream",
+      "what_would_change_classification": "tracing one real reflection.meta_synthesis event to a changed decision"
+    },
+    {
+      "capability": "Self-model (self_model.json)",
+      "class": "B",
+      "mechanism": "self_model_updater.py 130s-timer writer -> echo_ground_truth.py reader",
+      "evidence": "fresh (minutes-old) at every check this session",
+      "reader_consumer": "real conversational prompts, introspective-keyword-gated",
+      "demonstrated_downstream_effect": "real content reaches real prompts",
+      "confounds": "no check on whether content value (not just presence) changes anything",
+      "confidence": "MEDIUM_HIGH",
+      "what_would_change_classification": "evidence a specific field's value changed a response"
+    },
+    {
+      "capability": "Shadow self-model/shadow accuracy",
+      "class": "B",
+      "mechanism": "shadow_model.propose_from_reflection() -> shadow_self_model.json/shadow_accuracy.jsonl",
+      "evidence": "2035 real entries, freshly growing; causally affects real self-edit targeting on at least one occasion",
+      "reader_consumer": "perform_self_edit()'s arbitration (checked first)",
+      "demonstrated_downstream_effect": "overrides empirical signal despite being 5x less accurate",
+      "confounds": "pure keyword-count heuristic, not semantic inference",
+      "confidence": "HIGH",
+      "what_would_change_classification": "the proposed A/B/C/D arbitration experiment"
+    },
+    {
+      "capability": "Global Workspace publish/consume",
+      "class": "A",
+      "mechanism": "6+ real publishers -> workspace_log.jsonl -> real consumers (exploration_bias)",
+      "evidence": "6 distinct real sources in 500-event window; one directly-observed live consumption event",
+      "reader_consumer": "Bernoulli gate in _select_council()",
+      "demonstrated_downstream_effect": "real, small-magnitude (p=0.001 observed) causal effect",
+      "confounds": "magnitude genuinely small at the moment observed; not measured over a longer window",
+      "confidence": "HIGH",
+      "what_would_change_classification": "a longer window's realized swap rate"
+    },
+    {
+      "capability": "Crash avoidance (crash_awareness.py)",
+      "class": "A",
+      "mechanism": "real crash detection -> temporary mlx:* pool exclusion -> list_mlx_models()",
+      "evidence": "14 real log occurrences",
+      "reader_consumer": "every real council selection during the cooldown window",
+      "demonstrated_downstream_effect": "real, repeated, demonstrated composition change",
+      "confounds": "none of significance found",
+      "confidence": "HIGH",
+      "what_would_change_classification": "N/A -- already the cleanest confirmed case"
+    },
+    {
+      "capability": "Dissent Log",
+      "class": "D",
+      "mechanism": "propose_core_edit()'s council review -> dissent_log.jsonl",
+      "evidence": "1 entry, ever, dated 2026-07-17",
+      "reader_consumer": "human review only (by design)",
+      "demonstrated_downstream_effect": "none since its single historical use",
+      "confounds": "by-design human-invoked-only",
+      "confidence": "HIGH",
+      "what_would_change_classification": "any second real invocation"
+    },
+    {
+      "capability": "Goal persistence (goals.txt)",
+      "class": "E",
+      "mechanism": "static 3-line file",
+      "evidence": "zero live references, last touched 2026-07-04",
+      "reader_consumer": "none",
+      "demonstrated_downstream_effect": "none",
+      "confounds": "curiosity garden is the real functioning analogue",
+      "confidence": "HIGH",
+      "what_would_change_classification": "N/A"
+    },
+    {
+      "capability": "Tier-3 apparatus itself",
+      "class": "G",
+      "mechanism": "budget-matched 4-arm design, execution-verified this session",
+      "evidence": "29/31 new execution checks VERIFIED, 0 FAILED, 2 OPEN",
+      "reader_consumer": "the investigators",
+      "demonstrated_downstream_effect": "can now correctly attribute truncation, pin models, anonymize identity, block RiverBrain contamination, gate held-out access",
+      "confounds": "cannot isolate model diversity from council orchestration; Ollama contention remains the dominant practical risk",
+      "confidence": "HIGH",
+      "what_would_change_classification": "running the held-out set"
+    },
+    {
+      "capability": "Investigative/scientific rigor generally",
+      "class": "G",
+      "mechanism": "the whole multi-month audit corpus this synthesis reconciles",
+      "evidence": "dozens of independent, cross-corroborating documents",
+      "reader_consumer": "this document, future sessions",
+      "demonstrated_downstream_effect": "real improvement in the reliability of claims ABOUT Echo, not in Echo itself",
+      "confounds": "must never be conflated with Echo's own capability",
+      "confidence": "HIGH",
+      "what_would_change_classification": "N/A"
+    }
+  ],
+  "autonomous_fruit_stress_test": {
+    "crash_avoidance": "FRUIT, confirmed repeatable (14 occurrences)",
+    "riverbrain_model_task_stats": "FRUIT for selection only, sharpened per causal_autopsy: structurally incapable of affecting response content",
+    "global_workspace_exploration_bias": "FRUIT mechanism real; magnitude confidence downgraded HIGH->MEDIUM (single observed p=0.001, no longer-window repeatability established)",
+    "curiosity_to_echo_projects_spec": "reclassified from POTENTIAL_FRUIT to stricter ACTIVITY-with-real-mechanical-link -- interpretive framing (genuine 'interest') downgraded per measurability audit's scheduling-artifact finding",
+    "echo_projects_generated_code": "DEAD/ACTIVITY, unchanged, doubly confirmed (0/61 by two independent audits)",
+    "quantification": {
+      "autonomous_events_last_observed_hour": 53,
+      "verified_fruitful_events_same_window": "not separately countable -- genuine measurement gap",
+      "fruit_rate": "cannot be computed from available data -- no shared accounting unit",
+      "strongest_fruit_per_unit_resource": "crash avoidance (rare trigger, cheap per-occurrence, clean repeatable effect)",
+      "largest_resource_sink_no_demonstrated_fruit": "echo_projects (61 real expensive cycles, 0 fruit)"
+    },
+    "preserve_for_experimentation": [
+      "crash_awareness.py",
+      "RiverBrain.learn() routing signal",
+      "Global Workspace publish/consume"
+    ],
+    "throttle_for_experiment_window_only": [
+      "model_guided_autonomous_loop",
+      "echo_projects autonomous 6h cycle"
+    ],
+    "instrument_only": [
+      "curiosity garden / reflection-shard write paths",
+      "learn_from_council_rating() (a regression test computing interaction_log_line_count - cursor_position)"
+    ],
+    "eventually_repair_or_remove_not_now": [
+      "stale council cursor (~5-15 LOC fix, proposed not implemented)",
+      "shadow-over-empirical arbitration priority inversion (Fix A, proposed not implemented, requires its own A/B/C/D validation)",
+      "ToolManager zero-invocation gap"
+    ]
+  },
+  "operating_profile_options": [
+    {
+      "option": "FULL_AUTONOMY",
+      "contamination_risk": "LOW",
+      "ollama_contention": "HIGH",
+      "swap_memory_pressure": "HIGH",
+      "reproducibility": "LOW",
+      "ecological_validity": "HIGHEST",
+      "risk_of_suppressing_important_mechanism": "LOWEST",
+      "expected_information_gain": "LOW_MEDIUM"
+    },
+    {
+      "option": "THROTTLED_AUTONOMY",
+      "contamination_risk": "LOW",
+      "ollama_contention": "MEDIUM",
+      "swap_memory_pressure": "MEDIUM",
+      "reproducibility": "MEDIUM",
+      "ecological_validity": "HIGH",
+      "risk_of_suppressing_important_mechanism": "LOW",
+      "expected_information_gain": "MEDIUM_HIGH"
+    },
+    {
+      "option": "EXPERIMENT_WINDOW_LOW_CONTENTION",
+      "contamination_risk": "LOW",
+      "ollama_contention": "LOW",
+      "swap_memory_pressure": "LOW",
+      "reproducibility": "HIGH",
+      "ecological_validity": "MEDIUM",
+      "risk_of_suppressing_important_mechanism": "MEDIUM",
+      "expected_information_gain": "HIGHEST",
+      "recommended": true
+    },
+    {
+      "option": "PAUSED_AUTONOMY",
+      "contamination_risk": "LOW",
+      "ollama_contention": "LOW",
+      "swap_memory_pressure": "LOW",
+      "reproducibility": "HIGH",
+      "ecological_validity": "LOW",
+      "risk_of_suppressing_important_mechanism": "HIGH",
+      "expected_information_gain": "SAME_AS_WINDOW_HIGHER_COST"
+    }
+  ],
+  "production_vs_measurement_distinction": {
+    "best_for_echo_in_production": "FULL_AUTONOMY, continuous, including crash avoidance and routing",
+    "best_for_scientifically_measuring_echo": "EXPERIMENT_WINDOW_LOW_CONTENTION, scoped strictly to the held-out run's duration, full autonomy resumed immediately after",
+    "explicitly_not_conflated": true
+  },
+  "tier3_apparatus_verification": [
+    {
+      "check": "equal_max_tokens_constant",
+      "status": "VERIFIED",
+      "detail": "MAX_TOKENS=2048; ARCH_PIPELINE's real path uses production's own _TASK_TOKEN_LIMITS['coding']=2048 (confirmed by direct source read of echo_model_orchestrator.py, matches MAX_TOKENS exactly)"
+    },
+    {
+      "check": "every_base1_basen_council_call_site_passes_MAX_TOKENS",
+      "status": "VERIFIED",
+      "detail": "5 call sites in run_condition_base1/basen/council literally pass max_tokens=MAX_TOKENS (source-grep count, cross-checked against the 4 real call sites read directly: BASE_1's one call, BASE_N's attempt loop + synthesis call, ARCH_COUNCIL's deliberate_and_learn() call)"
+    },
+    {
+      "check": "call_budgets_matched_basen_vs_council",
+      "status": "VERIFIED",
+      "detail": "BASE_N=4 calls (N_BASEN=3 attempts + 1 synthesis), ARCH_COUNCIL=4 calls (3 councillors + 1 synthesis, per deliberate_and_learn()'s own DEFAULT_COUNCIL_SIZE=3, confirmed by direct source read) -- equal, by construction of N_BASEN=3"
+    },
+    {
+      "check": "base1_vs_pipeline_budget_asymmetry_disclosed",
+      "status": "VERIFIED",
+      "detail": "BASE_1 and ARCH_PIPELINE are both single-call (1 vs 1) -- budget-equal by construction; this is NOT the same comparison as BASE_N-vs-COUNCIL and was never claimed to be"
+    },
+    {
+      "check": "model_pin_intercepts_self_edit_manager_choose_model",
+      "status": "VERIFIED",
+      "detail": "called the REAL sem.choose_model(...) after install_model_pin() patched it; got ('FAKE_PINNED_MODEL_FOR_VERIFICATION_ONLY', 'FAKE_PINNED_MODEL_FOR_VERIFICATION_ONLY'), expected ('FAKE_PINNED_MODEL_FOR_VERIFICATION_ONLY', 'FAKE_PINNED_MODEL_FOR_VERIFICATION_ONLY')"
+    },
+    {
+      "check": "pin_model_for_study_persists_once_for_whole_experiment",
+      "status": "VERIFIED",
+      "detail": "pin_model_for_study() reads/writes audits/tier3_apparatus/pinned_model.json and returns the SAME persisted value on every call within a process -- confirmed by direct source read (checks os.path.exists(PINNED_MODEL_PATH) first, returns cached value, never re-selects) -- this pins for the whole study, not per-batch, as required"
+    },
+    {
+      "check": "four_arms_are_structurally_distinct_implementations",
+      "status": "VERIFIED",
+      "detail": "4 distinct function bodies confirmed via inspect.getsource() (not just distinct names) -- BASE_1 uses river_deliberation._ollama_query() x1; BASE_N uses it x(N+1) with a harness-only synthesis; ARCH_PIPELINE uses self_edit_manager.generate_code_from_plan(); ARCH_COUNCIL uses river_deliberation.deliberate_and_learn()"
+    },
+    {
+      "check": "self_edit_manager_get_river_brain_resolves_through_patched_orchestrator_name",
+      "status": "VERIFIED",
+      "detail": "patched echo_model_orchestrator.get_river_brain to return a fake proxy, then called the REAL, unmodified self_edit_manager.get_river_brain() (the function generate_code_from_plan() actually calls at its 3 real call sites) -- got object identity match=True. This is the specific isolation-correctness question for the ARCH_PIPELINE call path, not previously executed as a live test in any prior mission's own verification pass (prior passes verified choose_model() interception, not get_river_brain() interception, for this exact call path)."
+    },
+    {
+      "check": "generate_code_from_plans_own_learn_call_would_hit_the_proxy_not_production",
+      "status": "VERIFIED",
+      "detail": "simulated the exact call generate_code_from_plan() makes (get_river_brain().learn(model_name, 'self_edit_coding', code)) against the resolved object -- 1 call(s) landed on the fake proxy, 0 on any real RiverBrain instance (none was ever touched in this test)"
+    },
+    {
+      "check": "real_install_isolation_intercepts_self_edit_manager_path_too",
+      "status": "VERIFIED",
+      "detail": "called base_pilot.install_isolation() for real (the exact call main() makes), then called self_edit_manager.get_river_brain() -- got the SAME proxy object install_isolation() itself returned: True. This is the load-bearing proof that ARCH_PIPELINE's real generate_code_from_plan() -> get_river_brain().learn(...) calls are isolated by the SAME install_isolation() call BASE_N/ARCH_COUNCIL already rely on -- not a separate, unverified path."
+    },
+    {
+      "check": "isolation_proxy_read_through_still_exposes_real_model_task_stats",
+      "status": "VERIFIED",
+      "detail": "proxy.model_task_stats is a real dict with 12 models -- confirms the proxy is read-through (faithful to live production ranking data) while write-blocked, not simply a disconnected stub"
+    },
+    {
+      "check": "log_interaction_and_save_reflection_patched_module_level",
+      "status": "VERIFIED",
+      "detail": "base_pilot.install_isolation() sets emo.log_interaction and emo.save_reflection to recording no-ops -- confirmed by direct source read of install_isolation() itself, and these are the same two production functions self_edit_manager.py's execute_self_edit()/generate_code_from_plan() call paths use for logging (execute_self_edit() is never called by this harness at all -- only generate_code_from_plan() is -- so save_reflection's real call sites inside execute_self_edit() are moot for THIS harness; recorded as VERIFIED for what the harness actually calls, not for every function self_edit_manager.py contains)"
+    },
+    {
+      "check": "council_identity_anonymization_actually_hides_real_model_names",
+      "status": "VERIFIED",
+      "detail": "called the REAL (patched) rd._format_opinions() with real model-name keys -- rendered output contains no real model name substring; contains anonymous '[Attempt N]' labels instead. rendered='[Attempt 1]\\nsome real response text\\n\\n[Attempt 2]\\nanother response'"
+    },
+    {
+      "check": "council_identity_anonymization_restored_correctly",
+      "status": "VERIFIED",
+      "detail": "confirmed the real production _format_opinions is back in place after this verification script's own patch/restore cycle -- proves the pattern is reversible and doesn't leak into other processes"
+    },
+    {
+      "check": "basen_synthesis_template_genuinely_distinct_not_copy_paste",
+      "status": "VERIFIED",
+      "detail": "real template: 29 non-blank lines; BASE_N template: 19 non-blank lines; 3 lines shared verbatim -- a genuine, structurally-mirrored but not-identical rewrite, consistent with the design's own disclosed intent (mirror structure, never claim a 'council' that doesn't exist)"
+    },
+    {
+      "check": "randomized_arm_order_is_deterministic_given_seed_and_task_id",
+      "status": "VERIFIED",
+      "detail": "same (seed, task_id) called twice produces byte-identical order both times"
+    },
+    {
+      "check": "randomized_arm_order_produces_real_variety_across_seeds",
+      "status": "VERIFIED",
+      "detail": "task_11: 16 distinct orderings across 25 seeds; task_12: 16 distinct orderings across 25 seeds -- confirms real, non-degenerate randomization, not a fixed/near-fixed order dressed up as random"
+    },
+    {
+      "check": "randomized_arm_order_independent_per_task_id",
+      "status": "VERIFIED",
+      "detail": "task_11 order at seed 20260904: ['ARCH_PIPELINE', 'ARCH_COUNCIL', 'BASE_N', 'BASE_1']; task_12 order at seed 20260904: ['ARCH_COUNCIL', 'BASE_1', 'BASE_N', 'ARCH_PIPELINE'] -- independently shuffled per task, not one shared order applied to every task"
+    },
+    {
+      "check": "held_out_task_ordering_or_selection_randomization",
+      "status": "OPEN",
+      "detail": "no held-out task suite exists yet (audits/tier3_apparatus/held_out_task_suite.json absent, re-confirmed this session) -- randomized_arm_order() is the only randomization mechanism that currently exists and executes; whether held-out TASK selection/ordering itself will be randomized is a property of a future task-authoring step, not of any code that exists to test today. Marked OPEN rather than assumed either way."
+    },
+    {
+      "check": "infrastructure_failure_classification_executed_against_real_function",
+      "status": "VERIFIED",
+      "detail": "real base_pilot._classify_exception() called directly: TimeoutError -> INFRASTRUCTURE_FAILURE, ConnectionError -> INFRASTRUCTURE_FAILURE, ValueError -> GENERATION_EXCEPTION (expected the first two to be INFRASTRUCTURE_FAILURE, the third to be something else, confirming the classifier discriminates rather than defaulting everything to one bucket)"
+    },
+    {
+      "check": "infrastructure_failure_does_not_swallow_ordinary_logic_exceptions",
+      "status": "VERIFIED",
+      "detail": "ValueError correctly classified as 'GENERATION_EXCEPTION', not INFRASTRUCTURE_FAILURE -- confirms the classifier isn't simply mapping every exception to the same bucket"
+    },
+    {
+      "check": "objective_verify_receives_no_condition_label",
+      "status": "VERIFIED",
+      "detail": "direct source read of objective_verify(candidate_code, test_code) -- signature and body contain no 'arm'/'condition' parameter or reference; it cannot know which of the 4 arms produced the code it is scoring"
+    },
+    {
+      "check": "objective_verify_executed_live_against_real_sandbox_correct_code",
+      "status": "VERIFIED",
+      "detail": "ran a real, correct trivial function through the actual verify_in_sandbox() kernel sandbox -- result: True, ran_ok=True"
+    },
+    {
+      "check": "objective_verify_executed_live_against_real_sandbox_incorrect_code",
+      "status": "VERIFIED",
+      "detail": "ran a real, deliberately WRONG function through the same real sandbox -- correctly failed: passed=False"
+    },
+    {
+      "check": "no_hidden_retry_loops_outside_the_disclosed_basen_attempt_loop",
+      "status": "VERIFIED",
+      "detail": "BASE_1/ARCH_PIPELINE/ARCH_COUNCIL contain zero retry/while-True/for-attempt constructs; BASE_N's one loop (`for i in range(N_BASEN)`) is the disclosed, fixed-N independent-attempts loop, not a hidden retry-on-failure mechanism -- confirmed by direct source read of all 4 function bodies, not a grep alone"
+    },
+    {
+      "check": "arch_pipeline_generate_code_from_plans_own_internal_retry_disclosed_not_hidden",
+      "status": "OPEN",
+      "detail": "generate_code_from_plan() itself (production code, called by ARCH_PIPELINE) was read directly this session and found to have NO internal retry of its own (a SEPARATE production function, the real execute_self_edit(), has a documented single-retry-on-sandbox-failure mechanism per prior audits -- but execute_self_edit() is never called by this harness at all, only generate_code_from_plan() is, confirmed by direct source read of run_condition_arch_pipeline()). Marked OPEN rather than VERIFIED because this reasoning was not additionally proven by a live execution trace (e.g. instrumenting call counts during a real Ollama call), only by static reading of generate_code_from_plan()'s own body."
+    },
+    {
+      "check": "frozen_task_suite_hash_matches_expected_constant",
+      "status": "VERIFIED",
+      "detail": "live sha256=6440ed174482a2d5bb43bdd03bfc33c73c66b492cb74f465e2674e8a8eb8937d, expected constant in source=6440ed174482a2d5bb43bdd03bfc33c73c66b492cb74f465e2674e8a8eb8937d"
+    },
+    {
+      "check": "held_out_manifest_does_not_exist",
+      "status": "VERIFIED",
+      "detail": "checked audits/tier3_apparatus/held_out_task_suite.json -- does not exist"
+    },
+    {
+      "check": "assert_development_task_only_correctly_gates_real_and_fake_ids",
+      "status": "VERIFIED",
+      "detail": "real dev task_11 allowed=True; non-development task_01 correctly refused=True"
+    },
+    {
+      "check": "held_out_manifest_precedence_over_dev_allowlist_when_present",
+      "status": "VERIFIED",
+      "detail": "simulated a held-out manifest listing task_11 (normally a valid dev task) -- assert_development_task_only('task_11') correctly refused: True"
+    },
+    {
+      "check": "truncation_classification_full_suite_rerun",
+      "status": "VERIFIED",
+      "detail": "re-ran scripts/verify_tier3_truncation_repair.py fresh, exit_code=0"
+    }
+  ],
+  "tier3_apparatus_verification_summary": {
+    "verified": 29,
+    "open": 2,
+    "failed": 0,
+    "total": 31
+  },
+  "hypothesis_boundaries": {
+    "H1_architecture_beyond_model": {
+      "definition": "reproducible performance advantage over an appropriately matched baseline at equal inference budget",
+      "current_experiment_can_test": true
+    },
+    "H2_model_ceiling": {
+      "definition": "architecture cannot overcome model limits given equal/greater budget",
+      "current_experiment_can_test": true
+    },
+    "H3_measurement_limitation": {
+      "definition": "evaluators fail to capture meaningful differences",
+      "current_experiment_can_test": "partially -- objective sandbox scoring mitigates but does not eliminate this"
+    },
+    "H4_orchestration_vs_diversity": {
+      "definition": "FeralEcho helps mainly via more attempts/diversity/selection, not orchestration specifically",
+      "current_experiment_can_test": "PARTIALLY -- can distinguish 'combined council package beats budget-matched baseline' from 'no advantage'; CANNOT distinguish 'diversity is the active ingredient' from 'orchestration/synthesis mechanism itself is the active ingredient' -- these change simultaneously between BASE_N and ARCH_COUNCIL with no arm isolating them",
+      "strongest_supportable_claim": "Whether council's real, combined package -- diversity and orchestration together, exactly as it exists in production -- beats a budget-matched same-model self-consistency baseline",
+      "claim_not_supportable": "Whether council's specific orchestration/synthesis mechanism, independent of having multiple different models available, is what makes any observed advantage happen"
+    },
+    "H5_infrastructure_ceiling": {
+      "definition": "the M5/Ollama operating envelope prevents valid evaluation before the substantive comparison can even complete",
+      "override_rule": ">15% INFRASTRUCTURE_FAILURE-classified trials -> report as inconclusive-pending-infrastructure regardless of pass-rate numbers"
+    },
+    "statistical_discipline": "pre-registered >=25 percentage point paired effect size, not bare p-value significance; 'not statistically significant' must not be converted into 'no difference exists'"
+  },
+  "readiness_verdict": "READY_WITH_CONDITIONS",
+  "readiness_conditions": [
+    "A genuine low-contention execution window (Option 3) must be secured before the held-out run",
+    "8 real, frozen held-out tasks must be authored and hashed -- do not yet exist",
+    "BASE_N synthesis must be sanity-checked on development tasks under the REPAIRED code before touching held-out data",
+    "Any report of results must state the H4 boundary verbatim, not summarize it away",
+    "No production change, autonomy repair, or fine-tuning should be bundled into or precede this run"
+  ],
+  "highest_information_gain_next_experiment": {
+    "recommendation": "A",
+    "option_A_tier3": "uniquely targets a question with zero prior discriminating evidence in this corpus; apparatus now most-verified it has ever been; low remaining marginal engineering cost",
+    "option_B_autonomy_investigation": "largely already extracted by this mission's own stress test; low marginal gain",
+    "option_C_learning_experiment": "P1.2 already delivered a clean null for preference formation; broader content-level learning has no apparatus yet -- high up-front cost",
+    "option_D_self_edit_level4": "retrospective evidence already argues against Level 4; prospective test blocked by the SAME resource-contention issue as Tier-3, without comparable unique discriminating power",
+    "option_E_memory_retrieval_ablation_temp0_all_task_types": "strongest genuine runner-up -- lower cost, resolves an independently important open question; could run in the SAME low-contention window as Tier-3 without competing for the same held-out data",
+    "option_F_other": "stale council-cursor repair is cheap but not itself a high-information experiment -- its effect would still need controlled before/after measurement"
+  },
+  "next_step_protocol_not_executed": [
+    "Author and freeze 8 held-out tasks; hash immediately",
+    "Secure a genuine low-contention execution window (pause model_guided_autonomous_loop and echo_projects' autonomous cycle for the run's duration only)",
+    "Confirm or deliberately re-pin the study model",
+    "Run all 4 arms on the 2 development tasks under the REPAIRED code first, confirming a sane BASE_N synthesis result",
+    "Run all 4 arms on the 8 held-out tasks in randomized order with pre-batch telemetry",
+    "Score via objective_verify() + repaired classify_result(), preserving truncation_evidence_type",
+    "Independently spot-check >=20% of verdicts, stratified across arms",
+    "Unblind, compute paired comparisons, apply the pre-registered >=25pp threshold and the H5 >15% override rule",
+    "Report once, with the H4 boundary language included verbatim",
+    "Resume full autonomy immediately after"
+  ],
+  "open_uncertainties": [
+    "Exact original trigger date/cause of learn_from_council_rating()'s stall (cursor's last update predates the confirmed rotation by about a month; earlier logs already rotated out)",
+    "Whether repairing the stale cursor or arbitration priority would produce measurable quality benefit",
+    "Whether self_edit_convergence.json's zero streaks reflect correct design or quiet inertness",
+    "Whether memory retrieval has causal effect on non-personal task types or at temperature=0",
+    "Whether echo_projects' 0/61 reflects a model-class ceiling or a fixable calibration issue",
+    "Whether a council win, if any, reflects something about this specific model pool rather than diversity generally",
+    "Full content of the 2026-09-02 architectural-self-knowledge document series not read in depth this session"
+  ],
+  "falsification_criteria": [
+    "H1-support reading falsified by BASE_N performing statistically indistinguishably from ARCH_COUNCIL on held-out data (a valid H4-supporting outcome, not a failure)",
+    "learn_from_council_rating()-is-dead claim falsified by council_ratings.jsonl growing within one real polling cycle without any code change (plausible self-resolution ~2026-09-17 at observed growth rate)",
+    "echo_projects classification (D) falsified by any single real, human-verified, F2-passing, genuinely useful multi-file project",
+    "P1.2-null-carries-forward claim falsified by a position-decoupled replication showing genuine content-tracking through a real repeated label flip",
+    "C1 75% compliance estimate meaningfully revised by a 20+-trial replication landing outside a reasonable CI around 75%",
+    "Readiness verdict downgraded to NOT_READY if a low-contention window proves structurally unobtainable (still >15% INFRASTRUCTURE_FAILURE after throttling)"
+  ],
+  "next_mission": "Author and freeze 8 held-out tasks, secure a genuine EXPERIMENT_WINDOW (Option 3) low-contention operating window, run a fresh development-sanity pass under the repaired scripts/run_tier3_apparatus.py to confirm BASE_N's synthesis behaves sanely, then execute the full 4-arm Tier-3 held-out comparison exactly per the protocol -- reporting the H4 hypothesis-boundary language verbatim alongside any result."
+}

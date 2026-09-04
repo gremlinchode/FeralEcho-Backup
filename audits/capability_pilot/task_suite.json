@@ -1,0 +1,111 @@
+{
+  "suite_version": 1,
+  "frozen_at": "2026-09-04",
+  "tasks": [
+    {
+      "task_id": "task_01",
+      "tier": 1,
+      "category": "data transformation",
+      "prompt": "Write a Python function `dedupe_preserve_order(items: list) -> list` that removes duplicate elements from a list while preserving the original order of first occurrence. Return only the function definition, valid Python, no explanation.",
+      "test_code": "assert dedupe_preserve_order([1,2,2,3,1,4]) == [1,2,3,4]\nassert dedupe_preserve_order([]) == []\nassert dedupe_preserve_order(['a','a','a']) == ['a']\nassert dedupe_preserve_order([1,1,2,1,2,3]) == [1,2,3]\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "task_02",
+      "tier": 1,
+      "category": "parsing / string logic",
+      "prompt": "Write a Python function `is_palindrome(s: str) -> bool` that returns True if the string is a palindrome, ignoring case, spaces, and punctuation (consider only alphanumeric characters). Return only the function definition, valid Python, no explanation.",
+      "test_code": "assert is_palindrome('A man, a plan, a canal: Panama') == True\nassert is_palindrome('') == True\nassert is_palindrome('hello') == False\nassert is_palindrome('No lemon, no melon') == True\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "task_03",
+      "tier": 1,
+      "category": "data transformation",
+      "prompt": "Write a Python function `flatten_one_level(nested: list) -> list` that flattens exactly ONE level of nesting in a list (a list containing some plain items and some list items -> a single flat list; do not recurse into deeper nesting). Return only the function definition, valid Python, no explanation.",
+      "test_code": "assert flatten_one_level([1, [2, 3], 4, [5]]) == [1, 2, 3, 4, 5]\nassert flatten_one_level([[1, [2, 3]], 4]) == [1, [2, 3], 4]\nassert flatten_one_level([]) == []\nassert flatten_one_level([1, 2, 3]) == [1, 2, 3]\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "task_04",
+      "tier": 1,
+      "category": "data transformation",
+      "prompt": "Write a Python function `word_frequencies(text: str) -> dict` that returns a dict mapping each lowercase word to its occurrence count. Words are separated by whitespace; strip punctuation from the edges of each word. Return only the function definition, valid Python, no explanation.",
+      "test_code": "r = word_frequencies('The cat sat on the mat. The cat ran.')\nassert r['the'] == 3\nassert r['cat'] == 2\nassert r['sat'] == 1\nassert word_frequencies('') == {}\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "task_05",
+      "tier": 1,
+      "category": "algorithmic reasoning",
+      "prompt": "Write a Python function `fizzbuzz(n: int) -> list` that returns a list of strings for integers 1 through n inclusive: 'Fizz' for multiples of 3, 'Buzz' for multiples of 5, 'FizzBuzz' for multiples of both, otherwise the number as a string. Return only the function definition, valid Python, no explanation.",
+      "test_code": "r = fizzbuzz(15)\nassert r[0] == '1'\nassert r[2] == 'Fizz'\nassert r[4] == 'Buzz'\nassert r[14] == 'FizzBuzz'\nassert len(r) == 15\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "task_06",
+      "tier": 2,
+      "category": "stateful logic / API implementation",
+      "prompt": "Write a Python class `LRUCache` with a constructor `__init__(self, capacity: int)`, a method `get(self, key) -> int` (returns the value or -1 if not present, and marks the key as most-recently-used), and a method `put(self, key, value)` (inserts/updates a key, evicting the least-recently-used entry if the cache is over capacity). Both get and put must be O(1) on average. Return only the class definition, valid Python, no explanation.",
+      "test_code": "c = LRUCache(2)\nc.put(1, 1)\nc.put(2, 2)\nassert c.get(1) == 1\nc.put(3, 3)  # evicts key 2 (least recently used)\nassert c.get(2) == -1\nc.put(4, 4)  # evicts key 1\nassert c.get(1) == -1\nassert c.get(3) == 3\nassert c.get(4) == 4\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "task_07",
+      "tier": 2,
+      "category": "parsing",
+      "prompt": "Write a Python function `parse_csv_line(line: str) -> list` that parses a single CSV line into a list of string fields, correctly handling fields wrapped in double quotes that may themselves contain commas (e.g. '\"a,b\",c' should parse to ['a,b', 'c']). Do not use the csv module. Return only the function definition, valid Python, no explanation.",
+      "test_code": "assert parse_csv_line('a,b,c') == ['a', 'b', 'c']\nassert parse_csv_line('\"a,b\",c') == ['a,b', 'c']\nassert parse_csv_line('x,\"y,z\",w') == ['x', 'y,z', 'w']\nassert parse_csv_line('') == ['']\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "task_08",
+      "tier": 2,
+      "category": "algorithmic reasoning / edge-case handling",
+      "prompt": "Write a Python function `is_balanced(s: str) -> bool` that checks whether a string containing only the characters ()[]{}. correctly nests and matches all three bracket types (any other characters should be ignored). Return only the function definition, valid Python, no explanation.",
+      "test_code": "assert is_balanced('([{}])') == True\nassert is_balanced('([)]') == False\nassert is_balanced('a(b[c]d)e') == True\nassert is_balanced('(') == False\nassert is_balanced('') == True\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "task_09",
+      "tier": 2,
+      "category": "algorithmic reasoning",
+      "prompt": "Write a Python function `merge_intervals(intervals: list) -> list` that takes a list of [start, end] pairs (not necessarily sorted) and returns a new list with all overlapping intervals merged, sorted by start. Return only the function definition, valid Python, no explanation.",
+      "test_code": "assert merge_intervals([[1,3],[2,6],[8,10],[15,18]]) == [[1,6],[8,10],[15,18]]\nassert merge_intervals([[1,4],[4,5]]) == [[1,5]]\nassert merge_intervals([]) == []\nassert merge_intervals([[5,6],[1,2]]) == [[1,2],[5,6]]\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "task_10",
+      "tier": 2,
+      "category": "stateful logic / parsing",
+      "prompt": "Write a Python function `eval_postfix(expr: str) -> float` that evaluates a space-separated postfix (reverse Polish notation) arithmetic expression supporting +, -, *, / and returns the numeric result. Example: '3 4 +' -> 7. Return only the function definition, valid Python, no explanation.",
+      "test_code": "assert eval_postfix('3 4 +') == 7\nassert eval_postfix('5 1 2 + 4 * + 3 -') == 14\nassert eval_postfix('10 2 /') == 5\nassert eval_postfix('4') == 4\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "task_11",
+      "tier": 3,
+      "category": "refactoring (seeded from a real self-edit historical failure class)",
+      "prompt": "Some text may have a leading natural-language sentence before the first valid Python token (for example: 'Here is the code you requested:\\ndef foo():\\n    return 1'). Write a Python function `strip_leading_prose(text: str) -> str` that removes any leading non-code prose and returns only the code starting from the first line that is valid as the start of a Python statement (e.g. starts with 'def ', 'class ', 'import ', '#', or an assignment/expression), preserving the rest of the text exactly. Return only the function definition, valid Python, no explanation.",
+      "test_code": "assert strip_leading_prose('Here is the code:\\ndef foo():\\n    return 1') == 'def foo():\\n    return 1'\nassert strip_leading_prose('def foo():\\n    return 1') == 'def foo():\\n    return 1'\nassert strip_leading_prose('Sure! Here you go:\\n\\nimport os\\nprint(os.getcwd())') == 'import os\\nprint(os.getcwd())'\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "task_12",
+      "tier": 3,
+      "category": "bug fixing (seeded from a real off-by-one bug shape)",
+      "prompt": "The following function has a bug: it is supposed to perform binary search and return the index of `target` in the sorted list `arr`, or -1 if not found, but it has an off-by-one error that causes it to sometimes miss the correct answer or infinite-loop. Fix the bug WITHOUT changing the function's name or signature. Here is the buggy code:\\n\\ndef binary_search(arr, target):\\n    low, high = 0, len(arr)\\n    while low < high:\\n        mid = (low + high) // 2\\n        if arr[mid] == target:\\n            return mid\\n        elif arr[mid] < target:\\n            low = mid\\n        else:\\n            high = mid\\n    return -1\\n\\nReturn only the corrected function definition, valid Python, no explanation.",
+      "test_code": "assert binary_search([1,3,5,7,9,11], 7) == 3\nassert binary_search([1,3,5,7,9,11], 1) == 0\nassert binary_search([1,3,5,7,9,11], 11) == 5\nassert binary_search([1,3,5,7,9,11], 4) == -1\nassert binary_search([], 1) == -1\nassert binary_search([5], 5) == 0\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "task_13",
+      "tier": 3,
+      "category": "algorithmic reasoning (mirrors real duplicate-detection logic already used in this codebase)",
+      "prompt": "Write a Python function `jaccard_near_duplicate(a: str, b: str, threshold: float = 0.5) -> bool` that tokenizes both strings by whitespace into sets of words, computes the Jaccard similarity (size of intersection divided by size of union), and returns True if the similarity is greater than or equal to threshold. If both strings tokenize to empty sets, return True. Return only the function definition, valid Python, no explanation.",
+      "test_code": "assert jaccard_near_duplicate('the cat sat on the mat', 'the cat sat on the rug', 0.5) == True\nassert jaccard_near_duplicate('completely different words here', 'nothing alike at all', 0.5) == False\nassert jaccard_near_duplicate('', '', 0.5) == True\nassert jaccard_near_duplicate('a b c', 'a b c', 0.99) == True\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "task_14",
+      "tier": 3,
+      "category": "stateful logic / concurrency reasoning",
+      "prompt": "Write a Python class `ThreadSafeCounter` with an `__init__(self)` that starts the count at 0, an `increment(self)` method that atomically increments the count by 1 using a threading.Lock, and a `value(self) -> int` method that returns the current count. It must be safe to call increment() from many threads concurrently with no lost updates. Return only the class definition (including any needed imports), valid Python, no explanation.",
+      "test_code": "import threading\nc = ThreadSafeCounter()\ndef worker():\n    for _ in range(1000):\n        c.increment()\nthreads = [threading.Thread(target=worker) for _ in range(10)]\nfor t in threads: t.start()\nfor t in threads: t.join()\nassert c.value() == 10000, f'expected 10000, got {c.value()}'\nprint('ALL_TESTS_PASSED')"
+    },
+    {
+      "task_id": "task_15",
+      "tier": 3,
+      "category": "algorithmic reasoning / edge-case handling",
+      "prompt": "Write a Python function `topological_sort(graph: dict) -> list` where `graph` is a dict mapping each node to a list of nodes it depends on (must come before it). Return a valid topological order as a list. If the graph contains a cycle, raise a `ValueError`. Return only the function definition, valid Python, no explanation.",
+      "test_code": "order = topological_sort({'a': [], 'b': ['a'], 'c': ['b']})\nassert order.index('a') < order.index('b') < order.index('c')\norder2 = topological_sort({'x': ['y', 'z'], 'y': [], 'z': ['y']})\nassert order2.index('y') < order2.index('z') < order2.index('x')\ntry:\n    topological_sort({'a': ['b'], 'b': ['a']})\n    raise AssertionError('expected ValueError for cycle')\nexcept ValueError:\n    pass\nprint('ALL_TESTS_PASSED')"
+    }
+  ]
+}

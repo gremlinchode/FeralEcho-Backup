@@ -1,0 +1,105 @@
+{
+  "results": [
+    {
+      "check": "isolated_source_contains_no_council_path_references",
+      "status": "VERIFIED",
+      "detail": "AST-parsed run_condition_arch_pipeline()'s real Call nodes (immune to docstring prose, which legitimately narrates these same names as history) -- real function calls made: ['_new_call_id', '_ollama_query', 'clean_code', 'len', 'open', 'read', 'round', 'scan_for_unsafe_operations', 'str', 'time']; forbidden names found among them: []"
+    },
+    {
+      "check": "isolated_source_uses_same_low_level_call_as_base1",
+      "status": "VERIFIED",
+      "detail": "confirms river_deliberation._ollama_query() is the real call mechanism, matching BASE_1's own"
+    },
+    {
+      "check": "canary_confirms_no_council_path_reached_live",
+      "status": "VERIFIED",
+      "detail": "poisoned echo_query()/deliberate_and_learn()/generate_code_from_plan() to raise if called, then ran a REAL live call through run_condition_arch_pipeline() -- none of the canaries fired"
+    },
+    {
+      "check": "single_generation_call_reported",
+      "status": "VERIFIED",
+      "detail": "total_calls=1"
+    },
+    {
+      "check": "max_tokens_matches_base1_constant",
+      "status": "VERIFIED",
+      "detail": "requested_max_tokens_per_call=2048, MAX_TOKENS=2048"
+    },
+    {
+      "check": "exactly_one_real_ollama_query_call_recorded",
+      "status": "VERIFIED",
+      "detail": "1 real _ollama_query() call(s) recorded during one run_condition_arch_pipeline() invocation"
+    },
+    {
+      "check": "real_call_used_the_pinned_model_not_a_different_one",
+      "status": "VERIFIED",
+      "detail": "real call's model_name=qwen2.5-coder:7b, pinned_model=qwen2.5-coder:7b"
+    },
+    {
+      "check": "model_used_field_matches_the_real_call_not_a_cosmetic_label",
+      "status": "VERIFIED",
+      "detail": "result['model_used']=qwen2.5-coder:7b"
+    },
+    {
+      "check": "zero_side_effects_attempted_not_merely_blocked",
+      "status": "VERIFIED",
+      "detail": "side_effects_detected count: before=0, after=0 (unlike the old path, which attempted several real writes that install_isolation() had to intercept, this path should attempt none at all, since it never calls log_interaction/save_reflection/river_brain.learn/river_brain.save anywhere)"
+    },
+    {
+      "check": "call_id_is_a_real_int_not_the_no_ground_truth_sentinel",
+      "status": "VERIFIED",
+      "detail": "call_id=2 (type=int)"
+    },
+    {
+      "check": "real_ground_truth_done_reason_was_captured_for_this_call",
+      "status": "VERIFIED",
+      "detail": "_truncation_events_by_call has an entry for call_id=2: True"
+    },
+    {
+      "check": "clean_code_extraction_case_normal_fenced_code",
+      "status": "VERIFIED",
+      "detail": "raw='```python\\ndef f(x):\\n    return x + 1\\n```'... -> extracted='def f(x):\\n    return x + 1'... parses=True (expected parseable=True)"
+    },
+    {
+      "check": "clean_code_extraction_case_code_followed_by_prose_no_fence",
+      "status": "VERIFIED",
+      "detail": "raw='def f(x):\\n    return x + 1\\n\\nThis solves '... -> extracted='def f(x):\\n    return x + 1\\n\\nThis solves '... parses=False (expected parseable=False)"
+    },
+    {
+      "check": "clean_code_extraction_case_reasoning_followed_by_code",
+      "status": "VERIFIED",
+      "detail": "raw='Let me think about this step by step. Th'... -> extracted='def f(x):\\n    return x + 1'... parses=True (expected parseable=True)"
+    },
+    {
+      "check": "clean_code_extraction_case_truncated_generation",
+      "status": "VERIFIED",
+      "detail": "raw='```python\\ndef f(x):\\n    return x +'... -> extracted='```python\\ndef f(x):\\n    return x +'... parses=False (expected parseable=False)"
+    },
+    {
+      "check": "clean_code_extraction_case_malformed_candidate",
+      "status": "VERIFIED",
+      "detail": "raw='```python\\ndef f(x)\\n    return x + 1\\n```'... -> extracted='def f(x)\\n    return x + 1'... parses=False (expected parseable=False)"
+    },
+    {
+      "check": "clean_code_extraction_case_empty_generation",
+      "status": "VERIFIED",
+      "detail": "raw=''... -> extracted=''... parses=True (expected parseable=True)"
+    },
+    {
+      "check": "empty_candidate_correctly_fails_the_real_sandbox_despite_parsing",
+      "status": "VERIFIED",
+      "detail": "an empty candidate correctly ast.parse()s (trivially, as an empty module) but the REAL sandbox test still correctly fails it (NameError calling the undefined function): passed=False"
+    },
+    {
+      "check": "infrastructure_failure_classification_reused_unchanged",
+      "status": "VERIFIED",
+      "detail": "run_condition_arch_pipeline() raises through the same try/except in _run_single_candidate() as every other arm -- base_pilot._classify_exception() is shared, unmodified, and already verified (scripts/verify_tier3_apparatus_readiness_audit.py) to correctly distinguish INFRASTRUCTURE_FAILURE (TimeoutError/ConnectionError) from an ordinary logic exception"
+    }
+  ],
+  "summary": {
+    "verified": 19,
+    "open": 0,
+    "failed": 0,
+    "total": 19
+  }
+}

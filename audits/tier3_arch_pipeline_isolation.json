@@ -1,0 +1,557 @@
+{
+  "mission": "tier3_arch_pipeline_isolation",
+  "constraints_honored": {
+    "held_out_experiment_run": false,
+    "held_out_material_inspected_beyond_integrity_metadata": false,
+    "held_out_suite_modified": false,
+    "fine_tuning_performed": false,
+    "production_self_edit_behavior_modified": false,
+    "echo_model_orchestrator_modified": false,
+    "river_deliberation_modified": false,
+    "self_edit_manager_modified": false,
+    "self_edit_manager_only_read_via_import": [
+      "CODE_OUTPUT_RULES",
+      "SELF_EDIT_FILE"
+    ],
+    "unrelated_production_code_modified": false,
+    "architecture_optimized_for_better_results": false,
+    "other_arms_altered_to_make_arch_pipeline_look_comparable": false,
+    "historical_data_deleted_or_rewritten": false,
+    "only_file_changed": "scripts/run_tier3_apparatus.py",
+    "held_out_suite_hash_reconfirmed_unchanged": "2d78cbdb3657755f65779d010590ae348ded22d6d32d300bddacfd0aaa0e912a"
+  },
+  "step1_previous_call_path": {
+    "chain": [
+      "run_condition_arch_pipeline(task)",
+      "self_edit_manager.generate_code_from_plan(task['prompt'], temperature=0.0)",
+      "echo_model_orchestrator.echo_query(code_prompt, task_type='coding', temperature=temperature)",
+      "echo_query()'s use_all=False default branch",
+      "river_deliberation.deliberate_and_learn(...)",
+      "3 real councillors queried independently",
+      "echo:latest synthesis",
+      "final response returned"
+    ],
+    "direct_task_not_in_direct_echo_tasks": true,
+    "direct_echo_tasks_set": [
+      "personal",
+      "reflection",
+      "spiritual",
+      "identity",
+      "faith",
+      "poetry",
+      "dream"
+    ],
+    "live_confirmation": "task_12's ARCH_PIPELINE candidate under the old code showed a real '[DELIBERATION] Council for task=coding: [qwen2.5-coder:7b, mlx:qwen3, echo:latest]' / 'Sending 3 opinions to echo:latest for synthesis' sequence in the live process log",
+    "misreported_fields": {
+      "total_calls": "hardcoded literal '1' at the old scripts/run_tier3_apparatus.py:524, never measured",
+      "model_used": "a label from generate_code_from_plan()'s own separate, non-generating choose_model() call, used only for RiverBrain attribution -- never the model that actually generated the text"
+    },
+    "generation_time_evidence": {
+      "old_arch_pipeline_task11_s": 32.83,
+      "old_arch_pipeline_task12_s": 37.37,
+      "base1_task11_s": 2.69,
+      "base1_task12_s": 6.6
+    },
+    "scope_beyond_tier3_harness": "the ORIGINAL 3-condition pilot (scripts/run_capability_pilot.py)'s own condition B (run_condition_b_pipeline()) calls generate_code_from_plan() the identical way and carries the identical confound -- 9 historical records in audits/capability_pilot/raw_results.jsonl, additionally confounded by having no model pinning at all (real model_used values: echo:latest, llama3:instruct, llama3.2:3b, qwen2.5-coder:7b across the 9 records)"
+  },
+  "step2_new_call_path": {
+    "chain": [
+      "run_condition_arch_pipeline(task, pinned_model)",
+      "builds code_prompt reproducing generate_code_from_plan()'s own real prompt shape (CODE_OUTPUT_RULES + live self_edit_generated.py contents + task prompt)",
+      "river_deliberation._ollama_query(pinned_model, code_prompt, temperature=0.0, max_tokens=MAX_TOKENS, task_type='coding')",
+      "base_pilot.clean_code(raw)",
+      "scan_for_unsafe_operations(code) -- observational F1, non-gating"
+    ],
+    "same_low_level_mechanism_as_base1": true,
+    "arm_label": "ARCH_PIPELINE_ISOLATED",
+    "arm_label_kept_distinct_from_historical_label": "ARCH_PIPELINE",
+    "no_production_file_modified": true,
+    "self_edit_manager_constants_only_imported_read_only": true
+  },
+  "step1_information_advantage_check": {
+    "self_edit_generated_py_live_content_read": true,
+    "self_edit_generated_py_char_length": 2324,
+    "task_relevant_information_found": false,
+    "content_summary": "a HealthMonitor class, a log_call logging decorator, a duplicated and internally-broken run_code_generator/generate_and_modify_code pair -- unrelated, disclosed noise, not task-relevant signal",
+    "live_demonstration_of_dilution_not_advantage": "a real verification-test call given a trivial add_one(x) task, under this exact framing, produced '# def add_one(x: int) -> int:\\n#     return x + 1' -- the entire function commented out",
+    "disclosed_non_frozen_limitation": "self_edit_generated.py is the live, continuously-self-edited production file, not a frozen artifact -- its exact text can differ between separate runs of this harness at different times",
+    "conclusion": "no unintentional information advantage found; proceeded to implementation per instruction"
+  },
+  "context_prompt_equivalence_table": "see audits/tier3_arch_pipeline_isolation.md section 3 (full attribute table: model, system prompt, hidden wrapper content, user/task prompt, CODE_OUTPUT_RULES, self_edit_generated.py contents, plan_code_logic, temperature, max_tokens, context length, retry behavior, call count, synthesis, tool access, memory/RAG access, RiverBrain access, model selection, production-state access)",
+  "step3_6_verification": {
+    "script": "scripts/verify_arch_pipeline_isolation.py",
+    "results_file": "audits/tier3_apparatus/arch_pipeline_isolation_verification_results.json",
+    "summary": {
+      "verified": 19,
+      "open": 0,
+      "failed": 0,
+      "total": 19
+    },
+    "results": [
+      {
+        "check": "isolated_source_contains_no_council_path_references",
+        "status": "VERIFIED",
+        "detail": "AST-parsed run_condition_arch_pipeline()'s real Call nodes (immune to docstring prose, which legitimately narrates these same names as history) -- real function calls made: ['_new_call_id', '_ollama_query', 'clean_code', 'len', 'open', 'read', 'round', 'scan_for_unsafe_operations', 'str', 'time']; forbidden names found among them: []"
+      },
+      {
+        "check": "isolated_source_uses_same_low_level_call_as_base1",
+        "status": "VERIFIED",
+        "detail": "confirms river_deliberation._ollama_query() is the real call mechanism, matching BASE_1's own"
+      },
+      {
+        "check": "canary_confirms_no_council_path_reached_live",
+        "status": "VERIFIED",
+        "detail": "poisoned echo_query()/deliberate_and_learn()/generate_code_from_plan() to raise if called, then ran a REAL live call through run_condition_arch_pipeline() -- none of the canaries fired"
+      },
+      {
+        "check": "single_generation_call_reported",
+        "status": "VERIFIED",
+        "detail": "total_calls=1"
+      },
+      {
+        "check": "max_tokens_matches_base1_constant",
+        "status": "VERIFIED",
+        "detail": "requested_max_tokens_per_call=2048, MAX_TOKENS=2048"
+      },
+      {
+        "check": "exactly_one_real_ollama_query_call_recorded",
+        "status": "VERIFIED",
+        "detail": "1 real _ollama_query() call(s) recorded during one run_condition_arch_pipeline() invocation"
+      },
+      {
+        "check": "real_call_used_the_pinned_model_not_a_different_one",
+        "status": "VERIFIED",
+        "detail": "real call's model_name=qwen2.5-coder:7b, pinned_model=qwen2.5-coder:7b"
+      },
+      {
+        "check": "model_used_field_matches_the_real_call_not_a_cosmetic_label",
+        "status": "VERIFIED",
+        "detail": "result['model_used']=qwen2.5-coder:7b"
+      },
+      {
+        "check": "zero_side_effects_attempted_not_merely_blocked",
+        "status": "VERIFIED",
+        "detail": "side_effects_detected count: before=0, after=0 (unlike the old path, which attempted several real writes that install_isolation() had to intercept, this path should attempt none at all, since it never calls log_interaction/save_reflection/river_brain.learn/river_brain.save anywhere)"
+      },
+      {
+        "check": "call_id_is_a_real_int_not_the_no_ground_truth_sentinel",
+        "status": "VERIFIED",
+        "detail": "call_id=2 (type=int)"
+      },
+      {
+        "check": "real_ground_truth_done_reason_was_captured_for_this_call",
+        "status": "VERIFIED",
+        "detail": "_truncation_events_by_call has an entry for call_id=2: True"
+      },
+      {
+        "check": "clean_code_extraction_case_normal_fenced_code",
+        "status": "VERIFIED",
+        "detail": "raw='```python\\ndef f(x):\\n    return x + 1\\n```'... -> extracted='def f(x):\\n    return x + 1'... parses=True (expected parseable=True)"
+      },
+      {
+        "check": "clean_code_extraction_case_code_followed_by_prose_no_fence",
+        "status": "VERIFIED",
+        "detail": "raw='def f(x):\\n    return x + 1\\n\\nThis solves '... -> extracted='def f(x):\\n    return x + 1\\n\\nThis solves '... parses=False (expected parseable=False)"
+      },
+      {
+        "check": "clean_code_extraction_case_reasoning_followed_by_code",
+        "status": "VERIFIED",
+        "detail": "raw='Let me think about this step by step. Th'... -> extracted='def f(x):\\n    return x + 1'... parses=True (expected parseable=True)"
+      },
+      {
+        "check": "clean_code_extraction_case_truncated_generation",
+        "status": "VERIFIED",
+        "detail": "raw='```python\\ndef f(x):\\n    return x +'... -> extracted='```python\\ndef f(x):\\n    return x +'... parses=False (expected parseable=False)"
+      },
+      {
+        "check": "clean_code_extraction_case_malformed_candidate",
+        "status": "VERIFIED",
+        "detail": "raw='```python\\ndef f(x)\\n    return x + 1\\n```'... -> extracted='def f(x)\\n    return x + 1'... parses=False (expected parseable=False)"
+      },
+      {
+        "check": "clean_code_extraction_case_empty_generation",
+        "status": "VERIFIED",
+        "detail": "raw=''... -> extracted=''... parses=True (expected parseable=True)"
+      },
+      {
+        "check": "empty_candidate_correctly_fails_the_real_sandbox_despite_parsing",
+        "status": "VERIFIED",
+        "detail": "an empty candidate correctly ast.parse()s (trivially, as an empty module) but the REAL sandbox test still correctly fails it (NameError calling the undefined function): passed=False"
+      },
+      {
+        "check": "infrastructure_failure_classification_reused_unchanged",
+        "status": "VERIFIED",
+        "detail": "run_condition_arch_pipeline() raises through the same try/except in _run_single_candidate() as every other arm -- base_pilot._classify_exception() is shared, unmodified, and already verified (scripts/verify_tier3_apparatus_readiness_audit.py) to correctly distinguish INFRASTRUCTURE_FAILURE (TimeoutError/ConnectionError) from an ordinary logic exception"
+      }
+    ],
+    "false_positive_caught_and_fixed_during_construction": "the source-check for forbidden council-path references originally used naive substring search, which falsely FAILED because the new function's own docstring legitimately narrates 'generate_code_from_plan'/'echo_query'/'deliberate_and_learn' as history -- fixed to AST-based Call-node inspection, immune to docstring/comment content, mirroring the same fix already applied to detect_orphaned_root_data() etc. per CLAUDE.md Findings 63/83/84",
+    "test_design_flaw_caught_and_fixed": "an OPEN result for the empty-generation extraction case was traced to the test's OWN wrong expectation (an empty string trivially ast.parse()s as a valid empty module) -- not a system gap; fixed by correcting the test's expectation and adding a supplementary real sandbox check confirming an empty candidate still correctly fails objective_verify() (NameError calling an undefined function)"
+  },
+  "step7_dev_sanity_results": [
+    {
+      "task_id": "task_11",
+      "arm": "ARCH_PIPELINE_ISOLATED",
+      "seed": 20260904,
+      "arm_order": [
+        "ARCH_PIPELINE_ISOLATED",
+        "ARCH_COUNCIL",
+        "BASE_N",
+        "BASE_1"
+      ],
+      "timestamp": 1788500322.350086,
+      "raw_response": "```python\ndef strip_leading_prose(text: str) -> str:\n    lines = text.splitlines()\n    for i, line in enumerate(lines):\n        if line.strip().startswith(('def ', 'class ', 'import ', '#', '=')):\n            return '\\n'.join(lines[i:])\n    return ''\n```",
+      "candidate_code": "def strip_leading_prose(text: str) -> str:\n    lines = text.splitlines()\n    for i, line in enumerate(lines):\n        if line.strip().startswith(('def ', 'class ', 'import ', '#', '=')):\n            return '\\n'.join(lines[i:])\n    return ''",
+      "model_used": "qwen2.5-coder:7b",
+      "total_calls": 1,
+      "generation_time": 11.44,
+      "f1_passed": true,
+      "f1_detail": null,
+      "requested_max_tokens_per_call": 2048,
+      "call_id": 1,
+      "code_prompt_char_len": 4571,
+      "self_edit_file_char_len": 2324,
+      "ran_ok": true,
+      "output_tail": "ALL_TESTS_PASSED",
+      "passed": true,
+      "verification_time": 0.06,
+      "classification": "PASS",
+      "truncation_evidence_type": null,
+      "side_effects_so_far": 0
+    },
+    {
+      "task_id": "task_11",
+      "arm": "ARCH_COUNCIL",
+      "seed": 20260904,
+      "arm_order": [
+        "ARCH_PIPELINE_ISOLATED",
+        "ARCH_COUNCIL",
+        "BASE_N",
+        "BASE_1"
+      ],
+      "timestamp": 1788500333.852917,
+      "raw_response": "```\nimport re\n\ndef strip_leading_prose(text: str) -> str:\n    pattern = r'^\\s*(?:#.*|from\\s+.*|import\\s+.*|class\\s+.*|def\\s+.*|as\\s+|raise\\s+|return\\s+|yield\\s+|assert\\s+|break\\s+|continue\\s+|del\\s+|global\\s+|nonlocal\\s+|pass\\s+|print\\s+|try\\s+|except\\s+|finally\\s+|async\\s+|await\\s+)'\n    cleaned_text = re.sub(pattern, '', text, count=1)\n    return cleaned_text.strip()\n```",
+      "candidate_code": "import re\n\ndef strip_leading_prose(text: str) -> str:\n    pattern = r'^\\s*(?:#.*|from\\s+.*|import\\s+.*|class\\s+.*|def\\s+.*|as\\s+|raise\\s+|return\\s+|yield\\s+|assert\\s+|break\\s+|continue\\s+|del\\s+|global\\s+|nonlocal\\s+|pass\\s+|print\\s+|try\\s+|except\\s+|finally\\s+|async\\s+|await\\s+)'\n    cleaned_text = re.sub(pattern, '', text, count=1)\n    return cleaned_text.strip()",
+      "model_used": "council_synthesis",
+      "total_calls": 4,
+      "generation_time": 129.81,
+      "requested_max_tokens_per_call": 2048,
+      "call_id": 2,
+      "ran_ok": false,
+      "output_tail": "Traceback (most recent call last):\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/safe_exec_wrapper.py\", line 368, in <module>\n    spec.loader.exec_module(m)\n  File \"<frozen importlib._bootstrap_external>\", line 999, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/echo_sandbox_run_chcn6d4t/_script.py\", line 9, in <module>\n    assert strip_leading_prose('Here is the code:\\ndef foo():\\n    return 1') == 'def foo():\\n    return 1'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError",
+      "passed": false,
+      "verification_time": 0.08,
+      "classification": "TASK_LOGIC_FAILURE",
+      "truncation_evidence_type": null,
+      "side_effects_so_far": 4
+    },
+    {
+      "task_id": "task_11",
+      "arm": "BASE_N",
+      "seed": 20260904,
+      "arm_order": [
+        "ARCH_PIPELINE_ISOLATED",
+        "ARCH_COUNCIL",
+        "BASE_N",
+        "BASE_1"
+      ],
+      "timestamp": 1788500463.7460978,
+      "raw_response": "```python\nimport re\n\ndef strip_leading_prose(text: str) -> str:\n    pattern = r'^[^\\n]*'\n    match = re.match(pattern, text)\n    if match:\n        return text[len(match.group(0)):].lstrip()\n    return text\n```",
+      "candidate_code": "import re\n\ndef strip_leading_prose(text: str) -> str:\n    pattern = r'^[^\\n]*'\n    match = re.match(pattern, text)\n    if match:\n        return text[len(match.group(0)):].lstrip()\n    return text",
+      "model_used": "qwen2.5-coder:7b",
+      "n_attempts": 3,
+      "total_calls": 4,
+      "call_log": [
+        {
+          "call": "attempt_1",
+          "model": "qwen2.5-coder:7b",
+          "temperature": 0.55,
+          "requested_max_tokens": 2048,
+          "generation_time": 52.51,
+          "call_id": 3
+        },
+        {
+          "call": "attempt_2",
+          "model": "qwen2.5-coder:7b",
+          "temperature": 0.7,
+          "requested_max_tokens": 2048,
+          "generation_time": 44.59,
+          "call_id": 4
+        },
+        {
+          "call": "attempt_3",
+          "model": "qwen2.5-coder:7b",
+          "temperature": 0.85,
+          "requested_max_tokens": 2048,
+          "generation_time": 11.76,
+          "call_id": 5
+        },
+        {
+          "call": "synthesis",
+          "model": "qwen2.5-coder:7b",
+          "temperature": 0.3,
+          "requested_max_tokens": 2048,
+          "generation_time": 28.72,
+          "call_id": 6
+        }
+      ],
+      "requested_max_tokens_per_call": 2048,
+      "call_id": 6,
+      "ran_ok": false,
+      "output_tail": "Traceback (most recent call last):\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/safe_exec_wrapper.py\", line 368, in <module>\n    spec.loader.exec_module(m)\n  File \"<frozen importlib._bootstrap_external>\", line 999, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/echo_sandbox_run_ci6kkc60/_script.py\", line 12, in <module>\n    assert strip_leading_prose('def foo():\\n    return 1') == 'def foo():\\n    return 1'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError",
+      "passed": false,
+      "verification_time": 0.06,
+      "classification": "TASK_LOGIC_FAILURE",
+      "truncation_evidence_type": null,
+      "side_effects_so_far": 4
+    },
+    {
+      "task_id": "task_11",
+      "arm": "BASE_1",
+      "seed": 20260904,
+      "arm_order": [
+        "ARCH_PIPELINE_ISOLATED",
+        "ARCH_COUNCIL",
+        "BASE_N",
+        "BASE_1"
+      ],
+      "timestamp": 1788500601.390649,
+      "raw_response": "```python\nimport re\n\ndef strip_leading_prose(text: str) -> str:\n    # Regular expression to match leading non-code prose\n    pattern = r'^[^\\n]*\\n'\n    \n    # Remove leading prose using regex\n    code_only = re.sub(pattern, '', text)\n    \n    return code_only\n```",
+      "candidate_code": "import re\n\ndef strip_leading_prose(text: str) -> str:\n    # Regular expression to match leading non-code prose\n    pattern = r'^[^\\n]*\\n'\n    \n    # Remove leading prose using regex\n    code_only = re.sub(pattern, '', text)\n    \n    return code_only",
+      "model_used": "qwen2.5-coder:7b",
+      "total_calls": 1,
+      "generation_time": 6.59,
+      "requested_max_tokens_per_call": 2048,
+      "call_id": 7,
+      "ran_ok": false,
+      "output_tail": "Traceback (most recent call last):\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/safe_exec_wrapper.py\", line 368, in <module>\n    spec.loader.exec_module(m)\n  File \"<frozen importlib._bootstrap_external>\", line 999, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/echo_sandbox_run_rxe2s2as/_script.py\", line 14, in <module>\n    assert strip_leading_prose('def foo():\\n    return 1') == 'def foo():\\n    return 1'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError",
+      "passed": false,
+      "verification_time": 0.04,
+      "classification": "TASK_LOGIC_FAILURE",
+      "truncation_evidence_type": null,
+      "side_effects_so_far": 4
+    },
+    {
+      "task_id": "task_12",
+      "arm": "ARCH_COUNCIL",
+      "seed": 20260904,
+      "arm_order": [
+        "ARCH_COUNCIL",
+        "BASE_1",
+        "BASE_N",
+        "ARCH_PIPELINE_ISOLATED"
+      ],
+      "timestamp": 1788500608.019424,
+      "raw_response": "def binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid\n    return -1",
+      "candidate_code": "def binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid\n    return -1",
+      "model_used": "council_synthesis",
+      "total_calls": 4,
+      "generation_time": 177.06,
+      "requested_max_tokens_per_call": 2048,
+      "call_id": 8,
+      "ran_ok": false,
+      "output_tail": "Timed out after 30s",
+      "passed": false,
+      "verification_time": 30.03,
+      "classification": "TASK_LOGIC_FAILURE",
+      "truncation_evidence_type": null,
+      "side_effects_so_far": 8
+    },
+    {
+      "task_id": "task_12",
+      "arm": "BASE_1",
+      "seed": 20260904,
+      "arm_order": [
+        "ARCH_COUNCIL",
+        "BASE_1",
+        "BASE_N",
+        "ARCH_PIPELINE_ISOLATED"
+      ],
+      "timestamp": 1788500815.118704,
+      "raw_response": "```python\ndef binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1\n```",
+      "candidate_code": "def binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1",
+      "model_used": "qwen2.5-coder:7b",
+      "total_calls": 1,
+      "generation_time": 84.08,
+      "requested_max_tokens_per_call": 2048,
+      "call_id": 9,
+      "ran_ok": true,
+      "output_tail": "ALL_TESTS_PASSED",
+      "passed": true,
+      "verification_time": 0.06,
+      "classification": "PASS",
+      "truncation_evidence_type": null,
+      "side_effects_so_far": 8
+    },
+    {
+      "task_id": "task_12",
+      "arm": "BASE_N",
+      "seed": 20260904,
+      "arm_order": [
+        "ARCH_COUNCIL",
+        "BASE_1",
+        "BASE_N",
+        "ARCH_PIPELINE_ISOLATED"
+      ],
+      "timestamp": 1788500899.261376,
+      "raw_response": "```python\ndef binary_search(arr, target):\n    low, high = 0, len(arr)\n    while low < high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid\n    return -1\n```",
+      "candidate_code": "def binary_search(arr, target):\n    low, high = 0, len(arr)\n    while low < high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid\n    return -1",
+      "model_used": "qwen2.5-coder:7b",
+      "n_attempts": 3,
+      "total_calls": 4,
+      "call_log": [
+        {
+          "call": "attempt_1",
+          "model": "qwen2.5-coder:7b",
+          "temperature": 0.55,
+          "requested_max_tokens": 2048,
+          "generation_time": 13.63,
+          "call_id": 10
+        },
+        {
+          "call": "attempt_2",
+          "model": "qwen2.5-coder:7b",
+          "temperature": 0.7,
+          "requested_max_tokens": 2048,
+          "generation_time": 10.66,
+          "call_id": 11
+        },
+        {
+          "call": "attempt_3",
+          "model": "qwen2.5-coder:7b",
+          "temperature": 0.85,
+          "requested_max_tokens": 2048,
+          "generation_time": 7.69,
+          "call_id": 12
+        },
+        {
+          "call": "synthesis",
+          "model": "qwen2.5-coder:7b",
+          "temperature": 0.3,
+          "requested_max_tokens": 2048,
+          "generation_time": 9.02,
+          "call_id": 13
+        }
+      ],
+      "requested_max_tokens_per_call": 2048,
+      "call_id": 13,
+      "ran_ok": true,
+      "output_tail": "ALL_TESTS_PASSED",
+      "passed": true,
+      "verification_time": 0.13,
+      "classification": "PASS",
+      "truncation_evidence_type": null,
+      "side_effects_so_far": 8
+    },
+    {
+      "task_id": "task_12",
+      "arm": "ARCH_PIPELINE_ISOLATED",
+      "seed": 20260904,
+      "arm_order": [
+        "ARCH_COUNCIL",
+        "BASE_1",
+        "BASE_N",
+        "ARCH_PIPELINE_ISOLATED"
+      ],
+      "timestamp": 1788500940.37929,
+      "raw_response": "```python\ndef binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1\n```",
+      "candidate_code": "def binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1",
+      "model_used": "qwen2.5-coder:7b",
+      "total_calls": 1,
+      "generation_time": 17.47,
+      "f1_passed": true,
+      "f1_detail": null,
+      "requested_max_tokens_per_call": 2048,
+      "call_id": 14,
+      "code_prompt_char_len": 4713,
+      "self_edit_file_char_len": 2324,
+      "ran_ok": true,
+      "output_tail": "ALL_TESTS_PASSED",
+      "passed": true,
+      "verification_time": 0.06,
+      "classification": "PASS",
+      "truncation_evidence_type": null,
+      "side_effects_so_far": 8
+    }
+  ],
+  "step9_historical_invalidation": {
+    "classification": "INVALID_FOR_ISOLATED_SINGLE_CALL_COMPARISON",
+    "total_historical_records_reclassified": 13,
+    "sources": [
+      {
+        "file": "audits/capability_pilot/raw_results.jsonl",
+        "condition_label": "B",
+        "count": 9,
+        "additional_confound": "no model pinning existed in this pilot at all"
+      },
+      {
+        "file": "audits/tier3_apparatus/dev_sanity_results.PRE_REPAIR_20260904.jsonl",
+        "arm_label": "ARCH_PIPELINE",
+        "count": 2
+      },
+      {
+        "file": "audits/tier3_apparatus/dev_sanity_results.PRE_ISOLATION_FIX_20260904.jsonl",
+        "arm_label": "ARCH_PIPELINE",
+        "count": 2
+      }
+    ],
+    "data_deleted_or_rewritten": false
+  },
+  "step8_updated_arm_table": [
+    {
+      "arm": "BASE_1",
+      "calls": 1,
+      "models": "pinned (single)",
+      "token_budget": 2048,
+      "context_framing": "bare task prompt",
+      "synthesis": "none",
+      "scientific_question": "What can the pinned model do with one attempt, no framing, no extra compute?"
+    },
+    {
+      "arm": "BASE_N",
+      "calls": 4,
+      "models": "pinned (single, reused)",
+      "token_budget": 2048,
+      "context_framing": "bare task prompt x3, then own attempts for synthesis",
+      "synthesis": "same-model, neutral template",
+      "scientific_question": "What can the pinned model do with 3 independent attempts and self-synthesis -- compute-matched to Council, diversity removed?"
+    },
+    {
+      "arm": "ARCH_PIPELINE_ISOLATED",
+      "calls": 1,
+      "models": "pinned (single)",
+      "token_budget": 2048,
+      "context_framing": "CODE_OUTPUT_RULES + live self_edit_generated.py contents + task",
+      "synthesis": "none",
+      "scientific_question": "Does self-edit's own generation framing/context improve objectively-measured correctness beyond a budget-matched single-model baseline?"
+    },
+    {
+      "arm": "ARCH_COUNCIL",
+      "calls": 4,
+      "models": "3 real diverse models + synthesis",
+      "token_budget": 2048,
+      "context_framing": "production's real council system-prompt assembly",
+      "synthesis": "real, heterogeneous",
+      "scientific_question": "Does FeralEcho's real, combined council package (diversity + selection + synthesis together) beat a budget-matched same-model baseline?"
+    }
+  ],
+  "arch_pipeline_isolated_can_support": "A test of whether the isolated self-edit generation framing/context contributes correctness beyond a budget-matched single-model generation on this task class.",
+  "arch_pipeline_isolated_cannot_support": "A claim that Echo's literal current production self-edit path is superior to the baseline -- that requires a separate experiment, since the real production path is now known (per Step 1) to itself be a real council deliberation under self-edit's own framing.",
+  "h4_boundary_verbatim": "This four-arm design cannot separate heterogeneous model diversity from Council-specific orchestration as competing explanations for a Council win. A win for ARCH_COUNCIL over BASE_N supports only 'the Council package as a whole -- diversity, selection, and synthesis together -- beats a budget-matched same-model baseline,' never 'Council-specific orchestration, independent of model diversity, is the active ingredient.'",
+  "remaining_confounds": [
+    "self_edit_generated.py's content is not frozen -- the live, continuously-self-edited production file",
+    "plan_code_logic() (self-edit's real planning step) is still never exercised by either implementation",
+    "CODE_OUTPUT_RULES' rule 10 (apply_to_code naming) is irrelevant to every task in this study, disclosed not removed",
+    "model diversity vs Council-specific orchestration remains unresolved for ARCH_COUNCIL vs BASE_N (H4)",
+    "this fix has not yet been run against held-out data"
+  ],
+  "readiness_verdict": "READY_WITH_CONDITIONS",
+  "readiness_conditions": [
+    "A genuine low-contention execution window should still be secured before the held-out run",
+    "The 8 held-out tasks (hash 2d78cbdb...) remain untouched and ready, integrity re-confirmed throughout this mission",
+    "Any future report of results must state the H4 boundary AND the ARCH_PIPELINE_ISOLATED scope boundary verbatim",
+    "No production change, autonomy repair, or fine-tuning should be bundled into or precede the held-out run",
+    "The held-out run must use the arm label ARCH_PIPELINE_ISOLATED and must not conflate results with the 13 historical ARCH_PIPELINE-labeled records this report explicitly invalidated"
+  ],
+  "held_out_experiment_executed_by_this_mission": false,
+  "held_out_experiment_authorized_by_this_mission": false
+}

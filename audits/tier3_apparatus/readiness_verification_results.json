@@ -1,0 +1,165 @@
+{
+  "results": [
+    {
+      "check": "equal_max_tokens_constant",
+      "status": "VERIFIED",
+      "detail": "MAX_TOKENS=2048; ARCH_PIPELINE's real path uses production's own _TASK_TOKEN_LIMITS['coding']=2048 (confirmed by direct source read of echo_model_orchestrator.py, matches MAX_TOKENS exactly)"
+    },
+    {
+      "check": "every_base1_basen_council_call_site_passes_MAX_TOKENS",
+      "status": "VERIFIED",
+      "detail": "6 call sites in run_condition_base1/basen/council literally pass max_tokens=MAX_TOKENS (source-grep count, cross-checked against the 4 real call sites read directly: BASE_1's one call, BASE_N's attempt loop + synthesis call, ARCH_COUNCIL's deliberate_and_learn() call)"
+    },
+    {
+      "check": "call_budgets_matched_basen_vs_council",
+      "status": "VERIFIED",
+      "detail": "BASE_N=4 calls (N_BASEN=3 attempts + 1 synthesis), ARCH_COUNCIL=4 calls (3 councillors + 1 synthesis, per deliberate_and_learn()'s own DEFAULT_COUNCIL_SIZE=3, confirmed by direct source read) -- equal, by construction of N_BASEN=3"
+    },
+    {
+      "check": "base1_vs_pipeline_budget_asymmetry_disclosed",
+      "status": "VERIFIED",
+      "detail": "BASE_1 and ARCH_PIPELINE are both single-call (1 vs 1) -- budget-equal by construction; this is NOT the same comparison as BASE_N-vs-COUNCIL and was never claimed to be"
+    },
+    {
+      "check": "model_pin_intercepts_self_edit_manager_choose_model",
+      "status": "VERIFIED",
+      "detail": "called the REAL sem.choose_model(...) after install_model_pin() patched it; got ('FAKE_PINNED_MODEL_FOR_VERIFICATION_ONLY', 'FAKE_PINNED_MODEL_FOR_VERIFICATION_ONLY'), expected ('FAKE_PINNED_MODEL_FOR_VERIFICATION_ONLY', 'FAKE_PINNED_MODEL_FOR_VERIFICATION_ONLY')"
+    },
+    {
+      "check": "pin_model_for_study_persists_once_for_whole_experiment",
+      "status": "VERIFIED",
+      "detail": "pin_model_for_study() reads/writes audits/tier3_apparatus/pinned_model.json and returns the SAME persisted value on every call within a process -- confirmed by direct source read (checks os.path.exists(PINNED_MODEL_PATH) first, returns cached value, never re-selects) -- this pins for the whole study, not per-batch, as required"
+    },
+    {
+      "check": "four_arms_are_structurally_distinct_implementations",
+      "status": "VERIFIED",
+      "detail": "4 distinct function bodies confirmed via inspect.getsource() (not just distinct names) -- BASE_1 uses river_deliberation._ollama_query() x1; BASE_N uses it x(N+1) with a harness-only synthesis; ARCH_PIPELINE uses self_edit_manager.generate_code_from_plan(); ARCH_COUNCIL uses river_deliberation.deliberate_and_learn()"
+    },
+    {
+      "check": "self_edit_manager_get_river_brain_resolves_through_patched_orchestrator_name",
+      "status": "VERIFIED",
+      "detail": "patched echo_model_orchestrator.get_river_brain to return a fake proxy, then called the REAL, unmodified self_edit_manager.get_river_brain() (the function generate_code_from_plan() actually calls at its 3 real call sites) -- got object identity match=True. This is the specific isolation-correctness question for the ARCH_PIPELINE call path, not previously executed as a live test in any prior mission's own verification pass (prior passes verified choose_model() interception, not get_river_brain() interception, for this exact call path)."
+    },
+    {
+      "check": "generate_code_from_plans_own_learn_call_would_hit_the_proxy_not_production",
+      "status": "VERIFIED",
+      "detail": "simulated the exact call generate_code_from_plan() makes (get_river_brain().learn(model_name, 'self_edit_coding', code)) against the resolved object -- 1 call(s) landed on the fake proxy, 0 on any real RiverBrain instance (none was ever touched in this test)"
+    },
+    {
+      "check": "real_install_isolation_intercepts_self_edit_manager_path_too",
+      "status": "VERIFIED",
+      "detail": "called base_pilot.install_isolation() for real (the exact call main() makes), then called self_edit_manager.get_river_brain() -- got the SAME proxy object install_isolation() itself returned: True. This is the load-bearing proof that ARCH_PIPELINE's real generate_code_from_plan() -> get_river_brain().learn(...) calls are isolated by the SAME install_isolation() call BASE_N/ARCH_COUNCIL already rely on -- not a separate, unverified path."
+    },
+    {
+      "check": "isolation_proxy_read_through_still_exposes_real_model_task_stats",
+      "status": "VERIFIED",
+      "detail": "proxy.model_task_stats is a real dict with 12 models -- confirms the proxy is read-through (faithful to live production ranking data) while write-blocked, not simply a disconnected stub"
+    },
+    {
+      "check": "log_interaction_and_save_reflection_patched_module_level",
+      "status": "VERIFIED",
+      "detail": "base_pilot.install_isolation() sets emo.log_interaction and emo.save_reflection to recording no-ops -- confirmed by direct source read of install_isolation() itself, and these are the same two production functions self_edit_manager.py's execute_self_edit()/generate_code_from_plan() call paths use for logging (execute_self_edit() is never called by this harness at all -- only generate_code_from_plan() is -- so save_reflection's real call sites inside execute_self_edit() are moot for THIS harness; recorded as VERIFIED for what the harness actually calls, not for every function self_edit_manager.py contains)"
+    },
+    {
+      "check": "council_identity_anonymization_actually_hides_real_model_names",
+      "status": "VERIFIED",
+      "detail": "called the REAL (patched) rd._format_opinions() with real model-name keys -- rendered output contains no real model name substring; contains anonymous '[Attempt N]' labels instead. rendered='[Attempt 1]\\nsome real response text\\n\\n[Attempt 2]\\nanother response'"
+    },
+    {
+      "check": "council_identity_anonymization_restored_correctly",
+      "status": "VERIFIED",
+      "detail": "confirmed the real production _format_opinions is back in place after this verification script's own patch/restore cycle -- proves the pattern is reversible and doesn't leak into other processes"
+    },
+    {
+      "check": "basen_synthesis_template_genuinely_distinct_not_copy_paste",
+      "status": "VERIFIED",
+      "detail": "real template: 29 non-blank lines; BASE_N template: 19 non-blank lines; 3 lines shared verbatim -- a genuine, structurally-mirrored but not-identical rewrite, consistent with the design's own disclosed intent (mirror structure, never claim a 'council' that doesn't exist)"
+    },
+    {
+      "check": "randomized_arm_order_is_deterministic_given_seed_and_task_id",
+      "status": "VERIFIED",
+      "detail": "same (seed, task_id) called twice produces byte-identical order both times"
+    },
+    {
+      "check": "randomized_arm_order_produces_real_variety_across_seeds",
+      "status": "VERIFIED",
+      "detail": "task_11: 16 distinct orderings across 25 seeds; task_12: 16 distinct orderings across 25 seeds -- confirms real, non-degenerate randomization, not a fixed/near-fixed order dressed up as random"
+    },
+    {
+      "check": "randomized_arm_order_independent_per_task_id",
+      "status": "VERIFIED",
+      "detail": "task_11 order at seed 20260904: ['ARCH_PIPELINE_ISOLATED', 'ARCH_COUNCIL', 'BASE_N', 'BASE_1']; task_12 order at seed 20260904: ['ARCH_COUNCIL', 'BASE_1', 'BASE_N', 'ARCH_PIPELINE_ISOLATED'] -- independently shuffled per task, not one shared order applied to every task"
+    },
+    {
+      "check": "held_out_task_ordering_or_selection_randomization",
+      "status": "VERIFIED",
+      "detail": "real held-out suite now exists (8 tasks, task_ids/numbering only, no content read) -- 7/8 distinct arm orders, deterministic=True, first-arm-varies-across-tasks=True"
+    },
+    {
+      "check": "infrastructure_failure_classification_executed_against_real_function",
+      "status": "VERIFIED",
+      "detail": "real base_pilot._classify_exception() called directly: TimeoutError -> INFRASTRUCTURE_FAILURE, ConnectionError -> INFRASTRUCTURE_FAILURE, ValueError -> GENERATION_EXCEPTION (expected the first two to be INFRASTRUCTURE_FAILURE, the third to be something else, confirming the classifier discriminates rather than defaulting everything to one bucket)"
+    },
+    {
+      "check": "infrastructure_failure_does_not_swallow_ordinary_logic_exceptions",
+      "status": "VERIFIED",
+      "detail": "ValueError correctly classified as 'GENERATION_EXCEPTION', not INFRASTRUCTURE_FAILURE -- confirms the classifier isn't simply mapping every exception to the same bucket"
+    },
+    {
+      "check": "objective_verify_receives_no_condition_label",
+      "status": "VERIFIED",
+      "detail": "direct source read of objective_verify(candidate_code, test_code) -- signature and body contain no 'arm'/'condition' parameter or reference; it cannot know which of the 4 arms produced the code it is scoring"
+    },
+    {
+      "check": "objective_verify_executed_live_against_real_sandbox_correct_code",
+      "status": "VERIFIED",
+      "detail": "ran a real, correct trivial function through the actual verify_in_sandbox() kernel sandbox -- result: True, ran_ok=True"
+    },
+    {
+      "check": "objective_verify_executed_live_against_real_sandbox_incorrect_code",
+      "status": "VERIFIED",
+      "detail": "ran a real, deliberately WRONG function through the same real sandbox -- correctly failed: passed=False"
+    },
+    {
+      "check": "no_hidden_retry_loops_outside_the_disclosed_basen_attempt_loop",
+      "status": "VERIFIED",
+      "detail": "BASE_1/ARCH_PIPELINE/ARCH_COUNCIL contain zero retry/while-True/for-attempt constructs; BASE_N's one loop (`for i in range(N_BASEN)`) is the disclosed, fixed-N independent-attempts loop, not a hidden retry-on-failure mechanism -- confirmed by direct source read of all 4 function bodies, not a grep alone"
+    },
+    {
+      "check": "arch_pipeline_generate_code_from_plans_own_internal_retry_disclosed_not_hidden",
+      "status": "OPEN",
+      "detail": "generate_code_from_plan() itself (production code, called by ARCH_PIPELINE) was read directly this session and found to have NO internal retry of its own (a SEPARATE production function, the real execute_self_edit(), has a documented single-retry-on-sandbox-failure mechanism per prior audits -- but execute_self_edit() is never called by this harness at all, only generate_code_from_plan() is, confirmed by direct source read of run_condition_arch_pipeline()). Marked OPEN rather than VERIFIED because this reasoning was not additionally proven by a live execution trace (e.g. instrumenting call counts during a real Ollama call), only by static reading of generate_code_from_plan()'s own body."
+    },
+    {
+      "check": "frozen_task_suite_hash_matches_expected_constant",
+      "status": "VERIFIED",
+      "detail": "live sha256=6440ed174482a2d5bb43bdd03bfc33c73c66b492cb74f465e2674e8a8eb8937d, expected constant in source=6440ed174482a2d5bb43bdd03bfc33c73c66b492cb74f465e2674e8a8eb8937d"
+    },
+    {
+      "check": "held_out_manifest_integrity_matches_frozen_hash",
+      "status": "VERIFIED",
+      "detail": "held-out manifest exists (expected, post-freeze) -- live sha256=2d78cbdb3657755f65779d010590ae348ded22d6d32d300bddacfd0aaa0e912a, frozen constant=2d78cbdb3657755f65779d010590ae348ded22d6d32d300bddacfd0aaa0e912a"
+    },
+    {
+      "check": "assert_development_task_only_correctly_gates_real_and_fake_ids",
+      "status": "VERIFIED",
+      "detail": "real dev task_11 allowed=True; non-development task_01 correctly refused=True"
+    },
+    {
+      "check": "held_out_manifest_precedence_over_dev_allowlist_when_present",
+      "status": "VERIFIED",
+      "detail": "simulated a held-out manifest listing task_11 (normally a valid dev task) -- assert_development_task_only('task_11') correctly refused: True"
+    },
+    {
+      "check": "truncation_classification_full_suite_rerun",
+      "status": "VERIFIED",
+      "detail": "re-ran scripts/verify_tier3_truncation_repair.py fresh, exit_code=0"
+    }
+  ],
+  "summary": {
+    "verified": 30,
+    "open": 1,
+    "failed": 0,
+    "total": 31
+  }
+}

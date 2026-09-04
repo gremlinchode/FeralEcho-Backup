@@ -1,0 +1,7 @@
+sha256: 82a4a68fdc1c4a2b1346cf7429e648cbcbc83895a0deeb21140115dfad0e3c77
+file: audits/tier4_confirmatory_protocol.md
+frozen_at: 2026-09-04 (final version, after the disclosed pre-execution N=40->42/stage adjustment
+  recorded in the file's own §5; still before Stage 1 task suite authoring/hashing and before any
+  confirmatory execution)
+superseded_hash: 8d2f96cfeb4182002b1b60e07bae57b20784f80b837e9c5555f8bd52df4fbb10 (initial freeze,
+  before the pool-verification-driven N adjustment; kept here for the record, not used)

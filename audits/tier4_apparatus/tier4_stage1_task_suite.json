@@ -1,0 +1,298 @@
+{
+  "tasks": [
+    {
+      "task_id": "bf01",
+      "tier": 3,
+      "category": "bug_fixing",
+      "prompt": "The function below is supposed to find the two closest values in a SORTED list of numbers and return them as a tuple (a, b) with a <= b, sorted so a comes from an earlier index than b. It has a bug. Fix it and return the complete corrected function.\n\ndef closest_pair(nums):\n    best_diff = float('inf')\n    best_pair = None\n    for i in range(len(nums)):\n        diff = nums[i + 1] - nums[i]\n        if diff < best_diff:\n            best_diff = diff\n            best_pair = (nums[i], nums[i + 1])\n    return best_pair",
+      "test_code": "\nassert closest_pair([1, 3, 4, 8, 13]) == (3, 4)\nassert closest_pair([1, 2]) == (1, 2)\nassert closest_pair([5, 5, 9, 20]) == (5, 5)\nassert closest_pair([1, 10, 11, 50, 51, 52]) in [(10, 11), (50, 51), (51, 52)]\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "bf03",
+      "tier": 3,
+      "category": "bug_fixing",
+      "prompt": "The function below performs binary search to find the FIRST (leftmost) index at which `target` occurs in a sorted list `nums`, returning -1 if not present. It has an off-by-one bug. Fix it and return the complete corrected function.\n\ndef first_occurrence(nums, target):\n    lo, hi = 0, len(nums) - 1\n    result = -1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if nums[mid] == target:\n            result = mid\n            lo = mid + 1\n        elif nums[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid + 1\n    return result",
+      "test_code": "\nassert first_occurrence([1, 2, 2, 2, 3, 4], 2) == 1\nassert first_occurrence([1, 2, 3], 5) == -1\nassert first_occurrence([], 1) == -1\nassert first_occurrence([1, 1, 1, 1], 1) == 0\nassert first_occurrence([1, 2, 3, 4, 5], 5) == 4\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "bf05",
+      "tier": 3,
+      "category": "bug_fixing",
+      "prompt": "The function below rotates a list to the right by k positions (elements that fall off the end wrap to the front). It has a bug when k is larger than the length of the list. Fix it and return the complete corrected function.\n\ndef rotate_right(nums, k):\n    if not nums:\n        return nums\n    k = k % len(nums)\n    return nums[k:] + nums[:k]",
+      "test_code": "\nassert rotate_right([1, 2, 3, 4, 5], 2) == [4, 5, 1, 2, 3]\nassert rotate_right([1, 2, 3], 3) == [1, 2, 3]\nassert rotate_right([1, 2, 3], 8) == [2, 3, 1]\nassert rotate_right([], 5) == []\nassert rotate_right([1], 100) == [1]\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "bf07",
+      "tier": 3,
+      "category": "bug_fixing",
+      "prompt": "The function below (Kadane's algorithm) should return the maximum sum of any contiguous subarray of nums (nums may contain negative numbers, and is guaranteed non-empty). It has a bug that produces wrong answers when all numbers are negative. Fix it and return the complete corrected function.\n\ndef max_subarray_sum(nums):\n    best = 0\n    current = 0\n    for n in nums:\n        current = max(n, current + n)\n        best = max(best, current)\n    return best",
+      "test_code": "\nassert max_subarray_sum([-2, 1, -3, 4, -1, 2, 1, -5, 4]) == 6\nassert max_subarray_sum([-5, -2, -8, -1]) == -1\nassert max_subarray_sum([5]) == 5\nassert max_subarray_sum([-1]) == -1\nassert max_subarray_sum([1, 2, 3]) == 6\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "bf09",
+      "tier": 3,
+      "category": "bug_fixing",
+      "prompt": "The function below reverses the order of words in a sentence, collapsing any repeated whitespace between words to a single space and stripping leading/trailing whitespace. It has a bug that leaves extra empty strings in the result when there is repeated whitespace. Fix it and return the complete corrected function.\n\ndef reverse_words(s):\n    words = s.split(' ')\n    return ' '.join(reversed(words))",
+      "test_code": "\nassert reverse_words(\"the sky is blue\") == \"blue is sky the\"\nassert reverse_words(\"  hello   world  \") == \"world hello\"\nassert reverse_words(\"a\") == \"a\"\nassert reverse_words(\"\") == \"\"\nassert reverse_words(\"   \") == \"\"\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "bf11",
+      "tier": 3,
+      "category": "bug_fixing",
+      "prompt": "The function below checks whether a string is a palindrome, ignoring any characters that are not letters or digits, and ignoring case. It has a bug: it does not ignore non-alphanumeric characters. Fix it and return the complete corrected function.\n\ndef is_palindrome_clean(s):\n    cleaned = s.lower()\n    return cleaned == cleaned[::-1]",
+      "test_code": "\nassert is_palindrome_clean(\"A man, a plan, a canal: Panama\") == True\nassert is_palindrome_clean(\"race a car\") == False\nassert is_palindrome_clean(\"\") == True\nassert is_palindrome_clean(\"Was it a car or a cat I saw?\") == True\nassert is_palindrome_clean(\".,!\") == True\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "bf13",
+      "tier": 3,
+      "category": "bug_fixing",
+      "prompt": "The function below merges two already-sorted lists into one sorted list. It has a bug that drops the last element of whichever list still has leftover elements after the main loop. Fix it and return the complete corrected function.\n\ndef merge_sorted(a, b):\n    result = []\n    i, j = 0, 0\n    while i < len(a) - 1 and j < len(b) - 1:\n        if a[i] <= b[j]:\n            result.append(a[i])\n            i += 1\n        else:\n            result.append(b[j])\n            j += 1\n    result.extend(a[i:])\n    result.extend(b[j:])\n    return result",
+      "test_code": "\nassert merge_sorted([1, 3, 5], [2, 4, 6]) == [1, 2, 3, 4, 5, 6]\nassert merge_sorted([], [1, 2]) == [1, 2]\nassert merge_sorted([1, 2], []) == [1, 2]\nassert merge_sorted([1, 1, 1], [1, 1]) == [1, 1, 1, 1, 1]\nassert merge_sorted([5], [1]) == [1, 5]\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "cs01",
+      "tier": 3,
+      "category": "concurrency_stateful",
+      "prompt": "Implement a thread-safe class `ThreadSafeCounter` with methods `increment()` (adds 1), `decrement()` (subtracts 1), `get()` (returns current value), and `reset()` (sets value back to 0). All methods must be safe to call from multiple threads concurrently (use `threading.Lock`). Initial value is 0.",
+      "test_code": "\nc = ThreadSafeCounter()\nc.increment(); c.increment(); c.increment()\nassert c.get() == 3\nc.decrement()\nassert c.get() == 2\nc.reset()\nassert c.get() == 0\nimport threading\nc2 = ThreadSafeCounter()\ndef worker():\n    for _ in range(1000):\n        c2.increment()\nthreads = [threading.Thread(target=worker) for _ in range(8)]\nfor t in threads: t.start()\nfor t in threads: t.join()\nassert c2.get() == 8000\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "cs03",
+      "tier": 3,
+      "category": "concurrency_stateful",
+      "prompt": "Implement a thread-safe class `ThreadSafeUniqueIdGenerator` with method `next_id()` that returns a strictly increasing integer starting at 1 (1, 2, 3, ...), safe under concurrent calls from multiple threads with no duplicate or skipped IDs (use `threading.Lock`).",
+      "test_code": "\ng = ThreadSafeUniqueIdGenerator()\nassert g.next_id() == 1\nassert g.next_id() == 2\nassert g.next_id() == 3\nimport threading\ng2 = ThreadSafeUniqueIdGenerator()\nresults = []\nlock = threading.Lock()\ndef worker():\n    for _ in range(500):\n        val = g2.next_id()\n        with lock:\n            results.append(val)\nthreads = [threading.Thread(target=worker) for _ in range(6)]\nfor t in threads: t.start()\nfor t in threads: t.join()\nassert len(results) == len(set(results)) == 3000\nassert min(results) == 1 and max(results) == 3000\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "cs05",
+      "tier": 3,
+      "category": "concurrency_stateful",
+      "prompt": "Implement a class `Debouncer` constructed with `Debouncer(min_interval, clock)` where `clock` is a zero-argument callable returning the current time. Method `should_fire()` returns True (and records the current time as the last-fired time) only if at least `min_interval` time has passed since the last time it returned True (or if it has never returned True before). Must be thread-safe.",
+      "test_code": "\nt = [0.0]\ndef fake_clock():\n    return t[0]\nd = Debouncer(5.0, fake_clock)\nassert d.should_fire() == True\nassert d.should_fire() == False\nt[0] = 3.0\nassert d.should_fire() == False\nt[0] = 5.0\nassert d.should_fire() == True\nt[0] = 5.5\nassert d.should_fire() == False\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "cs07",
+      "tier": 3,
+      "category": "concurrency_stateful",
+      "prompt": "Implement a class `ThreadSafeMovingAverage` constructed with `ThreadSafeMovingAverage(window_size)`. Method `add(value)` records a new value, keeping only the most recent `window_size` values (oldest dropped once the window is full). Method `average()` returns the average of the currently-held values, or 0.0 if none have been added. Must be thread-safe.",
+      "test_code": "\nm = ThreadSafeMovingAverage(3)\nassert m.average() == 0.0\nm.add(2.0); m.add(4.0)\nassert m.average() == 3.0\nm.add(9.0)\nassert m.average() == 5.0\nm.add(0.0)\navg = m.average()\nassert abs(avg - (4.0+9.0+0.0)/3) < 1e-9\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "cs09",
+      "tier": 3,
+      "category": "concurrency_stateful",
+      "prompt": "Implement a thread-safe class `ThreadSafeMultiCounter` with method `increment(key)` (increments the counter for that key, starting from 0 if new) and `get(key)` (returns the count for that key, 0 if never incremented). Must be thread-safe using a single shared lock.",
+      "test_code": "\nm = ThreadSafeMultiCounter()\nassert m.get('a') == 0\nm.increment('a'); m.increment('a'); m.increment('b')\nassert m.get('a') == 2\nassert m.get('b') == 1\nassert m.get('c') == 0\nimport threading\nm2 = ThreadSafeMultiCounter()\ndef worker():\n    for _ in range(1000):\n        m2.increment('x')\nthreads = [threading.Thread(target=worker) for _ in range(6)]\nfor t in threads: t.start()\nfor t in threads: t.join()\nassert m2.get('x') == 6000\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "cs11",
+      "tier": 3,
+      "category": "concurrency_stateful",
+      "prompt": "Implement a class `ThreadSafeBatchAccumulator` constructed with `ThreadSafeBatchAccumulator(batch_size)`. Method `add(item)` appends `item` to an internal pending list; if the pending list reaches `batch_size`, it immediately clears the pending list and returns the full batch as a list (in the order added); otherwise it returns None. Must be thread-safe.",
+      "test_code": "\na = ThreadSafeBatchAccumulator(3)\nassert a.add(1) is None\nassert a.add(2) is None\nassert a.add(3) == [1, 2, 3]\nassert a.add(4) is None\nassert a.add(5) is None\nassert a.add(6) == [4, 5, 6]\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "cs13",
+      "tier": 3,
+      "category": "concurrency_stateful",
+      "prompt": "Implement a class `ThreadSafeSemaphoreLite` constructed with `ThreadSafeSemaphoreLite(max_count)`. Method `acquire()` returns True and decrements the available count if any is available (available > 0), otherwise returns False without changing state. Method `release()` increments the available count back up, never exceeding `max_count`. Method `available()` returns the current available count. Must be thread-safe.",
+      "test_code": "\ns = ThreadSafeSemaphoreLite(2)\nassert s.available() == 2\nassert s.acquire() == True\nassert s.acquire() == True\nassert s.acquire() == False\nassert s.available() == 0\ns.release()\nassert s.available() == 1\ns.release(); s.release()\nassert s.available() == 2\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "ae01",
+      "tier": 3,
+      "category": "algorithmic_edge_case",
+      "prompt": "Write a function `flatten_nested_list(lst)` that flattens an arbitrarily-deeply-nested list of lists (and non-list elements) into a single flat list, preserving left-to-right order.",
+      "test_code": "\nassert flatten_nested_list([1, [2, 3], [4, [5, 6]]]) == [1, 2, 3, 4, 5, 6]\nassert flatten_nested_list([]) == []\nassert flatten_nested_list([[[[1]]], 2]) == [1, 2]\nassert flatten_nested_list([1, 2, 3]) == [1, 2, 3]\nassert flatten_nested_list([[], [], [1]]) == [1]\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "ae03",
+      "tier": 3,
+      "category": "algorithmic_edge_case",
+      "prompt": "Write a function `sliding_window_max(nums, k)` that returns a list containing the maximum value in every contiguous window of size k as the window slides from left to right across nums. If k > len(nums), return an empty list.",
+      "test_code": "\nassert sliding_window_max([1, 3, -1, -3, 5, 3, 6, 7], 3) == [3, 3, 5, 5, 6, 7]\nassert sliding_window_max([1, 2, 3], 5) == []\nassert sliding_window_max([4, 4, 4], 1) == [4, 4, 4]\nassert sliding_window_max([9, 1, 2], 3) == [9]\nassert sliding_window_max([], 1) == []\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "ae05",
+      "tier": 3,
+      "category": "algorithmic_edge_case",
+      "prompt": "Write a function `is_subsequence(s, t)` that returns True if `s` is a subsequence of `t` (all characters of s appear in t in the same relative order, not necessarily contiguous), False otherwise. An empty s is always a subsequence.",
+      "test_code": "\nassert is_subsequence(\"abc\", \"ahbgdc\") == True\nassert is_subsequence(\"axc\", \"ahbgdc\") == False\nassert is_subsequence(\"\", \"anything\") == True\nassert is_subsequence(\"abc\", \"\") == False\nassert is_subsequence(\"abc\", \"abc\") == True\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "ae07",
+      "tier": 3,
+      "category": "algorithmic_edge_case",
+      "prompt": "Write a function `spiral_order(matrix)` that returns all elements of a 2D rectangular list in spiral order (starting top-left, moving right, then down, then left, then up, spiraling inward).",
+      "test_code": "\nassert spiral_order([[1,2,3],[4,5,6],[7,8,9]]) == [1,2,3,6,9,8,7,4,5]\nassert spiral_order([[1,2],[3,4]]) == [1,2,4,3]\nassert spiral_order([]) == []\nassert spiral_order([[1,2,3,4]]) == [1,2,3,4]\nassert spiral_order([[1],[2],[3]]) == [1,2,3]\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "ae09",
+      "tier": 3,
+      "category": "algorithmic_edge_case",
+      "prompt": "Write a function `majority_element(nums)` that returns the element appearing more than n/2 times in a list of length n (guaranteed to exist for every test case). Use an O(n) time, O(1) extra space approach (Boyer-Moore voting) if possible, but any correct approach is acceptable.",
+      "test_code": "\nassert majority_element([2,2,1,1,1,2,2]) == 2\nassert majority_element([1]) == 1\nassert majority_element([3,3,4]) == 3\nassert majority_element([5,5,5,1,1]) == 5\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "ae11",
+      "tier": 3,
+      "category": "algorithmic_edge_case",
+      "prompt": "Write a function `find_peak_element(nums)` that returns the index of ANY peak element (an element strictly greater than its neighbors; boundary elements only need to be greater than their one existing neighbor) in a list guaranteed to have at least one element and no two adjacent equal elements. Use an O(log n) binary-search approach.",
+      "test_code": "\nnums1 = [1,2,3,1]\nidx = find_peak_element(nums1)\nassert nums1[idx] > (nums1[idx-1] if idx > 0 else float('-inf'))\nassert nums1[idx] > (nums1[idx+1] if idx < len(nums1)-1 else float('-inf'))\nidx2 = find_peak_element([1,2,1,3,5,6,4])\nnums2 = [1,2,1,3,5,6,4]\nassert nums2[idx2] > (nums2[idx2-1] if idx2 > 0 else float('-inf'))\nassert nums2[idx2] > (nums2[idx2+1] if idx2 < len(nums2)-1 else float('-inf'))\nassert find_peak_element([1]) == 0\nassert find_peak_element([1,2]) == 1\nassert find_peak_element([2,1]) == 0\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "ae13",
+      "tier": 3,
+      "category": "algorithmic_edge_case",
+      "prompt": "Write a function `min_window_length_ge_target(nums, target)` that returns the length of the smallest contiguous subarray of positive integers `nums` whose sum is greater than or equal to `target`, or 0 if no such subarray exists.",
+      "test_code": "\nassert min_window_length_ge_target([2,3,1,2,4,3], 7) == 2\nassert min_window_length_ge_target([1,1,1,1,1], 11) == 0\nassert min_window_length_ge_target([1,4,4], 4) == 1\nassert min_window_length_ge_target([], 5) == 0\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "rf01",
+      "tier": 3,
+      "category": "refactoring",
+      "prompt": "The function below computes Fibonacci numbers using naive, unmemoized recursion, which is far too slow for larger inputs. Refactor it (using memoization or an iterative approach) so that it produces IDENTICAL results but can compute fib(35) quickly. Return the complete refactored function, named exactly `fib`.\n\ndef fib(n):\n    if n <= 1:\n        return n\n    return fib(n - 1) + fib(n - 2)",
+      "test_code": "\nimport time\nassert fib(0) == 0\nassert fib(1) == 1\nassert fib(10) == 55\nassert fib(20) == 6765\nt0 = time.time()\nresult = fib(35)\nelapsed = time.time() - t0\nassert result == 9227465\nassert elapsed < 3.0\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "rf03",
+      "tier": 3,
+      "category": "refactoring",
+      "prompt": "The function below counts how many numbers from 2 up to (and including) n are prime, using trial division for every number, which is too slow for large n. Refactor it (e.g. using a Sieve of Eratosthenes) so it produces IDENTICAL results but can handle n=200000 quickly. Return the complete refactored function, named exactly `count_primes_up_to`.\n\ndef count_primes_up_to(n):\n    def is_prime(x):\n        if x < 2:\n            return False\n        for i in range(2, x):\n            if x % i == 0:\n                return False\n        return True\n    return sum(1 for i in range(2, n + 1) if is_prime(i))",
+      "test_code": "\nimport time\nassert count_primes_up_to(1) == 0\nassert count_primes_up_to(2) == 1\nassert count_primes_up_to(10) == 4\nassert count_primes_up_to(30) == 10\nt0 = time.time()\nresult = count_primes_up_to(200000)\nelapsed = time.time() - t0\nassert result == 17984\nassert elapsed < 5.0\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "rf05",
+      "tier": 3,
+      "category": "refactoring",
+      "prompt": "The function below checks whether a list contains any duplicate values using a nested-loop O(n^2) approach, which is too slow for large lists. Refactor it (using a set) so it produces IDENTICAL results but can handle a list of 200000 elements quickly. Return the complete refactored function, named exactly `has_duplicate`.\n\ndef has_duplicate(nums):\n    for i in range(len(nums)):\n        for j in range(len(nums)):\n            if i != j and nums[i] == nums[j]:\n                return True\n    return False",
+      "test_code": "\nimport time\nassert has_duplicate([1, 2, 3]) == False\nassert has_duplicate([1, 2, 2]) == True\nassert has_duplicate([]) == False\nbig = list(range(200000))\nt0 = time.time()\nresult = has_duplicate(big)\nelapsed = time.time() - t0\nassert result == False\nassert elapsed < 5.0\nbig2 = list(range(200000))\nbig2[100] = big2[200]\nt0 = time.time()\nresult2 = has_duplicate(big2)\nelapsed2 = time.time() - t0\nassert result2 == True\nassert elapsed2 < 5.0\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "rf07",
+      "tier": 3,
+      "category": "refactoring",
+      "prompt": "The function below computes, for a LIST of non-negative integers, the number of set (1) bits in each one's binary representation, by recomputing from scratch for every number with no caching -- when the same number appears many times in the input this is wasteful. Refactor it to cache results across repeated numbers within a single call so it produces IDENTICAL results but completes quickly even when a large list has many repeated large numbers. Return the complete refactored function, named exactly `count_set_bits_list`.\n\ndef count_set_bits_list(nums):\n    def count_bits(x):\n        count = 0\n        while x:\n            count += x & 1\n            x >>= 1\n        return count\n    return [count_bits(n) for n in nums]",
+      "test_code": "\nimport time\nassert count_set_bits_list([0, 1, 2, 3, 255]) == [0, 1, 1, 2, 8]\nassert count_set_bits_list([]) == []\nbig = [123456789] * 300000\nt0 = time.time()\nresult = count_set_bits_list(big)\nelapsed = time.time() - t0\nassert result == [bin(123456789).count('1')] * 300000\nassert elapsed < 5.0\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "rf09",
+      "tier": 3,
+      "category": "refactoring",
+      "prompt": "The function below computes `(base ** exp) % mod` using naive repeated multiplication in a loop (O(exp) time), which is too slow for large exponents. Refactor it to use fast (binary) exponentiation (O(log exp) time) so it produces IDENTICAL results but can handle exp=1000000 quickly. Return the complete refactored function, named exactly `mod_pow`.\n\ndef mod_pow(base, exp, mod):\n    result = 1\n    for _ in range(exp):\n        result = (result * base) % mod\n    return result",
+      "test_code": "\nimport time\nassert mod_pow(2, 10, 1000) == 24\nassert mod_pow(3, 0, 100) == 1\nassert mod_pow(5, 3, 13) == 8\nt0 = time.time()\nresult = mod_pow(7, 1000000, 1000000007)\nelapsed = time.time() - t0\nassert result == pow(7, 1000000, 1000000007)\nassert elapsed < 3.0\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "rf11",
+      "tier": 3,
+      "category": "refactoring",
+      "prompt": "The function below counts the number of distinct characters in a string using a nested-loop O(n^2) comparison approach, which is too slow for long strings. Refactor it (using a set) so it produces IDENTICAL results but can handle a string of 500000 characters quickly. Return the complete refactored function, named exactly `count_unique_chars`.\n\ndef count_unique_chars(s):\n    unique = []\n    for i, ch in enumerate(s):\n        is_dup = False\n        for j in range(i):\n            if s[j] == ch:\n                is_dup = True\n                break\n        if not is_dup:\n            unique.append(ch)\n    return len(unique)",
+      "test_code": "\nimport time\nassert count_unique_chars(\"hello\") == 4\nassert count_unique_chars(\"\") == 0\nassert count_unique_chars(\"aaa\") == 1\nbig = \"ab\" * 250000\nt0 = time.time()\nresult = count_unique_chars(big)\nelapsed = time.time() - t0\nassert result == 2\nassert elapsed < 5.0\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "rf13",
+      "tier": 3,
+      "category": "refactoring",
+      "prompt": "The function below assigns a letter grade from a numeric score using a deeply nested if/elif chain. Refactor it to use a clean threshold-table/bisect-style lookup instead, producing IDENTICAL results (90+ -> 'A', 80-89 -> 'B', 70-79 -> 'C', 60-69 -> 'D', below 60 -> 'F'). Return the complete refactored function, named exactly `grade_from_score`.\n\ndef grade_from_score(score):\n    if score >= 90:\n        return 'A'\n    else:\n        if score >= 80:\n            return 'B'\n        else:\n            if score >= 70:\n                return 'C'\n            else:\n                if score >= 60:\n                    return 'D'\n                else:\n                    return 'F'",
+      "test_code": "\nassert grade_from_score(95) == 'A'\nassert grade_from_score(90) == 'A'\nassert grade_from_score(89) == 'B'\nassert grade_from_score(70) == 'C'\nassert grade_from_score(60) == 'D'\nassert grade_from_score(59) == 'F'\nassert grade_from_score(0) == 'F'\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "iv01",
+      "tier": 3,
+      "category": "input_validation_defensive",
+      "prompt": "Write a function `parse_int_safe(s)` that returns the integer value of string `s` if it represents a valid integer (optionally with leading whitespace, and an optional leading + or - sign, digits only), or None if it does not (e.g. empty string, contains letters, contains a decimal point, or is None).",
+      "test_code": "\nassert parse_int_safe(\"42\") == 42\nassert parse_int_safe(\"  -17\") == -17\nassert parse_int_safe(\"+5\") == 5\nassert parse_int_safe(\"abc\") is None\nassert parse_int_safe(\"3.14\") is None\nassert parse_int_safe(\"\") is None\nassert parse_int_safe(None) is None\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "iv03",
+      "tier": 3,
+      "category": "input_validation_defensive",
+      "prompt": "Write a function `clamp_to_range(value, lo, hi)` that returns `value` clamped between `lo` and `hi` (inclusive). If `lo > hi`, treat them as swapped (i.e. use min(lo,hi) and max(lo,hi) as the effective bounds). If `value` is not an int or float, raise a `TypeError`.",
+      "test_code": "\nassert clamp_to_range(5, 1, 10) == 5\nassert clamp_to_range(-5, 1, 10) == 1\nassert clamp_to_range(15, 1, 10) == 10\nassert clamp_to_range(5, 10, 1) == 5\nassert clamp_to_range(0, 10, 1) == 1\ntry:\n    clamp_to_range(\"x\", 1, 10)\n    assert False\nexcept TypeError:\n    pass\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "iv05",
+      "tier": 3,
+      "category": "input_validation_defensive",
+      "prompt": "Write a function `normalize_whitespace(s)` that collapses any run of whitespace characters (spaces, tabs, newlines) into a single space, and strips leading/trailing whitespace from the result.",
+      "test_code": "\nassert normalize_whitespace(\"  hello   world  \") == \"hello world\"\nassert normalize_whitespace(\"a\\t\\tb\\nc\") == \"a b c\"\nassert normalize_whitespace(\"\") == \"\"\nassert normalize_whitespace(\"nochange\") == \"nochange\"\nassert normalize_whitespace(\"   \") == \"\"\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "iv07",
+      "tier": 3,
+      "category": "input_validation_defensive",
+      "prompt": "Write a function `parse_csv_line_simple(line)` that parses a single CSV line into a list of field strings, handling the case where a field is wrapped in double quotes and may contain commas inside the quotes (no escaped-quote handling needed -- quotes only ever appear as the wrapping character for a whole field). Quoted fields should have their surrounding quotes stripped in the output.",
+      "test_code": "\nassert parse_csv_line_simple('a,b,c') == ['a', 'b', 'c']\nassert parse_csv_line_simple('\"hello, world\",b,c') == ['hello, world', 'b', 'c']\nassert parse_csv_line_simple('a,\"x,y,z\",c') == ['a', 'x,y,z', 'c']\nassert parse_csv_line_simple('') == ['']\nassert parse_csv_line_simple('single') == ['single']\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "iv09",
+      "tier": 3,
+      "category": "input_validation_defensive",
+      "prompt": "Write a function `merge_dicts_safe(d1, d2)` that returns a new dict that is the merge of `d1` and `d2`, with `d2`'s values winning any key conflicts. If either argument is not a dict, raise a `TypeError`. Do not mutate the inputs.",
+      "test_code": "\nassert merge_dicts_safe({\"a\": 1}, {\"b\": 2}) == {\"a\": 1, \"b\": 2}\nassert merge_dicts_safe({\"a\": 1}, {\"a\": 2}) == {\"a\": 2}\nd1 = {\"a\": 1}\nmerge_dicts_safe(d1, {\"b\": 2})\nassert d1 == {\"a\": 1}\ntry:\n    merge_dicts_safe([1], {\"a\": 1})\n    assert False\nexcept TypeError:\n    pass\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "iv11",
+      "tier": 3,
+      "category": "input_validation_defensive",
+      "prompt": "Write a function `sanitize_filename(s)` that replaces every character in `s` that is NOT a letter, digit, underscore, dash, or dot with an underscore, returning the sanitized string (same length as input).",
+      "test_code": "\nassert sanitize_filename(\"my file!.txt\") == \"my_file_.txt\"\nassert sanitize_filename(\"valid_name-1.0.py\") == \"valid_name-1.0.py\"\nassert sanitize_filename(\"a/b\\\\c\") == \"a_b_c\"\nassert sanitize_filename(\"\") == \"\"\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "iv13",
+      "tier": 3,
+      "category": "input_validation_defensive",
+      "prompt": "Write a function `dedupe_preserve_order(lst)` that returns a new list with duplicate values removed, keeping only the FIRST occurrence of each value and preserving original relative order.",
+      "test_code": "\nassert dedupe_preserve_order([1, 2, 1, 3, 2, 4]) == [1, 2, 3, 4]\nassert dedupe_preserve_order([]) == []\nassert dedupe_preserve_order([1, 1, 1]) == [1]\nassert dedupe_preserve_order([\"b\", \"a\", \"b\", \"c\", \"a\"]) == [\"b\", \"a\", \"c\"]\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "dt01",
+      "tier": 3,
+      "category": "data_transformation_parsing",
+      "prompt": "Write a function `word_count(text)` that returns a dict mapping each distinct word (case-insensitive, punctuation stripped from word boundaries) to the number of times it appears in `text`. Words are separated by whitespace.",
+      "test_code": "\nresult = word_count(\"The cat sat. The cat ran!\")\nassert result == {\"the\": 2, \"cat\": 2, \"sat\": 1, \"ran\": 1}\nassert word_count(\"\") == {}\nassert word_count(\"Hi, hi, HI!\") == {\"hi\": 3}\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "dt03",
+      "tier": 3,
+      "category": "data_transformation_parsing",
+      "prompt": "Write a function `chunk_list(lst, size)` that splits `lst` into a list of sublists each of length `size` (the last sublist may be shorter if the length does not divide evenly). If `size <= 0`, raise a `ValueError`.",
+      "test_code": "\nassert chunk_list([1,2,3,4,5], 2) == [[1,2],[3,4],[5]]\nassert chunk_list([1,2,3], 3) == [[1,2,3]]\nassert chunk_list([], 2) == []\nassert chunk_list([1,2,3,4], 1) == [[1],[2],[3],[4]]\ntry:\n    chunk_list([1,2], 0)\n    assert False\nexcept ValueError:\n    pass\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "dt05",
+      "tier": 3,
+      "category": "data_transformation_parsing",
+      "prompt": "Write a function `parse_key_value_pairs(s)` that parses a string of the form 'key1=val1;key2=val2;key3=val3' into a dict {'key1': 'val1', 'key2': 'val2', 'key3': 'val3'}. Handle an empty string by returning an empty dict. Assume no '=' or ';' appear within keys or values themselves.",
+      "test_code": "\nassert parse_key_value_pairs(\"a=1;b=2;c=3\") == {\"a\": \"1\", \"b\": \"2\", \"c\": \"3\"}\nassert parse_key_value_pairs(\"\") == {}\nassert parse_key_value_pairs(\"x=hello\") == {\"x\": \"hello\"}\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "dt07",
+      "tier": 3,
+      "category": "data_transformation_parsing",
+      "prompt": "Write a function `rows_to_dicts(headers, rows)` that converts a list of column headers and a list of row-lists into a list of dicts mapping header -> value for each row (like turning parsed CSV data into records). Assume every row has the same length as headers.",
+      "test_code": "\nheaders = [\"name\", \"age\"]\nrows = [[\"Alice\", \"30\"], [\"Bob\", \"25\"]]\nassert rows_to_dicts(headers, rows) == [{\"name\": \"Alice\", \"age\": \"30\"}, {\"name\": \"Bob\", \"age\": \"25\"}]\nassert rows_to_dicts([\"x\"], []) == []\nassert rows_to_dicts([], []) == []\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "dt09",
+      "tier": 3,
+      "category": "data_transformation_parsing",
+      "prompt": "Write a function `interleave_lists(a, b)` that interleaves two lists element by element (a[0], b[0], a[1], b[1], ...), appending any leftover elements from the longer list at the end once the shorter list is exhausted.",
+      "test_code": "\nassert interleave_lists([1,3,5], [2,4,6]) == [1,2,3,4,5,6]\nassert interleave_lists([1,2,3,4], [9]) == [1,9,2,3,4]\nassert interleave_lists([], [1,2]) == [1,2]\nassert interleave_lists([1,2], []) == [1,2]\nassert interleave_lists([], []) == []\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "dt11",
+      "tier": 3,
+      "category": "data_transformation_parsing",
+      "prompt": "Write a function `camel_to_snake(s)` that converts a CamelCase or camelCase string to snake_case (e.g. 'HelloWorld' -> 'hello_world', 'myHTTPServer' -> 'my_http_server' is not required -- just handle the simple case of a new lowercase-to-uppercase transition inserting an underscore before the uppercase letter, then lowercasing everything).",
+      "test_code": "\nassert camel_to_snake(\"HelloWorld\") == \"hello_world\"\nassert camel_to_snake(\"myVariableName\") == \"my_variable_name\"\nassert camel_to_snake(\"already_snake\") == \"already_snake\"\nassert camel_to_snake(\"A\") == \"a\"\nassert camel_to_snake(\"\") == \"\"\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "dt13",
+      "tier": 3,
+      "category": "data_transformation_parsing",
+      "prompt": "Write a function `parse_duration_string(s)` that converts a duration string like '1h30m', '45m', '2h', or '90s' (any combination/subset of h/m/s components, always in that order if present) into the total number of seconds as an int.",
+      "test_code": "\nassert parse_duration_string(\"1h30m\") == 5400\nassert parse_duration_string(\"45m\") == 2700\nassert parse_duration_string(\"2h\") == 7200\nassert parse_duration_string(\"90s\") == 90\nassert parse_duration_string(\"1h1m1s\") == 3661\nassert parse_duration_string(\"0s\") == 0\nprint('ALL_TESTS_PASSED')\n"
+    }
+  ]
+}

@@ -1,0 +1,298 @@
+{
+  "tasks": [
+    {
+      "task_id": "bf02",
+      "tier": 3,
+      "category": "bug_fixing",
+      "prompt": "The function below should count the number of DISTINCT unordered pairs of indices (i, j) with i < j such that nums[i] + nums[j] == target. It has a bug that causes it to overcount or undercount in some cases. Fix it and return the complete corrected function.\n\ndef count_pairs_sum_to_target(nums, target):\n    count = 0\n    for i in range(len(nums)):\n        for j in range(len(nums)):\n            if nums[i] + nums[j] == target:\n                count += 1\n    return count",
+      "test_code": "\nassert count_pairs_sum_to_target([1, 2, 3, 4], 5) == 2\nassert count_pairs_sum_to_target([1, 1, 1], 2) == 3\nassert count_pairs_sum_to_target([5], 10) == 0\nassert count_pairs_sum_to_target([], 0) == 0\nassert count_pairs_sum_to_target([3, 3, 3, 3], 6) == 6\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "bf04",
+      "tier": 3,
+      "category": "bug_fixing",
+      "prompt": "The function below checks whether a string of brackets ()[]{} is balanced and properly nested. It has a bug: it does not correctly reject mismatched bracket TYPES (e.g. '(]'), only mismatched counts. Fix it and return the complete corrected function.\n\ndef is_balanced(s):\n    stack = []\n    pairs = {')': '(', ']': '[', '}': '{'}\n    for ch in s:\n        if ch in '([{':\n            stack.append(ch)\n        elif ch in ')]}':\n            if not stack:\n                return False\n            stack.pop()\n    return len(stack) == 0",
+      "test_code": "\nassert is_balanced(\"()[]{}\") == True\nassert is_balanced(\"(]\") == False\nassert is_balanced(\"([)]\") == False\nassert is_balanced(\"{[]}\") == True\nassert is_balanced(\"\") == True\nassert is_balanced(\"(((\") == False\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "bf06",
+      "tier": 3,
+      "category": "bug_fixing",
+      "prompt": "The function below finds the single missing number in a list containing all integers from 0 to n except one. It has a bug in its formula. Fix it and return the complete corrected function.\n\ndef find_missing(nums):\n    n = len(nums)\n    expected_sum = n * (n - 1) // 2\n    return expected_sum - sum(nums)",
+      "test_code": "\nassert find_missing([3, 0, 1]) == 2\nassert find_missing([0, 1]) == 2\nassert find_missing([9, 6, 4, 2, 3, 5, 7, 0, 1]) == 8\nassert find_missing([0]) == 1\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "bf08",
+      "tier": 3,
+      "category": "bug_fixing",
+      "prompt": "The function below checks if two strings are anagrams of each other (same letters, same counts, case-insensitive, ignoring spaces). It has a bug: it is case-sensitive when it should not be. Fix it and return the complete corrected function.\n\ndef is_anagram(a, b):\n    a_clean = a.replace(' ', '')\n    b_clean = b.replace(' ', '')\n    return sorted(a_clean) == sorted(b_clean)",
+      "test_code": "\nassert is_anagram(\"Listen\", \"Silent\") == True\nassert is_anagram(\"Dormitory\", \"Dirty Room\") == True\nassert is_anagram(\"Hello\", \"World\") == False\nassert is_anagram(\"\", \"\") == True\nassert is_anagram(\"A B\", \"ba\") == True\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "bf10",
+      "tier": 3,
+      "category": "bug_fixing",
+      "prompt": "The function below uses the two-pointer technique on a SORTED list to find a pair of indices (i, j) with i < j such that nums[i] + nums[j] == target, returning the pair of VALUES (not indices) or None if no pair exists. It has a bug in how the pointers move. Fix it and return the complete corrected function.\n\ndef two_sum_sorted(nums, target):\n    lo, hi = 0, len(nums) - 1\n    while lo < hi:\n        s = nums[lo] + nums[hi]\n        if s == target:\n            return (nums[lo], nums[hi])\n        elif s < target:\n            hi -= 1\n        else:\n            lo += 1\n    return None",
+      "test_code": "\nassert two_sum_sorted([1, 2, 3, 4, 6], 6) == (2, 4)\nassert two_sum_sorted([1, 2, 3], 100) is None\nassert two_sum_sorted([-3, -1, 0, 2, 5], 2) == (-3, 5)\nassert two_sum_sorted([1, 1], 2) == (1, 1)\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "bf12",
+      "tier": 3,
+      "category": "bug_fixing",
+      "prompt": "The function below counts the number of vowels (a, e, i, o, u) in a string. It has a bug: it misses uppercase vowels. Fix it and return the complete corrected function.\n\ndef count_vowels(s):\n    count = 0\n    for ch in s:\n        if ch in 'aeiou':\n            count += 1\n    return count",
+      "test_code": "\nassert count_vowels(\"Hello World\") == 3\nassert count_vowels(\"AEIOU\") == 5\nassert count_vowels(\"xyz\") == 0\nassert count_vowels(\"\") == 0\nassert count_vowels(\"PYTHON\") == 1\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "bf14",
+      "tier": 3,
+      "category": "bug_fixing",
+      "prompt": "The function below finds the first duplicate value in a list (the duplicate whose SECOND occurrence appears earliest), returning None if there are no duplicates. It has a bug that returns the wrong element in some cases because it does not preserve first-seen order. Fix it and return the complete corrected function.\n\ndef first_duplicate(nums):\n    seen = set(nums)\n    for n in seen:\n        if nums.count(n) > 1:\n            return n\n    return None",
+      "test_code": "\nassert first_duplicate([2, 1, 3, 5, 3, 2]) == 3\nassert first_duplicate([1, 2, 3]) is None\nassert first_duplicate([1, 1]) == 1\nassert first_duplicate([]) is None\nassert first_duplicate([5, 4, 3, 2, 1, 4]) == 4\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "cs02",
+      "tier": 3,
+      "category": "concurrency_stateful",
+      "prompt": "Implement a thread-safe class `ThreadSafeBoundedStack` constructed with `ThreadSafeBoundedStack(capacity)`. Method `push(item)` returns True and adds the item if under capacity, or returns False (does not add) if the stack is already at capacity. Method `pop()` removes and returns the top item, or returns None if empty. Method `size()` returns current count. Must be safe under concurrent use (use `threading.Lock`).",
+      "test_code": "\ns = ThreadSafeBoundedStack(2)\nassert s.push(1) == True\nassert s.push(2) == True\nassert s.push(3) == False\nassert s.size() == 2\nassert s.pop() == 2\nassert s.pop() == 1\nassert s.pop() is None\nassert s.size() == 0\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "cs04",
+      "tier": 3,
+      "category": "concurrency_stateful",
+      "prompt": "Implement a class `RateLimiterSlidingWindow` constructed with `RateLimiterSlidingWindow(max_events, window_seconds, clock)` where `clock` is a zero-argument callable returning the current time (so tests can inject a fake clock). Method `allow()` returns True and records an event at the current clock time if fewer than `max_events` events occurred within the last `window_seconds` (relative to the current clock time), otherwise returns False without recording. Must be thread-safe (use `threading.Lock`).",
+      "test_code": "\nt = [0.0]\ndef fake_clock():\n    return t[0]\nr = RateLimiterSlidingWindow(3, 10, fake_clock)\nassert r.allow() == True\nassert r.allow() == True\nassert r.allow() == True\nassert r.allow() == False\nt[0] = 11.0\nassert r.allow() == True\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "cs06",
+      "tier": 3,
+      "category": "concurrency_stateful",
+      "prompt": "Implement a class `ThreadSafeCircuitBreaker` constructed with `ThreadSafeCircuitBreaker(failure_threshold, reset_timeout, clock)` where `clock` is a zero-argument callable returning current time. Method `record_failure()` increments a failure count; once the count reaches `failure_threshold`, the breaker opens. Method `record_success()` resets the failure count to 0 and closes the breaker. Method `is_open()` returns True if the breaker is open AND less than `reset_timeout` has passed since it opened; if `reset_timeout` has passed, `is_open()` returns False (the breaker resets itself to half-open/closed state, failure count back to 0). Must be thread-safe.",
+      "test_code": "\nt = [0.0]\ndef fake_clock():\n    return t[0]\nb = ThreadSafeCircuitBreaker(3, 10.0, fake_clock)\nassert b.is_open() == False\nb.record_failure(); b.record_failure()\nassert b.is_open() == False\nb.record_failure()\nassert b.is_open() == True\nt[0] = 5.0\nassert b.is_open() == True\nt[0] = 11.0\nassert b.is_open() == False\nb.record_failure(); b.record_failure(); b.record_failure()\nassert b.is_open() == True\nb.record_success()\nassert b.is_open() == False\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "cs08",
+      "tier": 3,
+      "category": "concurrency_stateful",
+      "prompt": "Implement a thread-safe class `ThreadSafeEventFlag` with methods `set()` (marks the flag as set), `clear()` (marks the flag as not set), and `is_set()` (returns current boolean state). Initial state is not set (False). Must be thread-safe.",
+      "test_code": "\nf = ThreadSafeEventFlag()\nassert f.is_set() == False\nf.set()\nassert f.is_set() == True\nf.clear()\nassert f.is_set() == False\nf.set(); f.set()\nassert f.is_set() == True\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "cs10",
+      "tier": 3,
+      "category": "concurrency_stateful",
+      "prompt": "Implement a class `ThreadSafeTTLCache` constructed with `ThreadSafeTTLCache(ttl_seconds, clock)` where `clock` is a zero-argument callable returning current time. Method `put(key, value)` stores a value with an expiry at current_time + ttl_seconds. Method `get(key)` returns the value if present and not yet expired, otherwise returns None (and if expired, removes the stale entry). Must be thread-safe.",
+      "test_code": "\nt = [0.0]\ndef fake_clock():\n    return t[0]\nc = ThreadSafeTTLCache(10.0, fake_clock)\nc.put('a', 1)\nassert c.get('a') == 1\nt[0] = 5.0\nassert c.get('a') == 1\nt[0] = 11.0\nassert c.get('a') is None\nassert c.get('missing') is None\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "cs12",
+      "tier": 3,
+      "category": "concurrency_stateful",
+      "prompt": "Implement a class `ThreadSafeRoundRobinSelector` constructed with `ThreadSafeRoundRobinSelector(items)` (a non-empty list). Method `next()` returns the next item, cycling back to the start after the last item. Must be thread-safe, and under concurrent calls each call must return exactly one item from the cycle with no item skipped or duplicated across the guaranteed total number of calls (i.e., after N calls with len(items)=k, each item has been returned exactly N/k times when N is a multiple of k).",
+      "test_code": "\ns = ThreadSafeRoundRobinSelector(['a', 'b', 'c'])\nassert [s.next() for _ in range(7)] == ['a', 'b', 'c', 'a', 'b', 'c', 'a']\nimport threading\nfrom collections import Counter\ns2 = ThreadSafeRoundRobinSelector(['x', 'y'])\nresults = []\nlock = threading.Lock()\ndef worker():\n    for _ in range(500):\n        val = s2.next()\n        with lock:\n            results.append(val)\nthreads = [threading.Thread(target=worker) for _ in range(4)]\nfor t in threads: t.start()\nfor t in threads: t.join()\ncounts = Counter(results)\nassert counts['x'] == counts['y'] == 1000\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "cs14",
+      "tier": 3,
+      "category": "concurrency_stateful",
+      "prompt": "Implement a thread-safe class `ThreadSafeHistogram` with method `record(bucket_key)` (increments the count for that bucket) and `counts()` (returns a dict copy of all bucket->count values recorded so far, with buckets never recorded showing no entry at all -- i.e. only include buckets that have been recorded at least once). Must be thread-safe using a single shared lock.",
+      "test_code": "\nh = ThreadSafeHistogram()\nh.record('a'); h.record('a'); h.record('b')\nc = h.counts()\nassert c == {'a': 2, 'b': 1}\nassert 'c' not in c\nh.record('c')\nc2 = h.counts()\nassert c2 == {'a': 2, 'b': 1, 'c': 1}\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "ae02",
+      "tier": 3,
+      "category": "algorithmic_edge_case",
+      "prompt": "Write a function `group_anagrams(words)` that groups a list of words into lists of anagrams of each other (same letters, same counts, case-sensitive as given). Return a list of lists; the order of groups and order within groups should follow first-appearance order in the input.",
+      "test_code": "\nresult = group_anagrams([\"eat\", \"tea\", \"tan\", \"ate\", \"nat\", \"bat\"])\nresult_sets = [set(g) for g in result]\nassert {\"eat\", \"tea\", \"ate\"} in result_sets\nassert {\"tan\", \"nat\"} in result_sets\nassert {\"bat\"} in result_sets\nassert len(result) == 3\nassert group_anagrams([]) == []\nassert group_anagrams([\"a\"]) == [[\"a\"]]\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "ae04",
+      "tier": 3,
+      "category": "algorithmic_edge_case",
+      "prompt": "Write a function `longest_common_prefix(strs)` that returns the longest common prefix string among a list of strings, or an empty string if there is no common prefix or the list is empty.",
+      "test_code": "\nassert longest_common_prefix([\"flower\", \"flow\", \"flight\"]) == \"fl\"\nassert longest_common_prefix([\"dog\", \"racecar\", \"car\"]) == \"\"\nassert longest_common_prefix([]) == \"\"\nassert longest_common_prefix([\"single\"]) == \"single\"\nassert longest_common_prefix([\"\", \"abc\"]) == \"\"\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "ae06",
+      "tier": 3,
+      "category": "algorithmic_edge_case",
+      "prompt": "Write a function `matrix_transpose(matrix)` that returns the transpose of a 2D list (rows become columns). Assume the matrix is rectangular (all rows the same length); handle an empty matrix by returning an empty list.",
+      "test_code": "\nassert matrix_transpose([[1, 2, 3], [4, 5, 6]]) == [[1, 4], [2, 5], [3, 6]]\nassert matrix_transpose([]) == []\nassert matrix_transpose([[1]]) == [[1]]\nassert matrix_transpose([[1, 2]]) == [[1], [2]]\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "ae08",
+      "tier": 3,
+      "category": "algorithmic_edge_case",
+      "prompt": "Write a function `zero_matrix(matrix)` that returns a NEW 2D list where, for every cell in the original matrix that is 0, the entire row and column containing that cell are set to 0 in the result (cells that were not in any zero row/column keep their original value). Do not mutate the input.",
+      "test_code": "\nassert zero_matrix([[1,2,3],[4,0,6],[7,8,9]]) == [[1,0,3],[0,0,0],[7,0,9]]\nassert zero_matrix([[1,2],[3,4]]) == [[1,2],[3,4]]\nassert zero_matrix([[0]]) == [[0]]\nassert zero_matrix([]) == []\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "ae10",
+      "tier": 3,
+      "category": "algorithmic_edge_case",
+      "prompt": "Write a function `dutch_flag_sort(nums)` that returns a NEW list containing the same elements as `nums` (which only contains the integers 0, 1, and 2) sorted in ascending order. Do not use Python's built-in `sorted()` or `.sort()` -- implement the counting/partition logic yourself. Do not mutate the input list.",
+      "test_code": "\nassert dutch_flag_sort([2,0,2,1,1,0]) == [0,0,1,1,2,2]\nassert dutch_flag_sort([2,0,1]) == [0,1,2]\nassert dutch_flag_sort([0]) == [0]\nassert dutch_flag_sort([]) == []\nassert dutch_flag_sort([1,1,1]) == [1,1,1]\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "ae12",
+      "tier": 3,
+      "category": "algorithmic_edge_case",
+      "prompt": "Write a function `word_break_possible(s, word_dict)` that returns True if the string `s` can be segmented into a sequence of one or more words that all appear in `word_dict` (a list of allowed words, each may be reused any number of times), False otherwise.",
+      "test_code": "\nassert word_break_possible(\"leetcode\", [\"leet\", \"code\"]) == True\nassert word_break_possible(\"applepenapple\", [\"apple\", \"pen\"]) == True\nassert word_break_possible(\"catsandog\", [\"cats\", \"dog\", \"sand\", \"and\", \"cat\"]) == False\nassert word_break_possible(\"\", [\"a\"]) == True\nassert word_break_possible(\"a\", []) == False\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "ae14",
+      "tier": 3,
+      "category": "algorithmic_edge_case",
+      "prompt": "Write a function `kth_largest(nums, k)` that returns the kth largest element in a list (k=1 means the largest, duplicates count separately, e.g. [3,3,2] with k=2 returns 3).",
+      "test_code": "\nassert kth_largest([3,2,1,5,6,4], 2) == 5\nassert kth_largest([3,2,3,1,2,4,5,5,6], 4) == 4\nassert kth_largest([1], 1) == 1\nassert kth_largest([3,3,2], 2) == 3\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "rf02",
+      "tier": 3,
+      "category": "refactoring",
+      "prompt": "The function below counts the number of distinct paths from the top-left to the bottom-right of an m x n grid (only moving right or down at each step) using naive unmemoized recursion, which is too slow for larger grids. Refactor it (memoization or iterative DP) so it produces IDENTICAL results but can compute count_paths(20, 20) quickly. Return the complete refactored function, named exactly `count_paths`.\n\ndef count_paths(m, n):\n    if m == 1 or n == 1:\n        return 1\n    return count_paths(m - 1, n) + count_paths(m, n - 1)",
+      "test_code": "\nimport time\nassert count_paths(1, 1) == 1\nassert count_paths(2, 2) == 2\nassert count_paths(3, 3) == 6\nt0 = time.time()\nresult = count_paths(20, 20)\nelapsed = time.time() - t0\nassert result == 35345263800\nassert elapsed < 3.0\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "rf04",
+      "tier": 3,
+      "category": "refactoring",
+      "prompt": "The function below classifies a triangle given three side lengths using a deeply nested if/elif chain that is hard to read. Refactor it using clearer guard-clause / early-return structure so it produces IDENTICAL results (return 'invalid' if the sides cannot form a triangle, 'equilateral' if all sides equal, 'isosceles' if exactly two sides equal, otherwise 'scalene'). Return the complete refactored function, named exactly `classify_triangle`.\n\ndef classify_triangle(a, b, c):\n    if a <= 0 or b <= 0 or c <= 0:\n        return 'invalid'\n    else:\n        if a + b <= c or a + c <= b or b + c <= a:\n            return 'invalid'\n        else:\n            if a == b:\n                if b == c:\n                    return 'equilateral'\n                else:\n                    return 'isosceles'\n            else:\n                if b == c or a == c:\n                    return 'isosceles'\n                else:\n                    return 'scalene'",
+      "test_code": "\nassert classify_triangle(3, 3, 3) == 'equilateral'\nassert classify_triangle(3, 3, 4) == 'isosceles'\nassert classify_triangle(4, 3, 3) == 'isosceles'\nassert classify_triangle(3, 4, 3) == 'isosceles'\nassert classify_triangle(3, 4, 5) == 'scalene'\nassert classify_triangle(0, 4, 5) == 'invalid'\nassert classify_triangle(1, 1, 3) == 'invalid'\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "rf06",
+      "tier": 3,
+      "category": "refactoring",
+      "prompt": "The function below converts a day number (1-7) to its name using a long if/elif chain. Refactor it to use a lookup table/list instead, producing IDENTICAL results including returning 'invalid' for any day number outside 1-7. Return the complete refactored function, named exactly `day_name`.\n\ndef day_name(day_num):\n    if day_num == 1:\n        return 'Monday'\n    elif day_num == 2:\n        return 'Tuesday'\n    elif day_num == 3:\n        return 'Wednesday'\n    elif day_num == 4:\n        return 'Thursday'\n    elif day_num == 5:\n        return 'Friday'\n    elif day_num == 6:\n        return 'Saturday'\n    elif day_num == 7:\n        return 'Sunday'\n    else:\n        return 'invalid'",
+      "test_code": "\nassert day_name(1) == 'Monday'\nassert day_name(7) == 'Sunday'\nassert day_name(4) == 'Thursday'\nassert day_name(0) == 'invalid'\nassert day_name(8) == 'invalid'\nassert day_name(-1) == 'invalid'\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "rf08",
+      "tier": 3,
+      "category": "refactoring",
+      "prompt": "The function below reverses each word in a sentence (but keeps word order the same) by manually building the reversed word character by character with string concatenation in a loop, which is unidiomatic and slow for long words. Refactor it to use idiomatic slicing/join so it produces IDENTICAL results. Return the complete refactored function, named exactly `reverse_each_word`.\n\ndef reverse_each_word(s):\n    words = s.split(' ')\n    result_words = []\n    for w in words:\n        reversed_w = ''\n        for ch in w:\n            reversed_w = ch + reversed_w\n        result_words.append(reversed_w)\n    return ' '.join(result_words)",
+      "test_code": "\nassert reverse_each_word(\"hello world\") == \"olleh dlrow\"\nassert reverse_each_word(\"a\") == \"a\"\nassert reverse_each_word(\"\") == \"\"\nassert reverse_each_word(\"ab cd ef\") == \"ba dc fe\"\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "rf10",
+      "tier": 3,
+      "category": "refactoring",
+      "prompt": "The function below describes the type of a value using an isinstance if/elif chain. Refactor it to use a dispatch dictionary keyed by type instead, producing IDENTICAL results (return 'int' for int, 'float' for float, 'str' for str, 'bool' for bool, 'other' for anything else -- note bool must be checked before int since bool is a subclass of int in Python). Return the complete refactored function, named exactly `describe_type`.\n\ndef describe_type(x):\n    if isinstance(x, bool):\n        return 'bool'\n    elif isinstance(x, int):\n        return 'int'\n    elif isinstance(x, float):\n        return 'float'\n    elif isinstance(x, str):\n        return 'str'\n    else:\n        return 'other'",
+      "test_code": "\nassert describe_type(True) == 'bool'\nassert describe_type(5) == 'int'\nassert describe_type(5.0) == 'float'\nassert describe_type(\"hi\") == 'str'\nassert describe_type([1, 2]) == 'other'\nassert describe_type(None) == 'other'\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "rf12",
+      "tier": 3,
+      "category": "refactoring",
+      "prompt": "The function below computes the digit sum of every number in a list by converting each digit's substring back to int for every position in a slow, repeated way. Refactor it to a cleaner, more efficient loop using arithmetic (mod/divide) instead of string conversion per digit, producing IDENTICAL results. Return the complete refactored function, named exactly `digit_sums`.\n\ndef digit_sums(nums):\n    result = []\n    for n in nums:\n        s = str(abs(n))\n        total = 0\n        for i in range(len(s)):\n            total += int(s[i:i+1])\n        result.append(total)\n    return result",
+      "test_code": "\nassert digit_sums([123, 0, 999, -45]) == [6, 0, 27, 9]\nassert digit_sums([]) == []\nassert digit_sums([7]) == [7]\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "rf14",
+      "tier": 3,
+      "category": "refactoring",
+      "prompt": "The function below computes the running average after each element of a list by recomputing the sum of ALL prior elements from scratch at every step (O(n^2) total). Refactor it to maintain a running sum incrementally (O(n) total) so it produces IDENTICAL results but can handle a list of 300000 elements quickly. Return the complete refactored function, named exactly `running_averages`.\n\ndef running_averages(nums):\n    result = []\n    for i in range(len(nums)):\n        total = 0\n        for j in range(i + 1):\n            total += nums[j]\n        result.append(total / (i + 1))\n    return result",
+      "test_code": "\nimport time\nr = running_averages([2, 4, 6])\nassert abs(r[0] - 2.0) < 1e-9\nassert abs(r[1] - 3.0) < 1e-9\nassert abs(r[2] - 4.0) < 1e-9\nassert running_averages([]) == []\nbig = list(range(1, 300001))\nt0 = time.time()\nresult = running_averages(big)\nelapsed = time.time() - t0\nassert abs(result[-1] - (sum(big) / len(big))) < 1e-6\nassert elapsed < 5.0\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "iv02",
+      "tier": 3,
+      "category": "input_validation_defensive",
+      "prompt": "Write a function `validate_email_basic(s)` that returns True if `s` satisfies this exact simplified rule: contains exactly one '@' character, has at least one non-empty character before the '@', and the part after the '@' contains at least one '.' with at least one character before and after that '.', and `s` contains no whitespace anywhere. Returns False otherwise.",
+      "test_code": "\nassert validate_email_basic(\"a@b.com\") == True\nassert validate_email_basic(\"user.name@example.co.uk\") == True\nassert validate_email_basic(\"no-at-sign.com\") == False\nassert validate_email_basic(\"two@@signs.com\") == False\nassert validate_email_basic(\"@nodomain.com\") == False\nassert validate_email_basic(\"a@nodot\") == False\nassert validate_email_basic(\"a b@c.com\") == False\nassert validate_email_basic(\"a@.com\") == False\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "iv04",
+      "tier": 3,
+      "category": "input_validation_defensive",
+      "prompt": "Write a function `safe_divide(a, b)` that returns `a / b` as a float if `b` is not zero, or None if `b` is zero. If either `a` or `b` is not an int or float, raise a `TypeError`.",
+      "test_code": "\nassert safe_divide(10, 2) == 5.0\nassert safe_divide(5, 0) is None\nassert safe_divide(-9, 3) == -3.0\ntry:\n    safe_divide(\"a\", 1)\n    assert False\nexcept TypeError:\n    pass\ntry:\n    safe_divide(1, \"b\")\n    assert False\nexcept TypeError:\n    pass\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "iv06",
+      "tier": 3,
+      "category": "input_validation_defensive",
+      "prompt": "Write a function `validate_password_strength(s)` that returns True only if `s` satisfies ALL of: length at least 8, contains at least one uppercase letter, contains at least one lowercase letter, and contains at least one digit. Returns False otherwise.",
+      "test_code": "\nassert validate_password_strength(\"Abcdefg1\") == True\nassert validate_password_strength(\"short1A\") == False\nassert validate_password_strength(\"alllowercase1\") == False\nassert validate_password_strength(\"ALLUPPERCASE1\") == False\nassert validate_password_strength(\"NoDigitsHere\") == False\nassert validate_password_strength(\"\") == False\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "iv08",
+      "tier": 3,
+      "category": "input_validation_defensive",
+      "prompt": "Write a function `safe_list_get(lst, index, default=None)` that returns `lst[index]` if the index is valid (Python-style negative indexing allowed), or `default` if the index is out of range for the list.",
+      "test_code": "\nassert safe_list_get([1, 2, 3], 1) == 2\nassert safe_list_get([1, 2, 3], -1) == 3\nassert safe_list_get([1, 2, 3], 10) is None\nassert safe_list_get([1, 2, 3], 10, \"missing\") == \"missing\"\nassert safe_list_get([], 0) is None\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "iv10",
+      "tier": 3,
+      "category": "input_validation_defensive",
+      "prompt": "Write a function `validate_ip_v4_basic(s)` that returns True only if `s` consists of exactly 4 parts separated by '.', each part is a string of only digits (no signs), each part parses to an integer between 0 and 255 inclusive, and no part is empty.",
+      "test_code": "\nassert validate_ip_v4_basic(\"192.168.1.1\") == True\nassert validate_ip_v4_basic(\"255.255.255.255\") == True\nassert validate_ip_v4_basic(\"0.0.0.0\") == True\nassert validate_ip_v4_basic(\"256.1.1.1\") == False\nassert validate_ip_v4_basic(\"1.2.3\") == False\nassert validate_ip_v4_basic(\"1.2.3.4.5\") == False\nassert validate_ip_v4_basic(\"1.2.3.\") == False\nassert validate_ip_v4_basic(\"a.b.c.d\") == False\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "iv12",
+      "tier": 3,
+      "category": "input_validation_defensive",
+      "prompt": "Write a function `parse_bool_loose(s)` that returns True for the case-insensitive strings 'true', 'yes', '1'; returns False for the case-insensitive strings 'false', 'no', '0'; and raises a `ValueError` for anything else.",
+      "test_code": "\nassert parse_bool_loose(\"true\") == True\nassert parse_bool_loose(\"YES\") == True\nassert parse_bool_loose(\"1\") == True\nassert parse_bool_loose(\"false\") == False\nassert parse_bool_loose(\"No\") == False\nassert parse_bool_loose(\"0\") == False\ntry:\n    parse_bool_loose(\"maybe\")\n    assert False\nexcept ValueError:\n    pass\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "iv14",
+      "tier": 3,
+      "category": "input_validation_defensive",
+      "prompt": "Write a function `validate_bracket_balance(s)` that returns True if every occurrence of (), [], and {} in `s` is properly matched and nested (ignoring any other characters entirely -- only bracket characters matter), False otherwise.",
+      "test_code": "\nassert validate_bracket_balance(\"a(b[c]d)e\") == True\nassert validate_bracket_balance(\"(a[b)c]\") == False\nassert validate_bracket_balance(\"no brackets here\") == True\nassert validate_bracket_balance(\"(((\") == False\nassert validate_bracket_balance(\"\") == True\nassert validate_bracket_balance(\"{[()]}\") == True\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "dt02",
+      "tier": 3,
+      "category": "data_transformation_parsing",
+      "prompt": "Write a function `flatten_dict(d, sep='.')` that flattens a nested dict into a single-level dict where nested keys are joined with `sep` (e.g. {'a': {'b': 1}} becomes {'a.b': 1}). Non-dict values (including empty dicts, which become an empty-value marker `{}` at their own flattened key... actually simpler: assume no empty nested dicts appear in test inputs) are kept as leaf values.",
+      "test_code": "\nassert flatten_dict({\"a\": 1, \"b\": {\"c\": 2, \"d\": {\"e\": 3}}}) == {\"a\": 1, \"b.c\": 2, \"b.d.e\": 3}\nassert flatten_dict({}) == {}\nassert flatten_dict({\"x\": 1}) == {\"x\": 1}\nassert flatten_dict({\"a\": {\"b\": {\"c\": {\"d\": 5}}}}) == {\"a.b.c.d\": 5}\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "dt04",
+      "tier": 3,
+      "category": "data_transformation_parsing",
+      "prompt": "Write a function `invert_dict(d)` that returns a new dict with keys and values swapped. If any two keys in `d` map to the same value (which would create a conflict when inverted), raise a `ValueError`.",
+      "test_code": "\nassert invert_dict({\"a\": 1, \"b\": 2}) == {1: \"a\", 2: \"b\"}\nassert invert_dict({}) == {}\ntry:\n    invert_dict({\"a\": 1, \"b\": 1})\n    assert False\nexcept ValueError:\n    pass\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "dt06",
+      "tier": 3,
+      "category": "data_transformation_parsing",
+      "prompt": "Write a function `nested_get(d, path, default=None)` that retrieves a value from a nested dict `d` using a dotted-path string like 'a.b.c', returning `default` if any level of the path is missing or not a dict.",
+      "test_code": "\nd = {\"a\": {\"b\": {\"c\": 42}}}\nassert nested_get(d, \"a.b.c\") == 42\nassert nested_get(d, \"a.b.x\") is None\nassert nested_get(d, \"a.b.x\", \"fallback\") == \"fallback\"\nassert nested_get(d, \"z.y.x\") is None\nassert nested_get({}, \"a\") is None\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "dt08",
+      "tier": 3,
+      "category": "data_transformation_parsing",
+      "prompt": "Write a function `dict_to_sorted_pairs(d)` that returns a list of (key, value) tuples from dict `d`, sorted by value in descending order; ties in value are broken by key in ascending order.",
+      "test_code": "\nassert dict_to_sorted_pairs({\"a\": 3, \"b\": 1, \"c\": 3}) == [(\"a\", 3), (\"c\", 3), (\"b\", 1)]\nassert dict_to_sorted_pairs({}) == []\nassert dict_to_sorted_pairs({\"x\": 5}) == [(\"x\", 5)]\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "dt10",
+      "tier": 3,
+      "category": "data_transformation_parsing",
+      "prompt": "Write a function `run_length_of_words(words)` that takes a list of words and returns a list of (word, count) tuples representing runs of CONSECUTIVE identical words (e.g. ['a','a','b','a'] becomes [('a',2),('b',1),('a',1)] -- non-adjacent repeats are NOT merged).",
+      "test_code": "\nassert run_length_of_words([\"a\",\"a\",\"b\",\"a\"]) == [(\"a\",2),(\"b\",1),(\"a\",1)]\nassert run_length_of_words([]) == []\nassert run_length_of_words([\"x\"]) == [(\"x\",1)]\nassert run_length_of_words([\"a\",\"a\",\"a\"]) == [(\"a\",3)]\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "dt12",
+      "tier": 3,
+      "category": "data_transformation_parsing",
+      "prompt": "Write a function `snake_to_camel(s)` that converts a snake_case string to camelCase (e.g. 'hello_world' -> 'helloWorld', 'my_variable_name' -> 'myVariableName'). A string with no underscores is returned unchanged.",
+      "test_code": "\nassert snake_to_camel(\"hello_world\") == \"helloWorld\"\nassert snake_to_camel(\"my_variable_name\") == \"myVariableName\"\nassert snake_to_camel(\"noUnderscores\") == \"noUnderscores\"\nassert snake_to_camel(\"\") == \"\"\nassert snake_to_camel(\"a_b\") == \"aB\"\nprint('ALL_TESTS_PASSED')\n"
+    },
+    {
+      "task_id": "dt14",
+      "tier": 3,
+      "category": "data_transformation_parsing",
+      "prompt": "Write a function `dict_diff(d1, d2)` that compares two flat dicts and returns {'added': {...}, 'removed': {...}, 'changed': {...}} where 'added' contains keys in d2 but not d1 (with d2's values), 'removed' contains keys in d1 but not d2 (with d1's values), and 'changed' contains keys present in both but with different values (value is a tuple (old_value, new_value)).",
+      "test_code": "\nd1 = {\"a\": 1, \"b\": 2, \"c\": 3}\nd2 = {\"a\": 1, \"b\": 20, \"d\": 4}\nresult = dict_diff(d1, d2)\nassert result == {\"added\": {\"d\": 4}, \"removed\": {\"c\": 3}, \"changed\": {\"b\": (2, 20)}}\nassert dict_diff({}, {}) == {\"added\": {}, \"removed\": {}, \"changed\": {}}\nassert dict_diff({\"x\": 1}, {\"x\": 1}) == {\"added\": {}, \"removed\": {}, \"changed\": {}}\nprint('ALL_TESTS_PASSED')\n"
+    }
+  ]
+}

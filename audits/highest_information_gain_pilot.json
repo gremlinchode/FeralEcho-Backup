@@ -1,0 +1,80 @@
+{
+  "doc_id": "highest_information_gain_pilot",
+  "date": "2026-09-04",
+  "mission": "Execute the previously-designed highest-information-gain pilot: 15-task RAW vs PIPELINE vs COUNCIL coding-capability benchmark, scored only by real sandboxed execution.",
+  "experiment_id": "capability_pilot_2026-09-04",
+  "phase0_forensic_setup": {
+    "condition_a_raw_implementation": "app.core.river_deliberation._ollama_query(model_name, prompt, temperature=0.0, task_type='coding') -- Design B, confirmed clean of any production write in prior audits and re-confirmed structurally this session (no echo_query/log_interaction/RiverBrain.learn call inside _ollama_query itself).",
+    "condition_b_pipeline_implementation": "app.core.self_edit_manager.generate_code_from_plan(plan=task_prompt, temperature=0.0) [the real generation step self-edit uses] followed by app.core.self_edit_manager.scan_for_unsafe_operations(code) [real F1]. DISCLOSED CONFLICT (see below): generate_code_from_plan() has two hardwired production writes (an internal echo_query() call which itself calls get_river_brain().learn()/log_interaction()/save_reflection()/get_river_brain().save(), plus its own explicit trailing get_river_brain().learn(model_name,'self_edit_coding',code) call) with no dependency-injection point -- resolved via in-process monkeypatching, not by using a different/toy function.",
+    "condition_c_council_implementation": "app.core.river_deliberation.deliberate_and_learn(prompt=task_prompt, task_type='coding', river_brain=<read-only proxy>, model_pool=MODEL_POOL) -- the real function; river_brain is an explicit parameter (no monkeypatch needed for that write), but _log_council_deliberation() is a bare module-level call inside river_deliberation.py requiring a monkeypatch.",
+    "objective_verification_implementation": "app.core.code_verification.verify_in_sandbox(script, timeout) -- reused directly, unmodified. Combined script = candidate_code + task's real assertion-based test_code; PASS iff the sandboxed run succeeds AND 'ALL_TESTS_PASSED' appears in output.",
+    "model_confirmed_for_conditions_a_b": "Determined live via the real app.core.self_edit_manager.choose_model(prompt, task_type='self_edit_coding') call, exactly as self-edit's own real generate_code_from_plan() determines its own model -- NOT hardcoded in advance. Recorded live at experiment start (see setup record in raw_results.jsonl).",
+    "generation_parameters": {"temperature_a_b": 0.0, "temperature_c": "per-councillor jittered, real production behavior (disclosed asymmetry, not an oversight -- see design doc)", "context_length": "8192 (river_deliberation._NUM_CTX / Modelfile default, unchanged)", "councillor_timeout_seconds": 1200, "sandbox_verification_timeout_seconds": 30, "council_size": 3},
+    "hardware_runtime_confirmed": "Apple M5, 24GB unified memory (per the original capability-ceiling hardware report). Live production run.py server (PID 15193) was confirmed running throughout this pilot's entire execution window -- NOT paused, per the mission's own 'test the system as it currently exists' instruction. This is a real, disclosed, non-eliminated confound, not an oversight.",
+    "asymmetries_identified_before_generation": [
+      "Condition C's real council selection (_select_council) and per-councillor temperature jitter are NOT held identical to conditions A/B's fixed temp=0.0 -- disclosed as intentional: condition C tests the REAL orchestration mechanism as it actually operates in production, not an artificially-constrained version of it.",
+      "generate_code_from_plan()'s real prompt (CODE_OUTPUT_RULES + current self_edit_generated.py file contents + the task's own text as the 'plan' argument) is necessarily LONGER and differently-framed than condition A's bare task prompt -- this IS the pipeline-vs-raw framing difference this experiment exists to measure, not a bug to remove.",
+      "Condition B as implemented calls generate_code_from_plan()+scan_for_unsafe_operations() directly, NOT the higher-level execute_self_edit() wrapper -- meaning self-edit's own intrinsic single-retry-on-sandbox-failure mechanism is NOT exercised in this pilot's Condition B. Stated plainly as a scope limitation, not silently omitted (see 'conflicts_discovered_and_resolved' below).",
+      "No condition receives extra/asymmetric retries in this pilot: single-shot generation for every candidate in every condition."
+    ],
+    "isolation_verified_empirically_not_assumed": "A direct pre-run smoke test confirmed: (1) the read-only RiverBrain proxy's score_model() call returns a real, live production value (0.6048 for echo:latest/coding) -- proving read-through delegation works; (2) a direct proxy.learn() call was correctly intercepted and recorded in _side_effects_detected rather than reaching memory/river_brain.pkl -- proving write-blocking works. The full run's own final side_effects_detected count is the authoritative, empirical confirmation for the actual 45-candidate batch (see results)."
+  },
+  "conflicts_discovered_and_resolved": [
+    {
+      "conflict": "generate_code_from_plan() (self-edit's real generation function) has two hardwired, unparameterized production writes with no dependency-injection point -- calling it directly, unmodified, would contaminate memory/river_brain.pkl, memory/interaction_log.jsonl, and memory/reflection_shard.jsonl.",
+      "resolution": "In-process monkeypatching of app.core.echo_model_orchestrator.get_river_brain/log_interaction/save_reflection for the duration of this script's own process only (nothing on disk edited) -- the same 'poison the function to test/redirect it' pattern this project's own test suites (e.g. scripts/verify_behavioral_state.py) already use. This is the narrowest existing/test-safe invocation path per the mission's own explicit instruction, not a toy substitute.",
+      "not_a_workaround_for": "F1, F2, or any verification/safety stage -- those run completely real and unmodified."
+    },
+    {
+      "conflict": "_extract_code_block()/_strip_markdown_fences()/_looks_like_python() (self-edit's own real cleanup helpers) assume generated code appears at the END of a response with no trailing prose -- true for self-edit's own normal generation style, but FALSE for deepseek-r1:7b's real output shape (a long reasoning trace, an inline unfenced code draft mid-reasoning, a final fenced code block, then MORE prose explaining it). Discovered live, from the pilot's own first real candidate (candidate_001, task_02, condition A): the real extraction pipeline returned the model's entire raw reasoning text as 'candidate_code', which failed to parse -- a pure extraction artifact, not a genuine model failure (independently re-verified: the model's real final answer, once correctly isolated, passed the real test).",
+      "resolution": "Added ONE disclosed, harness-only fallback to this pilot's own clean_code() wrapper (scripts/run_capability_pilot.py): if self-edit's own real helpers don't find valid Python, take the LAST fenced ```code block``` in the raw text (a standard, well-known convention for a reasoning-model's settled final answer). Applied IDENTICALL Y across all three conditions for fairness. Does not modify, replace, or bypass self_edit_manager.py's own real functions -- they are tried FIRST, unmodified, and only supplemented.",
+      "why_this_matters": "Without this fix, EVERY candidate from a reasoning-style model would have been scored FAIL regardless of actual code quality -- an instrumentation artifact that would have silently manufactured a false H4 (model-ceiling) result. This is itself a direct, concrete, real-world instance of the H3 (measurement) concern this whole investigation exists to guard against, caught and corrected before it could bias 44 more trials, not after."
+    }
+  ],
+  "task_suite_reference": {
+    "path": "audits/capability_pilot/task_suite.json",
+    "sha256": "6440ed174482a2d5bb43bdd03bfc33c73c66b492cb74f465e2674e8a8eb8937d",
+    "n_tasks": 15,
+    "tiers": {"1_trivial": 5, "2_medium": 5, "3_hard_seeded_from_real_historical_failures": 5},
+    "frozen_before_generation": true,
+    "not_modified_during_experiment": true
+  },
+  "blind_scoring_methodology": "Every candidate assigned an opaque candidate_NNN ID before objective scoring; the private task_id/condition mapping is written only to audits/capability_pilot/blind_mapping.json AFTER all 45 candidates complete, per the script's own design (scripts/run_capability_pilot.py's main() writes blind_mapping.json only at the very end of the loop) -- the objective PASS/FAIL determination itself is produced by real sandboxed code execution, which cannot be biased by condition-label knowledge since the verification function (objective_verify) never receives the condition label as an input.",
+  "run_notes": "See audits/highest_information_gain_pilot.md for the full narrative. ACTUAL EXECUTION OUTCOME: 7 of 45 planned candidates completed within this session's practical monitoring window (spanning task_02/task_06/task_08, all 3 conditions), before the background process (PID 49449, nohup, fully detached) was left running unattended to continue accumulating data. 5/7 passed real sandboxed verification; both failures (candidate_005, condition B, model llama3:instruct; candidate_007, condition A, model echo:latest) were genuine, fully-diagnosed logic bugs, not extraction/infrastructure artifacts. Decision: AMBIGUOUS, driven by infrastructure throughput (the same severe Ollama-queue contention independently encountered in the prior Level-4 arbitration experiment recurred twice within this pilot's own execution), not by any finding about the substantive H1-H4 comparison. Raw, complete per-candidate records are preserved at audits/capability_pilot/raw_results.jsonl; the blind task/condition mapping is written only once the full loop completes.",
+  "partial_results_summary": {
+    "candidates_completed": 19,
+    "candidates_planned": 45,
+    "tasks_touched": 7,
+    "tasks_total": 15,
+    "pass_count": 14,
+    "fail_count": 5,
+    "condition_level_pass_rates": {"A_raw": "5/7 (71%)", "B_pipeline": "4/6 (67%)", "C_council": "5/6 (83%)"},
+    "controlled_batches_run": [3, 5, 8],
+    "resumability_added": true,
+    "task_suite_hash_reverified_and_enforced": "6440ed174482a2d5bb43bdd03bfc33c73c66b492cb74f465e2674e8a8eb8937d",
+    "opposite_direction_task_pair": {
+      "task_06": "RAW failed, PIPELINE and COUNCIL both passed",
+      "task_03": "RAW passed (deepseek-r1:7b), PIPELINE and COUNCIL both failed",
+      "significance": "both directions of outcome occur within the same small dataset -- direct evidence against any simple, uniform H1 or H4 answer at this sample size"
+    },
+    "new_measurement_finding_this_continuation": {
+      "candidate_id": "candidate_019", "task_id": "task_05", "condition": "A", "model": "deepseek-r1:7b",
+      "finding": "generation was genuinely truncated mid-fenced-code-block (no closing fence anywhere in the raw response) -- distinct from the original extraction bug (which involved a COMPLETE response with a findable-but-mis-extracted answer). The corrected evaluator correctly identified zero complete code and correctly failed this candidate rather than silently padding/guessing -- positive evidence the evaluator behaves honestly under this new failure mode too, while disclosing it as a real, unresolved limitation (cannot distinguish 'wrong code' from 'code that ran out of token budget')."
+    },
+    "infrastructure_findings_summary": {
+      "ollama_num_parallel": "confirmed still unset",
+      "swap_trend_gb": [{"when": "original hardware report", "used": 5.19, "configured": 6.00}, {"when": "pilot start", "used": 6.19, "configured": 7.17}, {"when": "this continuation, mid-run", "used": 8.13, "configured": 9.22}],
+      "concurrent_model_residency_observed": ["echo:latest (5.5GB)", "qwen2.5-coder:7b (5.1GB)"],
+      "live_production_contention_directly_observed": "model_guided_autonomous_loop querying councillors + running synthesis at 19:45:15-19:45:43, overlapping this pilot's own generation window",
+      "autonomous_loops_paused": false,
+      "why_not_paused": "conversation_activity.py's in-process counter has no cross-process visibility from this pilot's separate script; pausing/killing the live run.py server was judged a consequential, hard-to-reverse action on a live shared system, not authorized for this pilot -- used the mission's own sanctioned fallback (controlled smaller batches with explicit timing) instead"
+    },
+    "ranked_bottleneck_assessment": [
+      {"rank": 1, "factor": "D_infrastructure_operating_envelope", "confidence": "HIGH", "basis": "directly demonstrated: real contention timestamps, confirmed unset OLLAMA_NUM_PARALLEL, rising swap trend across 3 independent measurements, real concurrent multi-model residency"},
+      {"rank": 2, "factor": "C_measurement_instrumentation", "confidence": "MEDIUM", "basis": "two real, distinct instrumentation gaps found and precisely diagnosed (extraction bug, truncation-vs-failure conflation) -- both now understood/disclosed, so confidence in further undiscovered gaps is plausible but not demonstrated"},
+      {"rank": 3, "factor": "A_architecture_integration and B_model_capability (tied)", "confidence": "LOW-MEDIUM", "basis": "genuinely unresolved -- both directions of outcome observed in the same small dataset (task_03 vs task_06), with zero data yet on Tier 3, the tier most likely to separate these two hypotheses"},
+      {"rank": 4, "factor": "E_some_combination", "confidence": "MEDIUM", "basis": "the current best-supported SUMMARY answer -- infrastructure is a real, demonstrated constraint on experimentation itself; measurement gaps are real but now narrowed; substantive task performance shows genuine small-sample evidence in both directions, consistent with a real combination not yet separable at this scale"}
+    ],
+    "final_decision": "AMBIGUOUS -- unchanged from the initial partial run's own classification, for the same infrastructure-driven reason, now with substantially more evidence and two additional real findings that sharpen without resolving the underlying question."
+  }
+}

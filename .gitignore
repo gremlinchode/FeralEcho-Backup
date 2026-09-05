@@ -88,6 +88,7 @@ richietate.txt
 # commit once the audit that generated them is complete.
 sandbox/experiments/exp_*.py
 sandbox/scripts/archive/
+sandbox/echo_projects/
 staging/_*.py
 # self_edit_manager.py's real per-call-unique staging filename (Finding 22
 # Batch 4: "staging files are now per-call-unique... f'self_edit_candidate_

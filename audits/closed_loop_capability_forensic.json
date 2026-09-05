@@ -1,0 +1,298 @@
+{
+  "doc_id": "closed_loop_capability_forensic",
+  "date": "2026-09-03",
+  "mission": "Closed-Loop Capability Integration Forensic Investigation",
+  "governing_question": "Does Echo already contain most components necessary for a coherent adaptive cognitive loop, with the primary limitation being insufficient connection between them?",
+  "method": "Live source tracing (grep/read of actual runtime code, not documentation), live data reads (memory/river_brain.pkl unpickle, memory/council_cursor.json, memory/shadow_self_model.json, memory/self_model.json, memory/shadow_accuracy.jsonl, memory/SELF_EDIT.log, app/core/self_edit_convergence.json, data/question_garden.jsonl, sandbox/echo_projects/*/_report.md, memory/interaction_log.jsonl line count), and reads of prior forensic audits (2026-09-02 gap analysis, 2026-09-02 information-flow-integrity implementation, prior capability-ceiling map). No code was modified. No P1/P1.2/Learning-Pilot/P2/P3/C1 evidence touched.",
+  "edges": [
+    {
+      "edge": "curiosity_signal -> question_garden entry",
+      "source": "seam_engine.check_pair() / dream_cycle() / curiosity_engine topic under-representation",
+      "destination": "data/question_garden.jsonl",
+      "mechanism": "garden_manager.harvest_question()",
+      "exists": true, "executes": true, "reader_confirmed": true, "behavioral_effect_proven": true, "persistent": true,
+      "evidence": "13,417 real entries confirmed live. 7,788 (58%) carry parent_questions, 5,615 (42%) carry children -- real, non-trivial lineage accumulation, not just schema presence.",
+      "confidence": "high"
+    },
+    {
+      "edge": "question_garden entry -> selected prompt/spec",
+      "source": "data/question_garden.jsonl",
+      "destination": "emergent_scheduler prompt selection / echo_projects_autonomy spec",
+      "mechanism": "select_from_garden() (weighted by category + resolution_score + recency), echo_projects.autonomous_generate_project()",
+      "exists": true, "executes": true, "reader_confirmed": true, "behavioral_effect_proven": true, "persistent": true,
+      "evidence": "Live memory/echo_projects_autonomy_state.json confirms spec_source='garden' -- a real garden question genuinely became a real autonomous build spec.",
+      "confidence": "high"
+    },
+    {
+      "edge": "question/spec -> goal object with identity/lineage that survives restart and competes with other goals",
+      "source": "selected question", "destination": "a persistent, resumable objective",
+      "mechanism": "NONE FOUND",
+      "exists": false, "executes": false, "reader_confirmed": false, "behavioral_effect_proven": false, "persistent": false,
+      "evidence": "echo_projects_autonomy_state.json's real schema is exactly {last_run_utc, last_status, spec_source} -- no goal ID, no priority, no competing-goals structure, no resumption pointer. A garden question is picked fresh each 6h cycle with no memory of a prior cycle's specific goal. question_garden's lineage fields (parent_questions/children) are a real relationship graph between QUESTIONS, not a goal-tracking/competition/resumption structure.",
+      "confidence": "high"
+    },
+    {
+      "edge": "goal/spec -> plan (council-deliberated file list)",
+      "source": "build-brief-framed spec", "destination": "parsed multi-file plan",
+      "mechanism": "echo_projects._parse_file_plan() fed by river_deliberation.deliberate_and_learn(task_type='general')",
+      "exists": true, "executes": true, "reader_confirmed": true, "behavioral_effect_proven": true, "persistent": false,
+      "evidence": "Real council deliberation genuinely produces a structured file list; confirmed live via a real 6-file autonomous cycle. Plan carries no persistent goal identifier forward beyond the one report file it's embedded in -- no goal_id/plan_id cross-reference schema exists.",
+      "confidence": "high"
+    },
+    {
+      "edge": "plan -> execution (per-file generation + F1 + F2)",
+      "source": "parsed file plan", "destination": "staged project directory + F1/F2 verdicts",
+      "mechanism": "echo_projects.generate_project()",
+      "exists": true, "executes": true, "reader_confirmed": true, "behavioral_effect_proven": true, "persistent": true,
+      "evidence": "QUANTIFIED LIVE: 61 real project directories exist. Only 13/61 (21%) ever reached the F2 (multi-file import+run) stage at all -- 48/61 (79%) were blocked at F1 before any execution was attempted. Of the 13 that reached F2, 13/13 (100%) show F2 status = FAIL. Net: 0/61 (0%) real cycles have ever produced a project that passed both F1 and F2.",
+      "confidence": "high"
+    },
+    {
+      "edge": "execution result -> verification",
+      "source": "F1/F2 results, self-edit sandbox results, code_verification.py",
+      "destination": "a pass/fail verdict, independent of the generator",
+      "mechanism": "F1 static AST scan, F2 kernel sandbox-exec, code_verification.py's real sandboxed re-execution of claimed examples",
+      "exists": true, "executes": true, "reader_confirmed": true, "behavioral_effect_proven": true, "persistent": true,
+      "evidence": "Verification is genuinely independent (real kernel sandbox, not a self-report) and CAN and DOES reject success -- confirmed via a live SELF_EDIT.log tail showing real, current safety_blocked/staging_import_failed rejections this session, and echo_projects' own 100% F2-fail rate among the 13 that reached it.",
+      "confidence": "high"
+    },
+    {
+      "edge": "verification result -> reflection content",
+      "source": "F1/F2/fitness-gate/self_edit_outcomes result",
+      "destination": "reflection text (either reflection_shard.jsonl's structured self-edit entries, or reflection_shard.py's generative musings)",
+      "mechanism": "TWO SEPARATE MECHANISMS, must not be conflated",
+      "exists": "partial", "executes": "partial", "reader_confirmed": true, "behavioral_effect_proven": "partial", "persistent": true,
+      "evidence": "(A) self_edit_manager.py's save_reflection() writes STRUCTURED entries into reflection_shard.jsonl carrying real result/quality-delta fields whenever a self-edit cycle reaches a terminal state -- this IS real outcome data reaching a reflection log. (B) reflection_shard.py's own generative _generate_reflection()/_generate_meta_reflection() (the 'ReflectionShardAutonomy' free-association loop) reads ONLY a signal string + past reflection embeddings -- confirmed by direct source read to contain NO reference to verification/outcome/quality data of any kind. Do not treat (B) as 'verification reaching reflection' -- it does not.",
+      "confidence": "high"
+    },
+    {
+      "edge": "reflection (self-edit structured entries) -> self-model performance/targets",
+      "source": "reflection_shard.jsonl entries with generated_code field",
+      "destination": "memory/self_model.json's performance.by_task_type and targets.next_self_edit_focus",
+      "mechanism": "self_model_updater.py's _compute_self_edit_stats() + _compute_targets()",
+      "exists": true, "executes": true, "reader_confirmed": true, "behavioral_effect_proven": true, "persistent": true,
+      "evidence": "Live self_model.json confirms a real, well-evidenced target: targets={'next_self_edit_focus':'coding','reason':'avg_quality=2.37 (threshold=2.5), obs=99027'} -- derived from real RiverBrain observation counts and real recent quality averages, not a placeholder.",
+      "confidence": "high"
+    },
+    {
+      "edge": "self-model targets -> actual self-edit targeting decision",
+      "source": "self_model.json targets.next_self_edit_focus (RiverBrain-performance-derived)",
+      "destination": "perform_self_edit()'s target_task_type used for the real next cycle",
+      "mechanism": "self_edit_manager.perform_self_edit()'s target-selection logic",
+      "exists": true, "executes": true, "reader_confirmed": true, "behavioral_effect_proven": "DEMOTED", "persistent": true,
+      "evidence": "CRITICAL FINDING: perform_self_edit() checks memory/shadow_self_model.json FIRST as the 'highest-trust signal' and only falls back to SelfModelUpdater().get_weak_task_type() (which reads the real, well-evidenced self_model.json target above) if shadow_self_model.json has no focus set. In live practice shadow_self_model.json almost always HAS a focus set (see next edge), so the real, 99,027-observation-backed signal is demoted to a fallback that may rarely fire.",
+      "confidence": "high"
+    },
+    {
+      "edge": "generative reflection text -> shadow_self_model.json override (metacognition edge)",
+      "source": "reflection_shard.py's free-association reflection text",
+      "destination": "memory/shadow_self_model.json's targets.next_self_edit_focus",
+      "mechanism": "shadow_model.propose_from_reflection(reflection_text), called from app/emergent_scheduler.py:723-724 on every real reflection cycle",
+      "exists": true, "executes": true, "reader_confirmed": true, "behavioral_effect_proven": true, "persistent": true,
+      "evidence": "propose_from_reflection() is a PURE KEYWORD-COUNT HEURISTIC (4 task types x 5-6 keywords each), no LLM call, threshold >=2 keyword hits. LIVE DATA: shadow_accuracy.jsonl's last 15 hourly comparisons show shadow != real focus in 12/15 (80%) of readings -- the keyword heuristic overwhelmingly disagrees with the real, RiverBrain-performance-derived signal, which stayed 'coding' throughout. CAUSAL EFFECT DEMONSTRATED, NOT JUST INFERRED: a real self-edit cycle at 2026-09-03T21:38:26 targeted 'personal' -- the only deviation from 'coding' in the entire recent SELF_EDIT.log sample -- correlating exactly with shadow_self_model.json's own contemporaneous 'personal' proposal. This is a real, live, causally verified override of a well-evidenced signal by a low-information heuristic.",
+      "confidence": "high -- both the mechanism and one concrete instance of its real-world effect were directly confirmed"
+    },
+    {
+      "edge": "verification/outcome -> RiverBrain routing learning (quality_score path)",
+      "source": "quality_score computed on real generations (coding, self_edit_coding, echo_projects_coding buckets)",
+      "destination": "RiverBrain.learn() -> model_task_stats -> score_model() -> _select_council()",
+      "mechanism": "RiverBrain.learn(model_name, task_type, response_text)",
+      "exists": true, "executes": true, "reader_confirmed": true, "behavioral_effect_proven": true, "persistent": true, "generalizes": true,
+      "evidence": "Live unpickle of memory/river_brain.pkl: 9 real models x 7 real task-type buckets, richly populated (e.g. echo:latest/coding n=48,829, qwen2.5-coder:7b/coding mean=0.657, now the real leader among well-sampled models -- confirms Finding 39's tag-boost mechanism is empirically working). This is ROUTING-LEVEL learning (which model answers), not content-level.",
+      "confidence": "high"
+    },
+    {
+      "edge": "council rating (peer-model quality judgment) -> RiverBrain blended training signal",
+      "source": "council_rater.py's rate_one_entry() peer ratings",
+      "destination": "RiverBrain.learn_from_council_rating()",
+      "mechanism": "council_rater.rate_one_entry() -> is_council_trusted() gate -> get_river_brain().learn_from_council_rating()",
+      "exists": true, "executes": false, "reader_confirmed": true, "behavioral_effect_proven": false, "persistent": true,
+      "evidence": "STRUCTURALLY REAL AND CORRECTLY GATED: is_council_trusted() live-confirmed True. learn_from_council_rating() is genuinely defined and genuinely called from rate_one_entry() when trust is True -- the code path is NOT dead in the source-code sense. BUT FUNCTIONALLY DEAD: memory/council_cursor.json reads {'position': 33471, 'updated_utc': '2026-07-26T14:15:33Z'} while memory/interaction_log.jsonl currently has only 11,671 real lines -- cursor position (33471) exceeds the file's current line count by 21,800. rate_one_entry()'s `new_lines = lines[cursor:]` on a shorter list returns an EMPTY LIST every single time (Python slicing past list length silently returns [] with no exception), so no new entry has been sampled/rated since approximately 2026-07-26. council_ratings.jsonl confirms this: 133 total lines, none newer than late July, despite 40+ days of continuous production interaction_log growth since. This CORRECTS the vague 'confirmed dead' claim in the prior capability-ceiling map (echo_capability_ceiling_map.json's learning_l2_autonomous dimension) with a precise, verified root cause: not a design flaw, a stale cursor left behind by an interaction_log rotation/reset event that never resynced this specific cursor.",
+      "confidence": "high -- exact numbers directly measured"
+    },
+    {
+      "edge": "self-edit outcome -> non_convergent_streak -> next self-edit prompt's Focus text (failure->adjustment)",
+      "source": "SELF_EDIT.log's [LOAD_AUDIT] history",
+      "destination": "app/core/self_edit_convergence.json -> _build_targeted_prompt()'s convergence_sentence",
+      "mechanism": "self_edit_manager._record_convergence() / _build_targeted_prompt()",
+      "exists": true, "executes": true, "reader_confirmed": true, "behavioral_effect_proven": "unclear-currently-inert", "persistent": true,
+      "evidence": "The mechanism and schema are real (self_edit_convergence.json exists with per-family cycles_attempted/non_convergent_streak fields; two entire families -- prose_stripping and quality_scoring -- were historically retired via this exact mechanism per project history). LIVE STATE: all 4 current families (prose_stripping, response_shortening, quality_scoring, unclassified) read non_convergent_streak=0 right now, despite a live SELF_EDIT.log tail this session showing many consecutive real staging_import_failed/safety_blocked results. This suggests the streak-reset condition (likely: reaching dry_run_staged resets the streak) fires even when a candidate never reaches real production deployment -- meaning the streak may rarely accumulate in current practice even amid frequent real failures. Not fully traced to a definitive root cause in this pass -- flagged as ambiguous, not concluded either way.",
+      "confidence": "medium -- the live zero-streak state is confirmed; the exact reason it stays at zero despite nearby failures is not fully traced"
+    },
+    {
+      "edge": "ToolManager registry -> tool name listing in system prompt",
+      "source": "awareness_tools_integration.py's discover_and_register_tools()",
+      "destination": "system prompt TOOL-LIST note",
+      "mechanism": "echo_model_orchestrator.py:1511-1516, ToolManager().list_tools()",
+      "exists": true, "executes": true, "reader_confirmed": true, "behavioral_effect_proven": "presentation-only", "persistent": false,
+      "evidence": "list_tools() IS real and IS injected into the model's system prompt for TOOL_AWARE_TASKS or content-triggered cases -- this is not fully hollow. The model genuinely sees a real list of tool names.",
+      "confidence": "high"
+    },
+    {
+      "edge": "model's tool-use intention -> actual tool invocation",
+      "source": "a model response naming/requesting a tool",
+      "destination": "ToolManager.get_tool(name) -> tool execution -> result fed back to the model",
+      "mechanism": "NONE FOUND",
+      "exists": true, "executes": false, "reader_confirmed": false, "behavioral_effect_proven": false, "persistent": false,
+      "evidence": "grep -rn 'get_tool(' across the entire live codebase finds exactly one hit: the method's own definition in tool_manager.py. Zero real call sites anywhere -- not in Flask routes, not in council/river_deliberation.py, not in any autonomous loop, not in echo_model_orchestrator.py past the listing site. A fully-built registration+listing infrastructure with a completely absent invocation path. This is confirmed, not merely suspected, going beyond a simple grep as the mission requested: instantiation sites (2, both traced and read in full), decorators (the @tool-registration decorator in awareness_tools_integration.py only feeds discovery, not dispatch), dynamic lookup (none found), Flask endpoints (none found routing to get_tool), background loops (none call it).",
+      "confidence": "high"
+    },
+    {
+      "edge": "memory retrieval (FAISS) -> generation content on the personal task path",
+      "source": "retrieve_relevant_memories()", "destination": "echo_query()'s injected context -> generated response",
+      "mechanism": "memory_bridge.py retrieval + context injection",
+      "exists": true, "executes": true, "reader_confirmed": true, "behavioral_effect_proven": false, "persistent": true,
+      "evidence": "Write and read both real and live (123k+ vectors, correctly excluded from contamination categories). Finding 76's real 30-prompt ablation experiment (real vs. retrieval-disabled, same prompts) found the embedding-distance effect indistinguishable from ordinary sampling noise (p=0.48/0.37) -- retrieval technically occurs and is technically exposed to the model, but its measurable effect on the ONE task type tested (personal) could not be distinguished from chance.",
+      "confidence": "high (for the personal-task, temp>0 case specifically) -- explicitly UNKNOWN for other task types or temp=0"
+    },
+    {
+      "edge": "request-scoped correlation ID -> cross-log reconstructability",
+      "source": "routes_echo_studio.py: trace_id = str(uuid.uuid4())",
+      "destination": "council_deliberations.jsonl (via _log_council_deliberation(trace_id=...)), interaction_log.jsonl (via echo_query(trace_id=...))",
+      "mechanism": "trace_id parameter threaded through echo_query()/deliberate_and_learn()/_log_council_deliberation(), implemented 2026-09-02 per audits/2026-09-02_information_flow_integrity.md",
+      "exists": true, "executes": true, "reader_confirmed": true, "behavioral_effect_proven": true, "persistent": true,
+      "evidence": "CORRECTION to the prior capability-ceiling map, which stated 'no request-scoped correlation ID exists anywhere' -- that claim is now stale. A real trace_id mechanism exists, generated per Echo-Studio request and threaded through the council-deliberation and interaction-log write paths, explicitly built to fix the exact verification-ordering bug the 2026-09-02 gap analysis found (7 real unflagged fabrications). Confirmed live in source with an explicit build-date comment. HOWEVER: grep confirms trace_id does NOT appear anywhere in workspace_log.jsonl's writer (echo_core.py), self_edit_outcome_tracker.py, or memory_bridge.py -- the correlation-ID coverage is real but PARTIAL, covering the Echo-Studio-chat-to-council-log path only, not the self-edit/autonomous-loop/memory-event side of the system.",
+      "confidence": "high"
+    },
+    {
+      "edge": "verification-ordering bug (fabrication caveats reaching interaction_log)",
+      "source": "code_verification.py/self_knowledge_verification.py caveat generation",
+      "destination": "interaction_log.jsonl's persisted record",
+      "mechanism": "post_synthesis_hook parameter, echo_query()/routes_echo_studio.py, 2026-09-02 fix",
+      "exists": true, "executes": true, "reader_confirmed": true, "behavioral_effect_proven": true, "persistent": true,
+      "evidence": "CORRECTION to the prior capability-ceiling map's 'top intervention #3' (thread caveat into interaction_log) -- this has ALREADY BEEN IMPLEMENTED AND VERIFIED per audits/2026-09-02_information_flow_integrity.md, which reports 2 live, unmocked reproductions post-fix showing the caveat and a matching trace_id in every persisted record, correcting a prior state where verification ran after the log-writing calls had already fired on the pre-verification draft.",
+      "confidence": "high -- per the source document's own two independent live reproductions"
+    }
+  ],
+  "closed_loops": [
+    {
+      "loop": "Self-edit outcome -> reflection (structured) -> self-model target -> [shadow override] -> next self-edit targeting",
+      "status": "CLOSED AND CAUSALLY VERIFIED, BUT DEGRADED",
+      "reasoning": "Every edge in this chain is real and independently confirmed, including a directly-observed real instance of the final edge's causal effect (the 2026-09-03T21:38:26 'personal'-targeted cycle). It is 'degraded' rather than simply 'closed' because the loop's own highest-information signal (self_model.json's RiverBrain-performance-derived target, backed by 99,027 real observations) is structurally demoted beneath a low-information keyword-count heuristic (shadow_self_model.json's propose_from_reflection(), threshold of 2 keyword hits) that most of the time (12/15 recent hourly comparisons) disagrees with it."
+    },
+    {
+      "loop": "Interaction -> council deliberation -> quality_score -> RiverBrain.learn() -> model_task_stats -> model selection",
+      "status": "CLOSED AND CAUSALLY VERIFIED",
+      "reasoning": "The quality_score-direct path (distinct from the council-rating-blend path below) is real, live, and demonstrably effective -- Finding 39's tag-boost mechanism has empirically worked (qwen2.5-coder:7b now leads real coding-task mean among well-sampled models). This is explicitly ROUTING-level adaptation, not content-level learning."
+    },
+    {
+      "loop": "Interaction -> council rating (peer judgment) -> is_council_trusted() gate -> RiverBrain.learn_from_council_rating() -> model_task_stats",
+      "status": "APPARENTLY CLOSED BUT CONTAINS A HOLLOW EDGE",
+      "reasoning": "Every piece of code is real, correctly wired, and the trust gate is genuinely True. The loop nonetheless produces zero real effect today because council_rater.py's read cursor is stuck past the end of a shrunk interaction_log.jsonl, so the sampling step at the very start of the loop always returns an empty batch. This is the cleanest possible real-world example of a 'stale cursor' failure mode: not a design flaw, a state-desync bug."
+    },
+    {
+      "loop": "Curiosity (seam/dream/curiosity_engine) -> question_garden (with real lineage) -> selected spec -> echo_projects plan -> execution (F1/F2) -> verification",
+      "status": "PARTIALLY CLOSED",
+      "reasoning": "Every edge up through verification is real, and verification is genuinely independent (kernel sandbox, not self-report). But the loop terminates at verification: 0/61 real historical cycles have ever passed both F1 and F2, and no downstream edge exists that feeds a verification failure back into how the NEXT cycle's question is chosen, planned, or generated -- echo_projects_autonomy_state.json's schema has no failure counter, no strategy field, nothing analogous to self_edit_convergence.json's non_convergent_streak. Each cycle is fully independent of every prior cycle's outcome."
+    },
+    {
+      "loop": "Self-edit: attempt -> F1/F2/F3 -> fitness gate -> deploy/reject -> outcome tracker -> [reflection/self-model, see loop 1]",
+      "status": "CLOSED BUT BEHAVIORAL EFFECT PARTIALLY UNVERIFIED",
+      "reasoning": "The safety half (F1/F2/F3, fitness gate, rollback) is robustly real -- 426/463 (92%) real deploy success per the 2026-09-03 self-modification evidence index, and this session's own live SELF_EDIT.log confirms the gates are actively still catching real failures, not a historical artifact. But the fitness gate's own quality metric (raw AST node count) is confirmed saturated at a perfect 4/4 for all 25 currently-retained deploys -- meaning 'passed the gate' and 'quality genuinely improved' are conflated in the 92% headline, and the gate currently cannot discriminate among its own retained population at all."
+    },
+    {
+      "loop": "Memory retrieval -> context injection -> generation (personal task)",
+      "status": "CLOSED BUT BEHAVIORAL EFFECT UNVERIFIED",
+      "reasoning": "Every mechanical step is real and live. Finding 76's real ablation experiment could not distinguish the behavioral effect of disabling retrieval from ordinary sampling noise on this specific task type. This is a genuine, still-open null result, not a confirmed absence of effect and not a confirmed presence of effect."
+    },
+    {
+      "loop": "ToolManager: registration -> discovery -> listing -> invocation",
+      "status": "DOES NOT EXIST (past the listing stage)",
+      "reasoning": "Registration and listing are both real and confirmed. Invocation (get_tool() actually being called with a result fed back to the model) has zero real call sites anywhere in the live codebase. The loop is structurally incomplete, not merely under-exercised."
+    },
+    {
+      "loop": "C1 (human-confirmed directive) -> persistent state -> deterministic exposure -> model compliance",
+      "status": "CLOSED AND CAUSALLY VERIFIED (architecture) / EXPERIMENTALLY DEMONSTRATED, SMALL-N (compliance)",
+      "reasoning": "This session's own live Phase 1 validation: state_existence/retrieval/exposure were 100% reliable across 9 real trials; live model compliance was 3/4 (75%, n=4). This is explicitly NOT autonomous learning -- the state mutation requires human confirmation -- but it is the single most rigorously-verified persistence mechanism in the codebase and a clean substrate for testing 'state change -> future behavior change' experimentally, separate from any claim about Echo's own autonomous adaptation."
+    }
+  ],
+  "minimum_cut_ranking": [
+    {
+      "rank": 1,
+      "bottleneck": "council_cursor.json stale cursor (position 33471 vs. 11,671 real current lines)",
+      "capability_leverage": "high -- unlocks an entire already-trusted, already-wired training pathway (learn_from_council_rating) that has been silently producing zero effect since approximately 2026-07-26",
+      "evidence_strength": "high -- exact numbers directly measured this session",
+      "implementation_simplicity": "very high -- a cursor-reset/resync fix, no new mechanism, no gate touched",
+      "safety": "very high -- does not touch any verification gate, sandbox, or human-confirmation requirement; only affects which historical interaction_log lines get sampled for rating"
+    },
+    {
+      "rank": 2,
+      "bottleneck": "shadow_self_model.json's keyword-heuristic focus overrides self_model.json's RiverBrain-performance-derived focus as 'highest-trust'",
+      "capability_leverage": "high -- reconnects an already causally-verified, already-closed loop (self-edit targeting) to its highest-information real signal instead of a low-information heuristic",
+      "evidence_strength": "high -- both the mechanism and one concrete real-world instance of its effect were directly observed this session",
+      "implementation_simplicity": "high -- a priority/threshold change in perform_self_edit()'s existing target-selection logic, not a new mechanism",
+      "safety": "high -- does not weaken any safety gate; changes which task type is targeted, not how safely a candidate is generated/deployed"
+    },
+    {
+      "rank": 3,
+      "bottleneck": "trace_id does not yet reach workspace_log.jsonl / self_edit_outcome_tracker.py / memory_bridge.py",
+      "capability_leverage": "medium -- completes an already-built, already-verified correlation mechanism; extends reconstructability to the autonomous-loop/self-edit side of the system",
+      "evidence_strength": "high -- grep-confirmed absence in these three specific files, positive confirmation of the mechanism's existence elsewhere",
+      "implementation_simplicity": "medium -- an additive parameter threading exercise across a few more call sites, following an already-proven pattern",
+      "safety": "very high -- purely additive logging, no behavior change"
+    },
+    {
+      "rank": 4,
+      "bottleneck": "ToolManager.get_tool() has zero invocation call sites",
+      "capability_leverage": "medium-high in principle (a fully-built registry sits unused) but genuinely uncertain in practice -- no evidence establishes what capability gain a real tool-invocation path would actually produce for this system's real task mix",
+      "evidence_strength": "high for the absence itself; low/speculative for the benefit of fixing it",
+      "implementation_simplicity": "low -- this requires new dispatch logic, a result-injection mechanism, and almost certainly new safety consideration (arbitrary tool execution is a new capability, not a bug fix)",
+      "safety": "requires new safeguards -- this is the one candidate on this list that is NOT a small, safe, surgical fix"
+    },
+    {
+      "rank": 5,
+      "bottleneck": "echo_projects has no failure -> adjustment edge (0/61 historical success, each cycle fully independent of prior outcomes)",
+      "capability_leverage": "medium -- would connect a real, working curiosity/planning/execution/verification chain to genuine iterative improvement",
+      "evidence_strength": "high for the absence (0/61 is a hard, real number); low for what a fix should even look like, since the underlying 0% success rate may reflect a model-capability ceiling rather than a missing adjustment mechanism alone",
+      "implementation_simplicity": "low -- this is closer to 'design a new mechanism' than 'connect two existing things', since self_edit_convergence.json's own analogous mechanism cannot simply be copied without adaptation to echo_projects' multi-file, non-deployed context",
+      "safety": "medium -- would not touch any existing gate, but a poorly-designed adjustment signal could bias future generations in an unverified direction"
+    }
+  ],
+  "minimum_viable_closed_loop_proposal": {
+    "loop": "Self-edit outcome -> reflection -> self-model target -> [fixed priority] -> self-edit targeting -> outcome -> verify improvement",
+    "not_the_curiosity_to_execution_loop": "The mission's own suggested MVP shape (curiosity -> goal -> plan -> execution -> verification -> reflection -> metacognition -> routing adjustment -> next attempt -> verification -> measurable change) was investigated directly via echo_projects, its most plausible existing substrate. It is NOT the best candidate: it has no goal-persistence structure, no failure->adjustment edge, and a 0/61 historical success rate. The self-edit loop, not explicitly named in the mission's own suggested shape, was found organically during this investigation to already satisfy nearly every requirement of that shape, with one identified, small, surgical defect (the shadow-override priority issue).",
+    "changes_required": [
+      {
+        "change": "Fix council_cursor.json's stale-cursor deadlock",
+        "files": ["app/core/council_rater.py"],
+        "approx_loc": "5-15",
+        "dependencies": "none new",
+        "risk": "very low",
+        "rollback": "cursor file is a small, standalone JSON; trivially restorable to its current stale value if needed",
+        "expected_causal_edge_closed": "council rating -> RiverBrain.learn_from_council_rating() -> model_task_stats",
+        "capabilities_potentially_unlocked": "restores a real, human/peer-judgment-informed training signal that has been dormant for over a month",
+        "experiment_required": "confirm council_ratings.jsonl resumes growing after the fix, and that a real rating produces a measurable model_task_stats change (mirroring Finding 44's own before/after methodology)"
+      },
+      {
+        "change": "Rebalance perform_self_edit()'s target-selection priority so the RiverBrain-performance-derived signal (self_model.json) is not unconditionally demoted beneath the keyword-heuristic shadow signal",
+        "files": ["app/core/self_edit_manager.py"],
+        "approx_loc": "5-20",
+        "dependencies": "none new -- both signals already exist and are already read",
+        "risk": "low -- changes WHICH task type is targeted, not any safety gate",
+        "rollback": "a simple priority-order change, trivially reversible",
+        "expected_causal_edge_closed": "self-model target -> actual self-edit targeting decision (currently demoted)",
+        "capabilities_potentially_unlocked": "makes the already-real reflection->self-model->targeting loop consistently driven by its highest-information signal rather than a low-information heuristic most of the time",
+        "experiment_required": "a controlled before/after comparison of real self-edit target_task_type selections against self_model.json's own target, over a comparable time window, to confirm agreement rate rises"
+      }
+    ],
+    "total_surgical_changes": 2,
+    "note": "Both changes are fixes to existing, already-wired mechanisms, not new architecture -- consistent with the mission's stated preference for existing mechanisms over new ones and 1-3 surgical changes over a rewrite."
+  },
+  "falsification_evidence": [
+    "echo_projects: 0/61 real historical cycles have ever passed both F1 and F2 -- direct evidence that local models may be too weak for genuinely reliable multi-file, cross-referencing code generation, independent of any architectural connectivity fix.",
+    "C1's own live validation (this project's own prior work) found only 75% compliance (n=4) even with a 100%-reliable architectural chain -- direct evidence that persistent state alone is not sufficient to guarantee adaptive behavioral change; the frozen-weight model's own stochastic compliance is a real, separate ceiling.",
+    "reflection_shard.py's generative reflections read only a signal string + past-reflection embeddings, with zero access to verification/outcome data -- confirming that at least one major 'reflection' mechanism in this codebase is closer to stylistic free-association than outcome-grounded introspection, exactly as the mission's adversarial hypothesis suggested it might be.",
+    "The 2026-09-03 measurability audit's own finding (cited, not re-derived here) that apparent curiosity-category drift resolves to scheduling/persona code rather than emergent interest directly supports the 'curiosity may be scheduling rather than intrinsic inquiry' falsification candidate.",
+    "No evidence was found in this pass that RiverBrain's routing-level tag-boost adaptation (Finding 39) has ever been measured against actual downstream OUTCOME QUALITY, only against WHICH MODEL gets selected -- 'routing adaptation may not improve outcomes' remains a live, unfalsified possibility, not refuted by this investigation.",
+    "self_edit_convergence.json's non_convergent_streak reads 0 for all 4 families despite a live log tail full of real, recent failures -- either the failure->adjustment mechanism is working correctly (streak genuinely resets whenever ANY candidate reaches staging) or it is quietly inert in current practice; this investigation could not fully resolve which, which is itself evidence the mechanism's real-world engagement rate may be lower than its mere existence implies."
+  ],
+  "explicit_non_claims": [
+    "This investigation does not establish that fixing the two proposed surgical changes would produce measurable content-level learning -- both changes affect ROUTING/TARGETING, not what gets generated.",
+    "This investigation does not establish whether memory retrieval causally affects behavior on any task type other than personal (only n=1 has ever been tested, per the 2026-09-02 gap analysis's own naming).",
+    "This investigation does not establish the root cause of self_edit_convergence.json's currently-zero streaks despite nearby real failures -- flagged as ambiguous, not resolved.",
+    "This investigation does not establish that wiring a real ToolManager invocation path would produce any net capability gain for this system's real task mix -- only that the infrastructure to register/list tools exists and invocation does not.",
+    "This investigation does not establish whether echo_projects' 0/61 success rate reflects a fixable calibration issue (F1's static scanner being too strict, F2's kernel sandbox being too strict) or a genuine model-capability ceiling -- both remain plausible and were not distinguished.",
+    "This investigation does not re-verify the 2026-09-02 architectural self-knowledge document series in full depth -- only its existence and the information-flow-integrity document's headline conclusions were read.",
+    "This investigation does not claim RiverBrain's routing-level learning constitutes 'learning' in any content-level sense -- per the mission's own Hard Rule 6, it is reported strictly as routing adaptation throughout."
+  ]
+}

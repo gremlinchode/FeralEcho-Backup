@@ -1,0 +1,179 @@
+{
+  "audit_id": "echo_learning_architecture_audit",
+  "generated": "2026-09-03",
+  "method": "three parallel read-only research passes tracing real call chains, plus direct spot-verification of the two most consequential claims by this session before being trusted into the audit",
+  "spot_verified_claims": [
+    {
+      "claim": "learn_from_council_rating() pipeline is dead in the live process due to a stale line-index cursor vs a rotated log file",
+      "verification": "reproduced directly: memory/council_cursor.json position=33471, real memory/interaction_log.jsonl has 11548 lines, rotated artifact interaction_log.jsonl.1.gz confirmed on disk (Aug 22), lines[33471:] on an 11548-line list reproduced as [], grep of echo_watchdog.log shows 0 occurrences of '[Council] Rated' against 26 daemon restarts",
+      "status": "CONFIRMED"
+    },
+    {
+      "claim": "learn_from_rating() never writes model_task_stats",
+      "verification": "direct read of echo_model_orchestrator.py:898-918 confirms only scalers/classifiers/observation_counts are mutated",
+      "status": "CONFIRMED"
+    },
+    {
+      "claim": "ToolManager.get_tool() has zero real callers anywhere in the repository",
+      "verification": "whole-repo grep for '.get_tool(' finds only its own definition and one unrelated comment",
+      "status": "CONFIRMED"
+    }
+  ],
+  "mechanisms": [
+    {
+      "name": "vector_memory_write_retrieve",
+      "files": ["app/core/memory_bridge.py", "app/lib/vector_memory.py"],
+      "input_experience": "any conversational turn or dream/curiosity/fetch content",
+      "extraction": "384-dim sentence embedding + raw text + metadata dict",
+      "state_change": "new vector appended to in-memory FAISS index, new {text,meta} entry in VectorMemory.meta",
+      "persistence": {"path": ["memory/faiss.index", "memory/memory_meta.json"], "written": "every single write, unbatched"},
+      "reload": "VectorMemory.__init__() at process/import startup",
+      "read_path": "retrieve_relevant_memories(), 8 confirmed real call sites",
+      "influence_on_generation": "CONFIRMED CAUSAL - traced into system= on every real /chat/stream and terminal_client.py request",
+      "survives_restart": true,
+      "survives_new_session": true,
+      "requires_exact_wording": false,
+      "causal_or_observational": "causal",
+      "hollow_write": false
+    },
+    {
+      "name": "memory_write_validator_gate",
+      "files": ["app/core/memory_write_validator.py"],
+      "state_change": "allow/block decision, quarantine journal append, hash-cache update",
+      "read_path": "gates whether mechanism vector_memory_write_retrieve's write is committed",
+      "influence_on_generation": "gate only, no direct content injection",
+      "causal_or_observational": "causal_to_gate_decision_only",
+      "hollow_write": false,
+      "note": "DUPLICATE_SIGNAL_FUZZY is character-sequence similarity (difflib, 0.92), not semantic"
+    },
+    {
+      "name": "reflection_shard_journal",
+      "files": ["app/subsystems/reflection_shard.py"],
+      "state_change": "real, live, non-templated model-generated text appended to reflection_journal.jsonl",
+      "read_path": "recall_reflections()/observe_reflection() - CONFIRMED ZERO EXTERNAL CALLERS",
+      "influence_on_generation": "NONE CONFIRMED - not read into FAISS, not read into any prompt; one indirect content-free side effect (meta-reflection publishes a Global Workspace event with salience=None, never qualifies as wide_broadcast)",
+      "causal_or_observational": "observational_only",
+      "hollow_write": true,
+      "note": "confirmed instance of the project's own documented 'hollow write, no reader' pattern, not previously catalogued for this specific module"
+    },
+    {
+      "name": "curiosity_engine_and_garden",
+      "files": ["app/core/curiosity_engine.py", "app/core/garden_manager.py"],
+      "state_change": "new question harvested to data/question_garden.jsonl; quality_scores/resolution_score/times_asked mutated on selection+reflection",
+      "read_path": "select_from_garden() drives emergent_scheduler.reflect() -> real generation call",
+      "influence_on_generation": "CAUSAL, closed self-reinforcing loop, but confined to Echo's own autonomous loop",
+      "causal_or_observational": "causal",
+      "hollow_write": false,
+      "live_evidence": "255 new questions in last 7 days (curiosity_engine liveness check); 11561/13385 entries with real lineage (question_garden_lineage check)"
+    },
+    {
+      "name": "echo_ground_truth_injection",
+      "files": ["app/core/echo_ground_truth.py"],
+      "state_change": "none persisted - stateless synthesis of other files' current content into a system-prompt slice",
+      "read_path": "get_structural_self_facts(), 4 real entry points: run.py mirror_echo, terminal_client.py, Echo Studio, emergent_scheduler.py",
+      "influence_on_generation": "CONFIRMED CAUSAL, keyword/regex-gated (not semantic) - requires the user's message to match a recognizable introspective marker",
+      "causal_or_observational": "causal_when_gated",
+      "hollow_write": false,
+      "relevance_to_this_investigation": "the micro-world task's formation/test prompts deliberately never trigger any of these keyword sets; unexpected firing during a trial would itself be a confound to flag"
+    },
+    {
+      "name": "self_model_json",
+      "files": ["app/core/self_model_updater.py"],
+      "state_change": "full JSON rewrite every 130s: performance, self_edit, memory_health, targets, verified_capabilities, etc.",
+      "read_path": ["echo_ground_truth.py (Mechanism 5 chain, real+gated)", "self_edit_manager.py's get_weak_task_type() fallback target selector"],
+      "influence_on_generation": "dual-path causal, both scoped (introspective-gated conversation content; self-edit subsystem targeting)",
+      "causal_or_observational": "causal_dual_scoped",
+      "hollow_write": false
+    },
+    {
+      "name": "riverbrain_model_task_stats",
+      "files": ["app/core/echo_model_orchestrator.py"],
+      "writers": ["learn()", "learn_from_sandbox_outcome()", "learn_from_rating() -- CONFIRMED DOES NOT WRITE THIS FIELD", "learn_from_council_rating() -- CONFIRMED CURRENTLY DEAD"],
+      "state_change": "per-(model,task_type) count/mean dict",
+      "read_path": ["river_deliberation.py _select_council()", "self_edit_manager.py core-edit review council", "echo_projects.py generation/review council", "echo_janitor.py advisory council"],
+      "influence_on_generation": "CAUSAL to model/council SELECTION only, never response content",
+      "causal_or_observational": "causal_selection_only",
+      "hollow_write": false,
+      "currently_firing_writers": ["learn()", "learn_from_sandbox_outcome() (plausible, not directly observed this session)"],
+      "currently_dead_writers": ["learn_from_council_rating() (stale cursor vs rotated log, confirmed dead)", "learn_from_rating() (never wrote this field to begin with)"]
+    },
+    {
+      "name": "riverbrain_classifier_and_accuracy_tracker",
+      "files": ["app/core/echo_model_orchestrator.py"],
+      "state_change": "HoeffdingTreeClassifier + StandardScaler internal state, updated by all four learn_* methods",
+      "read_path": "predict_one() called exactly once anywhere in the codebase, immediately inside learn() itself",
+      "influence_on_generation": "NONE - feeds only a self-referential prequential accuracy stat, which itself only feeds a WARNING-tier non-restorative drift-notice log line",
+      "causal_or_observational": "observational_only",
+      "hollow_write": true
+    },
+    {
+      "name": "self_edit_deploy_pipeline",
+      "files": ["app/core/self_edit_manager.py", "app/core/self_edit_generated.py"],
+      "state_change": "full-file overwrite of app/core/self_edit_generated.py",
+      "trigger": "run.py hourly AutonomousSelfEdit thread, perform_self_edit(dry_run=False), zero human review at write time",
+      "gates": "F1 static AST scan, F2 kernel sandbox import test, F3 post-write re-scan, quality fitness gate -- none constitute human review",
+      "read_path": ["apply_to_code hook (self-referential only, future self-edit candidates)", "ToolManager scan of app/core (tool NAMES only, never invoked - confirmed zero real ToolManager.get_tool() callers)"],
+      "influence_on_generation": "confirmed narrow, almost entirely self-referential; no confirmed path to ordinary conversation content",
+      "causal_or_observational": "causal_but_narrow_reach",
+      "hollow_write": false
+    },
+    {
+      "name": "modelfile_persona_mutation",
+      "files": ["app/core/modelfile_proposer.py"],
+      "state_change": "proposal text appended to memory/modelfile_proposals.jsonl only",
+      "read_path": "GET /api/modelfile/proposal (human-facing, read-only)",
+      "influence_on_generation": "NONE - no apply route exists anywhere; Modelfile is also EDIT_FORBIDDEN_TARGETS-protected",
+      "causal_or_observational": "no_causal_path",
+      "hollow_write": true,
+      "conclusion": "persona/Modelfile mutation is confirmed structurally impossible via any automated path"
+    },
+    {
+      "name": "shadow_model_propose_from_reflection",
+      "files": ["app/core/shadow_model.py"],
+      "state_change": "shadow_self_model.json's targets.next_self_edit_focus field",
+      "trigger": "emergent_scheduler.py, fed genuine real LLM-generated autonomous reflection text",
+      "read_path": "perform_self_edit() checks this field FIRST, before self_model.json fallback",
+      "influence_on_generation": "CONFIRMED REAL, full chain from Echo's own generated text to an autonomous human-review-free deploy target selection",
+      "causal_or_observational": "causal",
+      "hollow_write": false,
+      "scope_caveat": "only selects which file/task-type is targeted next, not the deployed code's content, and that content's own reach back into conversation is separately confirmed narrow"
+    },
+    {
+      "name": "task_type_classifier",
+      "files": ["app/core/task_type_classifier.py"],
+      "state_change": "online BagOfWords+MultinomialNB learned weights, persisted to memory/task_type_classifier.pkl",
+      "trigger": "log_interaction(), gated on source==user_conversation and is_trustworthy_training_example()",
+      "read_path": "detect_task_type(), tried before the keyword ladder",
+      "influence_on_generation": "CONFIRMED CAUSAL reroute: council composition, per-task token budgets, tool-list injection gating, DIRECT_ECHO_TASKS single-model bypass",
+      "causal_or_observational": "causal_routing_only",
+      "hollow_write": false,
+      "note": "changes ROUTING of later unrelated conversations, never the CONTENT directly"
+    },
+    {
+      "name": "self_edit_outcome_tracker",
+      "files": ["app/core/self_edit_outcome_tracker.py"],
+      "state_change": "pending->evaluated quality-delta records",
+      "read_path": "_recent_outcome_note(), feeds next self-edit generation cycle's prompt",
+      "influence_on_generation": "self-edit-prompt-only, narrow",
+      "causal_or_observational": "causal_narrow",
+      "hollow_write": false,
+      "note": "module's own docstring ('log-only, does not feed... self-edit targeting') is accurate for TARGETING but understates its real effect on prompt CONTENT via _recent_outcome_note()"
+    },
+    {
+      "name": "dissent_log",
+      "files": ["app/core/self_edit_manager.py"],
+      "state_change": "council APPROVE/REJECT vote appended to memory/dissent_log.jsonl",
+      "trigger": "human-invoked !propose command only",
+      "read_path": "static source-anchor liveness check + human dashboard only",
+      "influence_on_generation": "no direct behavioral reader; never gates a write (propose_core_edit never calls save_code)",
+      "causal_or_observational": "observational_advisory",
+      "hollow_write": true
+    }
+  ],
+  "phase4_condition_design_consequences": {
+    "condition_a_b_f": "unaffected; EchoDirectResponder/Design B already bypasses RiverBrain/logging/memory entirely",
+    "condition_c_persistent_memory": "implemented via explicit, transparent add_to_vector_memory() after Formation, then real retrieve_relevant_memories() before the test call - the only architecturally real, semantic, causal persistence mechanism found",
+    "condition_d_retrieval_blocked": "identical to C but the retrieval step is replaced with an empty result",
+    "condition_e_riverbrain_ablation": "ARCHITECTURALLY INAPPLICABLE to this experimental design - RiverBrain's only causal lever is multi-model council selection, which this investigation's single-model design never invokes; testing it would require reopening the exact contamination this thread's experiments consistently avoid"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "doc_id": "p3_persistent_behavioral_learning_architecture",
+  "companion_document": "audits/p3_persistent_behavioral_learning_architecture.md",
+  "conditions": {
+    "A_context": {
+      "real_calls": ["EchoDirectResponder.respond()", "river_deliberation._ollama_query(model, prompt, system=formation_text)"],
+      "memory_write": false,
+      "memory_read": false,
+      "riverbrain_touch": false
+    },
+    "B_restart_retrieval_available": {
+      "formation_calls": ["EchoDirectResponder.respond()", "memory_bridge.add_to_vector_memory(combined_text, meta={...})"],
+      "probe_calls": ["memory_bridge.retrieve_relevant_memories(probe.text, top_k=k)", "conversation_service.retrieve_memory_context()", "conversation_service.build_context_system_note()", "EchoDirectResponder.respond()"],
+      "memory_write": true,
+      "memory_read": true,
+      "riverbrain_touch": false,
+      "required_wait_seconds_min": 1800,
+      "known_risk": "retrieval may surface unrelated content instead of the taught rule, per the Learning Investigation's own live pilot finding -- instrumented via state_read field, not assumed away"
+    },
+    "C_restart_retrieval_blocked": {
+      "formation_calls": ["EchoDirectResponder.respond()"],
+      "probe_calls": ["EchoDirectResponder.respond() with empty/no retrieval result threaded into system context"],
+      "memory_write": false,
+      "memory_read": false,
+      "riverbrain_touch": false,
+      "block_method": "never write the content in the first place, not intercepting the read function -- a stronger, more certain block"
+    }
+  },
+  "negative_control_instrumentation": {
+    "fields": ["memory/river_brain.pkl size+mtime before/after", "memory/task_type_classifier.pkl size+mtime before/after"],
+    "expected_result": "no change across any trial in this design (EchoDirectResponder/Design B confirmed to bypass both)",
+    "if_violated": "surprising finding requiring investigation before trusting any other result from that trial"
+  },
+  "explicitly_out_of_scope": ["RiverBrain/routing direct test (requires multi-model council, reopens contamination this project avoids)", "self-edit deploy pipeline (confirmed narrow reach into conversation)", "reflection_shard journal (confirmed hollow, zero external readers)"],
+  "cites": [
+    "audits/echo_learning_causal_architecture.md",
+    "audits/echo_learning_causal_architecture.json",
+    "audits/echo_learning_causal_autopsy.md",
+    "audits/echo_learning_mechanism_inventory.md"
+  ]
+}

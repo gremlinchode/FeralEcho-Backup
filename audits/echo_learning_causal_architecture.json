@@ -1,0 +1,232 @@
+{
+  "audit_id": "echo_learning_causal_architecture",
+  "mission": "P2-CAUSAL-AUTOPSY",
+  "mode": "READONLY",
+  "live": false,
+  "mutate": false,
+  "generated": "2026-09-03",
+  "trace_framework": ["EXP", "OBS", "STATE", "PERSIST", "RELOAD", "READ", "GEN", "BEHAVIOR"],
+  "classification_key": {
+    "A": "context adaptation only",
+    "B": "persistent information retrieval",
+    "C": "persistent behavioral learning",
+    "U": "unknown/indeterminate from static evidence"
+  },
+  "status_key": ["ACTIVE", "DISCONNECTED", "WRITE-ONLY", "DEAD", "UNKNOWN"],
+  "re_verified_this_session": [
+    {
+      "claim": "learn_from_council_rating() pipeline is dead due to a stale cursor vs a rotated log",
+      "method": "fresh cat of memory/council_cursor.json (position=33471), fresh wc -l of memory/interaction_log.jsonl (11602 lines, up from 11548 at the last check -- confirming ongoing live growth still far short of the cursor), fresh reproduction of lines[33471:] == [], fresh grep of echo_watchdog.log for '[Council] Rated' (0 hits), fresh mtime check of council_ratings.jsonl (unchanged since Jul 28), fresh direct read of council_rater.py:574-630's current source",
+      "result": "CONFIRMED, independently reproduced from first principles this session, not carried forward from the prior audit's conclusion"
+    },
+    {
+      "claim": "ToolManager.get_tool() has zero real callers anywhere",
+      "method": "fresh whole-repo grep this session for '.get_tool('",
+      "result": "CONFIRMED -- only the method's own definition and one unrelated comment"
+    },
+    {
+      "claim": "learn_from_sandbox_outcome() writes model_task_stats (prior audit's claim)",
+      "method": "fresh direct read of echo_model_orchestrator.py:870-880 this session",
+      "result": "CORRECTED -- the function writes only scalers/classifiers/sandbox_observation_counts, never model_task_stats. This is a genuine correction to the prior Learning Investigation's Phase 1 audit, produced by this mission's explicit re-verify-don't-assume instruction."
+    },
+    {
+      "claim": "reflection_shard.py's recall_reflections()/observe_reflection() have zero external callers",
+      "method": "fresh whole-repo grep this session",
+      "result": "CONFIRMED -- only the two definition lines in echo_core.py appear anywhere"
+    }
+  ],
+  "mechanisms": [
+    {
+      "id": "faiss_memory_write_retrieve",
+      "trace": {
+        "EXP": "any conversational turn, dream cycle, curiosity/fetch content",
+        "OBS": "384-dim sentence embedding + raw text + metadata",
+        "STATE": "new FAISS vector + meta dict entry",
+        "PERSIST": "memory/faiss.index + memory/memory_meta.json, atomic rewrite every write",
+        "RELOAD": "VectorMemory.__init__() at process import, confirmed live (123567 meta entries this session)",
+        "READ": "retrieve_relevant_memories(), 10+ real call sites re-confirmed this session",
+        "GEN": "traced fresh unbroken into real /api/chat call via routes_echo_studio.py's _memory_search_fn chain",
+        "BEHAVIOR": "real text genuinely present in model input on every real conversational request"
+      },
+      "break_point": null,
+      "status": "ACTIVE",
+      "class": "B"
+    },
+    {
+      "id": "riverbrain_learn_model_task_stats",
+      "trace": {
+        "EXP": "any real conversational turn",
+        "OBS": "13-dim feature vector, regex/AST heuristics, no LLM judge",
+        "STATE": "scaler, classifier, AND model_task_stats[model][task_type] updated",
+        "PERSIST": "memory/river_brain.pkl, unconditional per-call save",
+        "RELOAD": "RiverBrain.load() at process init, confirmed exercised",
+        "READ": "score_model(), 4 real call sites re-confirmed fresh this session",
+        "GEN": "_select_council() called inside deliberate_and_learn() on every real non-bypass conversation",
+        "BEHAVIOR": "changes which models are consulted, never what they say"
+      },
+      "break_point": "terminates at SELECTION, never reaches CONTENT",
+      "status": "ACTIVE",
+      "class": "C_selection_only"
+    },
+    {
+      "id": "riverbrain_learn_from_sandbox_and_rating",
+      "trace": {
+        "EXP": "coding-verification outcome / human 1-5 rating",
+        "OBS": "feature vector extraction",
+        "STATE": "scaler + classifier updated; model_task_stats NOT updated (corrected finding)",
+        "PERSIST": "memory/river_brain.pkl",
+        "RELOAD": "same load path",
+        "READ": "predict_one(), the ONLY call site anywhere, feeds only accuracy_trackers",
+        "GEN": null,
+        "BEHAVIOR": "none confirmed"
+      },
+      "break_point": "STATE->READ (classifier's prediction has no forward path)",
+      "status": "WRITE-ONLY",
+      "class": "U"
+    },
+    {
+      "id": "riverbrain_learn_from_council_rating",
+      "trace": {
+        "EXP": "real peer-council rating, gated on is_council_trusted() (genuinely set)",
+        "OBS": "council_rater.py's rate_one_entry(), real per-model scoring",
+        "STATE": "would update same triad as learn() -- design is sound",
+        "PERSIST": "would write memory/river_brain.pkl",
+        "RELOAD": null,
+        "READ": null,
+        "GEN": null,
+        "BEHAVIOR": "currently zero, confirmed dead"
+      },
+      "break_point": "EXP->OBS: _poll_and_rate()'s stale cursor (33471) vs rotated log (11602 real lines) returns 0 before _save_cursor() ever executes -- self-perpetuating deadlock",
+      "status": "DEAD",
+      "class": "C_when_live"
+    },
+    {
+      "id": "riverbrain_classifier_accuracy_trackers",
+      "trace": {
+        "EXP": "every learn()/learn_from_* call",
+        "OBS": "N/A -- internal tree state",
+        "STATE": "HoeffdingTreeClassifier internal state",
+        "PERSIST": "memory/river_brain.pkl",
+        "RELOAD": "same load path",
+        "READ": "predict_one(), single call site, feeds only a self-referential accuracy stat",
+        "GEN": "accuracy_trackers -> PageHinkley -> WARNING-tier drift-notice log line only",
+        "BEHAVIOR": "none"
+      },
+      "break_point": "READ->GEN (feeds only a notification, never a decision, by explicit design)",
+      "status": "WRITE-ONLY",
+      "class": "U"
+    },
+    {
+      "id": "reflection_shard_journal",
+      "trace": {
+        "EXP": "300s autonomy tick or high-salience Global Workspace event",
+        "OBS": "real, live, non-templated model generation",
+        "STATE": "in-memory journal + self-model dict",
+        "PERSIST": "memory/reflection_journal.jsonl",
+        "RELOAD": "_load_from_disk() at EchoCore init, confirmed real",
+        "READ": "recall_reflections()/observe_reflection() -- ZERO external callers confirmed fresh this session",
+        "GEN": null,
+        "BEHAVIOR": "none confirmed; one content-free Global Workspace side effect that never qualifies as wide_broadcast"
+      },
+      "break_point": "RELOAD->READ (no external caller of the only accessors)",
+      "status": "WRITE-ONLY",
+      "class": "U"
+    },
+    {
+      "id": "task_type_classifier",
+      "trace": {
+        "EXP": "real user_conversation turn passing is_trustworthy_training_example()",
+        "OBS": "BagOfWords feature extraction",
+        "STATE": "learned NB weights",
+        "PERSIST": "memory/task_type_classifier.pkl, confirmed mtime Sep 1 (recently active)",
+        "RELOAD": "TaskTypeClassifier.load() at process init",
+        "READ": "detect_task_type(), tried before keyword ladder, 3 real call sites re-confirmed fresh",
+        "GEN": "drives council composition, token budgets, tool gating, DIRECT_ECHO_TASKS bypass",
+        "BEHAVIOR": "real reroute of later, unrelated conversation handling"
+      },
+      "break_point": null,
+      "status": "ACTIVE",
+      "class": "C_routing_only"
+    },
+    {
+      "id": "self_edit_deploy_to_conversation",
+      "trace": {
+        "EXP": "Echo's own autonomously-generated reflection text",
+        "OBS": "shadow_model.py keyword-count heuristic",
+        "STATE": "shadow_self_model.json targets.next_self_edit_focus",
+        "PERSIST": "real file",
+        "RELOAD": "N/A, re-read fresh",
+        "READ": "perform_self_edit() checks this field first, confirmed fresh",
+        "GEN": "F1/F2/F3 + fitness gate, zero human review, full file overwrite of self_edit_generated.py",
+        "BEHAVIOR": "self-edit subsystem: real. Ordinary conversation: confirmed narrow -- only apply_to_code (recursive, currently not deployed) or ToolManager tool-name text (never invoked, confirmed zero real ToolManager.get_tool() callers this session)"
+      },
+      "break_point": "GEN->BEHAVIOR for the 'ordinary conversation' claim specifically",
+      "status": "ACTIVE_for_self_edit_subsystem / DISCONNECTED_for_conversation",
+      "class": "C_for_self_edit_subsystem / effectively_A_for_conversation"
+    },
+    {
+      "id": "modelfile_persona_mutation",
+      "trace": {
+        "EXP": "any conclusion Echo reaches / human GET request",
+        "OBS": "modelfile_proposer.py renders a candidate",
+        "STATE": "a proposal object",
+        "PERSIST": "memory/modelfile_proposals.jsonl (log only)",
+        "RELOAD": null,
+        "READ": null,
+        "GEN": null,
+        "BEHAVIOR": "none -- no apply route exists anywhere"
+      },
+      "break_point": "STATE->PERSIST: only a proposal log exists, never the real artifact",
+      "status": "DISCONNECTED",
+      "class": "N/A"
+    },
+    {
+      "id": "curiosity_engine_garden_manager",
+      "trace": {
+        "EXP": "topic-underrepresentation signal from a real WorldModel distribution",
+        "OBS": "real generation call producing a new question",
+        "STATE": "question harvested, quality/lineage fields mutated",
+        "PERSIST": "data/question_garden.jsonl",
+        "RELOAD": "fresh file read each call",
+        "READ": "select_from_garden()",
+        "GEN": "drives emergent_scheduler.reflect() -> a real second generation call",
+        "BEHAVIOR": "real, closed, self-reinforcing loop, confined to Echo's own autonomous loop"
+      },
+      "break_point": null,
+      "status": "ACTIVE",
+      "class": "C_autonomous_loop_internal"
+    },
+    {
+      "id": "echo_ground_truth_slices",
+      "trace": {
+        "EXP": "a user message matching a keyword/regex marker",
+        "OBS": "stateless synthesis of other files' current content",
+        "STATE": "N/A",
+        "PERSIST": "N/A",
+        "RELOAD": "N/A",
+        "READ": "get_structural_self_facts(), 4 real entry points",
+        "GEN": "same chain as faiss_memory_write_retrieve",
+        "BEHAVIOR": "real content injected, gated on keyword match, not semantic"
+      },
+      "break_point": null,
+      "status": "ACTIVE_gated",
+      "class": "B"
+    },
+    {
+      "id": "self_model_json_get_weak_task_type",
+      "trace": {
+        "EXP": "130s background timer",
+        "OBS": "N/A, digest of other files",
+        "STATE": "full JSON rewrite",
+        "PERSIST": "memory/self_model.json",
+        "RELOAD": "read fresh each call",
+        "READ": "get_weak_task_type(), 3 real call sites re-confirmed fresh this session",
+        "GEN": "feeds self-edit's fallback target selection",
+        "BEHAVIOR": "real, scoped to self-edit subsystem"
+      },
+      "break_point": null,
+      "status": "ACTIVE",
+      "class": "C_self_edit_subsystem_only"
+    }
+  ]
+}

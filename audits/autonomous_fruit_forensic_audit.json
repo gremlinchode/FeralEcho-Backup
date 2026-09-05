@@ -1,0 +1,357 @@
+{
+  "mission": "autonomous_fruit_forensic_audit",
+  "observation_only": true,
+  "production_altered": false,
+  "held_out_protection": {
+    "held_out_manifest_exists": false,
+    "held_out_task_executed": false,
+    "held_out_task_referenced": false,
+    "frozen_dev_task_suite_hash_unchanged": true,
+    "frozen_dev_task_suite_hash": "6440ed174482a2d5bb43bdd03bfc33c73c66b492cb74f465e2674e8a8eb8937d",
+    "final_reconfirmation": "find . -iname '*held_out*' returned zero results at both the start and the end of this objective"
+  },
+  "executive_finding": "Mostly activity, with a small number of concrete demonstrated fruit (crash avoidance, RiverBrain model_task_stats routing, Global Workspace exploration-bias consumption, curiosity-garden-to-project-spec) and one previously-load-bearing pipeline (RiverBrain.learn_from_council_rating) found dormant during this exact investigation due to a log-rotation/cursor mismatch, not repaired.",
+  "subsystem_classifications": {
+    "curiosity_engine_and_garden": {
+      "classification": "ACTIVITY_with_narrow_POTENTIAL_FRUIT",
+      "confidence": "HIGH",
+      "garden_entries": 13470
+    },
+    "reflection_cycle_and_shards": {
+      "classification": "ACTIVITY_with_narrow_POTENTIAL_FRUIT",
+      "confidence": "MEDIUM",
+      "reflection_shard_lines": 20526
+    },
+    "self_edit_planning": {
+      "classification": "FRUIT_internal_to_self_edit_loop_only",
+      "confidence": "HIGH"
+    },
+    "echo_projects": {
+      "classification": "ACTIVITY",
+      "confidence": "HIGH",
+      "total_reports": 61,
+      "f1_blocked_reports": 48,
+      "reports_reaching_f2": 13,
+      "f2_pass_count": 0,
+      "f2_fail_count": 13,
+      "end_to_end_success_rate": "0/61"
+    },
+    "knowledge_acquisition": {
+      "classification": "POTENTIAL_FRUIT_hygiene_fix_confirmed_working",
+      "confidence": "HIGH",
+      "total_memory_entries": 123793,
+      "code_analysis_entries": 59910,
+      "code_analysis_pct": 48.4,
+      "new_code_analysis_entries_last_24h": 0,
+      "retrieval_exclusion_confirmed": true
+    },
+    "self_editing_full_pipeline": {
+      "classification": "ACTIVITY_with_narrow_weak_POTENTIAL_FRUIT",
+      "confidence": "HIGH",
+      "real_outcome_records": 179,
+      "recent_quality_deltas": [
+        0.135,
+        -1.471,
+        null
+      ],
+      "response_shortening_near_duplicate_names": 58,
+      "prose_stripping_near_duplicate_names": 95,
+      "quality_scoring_near_duplicate_names_despite_pause": 8
+    },
+    "riverbrain_model_task_stats": {
+      "classification": "FRUIT",
+      "confidence": "HIGH",
+      "models_with_stats": 12,
+      "sample": {
+        "echo:latest": {
+          "coding_n": 49139,
+          "coding_mean": 0.594,
+          "personal_n": 43460,
+          "personal_mean": 0.657,
+          "self_edit_coding_n": 7908,
+          "self_edit_coding_mean": 0.854,
+          "echo_projects_coding_n": 1282,
+          "echo_projects_coding_mean": 0.836
+        },
+        "qwen2.5-coder:7b": {
+          "coding_n": 9932,
+          "coding_mean": 0.647
+        }
+      }
+    },
+    "learn_from_council_rating": {
+      "classification": "DEAD_currently",
+      "confidence": "HIGH",
+      "root_cause": "council_cursor.json position (33471, saved 2026-07-26) exceeds the current post-rotation interaction_log.jsonl line count (11970); interaction_log.jsonl was rotated (gzip+truncate) on 2026-08-22 per log_retention.py (Finding 51); lines[cursor:] has been empty every poll cycle since, with zero exceptions logged -- a silent, no-error stall, not a crash.",
+      "council_ratings_growth_since_trust": "116 -> 133 (17 new) between 2026-07-22 and the stall",
+      "days_dormant_estimate": ">=13 (since 2026-08-22)",
+      "council_rater_thread_confirmed_alive": true,
+      "reported_not_repaired": true
+    },
+    "self_model_and_shadow_model": {
+      "classification": "FRUIT_self_model_read / ACTIVITY_shadow_comparison",
+      "confidence": "HIGH",
+      "self_model_last_updated": "2026-09-04T04:38:43.546655+00:00",
+      "shadow_accuracy_lines": 2035,
+      "latest_shadow_entry": {
+        "shadow_focus": "personal",
+        "real_focus": "coding",
+        "focus_matches": false
+      }
+    },
+    "global_workspace": {
+      "classification": "FRUIT",
+      "confidence": "HIGH",
+      "distinct_sources_last_500_events": [
+        "emergent_loop",
+        "echo_optuna",
+        "world_model",
+        "river_deliberation",
+        "reflection_shard",
+        "seam_engine"
+      ],
+      "live_consumption_event_observed": {
+        "ts": "2026-09-04T04:40:45.503765+00:00",
+        "type": "workspace.consumed",
+        "source": "river_deliberation",
+        "summary": "exploration_bias=0.001 (from cache)"
+      }
+    },
+    "behavioral_state_directives": {
+      "classification": "EXCLUDED_from_autonomous_fruit_human_gated_only",
+      "confidence": "HIGH",
+      "every_mutation_requires_literal_human_confirmed_true": true,
+      "live_directives_count": 0,
+      "historical_directive_lifecycle_observed": "created, matched twice, deleted -- all human_confirmed=true, same-day validation shape"
+    },
+    "memory_faiss_retrieval": {
+      "classification": "ACTIVITY",
+      "confidence": "MEDIUM",
+      "total_entries": 123793,
+      "prior_ablation_experiment_cited": "audits/2026-07-23_memory_ablation_experiment.md",
+      "followup_nonpersonal_ablation_attempt": {
+        "file": "scripts/memory_ablation_results_nonpersonal_2026-09-03.json",
+        "pairs": 5,
+        "computed_distances": 0,
+        "noise_floor_entries": 0,
+        "status": "incomplete_or_interrupted, not usable as new evidence"
+      }
+    },
+    "routing_adaptation": {
+      "classification": "ACTIVITY",
+      "confidence": "MEDIUM",
+      "disclosed_limitation": "choose_model()'s primary ranking (rank_models()) does not read model_task_stats at all, per Finding 44's own text -- not re-derived from source this session, only the underlying data richness was re-confirmed"
+    },
+    "autonomous_background_loops_and_scheduling": {
+      "classification": "ACTIVITY",
+      "confidence": "HIGH",
+      "interaction_log_entries_last_observed_hour": 53,
+      "concurrent_deliberation_loops_observed": [
+        "AutonomousSelfEdit",
+        "model_guided_autonomous_loop"
+      ]
+    },
+    "metacognitive_outputs": {
+      "classification": "FRUIT_for_conversational_path_only",
+      "confidence": "HIGH",
+      "note": "triggered by real conversational requests, not autonomy -- explicitly not claimed as autonomous fruit"
+    },
+    "error_correction_dissent_log": {
+      "classification": "ACTIVITY_effectively_unused",
+      "confidence": "HIGH",
+      "entries": 1,
+      "date": "2026-07-17"
+    },
+    "error_correction_crash_avoidance": {
+      "classification": "FRUIT",
+      "confidence": "HIGH",
+      "log_occurrences": 14
+    },
+    "goal_persistence": {
+      "classification": "DEAD",
+      "confidence": "HIGH",
+      "artifact": "goals.txt",
+      "last_git_commit": "2026-07-04",
+      "live_references": 0,
+      "note": "curiosity garden is this project's real functioning analogue; goals.txt is a separate, inert, orphaned file"
+    }
+  },
+  "causal_chain_table": [
+    {
+      "producer": "crash_awareness.py",
+      "output": "avoidance decision / cooldown window",
+      "reader": "list_mlx_models()",
+      "consumer": "every real council selection during window",
+      "consequence": "MLX models genuinely absent from real councils",
+      "evidence": "HIGH"
+    },
+    {
+      "producer": "river_deliberation.py world-surprise consumption",
+      "output": "exploration_bias value",
+      "reader": "Bernoulli gate in _select_council()",
+      "consumer": "council-swap decision",
+      "consequence": "real, small (p=0.001 observed) chance of an extra council slot swap",
+      "evidence": "HIGH"
+    },
+    {
+      "producer": "curiosity garden",
+      "output": "harvested question",
+      "reader": "echo_projects.autonomous_generate_project()",
+      "consumer": "autonomous project-generation cycle",
+      "consequence": "real project spec (verbatim garden text)",
+      "evidence": "HIGH"
+    },
+    {
+      "producer": "curiosity garden / seam_engine / dream_cycle",
+      "output": "harvested questions",
+      "reader": "emergent_scheduler.select_from_garden()",
+      "consumer": "next autonomous reflection prompt selection",
+      "consequence": "which topic gets reflected on next",
+      "evidence": "MEDIUM"
+    },
+    {
+      "producer": "self_edit_manager.plan_code_logic()",
+      "output": "numbered plan",
+      "reader": "generate_code_from_plan()",
+      "consumer": "next candidate-code generation",
+      "consequence": "literal candidate code generated",
+      "evidence": "HIGH"
+    },
+    {
+      "producer": "self-edit outcomes / echo_projects",
+      "output": "quality deltas",
+      "reader": "RiverBrain.learn()",
+      "consumer": "model_task_stats",
+      "consequence": "real, large per-model/task scoring state",
+      "evidence": "HIGH"
+    },
+    {
+      "producer": "model_task_stats",
+      "output": "scoring state",
+      "reader": "_select_council() exploration floor / TAG_SCORE_BOOST",
+      "consumer": "council composition",
+      "consequence": "real influence on which models are selected",
+      "evidence": "HIGH"
+    },
+    {
+      "producer": "council_rater.py ratings",
+      "output": "per-entry rating",
+      "reader": "RiverBrain.learn_from_council_rating()",
+      "consumer": "model_task_stats (blended)",
+      "consequence": "NONE currently -- stalled since ~2026-08-22",
+      "evidence": "HIGH_confidence_of_non_function"
+    },
+    {
+      "producer": "echo_projects council-generated code",
+      "output": "multi-file project",
+      "reader": "none (no importer)",
+      "consumer": "none",
+      "consequence": "none",
+      "evidence": "NONE"
+    },
+    {
+      "producer": "reflection_shard.py meta-synthesis",
+      "output": "reflection.meta_synthesis event",
+      "reader": "Global Workspace wide-broadcast",
+      "consumer": "reflection_shard.observe(), curiosity topic-bias (per prior finding)",
+      "consequence": "plausible, not directly re-traced end-to-end this session",
+      "evidence": "MEDIUM"
+    },
+    {
+      "producer": "behavioral_state.py directives (human-originated)",
+      "output": "matched directive text",
+      "reader": "echo_ground_truth.py prompt construction",
+      "consumer": "real conversational system prompt",
+      "consequence": "real, but human-originated -- excluded from autonomous-fruit tally",
+      "evidence": "HIGH"
+    },
+    {
+      "producer": "daily code-scan",
+      "output": "code_analysis memory entries",
+      "reader": "retrieve_relevant_memories() [now excludes]",
+      "consumer": "none (excluded)",
+      "consequence": "prevented, not caused, a downstream effect",
+      "evidence": "HIGH"
+    }
+  ],
+  "resource_cost": {
+    "interaction_log_entries_last_observed_hour": 53,
+    "concurrent_autonomous_deliberation_loops_observed_same_window": [
+      "AutonomousSelfEdit",
+      "model_guided_autonomous_loop"
+    ],
+    "ollama_resident_model_at_check": {
+      "name": "qwen2.5-coder:7b",
+      "size_gb": 5.0,
+      "processor": "100% GPU"
+    },
+    "swap_usage": {
+      "total_mb": 7168.0,
+      "used_mb": 5605.56,
+      "free_mb": 1562.44
+    },
+    "memory_dir_disk_usage_gb": 1.2,
+    "total_faiss_entries": 123793,
+    "faiss_entries_confirmed_unused_pct": 48.4,
+    "framing": "resource cost vs demonstrated downstream fruit -- not equated with lack of value"
+  },
+  "strongest_demonstrated_autonomous_fruit": "crash_awareness.py's MLX avoidance mechanism -- full causal chain independently verifiable, autonomous-originated trigger, 14 real log occurrences",
+  "largest_activity_without_fruit": "echo_projects -- 61 real, expensive multi-model generation cycles, 0/61 end-to-end success, zero automated readers of the generated code",
+  "dead_dormant_paths": [
+    "RiverBrain.learn_from_council_rating() -- currently non-functional, stale cursor vs. rotated log",
+    "Dissent Log -- functional but 1 entry ever (2026-07-17)",
+    "goals.txt -- orphaned, unreferenced, 2 months stale",
+    "echo_projects generated code -- no automated reader exists, by design"
+  ],
+  "important_unknowns": [
+    "Whether reflection.meta_synthesis's specific Global Workspace events have themselves changed a downstream decision (mechanism confirmed live in general; this specific source's consumption not directly traced this session)",
+    "Whether interaction_log growth will carry council_cursor.json's stale position back into range before the next rotation (~2026-09-17 at observed growth rate) -- plausible, not verified, self-resolution path",
+    "Why reflection_shard.jsonl contains at least one self-edit-planning-shaped entry -- observed, not root-caused",
+    "The nonpersonal memory-ablation follow-up attempt's incompleteness (5 pairs, 0 computed distances) -- status genuinely unresolved, not evidence either way",
+    "Whether echo_projects' 0/61 result is a stable capability ceiling or would improve with a different model pool/prompt design"
+  ],
+  "tier3_operating_recommendation": "THROTTLE_FOR_EXPERIMENT",
+  "recommendation_is_advisory_only": true,
+  "production_behavior_changed_to_produce_this_audit": false,
+  "sanity_process_note": "audits/tier3_apparatus/dev_sanity_results.jsonl's background process (PID 52989, from the companion Objective 1 mission) was observed completing naturally (8/8 records) during this investigation window; not touched, not restarted, not part of Objective 2's own workload",
+  "evidence_commands": [
+    "wc -l memory/interaction_log.jsonl memory/council_ratings.jsonl",
+    "cat memory/council_cursor.json",
+    "cat memory/snapshot_baseline.json",
+    "grep -rn learn_from_council_rating app/ --include=*.py",
+    "grep -n _CURSOR_PATH|def _poll_and_rate app/core/council_rater.py; sed -n '574,660p' app/core/council_rater.py",
+    "wc -l memory/interaction_log.jsonl; head -1/tail -1 memory/interaction_log.jsonl (timestamps)",
+    "ls -la memory/*.gz  (confirms interaction_log.jsonl.1.gz rotated 2026-08-22)",
+    "grep -c '[Council] Background rater started' / '[Council] Loop error' memory/echo_watchdog.log",
+    "cat memory/echo_sentinel.json",
+    "wc -l app/core/behavioral_state.py; grep -n human_confirmed app/core/behavioral_state.py",
+    "grep -rln behavioral_state app/ run.py; grep -n behavioral_state. app/core/echo_ground_truth.py",
+    "cat memory/behavioral_directives.json; tail -5 memory/behavioral_directives_audit.jsonl",
+    "grep -n 'class ToolManager' -A def app/core/tool_manager.py",
+    "grep -rn '.get_tool(|register_tool(|.func(' app/ --include=*.py",
+    "sed -n '95,135p' app/core/awareness_tools_integration.py (safe_wrapper never invoked)",
+    "ls sandbox/echo_projects/ | wc -l",
+    "cat memory/echo_projects_autonomy_state.json",
+    "grep -l BLOCKED / grep -l '^# F2' sandbox/echo_projects/*/_report.md; grep -A2 '^# F2' ... | grep -oE PASS|FAIL | sort | uniq -c",
+    "python3 -c memory_meta.json total/code_analysis split (123793 total, 59910 code_analysis, 48.4%)",
+    "ls -la memory/code_scan_hash_cache.json; python3 -c len(cache)==472",
+    "python3 -c code_analysis entries added in last 24h == 0",
+    "grep -n _ALWAYS_EXCLUDED_MEMORY_CATEGORIES app/core/memory_bridge.py",
+    "python3 -c self_edit_convergence.json family cycle counts (prose_stripping=95, response_shortening=58, quality_scoring=8, unclassified=53)",
+    "tail -300 memory/SELF_EDIT.log (live staging_import_failed / dry_run_staged / CONVERGENCE_BACKFILL entries, 2026-09-04T04:19-04:38)",
+    "wc -l memory/self_edit_outcomes.jsonl; tail -3 (deltas +0.135, -1.471, null)",
+    "python3 get_river_brain() direct singleton inspection -- model_task_stats, 12 models",
+    "wc -l memory/shadow_accuracy.jsonl; tail -1 (2026-09-04T04:34:59, focus_matches=false)",
+    "python3 self_model.json last_updated == 2026-09-04T04:38:43",
+    "wc -l data/question_garden.jsonl == 13470",
+    "tail -500 memory/workspace_log.jsonl source distribution + tail -1 raw (workspace.consumed, river_deliberation, 2026-09-04T04:40:45)",
+    "wc -l memory/reflection_shard.jsonl == 20526; tail -1 raw (planning-shaped entry)",
+    "numpy load memory/echo_state_history.npy dim[8] last 5 values",
+    "wc -l memory/dissent_log.jsonl == 1; cat contents",
+    "grep -c MLX-AVOIDANCE memory/echo_watchdog.log == 14",
+    "find . -iname *goal*; git log -1 -- goals.txt == 2026-07-04; grep -rln goals.txt app/ run.py == empty",
+    "ps aux | grep run_tier3_apparatus (process completed on its own, 8/8 records)",
+    "ps aux ollama/run.py CPU/MEM; ollama ps; sysctl vm.swapusage; du -sh memory/",
+    "find . -iname *held_out* == empty (checked twice, start and end)"
+  ]
+}

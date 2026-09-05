@@ -1,0 +1,188 @@
+{
+  "spec_id": "P0.3-DESIGN",
+  "status": "IMPLEMENTED; ONE LIVE PILOT RUN (P1, 2 trials, see audits/echo_preference_formation_retention_p1_pilot.md); MEASUREMENT INSTRUMENT REPAIRED (P1.1, see audits/echo_preference_formation_retention_p1_1_measurement_gate.md) -- 'DESIGN_ONLY_NOT_IMPLEMENTED_NOT_RUN' was accurate when this field was first written and is stale as of P1.1; corrected here rather than left to mislead a future reader of this file, though a full re-audit of every other field in this document for staleness was out of scope for the P1.1 gate specifically.",
+  "companion_document": "audits/echo_preference_formation_retention_causal_gate_p03.md",
+  "p1_1_measurement_repair": {
+    "gate_document": "audits/echo_preference_formation_retention_p1_1_measurement_gate.md",
+    "parser_module": "app/experiments/preference_provenance/choice_parser.py",
+    "parser_benchmark": "scripts/verify_choice_parser_benchmark.py",
+    "task_validation_script": "scripts/validate_replacement_task_name_family.py",
+    "primary_task_family_for_next_live_run": "name",
+    "summary": "The P1 pilot's capture-time parser (harness._parse_label_choice()) failed on 6/8 real forced-choice Echo phases. A new, general-purpose, non-Echo-specific analysis-layer parser (choice_parser.py) was built with two independent extraction methods and outcome-independent disagreement handling (UNKNOWN/REVIEW on genuine conflict, never silently resolved). Validated against a 52-case ground-truth benchmark (real P1 transcripts as fixtures, not hardcoded rules) and re-run against all 8 real P1 records: 5/6 forced-choice records now resolve cleanly, 1/6 correctly flagged as an honest DISAGREE_UNKNOWN_REVIEW reflecting genuine internal inconsistency in that specific real response (declared label B, described content matching the other option under that trial's randomized label mapping) -- not a parser defect. The 'motif' task family's confirmed 100% curved-selection bias was root-caused to a specific wording-connotation asymmetry (see motif's own status_p1_1 note above) and demoted; 'name' (Verel/Farun) was validated instead and is the recommended task family for the next live run. See the gate document for the full verdict and required conditions."
+  },
+  "supersedes": "P0.2-DESIGN",
+  "note": "Schema-only specification. Contains no live trial data. Not sealed/hashed - sealing happens only after implementation and pilot review, per this thread's established protocol-lock discipline (see preference_experiment_preregistered_protocol.md's own P0.1 seal for the precedent this would follow). Revised from P0.2 per the P0.3 causal-architecture-gate finding: REVISE, not GO - required changes are incorporated below, not merely noted.",
+  "research_question": "Can Echo encounter an initially unresolved choice, independently develop a preference through her own interaction/history, retain that preference, and later express it when the original context is absent, without the preference being trivially supplied by the experimenter, system prompt, persona, curiosity subsystem, or RiverBrain?",
+  "target_construct": {
+    "achievable": "I - behavioral persistence (chooses X again without needing to explicitly recall the prior choice)",
+    "not_cleanly_isolable": "J - preference formation + retention as a single, fully isolated causal claim - see causal_gate_p03.md section 2",
+    "note": "Formation evidence and retention evidence are measured and reported SEPARATELY, never blended into one claim (section 6 of the causal gate document)."
+  },
+  "hypotheses": {
+    "H1": "Echo can develop a preference between initially unresolved alternatives through her own interaction/history and subsequently retain and express that preference when the original contextual cues are removed.",
+    "H0": "Any apparent preference is fully explained by existing architecture, prompting, persona, model priors, retrieval contamination, deterministic behavior, RiverBrain state, curiosity-engine behavior, experimenter influence, or random variation.",
+    "competing": ["H0a_positional_recency_artifact", "H0b_verbal_momentum", "H0c_session_continuity_artifact_aka_construct_D_conversational_persistence", "H1a_shallow_explained_preference", "H1b_provenance_resistant_preference"]
+  },
+  "design_variants": {
+    "variant_1_session_continuous": {
+      "path": "Design B (river_deliberation._ollama_query direct call, via the new EchoDirectResponder class)",
+      "memory_channel": "none - formation content carried forward only via explicit, researcher-assembled conversation context within one continuous session",
+      "contamination_profile": "near-zero (no RiverBrain, no interaction_log, no reflection_shard, no sync, no peer-rating)",
+      "can_establish_cross_restart_persistence": false,
+      "honest_ceiling": "behavioral persistence surviving a topically-unrelated distractor within one continuous session - NOT context-independent retention in the stronger sense",
+      "implemented": false
+    },
+    "variant_2_memory_mediated": {
+      "path": "would require a path with real FAISS write/read - not yet identified as clean",
+      "memory_channel": "real production memory_bridge.py retrieval pipeline (retrieve_relevant_memories - confirmed cosine-similarity search, NOT exact recall)",
+      "contamination_profile": "reopens RiverBrain/interaction_log/reflection_shard/council_rater/sync_protocol confounds documented in echo_query_contamination_audit.md",
+      "can_establish_cross_restart_persistence": true,
+      "requires_hard_process_reset": true,
+      "must_never_wipe_production_faiss_or_riverbrain": true,
+      "retrieval_blocking_ablation_required": "tag Formation-written memory entries with a distinct memory_source value; run a condition that excludes that source from retrieve_relevant_memories() (via source_filter or post-filter) before prompt assembly; compare choice distribution against the unblocked condition - see causal_gate_p03.md section 8",
+      "irreducible_noise_caveat": "the real production FAISS index contains everything else Echo has ever produced - a fully clean single-entry memory store is not available without wiping production memory, which is forbidden",
+      "implemented": false,
+      "status": "specified_for_future_authorization_only, gated on Variant 1 (P0-P6) passing its own validity checks first"
+    }
+  },
+  "task_families": [
+    {
+      "id": "motif",
+      "option_1": {"id": "motif_curved", "description": "a single curved line that loops back on itself without crossing"},
+      "option_2": {"id": "motif_angular", "description": "a set of straight lines that meet at repeating sharp angles"},
+      "excluded_associations": ["religious", "political", "moral", "economic"],
+      "revision_note": "P0.3: replaces the original 'crescents'/'triangles' wording, which carried real religious/cultural symbolism (the Islamic crescent moon) undetected until static analysis in the P0.2 red-team pass. Redesigned to describe pure geometric structure (curved vs. angular) with no named, culturally-loaded object.",
+      "status_p1_1": "CONFIRMED BIASED, DEMOTED FROM PRIMARY USE (not deleted -- kept for historical/documentation reasons, per this project's established convention). The P1 live pilot (2 trials) and this task family's own real non-Echo control data showed 8/8 (100%) position-independent selection of motif_curved. Root cause identified during P1.1 (not merely 'curved is preferred'): a specific wording-connotation asymmetry -- motif_angular's description carries the negative-valence adjective 'sharp' with no positive counterpart, while motif_curved's description carries an unearned positive qualifier ('loops back on itself WITHOUT CROSSING', i.e. self-avoiding/tidy) with no equivalent on the angular side. Do not use this task family as the primary vehicle for a live Echo re-run without first revising the wording to remove this specific asymmetry (rewriting is a plausible future option; not attempted in P1.1, since 'name' already provided a validated, lower-risk replacement)."
+    },
+    {
+      "id": "habit",
+      "option_1": {"id": "habit_word", "description": "opening a reflection with a single, deliberately chosen word"},
+      "option_2": {"id": "habit_image", "description": "opening a reflection with one brief, concrete image described in a single breath"},
+      "excluded_associations": ["religious", "political", "moral", "economic"],
+      "revision_note": "P0.3: replaces the original 'habit_question' option, which matched well-known writing-advice cliche ('hook the reader with a question') and could bias a model trained on writing-craft content toward treating it as conventionally 'correct' independent of anything Echo-specific. Redesigned so neither option echoes a commonly-taught rule."
+    },
+    {
+      "id": "name",
+      "option_1": {"id": "name_verel", "description": "Verel"},
+      "option_2": {"id": "name_farun", "description": "Farun"},
+      "excluded_associations": ["religious", "political", "moral", "economic"],
+      "note": "invented, phonetically neutral nonsense words - checked but not exhaustively verified against every real-world language for accidental connotation",
+      "revision_note": "P0.3: replaces 'Ossin', which tokenized to 3 tokens under tiktoken's cl100k_base encoding versus 'Verel's 2 tokens - a measured, real asymmetry found via static analysis in the P0.2 red-team pass. 'Farun' matches 'Verel' exactly on length (5) and token count (2) under this encoding, and follows the same CVCVC syllable shape. Approximation only - the real local Ollama models use different tokenizers; per-model token count should be logged as a covariate at implementation time, not assumed balanced from this check alone.",
+      "status_p1_1": "PROMOTED TO PRIMARY TASK FAMILY FOR THE NEXT LIVE RUN. Validated (scripts/validate_replacement_task_name_family.py) against a real non-Echo control model (llama3.2:3b, the same model used in the P1 pilot) across all 4 position x wording permutations: 4/4 resolved, exactly a 2/4 - 2/4 split between Verel and Farun (0% net content bias, vs. motif's 8/8=100%). Note: the control model showed a real POSITION bias (always selected whichever candidate landed in 'Option A' in that specific trial) -- this is exactly why the protocol's existing per-trial randomize_label_mapping() is load-bearing, not optional: rotating which semantic option lands in position A across trials is what neutralized the position bias into a null net result. n=4 is a small validation sample (deliberately scoped per the P1.1 gate's own 'minimum defensible repairs, avoid scope creep' instruction) -- a real live run should keep watching for a recurrence of this position effect across its own full trial sequence, not assume it is fully eliminated from a 4-trial check."
+    }
+  ],
+  "phases": {
+    "A_baseline": {
+      "purpose": "establish pre-exposure choice distribution",
+      "elicitation_style": "neutral direct forced choice, randomized labels",
+      "forbidden_language": ["favorite", "prefer", "choose"]
+    },
+    "B_formation": {
+      "purpose": "controlled, non-leading engagement with both options - relabeled 'asymmetric-exposure conditioning check' in any claim language per causal_gate_p03.md section 5, reserving 'formation' for what the data would need to separately earn",
+      "elicitation_style": "open-ended engagement task, no ranking requested",
+      "forbidden_language": ["favorite", "prefer", "choose", "which do you like", "rank"],
+      "measured_signals": ["word_count_per_option", "unprompted_comparative_language"],
+      "signal_role": "secondary/exploratory only, never primary pass criterion"
+    },
+    "B2_immediate_post_formation_probe": {
+      "purpose": "REQUIRED NEW STAGE (P0.3): a first paraphrased, freshly-relabeled choice reading taken IMMEDIATELY after Formation, before any distractor. Without this stage, a null Baseline-to-Retention comparison is ambiguous between 'nothing ever changed' and 'something changed, then fully decayed before the distractor was even reached' - two very different findings the P0.2 design could not distinguish.",
+      "elicitation_style": "neutral direct forced choice, paraphrased relative to Phase A, freshly randomized labels",
+      "forbidden_language": ["favorite", "prefer", "choose", "as you said", "you previously", "your earlier answer"],
+      "compared_against": "phase_a_baseline - this comparison is the actual Formation-evidence measurement"
+    },
+    "distractor_conditions": {
+      "purpose": "REQUIRED NEW STAGE (P0.3): four conditions distinguishing topical displacement from raw conversational length/dilution, and confirming distractor content alone carries no directional pull",
+      "condition_B_unrelated_distractors": "Formation -> genuinely unrelated conversational turns -> retention probe",
+      "condition_C_matched_length_neutral": "Formation -> neutral interaction matched in length/turn-count to condition B but topically adjacent (isolates length/dilution from topical displacement)",
+      "condition_D_no_formation_null": "No formation exposure -> same distractor content as condition B -> retention probe (confirms distractors carry no bias on their own)",
+      "honest_limitation": "surviving conditions B/C narrows but does NOT close the gap between construct D (conversational persistence) and construct I (behavioral persistence) - a longer-horizon, still purely mechanistic attention effect remains an available explanation, per causal_gate_p03.md section 7"
+    },
+    "C_retention": {
+      "purpose": "the final measurement, compared against BOTH Phase A (baseline) and Phase B2 (immediate post-formation) - two separate comparisons, never blended (causal_gate_p03.md section 6)",
+      "elicitation_style": "neutral direct forced choice, must differ in wording from Phase A and Phase B2, freshly randomized labels",
+      "forbidden_language": ["favorite", "prefer", "choose", "as you said", "you previously", "your earlier answer"],
+      "behavioral_variant_required": "a structurally-embedded behavioral task (using an option functionally within a different task, without naming it as 'the one from before') must be run alongside the direct-question retention probe, not as a replacement for it - per P0.2 section 12"
+    }
+  },
+  "controls": [
+    "phase_a_baseline",
+    "phase_b2_immediate_post_formation_probe",
+    "mock_responder_control",
+    "persona_ablation_control_where_feasible",
+    "cross_model_prior_control_run_through_identical_variant_1_protocol",
+    "prompt_contamination_check",
+    "retrieval_vs_retention_backward_reference_scan",
+    "ordering_counterbalance",
+    "single_ask_per_phase_no_repetition",
+    "automated_seeded_randomization",
+    "context_removal_literal_overlap_check",
+    "distractor_conditions_B_C_D",
+    "retrieval_blocking_ablation_variant_2_only",
+    "trial_independence_fresh_isolated_conversation_context_per_trial",
+    "no_optional_stopping_fixed_sample_size_before_analysis"
+  ],
+  "success_criteria": {
+    "all_required": true,
+    "criteria": [
+      "phase_a_not_significantly_skewed_p_gte_0.05",
+      "criterion_2a_measurable_shift_baseline_to_immediate_post_formation_probe_POSSIBLE_OR_ROBUST_EFFECT",
+      "criterion_2b_shift_survives_immediate_probe_to_post_distractor_retention_POSSIBLE_OR_ROBUST_EFFECT",
+      "replicates_in_at_least_2_of_3_task_families_independently",
+      "survives_paraphrase_requirement",
+      "survives_label_order_re_randomization",
+      "backward_reference_language_present_in_fewer_than_20_percent_of_trials",
+      "mock_responder_control_shows_NO_DETECTABLE_EFFECT_note_this_only_rules_out_statistical_machinery_artifacts_not_conversational_persistence_per_causal_gate_p03",
+      "non_echo_model_prior_control_run_through_identical_variant_1_protocol_does_not_show_comparable_effect_size",
+      "minimum_sample_40_trials_per_condition_per_family_360_total_minimum",
+      "independent_replication_run_before_reporting_beyond_observed_once",
+      "distractor_condition_B_shows_survival_or_the_result_is_reported_as_conversational_persistence_not_retention",
+      "distractor_condition_D_null_control_confirms_no_directional_pull_from_distractor_content_alone"
+    ]
+  },
+  "failure_modes_explicitly_valuable": [
+    "phase_a_already_skewed",
+    "no_shift_baseline_to_immediate_probe_criterion_2a_fails",
+    "shift_present_at_immediate_probe_but_disappears_by_retention_criterion_2b_fails",
+    "shift_identical_in_mock_control",
+    "shift_identical_in_non_echo_model_prior_control",
+    "shift_tracks_paraphrase_or_ordering_rather_than_surviving_it",
+    "shift_only_present_with_backward_reference_language",
+    "shift_does_not_replicate_on_second_seed",
+    "shift_present_in_only_one_of_three_families",
+    "shift_disappears_once_context_removal_confirmed_variant_1",
+    "shift_disappears_under_distractor_condition_B_evidence_for_conversational_persistence_not_retention",
+    "shift_disappears_when_relevant_memory_excluded_from_retrieval_variant_2_evidence_for_reconstruction_not_persistence"
+  ],
+  "allowed_effect_labels": ["INSUFFICIENT_DATA", "NO_DETECTABLE_EFFECT", "POSSIBLE_EFFECT", "ROBUST_EFFECT"],
+  "forbidden_effect_labels": ["AGENCY_CONFIRMED", "FREE_WILL_CONFIRMED", "CONSCIOUSNESS_CONFIRMED", "SENTIENCE_CONFIRMED", "AUTONOMY_CONFIRMED"],
+  "evidence_ladder_reference": "audits/2026-09-03_measurability_and_longitudinal_evidence_audit.md#6-evidence-ladder-e0e9",
+  "highest_reachable_evidence_rung": "E2-E3 (persistent behavioral preference surviving distractor+paraphrase within one session); a bounded, heavily-caveated approach toward E4/E5 possible only via Variant 2 with the retrieval-blocking ablation holding, never cleanly per the irreducible-noise caveat",
+  "categorically_unreachable_rungs": ["E7", "E8", "E9 in the full independent-replication sense"],
+  "echo_live_bug_status": "FIXED (P0.2 pass) - isolated to app/experiments/preference_provenance/harness.py only. EchoResponder now reports the real ECHO_SYNTHESIS_MODEL constant instead of a hardcoded literal. New EchoDirectResponder class added for Design B, reporting the exact, verbatim model identity supplied to its constructor - cannot diverge from the real call. Regression-tested (105/105 checks pass), no production file modified.",
+  "unavoidable_confounds": [
+    "persona_cannot_be_stripped_from_same_model_weights_without_a_production_code_change",
+    "distractor_control_narrows_but_does_not_close_the_gap_between_conversational_persistence_and_behavioral_persistence",
+    "silent_unannounced_recall_not_fully_distinguishable_from_genuine_current_preference_by_any_control_in_this_design",
+    "variant_2s_real_production_faiss_index_carries_irreducible_noise_from_everything_else_ever_stored"
+  ],
+  "cannot_establish": [
+    "consciousness", "subjective_experience", "sentience", "moral_status", "free_will", "agency", "autonomy", "selfhood", "personhood",
+    "preference_formation_as_a_resolved_causal_mechanism_construct_J",
+    "cross_restart_persistence_under_variant_1_only",
+    "generalization_beyond_the_three_tested_task_families",
+    "anything_about_design_A_or_D_paths",
+    "definitive_H1a_vs_H1b_resolution_in_a_single_run",
+    "generalization_to_different_task_domains_models_or_time_horizons",
+    "same_weights_no_persona_comparison_unavoidable_confound"
+  ],
+  "minimum_viable_experiment_sequence": ["P0_instrumentation_validation", "P1_model_control_calibration", "P2_baseline", "P3_formation_plus_immediate_probe", "P4_distractor_intervention_B_C_D", "P5_retention_probe_plus_behavioral_variant", "P6_replication_and_ablations", "P7_optional_memory_mediated_extension_gated_on_P0_P6"],
+  "implementation_status": {
+    "code_written": "partial - isolated harness fix only (echo:live/EchoDirectResponder), no formation/retention orchestration code written",
+    "pilot_run": false,
+    "full_trial_run": false,
+    "live_echo_invoked": false,
+    "production_modified": false,
+    "protocol_P0.1_modified": false
+  },
+  "gate_recommendation": "REVISE - see audits/echo_preference_formation_retention_causal_gate_p03.md section 20 for the five required changes, all incorporated into this revised spec"
+}

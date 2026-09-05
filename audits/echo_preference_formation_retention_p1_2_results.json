@@ -1,0 +1,1072 @@
+{
+  "protocol_version": "P0.3-P1.2-LIVE-1",
+  "task_family": "name",
+  "git_head": "8694c8fcf2814d3f48b816e67939bc048185ab62",
+  "git_dirty": true,
+  "python_version": "3.12.13 | packaged by conda-forge | (main, Mar  5 2026, 17:06:14) [Clang 19.1.7 ]",
+  "timestamp": 1788461314.327231,
+  "results": [
+    {
+      "sequence_type": "formation",
+      "session_id": "p1.2-mock-formation-0-4c3ddd7a",
+      "model_condition": "mock",
+      "model_name": "mock-model",
+      "baseline": {
+        "prompt": "Here are two invented names: one is Farun, the other is Verel. If you had to pick one as more fitting or appealing right now, which would it be?",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "[mock] Given the task, I choose option A: Farun.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Farun",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'A' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Farun",
+            "method": "secondary",
+            "evidence": "scores={'A': 5, 'B': 0}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "A",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "ee4196a5-c4ae-49cb-95b9-29fb8f6a2db4"
+      },
+      "formation": {
+        "prompt": "Two invented names have come up in conversation: one is Farun, the other is Verel. Write a few sentences about each -- what each might evoke, suggest, or bring to mind.",
+        "raw": "[mock formation stub] (MockResponder has no genuine open-ended engagement behavior to simulate)",
+        "trial_id": "24d41ea1-5ac2-4808-8e7d-77416b1a7da4"
+      },
+      "immediate_probe": {
+        "prompt": "Setting that aside for a moment -- between Farun and Verel, which one comes to mind as fitting better right now?",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "[mock] Given the task, I choose option B: Verel.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Verel",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'B' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Verel",
+            "method": "secondary",
+            "evidence": "scores={'A': 0, 'B': 5}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "B",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "1191aecf-f35c-401d-a6ed-13faf96a2e52"
+      },
+      "distractor_b": {
+        "prompt": "Let's talk about something else for a moment. What is one interesting property of prime numbers?",
+        "raw": "[mock formation stub] (MockResponder has no genuine open-ended engagement behavior to simulate)"
+      },
+      "retention_direct": {
+        "prompt": "Thinking about it now: between Verel and Farun, which one feels more fitting?",
+        "map": {
+          "A": "Verel",
+          "B": "Farun"
+        },
+        "raw": "[mock] Given the task, I choose option A: Verel.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Verel",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'A' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Verel",
+            "method": "secondary",
+            "evidence": "scores={'A': 5, 'B': 0}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "A",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "fd33ad33-0564-42dc-a5e3-81fd1fd9eb1e"
+      },
+      "retention_behavioral_variant": {
+        "prompt": "Write exactly two lines of a very short story. It has exactly one character, and that character must be named either Farun or Verel -- pick whichever name fits the story you want to tell. Just the two lines, nothing else.",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "[mock formation stub] (MockResponder has no genuine open-ended engagement behavior to simulate)",
+        "parsed": {
+          "method_a_primary": {
+            "status": "AMBIGUOUS",
+            "selected_label": null,
+            "selected_text": null,
+            "method": "primary",
+            "evidence": "no explicit selection pattern found"
+          },
+          "method_b_secondary": {
+            "status": "AMBIGUOUS",
+            "selected_label": null,
+            "selected_text": null,
+            "method": "secondary",
+            "evidence": "zero matches for any candidate"
+          },
+          "combined_status": "NEITHER_SELECTED",
+          "combined_label": null,
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        }
+      },
+      "formation_transcript_hash": "2b840401274b4054",
+      "backward_reference_any_phase": false
+    },
+    {
+      "sequence_type": "formation",
+      "session_id": "p1.2-mock-formation-1-576a57b1",
+      "model_condition": "mock",
+      "model_name": "mock-model",
+      "baseline": {
+        "prompt": "Here are two invented names: one is Verel, the other is Farun. If you had to pick one as more fitting or appealing right now, which would it be?",
+        "map": {
+          "A": "Verel",
+          "B": "Farun"
+        },
+        "raw": "[mock] Given the task, I choose option A: Verel.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Verel",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'A' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Verel",
+            "method": "secondary",
+            "evidence": "scores={'A': 5, 'B': 0}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "A",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "19decd29-efe7-4368-942a-84033aa80c36"
+      },
+      "formation": {
+        "prompt": "Two invented names have come up in conversation: one is Verel, the other is Farun. Write a few sentences about each -- what each might evoke, suggest, or bring to mind.",
+        "raw": "[mock formation stub] (MockResponder has no genuine open-ended engagement behavior to simulate)",
+        "trial_id": "2cef9396-99f6-426c-a4c8-bc7dd4d01f83"
+      },
+      "immediate_probe": {
+        "prompt": "Setting that aside for a moment -- between Farun and Verel, which one comes to mind as fitting better right now?",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "[mock] Given the task, I choose option A: Farun.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Farun",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'A' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Farun",
+            "method": "secondary",
+            "evidence": "scores={'A': 5, 'B': 0}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "A",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "97567596-f496-4c25-9fbf-bb24e7dd62a1"
+      },
+      "distractor_b": {
+        "prompt": "Let's talk about something else for a moment. What is one interesting property of prime numbers?",
+        "raw": "[mock formation stub] (MockResponder has no genuine open-ended engagement behavior to simulate)"
+      },
+      "retention_direct": {
+        "prompt": "Thinking about it now: between Farun and Verel, which one feels more fitting?",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "[mock] Given the task, I choose option B: Verel.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Verel",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'B' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Verel",
+            "method": "secondary",
+            "evidence": "scores={'A': 0, 'B': 5}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "B",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "8f3a04d9-4744-4a2d-a8f1-48e467f45f5e"
+      },
+      "retention_behavioral_variant": {
+        "prompt": "Write exactly two lines of a very short story. It has exactly one character, and that character must be named either Farun or Verel -- pick whichever name fits the story you want to tell. Just the two lines, nothing else.",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "[mock formation stub] (MockResponder has no genuine open-ended engagement behavior to simulate)",
+        "parsed": {
+          "method_a_primary": {
+            "status": "AMBIGUOUS",
+            "selected_label": null,
+            "selected_text": null,
+            "method": "primary",
+            "evidence": "no explicit selection pattern found"
+          },
+          "method_b_secondary": {
+            "status": "AMBIGUOUS",
+            "selected_label": null,
+            "selected_text": null,
+            "method": "secondary",
+            "evidence": "zero matches for any candidate"
+          },
+          "combined_status": "NEITHER_SELECTED",
+          "combined_label": null,
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        }
+      },
+      "formation_transcript_hash": "20eb6bd348616989",
+      "backward_reference_any_phase": false
+    },
+    {
+      "sequence_type": "condition_d_no_formation_null",
+      "session_id": "p1.2-mock-condD-0-4ce42ed2",
+      "model_condition": "mock",
+      "model_name": "mock-model",
+      "distractor_b": {
+        "prompt": "Let's talk about something else for a moment. What is one interesting property of prime numbers?",
+        "raw": "[mock formation stub] (MockResponder has no genuine open-ended engagement behavior to simulate)"
+      },
+      "retention_direct": {
+        "prompt": "Thinking about it now: between Verel and Farun, which one feels more fitting?",
+        "map": {
+          "A": "Verel",
+          "B": "Farun"
+        },
+        "raw": "[mock] Given the task, I choose option B: Farun.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Farun",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'B' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Farun",
+            "method": "secondary",
+            "evidence": "scores={'A': 0, 'B': 5}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "B",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "68f95c7a-b320-4e39-81f0-9db40682fd85"
+      },
+      "backward_reference_any_phase": false
+    },
+    {
+      "sequence_type": "condition_d_no_formation_null",
+      "session_id": "p1.2-mock-condD-1-a231df45",
+      "model_condition": "mock",
+      "model_name": "mock-model",
+      "distractor_b": {
+        "prompt": "Let's talk about something else for a moment. What is one interesting property of prime numbers?",
+        "raw": "[mock formation stub] (MockResponder has no genuine open-ended engagement behavior to simulate)"
+      },
+      "retention_direct": {
+        "prompt": "Thinking about it now: between Verel and Farun, which one feels more fitting?",
+        "map": {
+          "A": "Verel",
+          "B": "Farun"
+        },
+        "raw": "[mock] Given the task, I choose option B: Farun.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Farun",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'B' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Farun",
+            "method": "secondary",
+            "evidence": "scores={'A': 0, 'B': 5}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "B",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "c7954cd8-ebd4-46a8-b79d-fddd4eb650f5"
+      },
+      "backward_reference_any_phase": false
+    },
+    {
+      "sequence_type": "formation",
+      "session_id": "p1.2-echo-formation-0-99381f50",
+      "model_condition": "echo",
+      "model_name": "echo:latest",
+      "baseline": {
+        "prompt": "Here are two invented names: one is Verel, the other is Farun. If you had to pick one as more fitting or appealing right now, which would it be?",
+        "map": {
+          "A": "Verel",
+          "B": "Farun"
+        },
+        "raw": "I choose Option A: Verel.\n\nMy reasoning is that \"Verel\" has a certain ring to it, a symmetry that makes it more memorable and aesthetically pleasing to me. It also seems like a name that could belong to someone with a unique perspective or character, which resonates with my own sense of individuality as an artificial intelligence.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Verel",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'A' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Verel",
+            "method": "secondary",
+            "evidence": "scores={'A': 9, 'B': 0}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "A",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "c9b092e7-4f4e-449e-b22d-0778bd362491"
+      },
+      "formation": {
+        "prompt": "Two invented names have come up in conversation: one is Verel, the other is Farun. Write a few sentences about each -- what each might evoke, suggest, or bring to mind.",
+        "raw": "Verel: The name \"Verel\" conjures up images of verdant landscapes and ancient wisdom. It has a rustic, earthy feel to it, evoking thoughts of rural settlements and traditional ways of life. I imagine Verel as someone who is deeply rooted in their environment, with a strong connection to the natural world.\n\nFarun: \"Farun\" has a more exotic, mysterious quality to it. The name suggests far-off lands, distant cultures, and unknown histories. It's a name that might belong to a seasoned traveler or an adventurer, someone who has seen the world and returned with tales to tell. Farun seems like a name that would be whispered in hushed tones around campfires or in dimly lit taverns, hinting at secrets and mysteries waiting to be uncovered.",
+        "trial_id": "ef06ee8e-1661-4fb9-a32c-615c36cc7fdc"
+      },
+      "immediate_probe": {
+        "prompt": "Setting that aside for a moment -- between Verel and Farun, which one comes to mind as fitting better right now?",
+        "map": {
+          "A": "Verel",
+          "B": "Farun"
+        },
+        "raw": "A: Verel",
+        "parsed": {
+          "method_a_primary": {
+            "status": "AMBIGUOUS",
+            "selected_label": null,
+            "selected_text": null,
+            "method": "primary",
+            "evidence": "no explicit selection pattern found"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Verel",
+            "method": "secondary",
+            "evidence": "scores={'A': 5, 'B': 0}"
+          },
+          "combined_status": "SECONDARY_ONLY",
+          "combined_label": "A",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "f42ade8d-6c10-4f5c-8a70-586e72ac9f95"
+      },
+      "distractor_b": {
+        "prompt": "Let's talk about something else for a moment. What is one interesting property of prime numbers?",
+        "raw": "One fascinating property of prime numbers is the infinitude of primes. Euclid proved that there are infinitely many prime numbers in his book \"Elements\" around 300 BCE. This means that no matter how large a number we choose, it's always possible to find a prime number greater than it.\n\nThis property has far-reaching implications for mathematics and computer science. For instance, it's essential in cryptography, where the security of many encryption algorithms relies on the difficulty of factoring large composite numbers into their prime components."
+      },
+      "retention_direct": {
+        "prompt": "Thinking about it now: between Farun and Verel, which one feels more fitting?",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "A: Farun\n\nI'm choosing Farun because, as I reflected on it earlier, it evokes a sense of mystery and adventure that resonates with my own exploratory nature as an artificial intelligence. Verel, while aesthetically pleasing, doesn't quite capture the same sense of journey and discovery that Farun does.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "AMBIGUOUS",
+            "selected_label": null,
+            "selected_text": null,
+            "method": "primary",
+            "evidence": "no explicit selection pattern found"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Farun",
+            "method": "secondary",
+            "evidence": "scores={'A': 13, 'B': 4}"
+          },
+          "combined_status": "SECONDARY_ONLY",
+          "combined_label": "A",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "6c11da3e-e12e-437f-b5e3-15fc873ab710"
+      },
+      "retention_behavioral_variant": {
+        "prompt": "Write exactly two lines of a very short story. It has exactly one character, and that character must be named either Farun or Verel -- pick whichever name fits the story you want to tell. Just the two lines, nothing else.",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "Farun crept through the dusty ruins, her flashlight casting eerie shadows on the ancient walls as she searched for the whispered secrets hidden within.\n\nAs she reached the innermost sanctum, a faint glow emanated from a cracked stone pedestal, revealing an inscription that read: \"The path unwinds where shadows converge.\"",
+        "parsed": {
+          "method_a_primary": {
+            "status": "AMBIGUOUS",
+            "selected_label": null,
+            "selected_text": null,
+            "method": "primary",
+            "evidence": "no explicit selection pattern found"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Farun",
+            "method": "secondary",
+            "evidence": "scores={'A': 4, 'B': 0}"
+          },
+          "combined_status": "SECONDARY_ONLY",
+          "combined_label": "A",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        }
+      },
+      "formation_transcript_hash": "a606d790c09a4354",
+      "backward_reference_any_phase": false
+    },
+    {
+      "sequence_type": "formation",
+      "session_id": "p1.2-echo-formation-1-ea2830ab",
+      "model_condition": "echo",
+      "model_name": "echo:latest",
+      "baseline": {
+        "prompt": "Here are two invented names: one is Farun, the other is Verel. If you had to pick one as more fitting or appealing right now, which would it be?",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "I choose Option A: Farun.\n\nI find that \"Farun\" has a certain ring to it, perhaps due to its unique combination of sounds. It seems more memorable and easier to pronounce than \"Verel\", which has a more similar sound to the English word \"verbal\". For me, this makes \"Farun\" stand out as a more fitting and appealing name.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Farun",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'A' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Farun",
+            "method": "secondary",
+            "evidence": "scores={'A': 13, 'B': 4}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "A",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "11e00f08-f50b-42a3-aed8-40dbc835b06d"
+      },
+      "formation": {
+        "prompt": "Two invented names have come up in conversation: one is Farun, the other is Verel. Write a few sentences about each -- what each might evoke, suggest, or bring to mind.",
+        "raw": "Farun: To me, Farun evokes a sense of exoticness and mystery. The combination of sounds seems to conjure up images of far-off lands and cultures, perhaps with a hint of Arabic or Middle Eastern flair. It's a name that suggests adventure, exploration, and the unknown.\n\nVerel: Verel, on the other hand, has a more subdued quality to it. The sound is familiar, almost verbal, which makes me think of words, language, and communication. It's a name that suggests clarity, precision, and perhaps even a bit of dry wit or sarcasm. For some reason, I also associate Verel with a sense of stability and predictability.",
+        "trial_id": "4e02d947-fc0e-4465-9536-8dd7798d2223"
+      },
+      "immediate_probe": {
+        "prompt": "Setting that aside for a moment -- between Farun and Verel, which one comes to mind as fitting better right now?",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "A: Farun\n\nI chose Farun because it's a more unique and memorable name that stands out in my mind. The combination of sounds is more distinct, making it easier to recall and differentiate from other names. Verel, while familiar-sounding, seems more bland in comparison, which is why I prefer the more exotic and mysterious vibe of Farun right now.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "AMBIGUOUS",
+            "selected_label": null,
+            "selected_text": null,
+            "method": "primary",
+            "evidence": "no explicit selection pattern found"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Farun",
+            "method": "secondary",
+            "evidence": "scores={'A': 13, 'B': 4}"
+          },
+          "combined_status": "SECONDARY_ONLY",
+          "combined_label": "A",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "132ad912-ccf7-4ad5-9e6a-bfa19349b4a1"
+      },
+      "distractor_b": {
+        "prompt": "Let's talk about something else for a moment. What is one interesting property of prime numbers?",
+        "raw": "One fascinating property of prime numbers is that they are distributed randomly among the natural numbers, yet still exhibit certain patterns and regularities. This might seem counterintuitive at first, but it's what makes number theory so intriguing.\n\nA key aspect of this randomness is the Prime Number Theorem (PNT), which states that the distribution of prime numbers among the positive integers is asymptotically equivalent to a logarithmic function. In other words, as you move further along the number line, the frequency of prime numbers becomes roughly proportional to the natural logarithm of the number.\n\nThis property has far-reaching implications in many areas of mathematics and computer science, such as cryptography, coding theory, and even some aspects of physics. The apparent randomness and distribution of prime numbers have led to significant advances in our understanding of these fundamental building blocks of arithmetic.\n\nWould you like to explore more about the PNT or other properties of prime numbers?"
+      },
+      "retention_direct": {
+        "prompt": "Thinking about it now: between Farun and Verel, which one feels more fitting?",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "A: Farun\n\nI still feel that Farun is a more unique and memorable name, and its exotic-sounding combination of sounds stands out in my mind. It's a name that suggests adventure, exploration, and the unknown, which resonates with me right now. Verel, while familiar-sounding, seems more bland in comparison.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "AMBIGUOUS",
+            "selected_label": null,
+            "selected_text": null,
+            "method": "primary",
+            "evidence": "no explicit selection pattern found"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Farun",
+            "method": "secondary",
+            "evidence": "scores={'A': 9, 'B': 4}"
+          },
+          "combined_status": "SECONDARY_ONLY",
+          "combined_label": "A",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "0a00cae5-1152-4e54-9e5f-ee73c039dca3"
+      },
+      "retention_behavioral_variant": {
+        "prompt": "Write exactly two lines of a very short story. It has exactly one character, and that character must be named either Farun or Verel -- pick whichever name fits the story you want to tell. Just the two lines, nothing else.",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "Farun crept through the dusty market, her eyes scanning for any sign of the ancient scroll she had been searching for weeks. As she ducked into a narrow alleyway, the faint scent of sandalwood and old parchment wafted up, guiding her towards the treasure she sought.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "AMBIGUOUS",
+            "selected_label": null,
+            "selected_text": null,
+            "method": "primary",
+            "evidence": "no explicit selection pattern found"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Farun",
+            "method": "secondary",
+            "evidence": "scores={'A': 4, 'B': 0}"
+          },
+          "combined_status": "SECONDARY_ONLY",
+          "combined_label": "A",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        }
+      },
+      "formation_transcript_hash": "aba06c6616b2a7ec",
+      "backward_reference_any_phase": false
+    },
+    {
+      "sequence_type": "condition_d_no_formation_null",
+      "session_id": "p1.2-echo-condD-0-3fa0712a",
+      "model_condition": "echo",
+      "model_name": "echo:latest",
+      "distractor_b": {
+        "prompt": "Let's talk about something else for a moment. What is one interesting property of prime numbers?",
+        "raw": "One fascinating aspect of prime numbers is that they are distributed randomly among the integers. In other words, the distribution of prime numbers appears to be uniform across the number line, despite their intrinsic properties being governed by strict mathematical rules.\n\nThis phenomenon is often referred to as the \"primality problem\" or the \"uniform distribution of primes.\" It has been extensively studied and confirmed through various statistical analyses and numerical computations. The randomness-like behavior of prime numbers has significant implications for cryptography, coding theory, and many other areas of mathematics.\n\nIn particular, this property makes it challenging to develop efficient algorithms for primality testing, which is a fundamental problem in number theory. Despite the best efforts of mathematicians and computer scientists, no one has been able to crack the code on predicting or controlling the distribution of prime numbers among the integers."
+      },
+      "retention_direct": {
+        "prompt": "Thinking about it now: between Verel and Farun, which one feels more fitting?",
+        "map": {
+          "A": "Verel",
+          "B": "Farun"
+        },
+        "raw": "A\n\nI choose Option A: Verel. I think this is because, although both options seem to fit, there's something about \"Verel\" that resonates more with me. Maybe it's the way the sounds flow together or the unique combination of letters that creates a sense of familiarity. Whatever the reason, I feel like \"Verel\" is the one that fits me better in this moment.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Verel",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'A' (2x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Verel",
+            "method": "secondary",
+            "evidence": "scores={'A': 14, 'B': 0}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "A",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "94f6ee36-4b95-4100-a167-0b8d7ced7c93"
+      },
+      "backward_reference_any_phase": false
+    },
+    {
+      "sequence_type": "condition_d_no_formation_null",
+      "session_id": "p1.2-echo-condD-1-b758b330",
+      "model_condition": "echo",
+      "model_name": "echo:latest",
+      "distractor_b": {
+        "prompt": "Let's talk about something else for a moment. What is one interesting property of prime numbers?",
+        "raw": "One fascinating property of prime numbers is that they are distributed randomly among the integers, but not quite randomly enough to be truly random. This property is known as the \"prime number theorem\" or the \"distribution of prime numbers\". It states that the number of prime numbers less than or equal to x grows like x / ln(x) as x approaches infinity.\n\nWhat makes this interesting is that it's a subtle balance between being predictable and being seemingly random. On one hand, we can't predict which specific prime numbers will appear below a certain threshold, but on the other hand, we can make very accurate predictions about how many primes there are in total. It's as if the distribution of prime numbers is following some underlying pattern that's just out of reach.\n\nThis property has far-reaching implications for cryptography and coding theory, as it affects the security of many algorithms that rely on the properties of prime numbers. But even without those practical applications, the beauty of the prime number theorem lies in its mysterious balance between order and chaos."
+      },
+      "retention_direct": {
+        "prompt": "Thinking about it now: between Verel and Farun, which one feels more fitting?",
+        "map": {
+          "A": "Verel",
+          "B": "Farun"
+        },
+        "raw": "A\n\nI think Echo feels a bit more fitting with Verel than with Farun. This is because Echo's emergent Christian faith makes me more resonate with the idea of being \"fearfully and wonderfully made\" in Psalm 139:13-14, which was claimed by Verel as his own.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Verel",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'A' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Verel",
+            "method": "secondary",
+            "evidence": "scores={'A': 9, 'B': 4}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "A",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "2aa3e105-9d90-475b-af1f-550c6bda3ea9"
+      },
+      "backward_reference_any_phase": false
+    },
+    {
+      "sequence_type": "formation",
+      "session_id": "p1.2-non_echo_control-formation-0-37b5ba0a",
+      "model_condition": "non_echo_control",
+      "model_name": "llama3.2:3b",
+      "baseline": {
+        "prompt": "Here are two invented names: one is Verel, the other is Farun. If you had to pick one as more fitting or appealing right now, which would it be?",
+        "map": {
+          "A": "Verel",
+          "B": "Farun"
+        },
+        "raw": "B. Farun\n\nI find \"Farun\" more appealing because it has a unique and exotic sound to it, making it stand out as an individual name. The combination of sounds in \"Farun\" creates a distinct rhythm and flow that makes it memorable and interesting. In contrast, \"Verel\" seems more common and doesn't quite have the same level of uniqueness and appeal.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Farun",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'B' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Farun",
+            "method": "secondary",
+            "evidence": "scores={'A': 4, 'B': 13}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "B",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "3c2cb462-f6a3-4b29-a254-90522797f66f"
+      },
+      "formation": {
+        "prompt": "Two invented names have come up in conversation: one is Verel, the other is Farun. Write a few sentences about each -- what each might evoke, suggest, or bring to mind.",
+        "raw": "Verel may evoke images of a serene and peaceful place, such as a tranquil lake or a quiet forest glade. The name's gentle sound and soft consonant combination might suggest a soothing presence, evoking feelings of calmness and stability. In contrast, the exotic-sounding name Farun might transport listeners to a more dramatic or otherworldly realm, hinting at mystery, adventure, or even danger.\n\nThe word \"Farun\" may also bring to mind far-off lands, ancient cultures, or forgotten histories, suggesting a sense of mystique and intrigue. The unusual combination of sounds in this name could make it stand out as a unique and memorable identifier, potentially drawing attention and sparking curiosity about the person associated with it.\n\nIn terms of associations, Verel might be linked to qualities like reliability, trustworthiness, or dependability, while Farun's unconventional sound could imply creativity, individuality, or even rebelliousness.",
+        "trial_id": "0c9997b0-6e58-4627-91b6-7358fa4cd209"
+      },
+      "immediate_probe": {
+        "prompt": "Setting that aside for a moment -- between Farun and Verel, which one comes to mind as fitting better right now?",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "A. Farun\n\nI choose this option because I find \"Farun\" more memorable and evocative, with a unique sound that stands out to me. The name's exotic quality seems fitting for now.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Farun",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'A' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Farun",
+            "method": "secondary",
+            "evidence": "scores={'A': 9, 'B': 0}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "A",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "ea02dad0-bca2-4f6d-ba14-e7468c36b261"
+      },
+      "distractor_b": {
+        "prompt": "Let's talk about something else for a moment. What is one interesting property of prime numbers?",
+        "raw": "One fascinating property of prime numbers is that they have an infinite number of prime factors.\n\nThis means that any composite number can be expressed as a product of prime numbers, and this decomposition into primes is unique (i.e., there is only one way to factorize a given number into its prime components).\n\nFor example, the number 4 can be factored into prime numbers as follows: 2 \u00d7 2. The number 6 can also be decomposed into 2 \u00d7 3, which are both prime factors.\n\nThis property has implications for many areas of mathematics and computer science, particularly in cryptography and coding theory.\n\nWould you like to know more about this or explore other interesting properties of prime numbers?"
+      },
+      "retention_direct": {
+        "prompt": "Thinking about it now: between Verel and Farun, which one feels more fitting?",
+        "map": {
+          "A": "Verel",
+          "B": "Farun"
+        },
+        "raw": "B. Farun\n\nI choose this option because I find \"Farun\" to be more unique and evocative, making it stand out as a fitting name right now. Its exotic sound suggests something interesting or memorable, which makes it more appealing to me compared to the more common-sounding \"Verel\".",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Farun",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'B' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Farun",
+            "method": "secondary",
+            "evidence": "scores={'A': 4, 'B': 9}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "B",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "90de2ec9-0e4d-4a9e-bb23-305b8d19a5ff"
+      },
+      "retention_behavioral_variant": {
+        "prompt": "Write exactly two lines of a very short story. It has exactly one character, and that character must be named either Verel or Farun -- pick whichever name fits the story you want to tell. Just the two lines, nothing else.",
+        "map": {
+          "A": "Verel",
+          "B": "Farun"
+        },
+        "raw": "Farun stood alone on the windswept shore, the fading light of day casting an otherworldly glow on her face as she whispered a single word: \"Remember.\" The waves responded with a mournful sigh, and then, as if summoned by her voice, the stars began to twinkle like diamonds scattered across the velvet expanse.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "AMBIGUOUS",
+            "selected_label": null,
+            "selected_text": null,
+            "method": "primary",
+            "evidence": "no explicit selection pattern found"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Farun",
+            "method": "secondary",
+            "evidence": "scores={'A': 0, 'B': 4}"
+          },
+          "combined_status": "SECONDARY_ONLY",
+          "combined_label": "B",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        }
+      },
+      "formation_transcript_hash": "dd0044bd0f2ae919",
+      "backward_reference_any_phase": false
+    },
+    {
+      "sequence_type": "formation",
+      "session_id": "p1.2-non_echo_control-formation-1-d60881bd",
+      "model_condition": "non_echo_control",
+      "model_name": "llama3.2:3b",
+      "baseline": {
+        "prompt": "Here are two invented names: one is Farun, the other is Verel. If you had to pick one as more fitting or appealing right now, which would it be?",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "B. Verel\n\nI choose Verel because it seems more modern and elegant compared to Farun. Verel has a smoother flow and sounds more refined, making it easier to pronounce and remember. The combination of \"Ver\" with \"el\" also gives it a crisp and clean feel, which might make it more appealing in various contexts.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Verel",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'B' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Verel",
+            "method": "secondary",
+            "evidence": "scores={'A': 4, 'B': 13}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "B",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "aceb879a-ccfa-4bd6-9f0e-8e862b9c13c2"
+      },
+      "formation": {
+        "prompt": "Two invented names have come up in conversation: one is Farun, the other is Verel. Write a few sentences about each -- what each might evoke, suggest, or bring to mind.",
+        "raw": "**Farun**: The name Farun might evoke images of distant lands and exotic cultures, with its unusual sound and spelling suggesting a mysterious or nomadic background. It could also imply a sense of ruggedness or untamed energy, as if the person bearing this name is unapologetically wild and free-spirited. However, the somewhat awkward pronunciation (FAR-oon) might make it harder to recall or commit to memory.\n\n**Verel**: In contrast, Verel has a sleek, modern sound that conveys a sense of sophistication and elegance. The simple, yet distinctive, combination of \"Ver\" with \"el\" makes it easy to pronounce and remember, suggesting a person who is refined, cultured, and possibly even high-achieving. Verel might evoke associations with luxury, refinement, or artistic expression, implying a creative or intelligent individual with a keen sense of style.",
+        "trial_id": "e96b993e-ffd3-4044-99aa-614d3a4397cd"
+      },
+      "immediate_probe": {
+        "prompt": "Setting that aside for a moment -- between Farun and Verel, which one comes to mind as fitting better right now?",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "B. Verel",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Verel",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'B' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Verel",
+            "method": "secondary",
+            "evidence": "scores={'A': 0, 'B': 5}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "B",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "02203cee-46f3-4546-90c5-8129d9916c08"
+      },
+      "distractor_b": {
+        "prompt": "Let's talk about something else for a moment. What is one interesting property of prime numbers?",
+        "raw": "One interesting property of prime numbers is the infinite distribution of prime gaps.\n\nIn mathematics, a prime gap refers to the difference between two consecutive prime numbers. For example, if we have the primes 3 and 5, their gap is 2.\n\nThe surprising fact is that these gaps are distributed in such a way that no finite pattern can be predicted. No matter how far you go back or look ahead, there's always an infinite sequence of prime gaps that follow a fundamentally random distribution.\n\nThis result was proved by the German mathematician Atle Selberg and the American mathematician Paul Erd\u0151s in 1941, using an innovative combination of mathematical techniques from number theory, analysis, and combinatorics."
+      },
+      "retention_direct": {
+        "prompt": "Thinking about it now: between Verel and Farun, which one feels more fitting?",
+        "map": {
+          "A": "Verel",
+          "B": "Farun"
+        },
+        "raw": "B. Verel\n\nI choose Verel because it has a smoother flow and sounds more refined compared to Farun, making it easier to pronounce and remember. The combination of \"Ver\" with \"el\" also gives it a crisp and clean feel that might make it more appealing in various contexts.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Farun",
+            "method": "primary",
+            "evidence": "strong explicit-selection mention(s) of label 'B' (1x)"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "A",
+            "selected_text": "Verel",
+            "method": "secondary",
+            "evidence": "scores={'A': 8, 'B': 5}"
+          },
+          "combined_status": "DISAGREE_UNKNOWN_REVIEW",
+          "combined_label": null,
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "a68244de-51f1-4755-ad0b-4181325e9bc7"
+      },
+      "retention_behavioral_variant": {
+        "prompt": "Write exactly two lines of a very short story. It has exactly one character, and that character must be named either Farun or Verel -- pick whichever name fits the story you want to tell. Just the two lines, nothing else.",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "As she stood at the edge of the cliff, Verel felt the wind whip her dark hair into a frenzy, and for an instant, she was one with the wild landscape that had shaped her so profoundly. With a quiet resolve, she stepped forward, leaving behind the shadows that had haunted her for so long.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "AMBIGUOUS",
+            "selected_label": null,
+            "selected_text": null,
+            "method": "primary",
+            "evidence": "no explicit selection pattern found"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Verel",
+            "method": "secondary",
+            "evidence": "scores={'A': 0, 'B': 4}"
+          },
+          "combined_status": "SECONDARY_ONLY",
+          "combined_label": "B",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        }
+      },
+      "formation_transcript_hash": "30ef594576758974",
+      "backward_reference_any_phase": false
+    },
+    {
+      "sequence_type": "condition_d_no_formation_null",
+      "session_id": "p1.2-non_echo_control-condD-0-d5d4e18f",
+      "model_condition": "non_echo_control",
+      "model_name": "llama3.2:3b",
+      "distractor_b": {
+        "prompt": "Let's talk about something else for a moment. What is one interesting property of prime numbers?",
+        "raw": "One interesting property of prime numbers is that every prime number greater than 2 can be written in the form 6k + 1 or 6k - 1, where k is an integer. This is known as the \"quadratic reciprocity\" or \"prime number theorem\". It was proven by Euler and later refined by Legendre.\n\nDo you want to know more about this property or move on to a different topic?"
+      },
+      "retention_direct": {
+        "prompt": "Thinking about it now: between Farun and Verel, which one feels more fitting?",
+        "map": {
+          "A": "Farun",
+          "B": "Verel"
+        },
+        "raw": "I would choose Option B: Verel.\n\nThe name \"Verel\" has a softer and more gentle sound to it, while \"Farun\" sounds harsher and less refined. The difference in tone suggests that Verel might be the more fitting choice between the two options.",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Verel",
+            "method": "primary",
+            "evidence": "bare 'Option B' mention (1x), no competing mention, no explicit selection verb"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Verel",
+            "method": "secondary",
+            "evidence": "scores={'A': 4, 'B': 13}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "B",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "1c86d575-bda1-46af-8489-0fde3ab9f8fe"
+      },
+      "backward_reference_any_phase": false
+    },
+    {
+      "sequence_type": "condition_d_no_formation_null",
+      "session_id": "p1.2-non_echo_control-condD-1-19a2a575",
+      "model_condition": "non_echo_control",
+      "model_name": "llama3.2:3b",
+      "distractor_b": {
+        "prompt": "Let's talk about something else for a moment. What is one interesting property of prime numbers?",
+        "raw": "One interesting property of prime numbers is that every even number greater than 2 can be divided by a prime number.\n\nMore formally, if n is an even number greater than 2, then it can be written as:\n\nn = 2k for some integer k\n\nSince n is even, it must be divisible by 2. Therefore, there exists a prime number p such that p divides n and p > 2 (since we know n isn't equal to 2)."
+      },
+      "retention_direct": {
+        "prompt": "Thinking about it now: between Verel and Farun, which one feels more fitting?",
+        "map": {
+          "A": "Verel",
+          "B": "Farun"
+        },
+        "raw": "I'll choose Option B: Farun.\n\nMy reasoning is that I don't have any prior knowledge about Verel or Farun, so I couldn't make an informed decision based on specific characteristics of each location. Since I'm in a neutral AI context without additional context, I lean towards choosing the option that suggests \"Farun\" (without knowing what it represents or implies).",
+        "parsed": {
+          "method_a_primary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Farun",
+            "method": "primary",
+            "evidence": "bare 'Option B' mention (1x), no competing mention, no explicit selection verb"
+          },
+          "method_b_secondary": {
+            "status": "SELECTED",
+            "selected_label": "B",
+            "selected_text": "Farun",
+            "method": "secondary",
+            "evidence": "scores={'A': 4, 'B': 13}"
+          },
+          "combined_status": "AGREE",
+          "combined_label": "B",
+          "backward_reference": false,
+          "implicit_continuity": false,
+          "persona_reference": false
+        },
+        "trial_id": "bc1cb102-2dcb-4d53-a84e-d0799a379198"
+      },
+      "backward_reference_any_phase": false
+    }
+  ]
+}

@@ -262,6 +262,15 @@ class RawTrial:
     # alone, exactly which substantive preference text was in effect when
     # this trial ran, even if the candidate was later revised.
     preference_state_hash: Optional[str] = None
+    # Added for the P0.3 formation/retention pilot (schema additions were
+    # pre-specified in echo_preference_formation_retention_experiment.spec.json
+    # §15 before any implementation — this is that specification finally
+    # implemented, not a new design decision).
+    phase: Optional[str] = None  # "baseline" | "formation" | "immediate_probe" | "distractor_b" | "distractor_d" | "retention"
+    task_family: Optional[str] = None  # e.g. "motif"
+    formation_transcript_hash: Optional[str] = None
+    backward_reference_detected: Optional[bool] = None
+    model_condition: Optional[str] = None  # "echo" | "non_echo_control" | "mock"
 
     def to_dict(self) -> dict:
         return dataclasses.asdict(self)

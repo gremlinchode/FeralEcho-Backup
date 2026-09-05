@@ -1,0 +1,59 @@
+{
+  "doc_id": "self_edit_level4_experiment",
+  "date": "2026-09-03",
+  "mission": "Level 3 -> Level 4 validation experiment for the self-edit targeting loop",
+  "prior_classification": "Level 3 (persistent targeting adaptation, no statistically defensible evidence of measurable iterative improvement) -- per audits/self_edit_closed_loop_validation.json",
+  "constraint_honored": "No production code was modified. Every prospective trial used execute_self_edit(dry_run=True) / perform_self_edit(dry_run=True) -- the identical, already-verified code path Optuna's own hourly dry-run search uses; dry_run=True never reaches the backup/save/load-into-production step.",
+  "experimental_design": {
+    "conditions": {
+      "A_current_system": "perform_self_edit(dry_run=True, target_task_type=None) -- the real, unmodified arbitration logic (shadow-first) picks the target exactly as it would in live production.",
+      "B_empirical_priority": "target_task_type forced to memory/self_model.json's real, RiverBrain-derived value, read once at experiment start and held fixed for the whole batch (live value at start: 'coding').",
+      "C_baseline": "target_task_type forced to a uniform-random choice among the five real task-type buckets self-edit prompts support (coding, personal, creative, reasoning, general), independent of both empirical and shadow signals."
+    },
+    "held_constant": [
+      "model pool (unchanged, no models added/removed)",
+      "verification gates (F1/F2/staging import test, unmodified)",
+      "fitness/quality scorer (echo_quality_scorer._score_response_quality(), unmodified)",
+      "starting production file (memory/app/core/self_edit_generated.py's content scored ONCE at batch start and held fixed as the comparison baseline for every trial in the batch, rather than re-scored per trial, specifically so a same-batch production deploy by the live server -- if one happened to fire -- could not silently shift the baseline mid-experiment)",
+      "resource limits (same live machine, same concurrently-running production server -- see confound audit)"
+    ],
+    "randomization": "trial order across the 3 conditions (5 trials each, 15 total) was shuffled once at batch start via random.shuffle(), not run in blocked A-A-A-B-B-B-C-C-C order",
+    "primary_endpoint_substitution_disclosed_upfront": "The mission's specified primary endpoint (Delta-quality per attempt, using the SAME quality_score.delta metric as the retrospective analysis) requires a real, ~25-minute post-deploy window of organic conversational coding-task interactions per trial -- infeasible to force or accelerate, and infeasible across 15 trials within this investigation's practical time budget. The prospective arm instead measures an IMMEDIATELY available, real, already-existing proxy: candidate-file quality score (echo_quality_scorer._score_response_quality(), the same 0-4 AST-based scorer used throughout this codebase) minus a SINGLE FIXED production-file baseline score computed once at batch start. This is NOT identical to the retrospective endpoint and is explicitly flagged as a substitution, not a like-for-like replication -- see the Non-Claims section."
+  },
+  "predefined_hypotheses": [
+    "H1 (primary): Condition B (empirical priority) will show a higher mean prospective quality-delta than Condition A (current system) and Condition C (baseline).",
+    "H2: Condition A will resemble Condition C more than Condition B whenever the live shadow signal disagrees with the live empirical signal (a live, direct test of whether the current arbitration behaves like an adaptive or a near-random signal in practice).",
+    "H3 (null, pre-registered as the honest default given the retrospective finding): given the retrospective analysis already found no significant quality effect from targeting at all (Section 7/10 of the prior report), the pre-registered EXPECTED finding is that no condition will show a statistically or practically meaningful advantage over any other in this necessarily small, exploratory batch -- and that this batch is explicitly UNDERPOWERED to distinguish H1 from H3 regardless of what it shows (see sample-size rationale)."
+  ],
+  "sample_size_rationale": {
+    "retrospective_endpoint_power_calc": {
+      "input_sd": 0.6354,
+      "input_n_historical": 103,
+      "meaningful_difference_threshold": 0.3,
+      "formula": "n_per_group ~= 2 * (z_alpha/2 + z_beta)^2 * sigma^2 / delta^2, two-sided alpha=0.05 (z=1.96), power=0.80 (z=0.84)",
+      "result_n_per_group": 71,
+      "conclusion": "A rigorous prospective RCT on the mission's own primary (conversational quality_score.delta) endpoint would require ~71 real trials PER CONDITION (~213 total), each needing a real ~25-minute post-deploy organic-interaction window. At this system's own observed historical cadence of roughly one real production deploy per day, this would take many months of real production operation -- not feasible within this investigation. Stated as a hard constraint, not worked around."
+    },
+    "prospective_proxy_endpoint_power_calc": {
+      "input_sd_source": "historical dry_run_quality.delta (n=30, sd=0.858) used as the closest available real-world variance estimate for a similarly-scaled AST-based quality-delta measurement",
+      "meaningful_difference_threshold": 0.3,
+      "result_n_per_group": 128,
+      "conclusion": "Even the faster, immediately-measurable proxy endpoint requires ~128 trials per condition for a rigorously powered comparison -- larger than the retrospective requirement, because the proxy's own historical variance (0.858) exceeds the conversational metric's (0.635). This session's achieved n (5 per condition, target) is therefore explicitly, substantially underpowered and must be reported as exploratory/pilot data only, per the mission's own instruction not to stop at a tiny N and treat a promising result as confirmatory."
+    },
+    "achieved_n_this_session": "see results section -- constrained by real wall-clock time and a confirmed resource-contention confound with the live, concurrently-running production server (see confound_audit)."
+  },
+  "confound_audit": [
+    {"confound": "resource contention with the live production server", "assessment": "CONFIRMED PRESENT, not merely theoretical", "evidence": "Ollama concurrency is confirmed unconfigured (OLLAMA_NUM_PARALLEL unset, per the prior capability-ceiling hardware report) -- the live run.py server's own multiple concurrent autonomous loops (emergent_loop, self_edit_loop, ModelGuidedOrchestrator, echo_projects_autonomy, ambient conversational traffic) share the single Ollama process with this experiment's own script, which runs as a SEPARATE OS process with no shared in-process lock against the live server. Directly observed: a real, independent self-edit dry-run cycle (result=dry_run_staged) appeared in memory/SELF_EDIT.log during this experiment's own run window, attributable to the live server's own background thread, not this script.", "impact": "trial latency in this batch reflects real queueing behind the live server's own concurrent activity, not solely this experiment's own generation cost -- reported latencies should not be read as this mechanism's 'natural' speed."},
+    {"confound": "model changes", "assessment": "controlled", "evidence": "no model was added, removed, or retired during the experiment window."},
+    {"confound": "task-mix changes", "assessment": "controlled by design", "evidence": "Condition C's randomization explicitly varies task mix as the manipulated variable, not a nuisance confound."},
+    {"confound": "temporal drift", "assessment": "partially controlled", "evidence": "randomized (not blocked) trial order specifically guards against a systematic time-of-batch drift favoring one condition."},
+    {"confound": "regression to the mean", "assessment": "acknowledged, cannot be fully ruled out at this N", "evidence": "the retrospective analysis already found evidence consistent with this (Section 7/14 of the prior report); this prospective batch's small N cannot independently rule it back out."},
+    {"confound": "prompt/context differences", "assessment": "controlled", "evidence": "_build_targeted_prompt() is the same real function for every condition; only its target_task_type argument differs by design."},
+    {"confound": "random sampling", "assessment": "acknowledged", "evidence": "with n=5/condition, single-trial outliers can dominate a group mean; reported alongside per-trial detail, not only as a summary."},
+    {"confound": "selection bias", "assessment": "controlled", "evidence": "every attempted trial's result is recorded, including failures (staging_import_failed/safety_blocked), not just successes -- no post-hoc exclusion was applied."},
+    {"confound": "RAG effects", "assessment": "not applicable to this specific endpoint", "evidence": "self-edit code generation does not route through conversational memory retrieval; this confound is more relevant to the retrospective conversational-quality endpoint, not this proxy."},
+    {"confound": "shadow/empirical timing mismatch", "assessment": "controlled for this batch, but real in production generally", "evidence": "Condition B's empirical target was read ONCE and held fixed for the whole batch specifically to remove this timing mismatch as a confound within THIS experiment -- it remains a real, separate confound in ordinary production operation (already documented in the prior report's own arbitration analysis)."},
+    {"confound": "repeated edits to the same subsystem", "assessment": "controlled", "evidence": "dry_run=True never modifies the production file; every trial's candidate is independently generated and staged, never chained onto a prior trial's own output."},
+    {"confound": "survivorship bias", "assessment": "controlled", "evidence": "candidates that fail F1/staging (e.g., safety_blocked, staging_import_failed) are recorded with success=False and excluded from the quality-delta calculation on principled grounds (no candidate file exists to score), not silently dropped from the trial count."}
+  ]
+}

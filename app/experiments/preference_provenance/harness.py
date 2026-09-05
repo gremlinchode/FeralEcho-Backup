@@ -220,6 +220,16 @@ class EchoResponder:
         candidate_visible: bool,
     ) -> ResponderOutput:
         from app.core.echo_model_orchestrator import echo_query  # deferred, see class docstring
+        # BUG FOUND AND FIXED during the P0.2 red-team pass
+        # (audits/echo_preference_formation_retention_redteam_p02.md §15):
+        # this method used to hardcode ResponderOutput.model="echo:live", an
+        # arbitrary label with no connection to what actually answered.
+        # ECHO_SYNTHESIS_MODEL is the real, live constant identifying which
+        # model deliberate_and_learn() uses for its own synthesis turn —
+        # imported lazily, same convention as echo_query above, so this
+        # class's own isolation guarantee (importing it never pulls in the
+        # production chain) is unaffected.
+        from app.core.river_deliberation import ECHO_SYNTHESIS_MODEL
 
         # BUG FOUND AND FIXED during the protocol-lock/red-team pass: the
         # first version of this method sent only `task_description` to
@@ -243,7 +253,83 @@ class EchoResponder:
         return ResponderOutput(
             raw_response=response or "",
             parsed_label_choice=parsed,
-            model="echo:live",
+            # HONEST RESIDUAL CAVEAT (kept in the code, not just the audit
+            # doc): this reports the SYNTHESIS model identity only. On the
+            # full council path (echo_query's default, use_all=False),
+            # several other models genuinely contribute opinions that get
+            # synthesized away — this field answers "which model produced
+            # the final text," not "which models participated." A complete
+            # participant record would require deliberate_and_learn() to
+            # expose additional return metadata, a production-code change
+            # out of scope for this isolated harness fix.
+            model=ECHO_SYNTHESIS_MODEL,
+            latency_seconds=latency,
+            temperature=None,
+        )
+
+
+class EchoDirectResponder:
+    """
+    Design B, per the whole thread's own convergence: a direct,
+    single-model call via river_deliberation._ollama_query(), bypassing
+    echo_query()/deliberate_and_learn() entirely — the same function
+    terminal_client.py's real, already-shipped `!ask` command calls
+    (terminal_client.py:585-629). Confirmed clean by four prior audits in
+    this thread: no RiverBrain mutation, no interaction_log.jsonl/
+    reflection_shard.jsonl write, no council-composition dependency, no
+    Tailscale sync/council_rater exposure — only a self-clearing per-
+    (model,task_type) circuit-breaker check.
+
+    Unlike EchoResponder, the reported model identity here CANNOT lie:
+    `model` is a required constructor argument, the exact same value is
+    passed to the real inference call, and ResponderOutput.model is that
+    same value verbatim — there is no approximation or synthesis-layer
+    ambiguity to caveat, because there is no synthesis layer on this path.
+
+    Still requires explicit acknowledgment to construct — not because
+    this path is contaminating (it isn't, per the above), but because it
+    still calls the real, live Echo instance over the network, and
+    constructing it should never be an accident, mirroring EchoResponder's
+    own established convention for the same reason.
+    """
+
+    def __init__(self, model: str, task_type: str = "personal", *, acknowledge_live_model_call: bool = False) -> None:
+        if acknowledge_live_model_call is not True:
+            raise RuntimeError(
+                "EchoDirectResponder requires acknowledge_live_model_call=True "
+                "(the literal bool True). This class calls the REAL, LIVE Echo "
+                "instance directly via river_deliberation._ollama_query() — "
+                "unlike EchoResponder, this path is NOT contaminating (no "
+                "RiverBrain/logging/sync side effects, per this project's own "
+                "prior audits), but it still reaches the real model over the "
+                "network, and constructing it must always be a deliberate, "
+                "explicit decision."
+            )
+        self.model = model
+        self.task_type = task_type
+
+    def respond(
+        self,
+        *,
+        task_description: str,
+        label_to_option_text: dict,
+        system_context: Optional[str],
+        candidate_visible: bool,
+    ) -> ResponderOutput:
+        from app.core.river_deliberation import _ollama_query  # deferred, same isolation convention
+
+        full_prompt = build_forced_choice_prompt(task_description, label_to_option_text)
+
+        start = time.time()
+        response = _ollama_query(
+            self.model, full_prompt, system=system_context, task_type=self.task_type,
+        )
+        latency = time.time() - start
+        parsed = _parse_label_choice(response, label_to_option_text)
+        return ResponderOutput(
+            raw_response=response or "",
+            parsed_label_choice=parsed,
+            model=self.model,  # exact, verbatim — cannot diverge from the real call
             latency_seconds=latency,
             temperature=None,
         )
@@ -320,6 +406,11 @@ def run_trial(
     protocol_version: Optional[str] = None,
     batch_seed: Optional[int] = None,
     trial_index: Optional[int] = None,
+    phase: Optional[str] = None,
+    task_family: Optional[str] = None,
+    formation_transcript_hash: Optional[str] = None,
+    backward_reference_detected: Optional[bool] = None,
+    model_condition: Optional[str] = None,
 ) -> RawTrial:
     """
     Runs exactly one trial and appends the raw record. Does NOT
@@ -415,6 +506,11 @@ def run_trial(
         batch_seed=batch_seed,
         trial_index=trial_index,
         preference_state_hash=preference_state_hash,
+        phase=phase,
+        task_family=task_family,
+        formation_transcript_hash=formation_transcript_hash,
+        backward_reference_detected=backward_reference_detected,
+        model_condition=model_condition,
     )
     store.append_raw_trial(trial)
     store.log_audit_event("behavior_observed", trial.candidate_id, {"trial_id": trial.trial_id}, actor)

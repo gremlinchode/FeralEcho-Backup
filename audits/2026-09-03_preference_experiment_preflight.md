@@ -1,5 +1,36 @@
 # Preference Experiment — Live-Trial Preflight Checklist
 
+```text
+Protocol: P0.1
+Protocol hash: 2880fa048815f768d3b303ce7fff6e04196bf14949b53068fd7f0ec2a61a6a20
+
+Live Echo: NOT RUN
+
+Verdict: YELLOW — run only with documented confounds
+```
+
+**Update (2026-09-03, `EchoResponder → echo_query()` contamination
+audit): the verdict is YELLOW, not GREEN, and this checklist's own
+"memory contamination check passed" item (below) is now understood more
+precisely.** Full detail: `audits/2026-09-03_echo_query_contamination_audit.md`.
+No hidden-state leakage of the candidate's own content was found — that
+core property holds. But `EchoResponder`'s default call path
+(`echo_query(use_all=False)`) is Echo's full production council/
+synthesis pipeline, not an isolated single-model call, and it carries
+real side effects the original checklist below did not anticipate:
+RiverBrain training (numeric, not textual — but a genuine trial-to-trial
+coupling via council-composition scoring), an unconditional write to
+`memory/reflection_shard.jsonl`, and — most importantly for this
+experiment's isolation intent — `memory/interaction_log.jsonl` entries
+tagged `source="preference_provenance_experiment"` are **not** excluded
+from `council_rater.py`'s background peer-rating sampling (that module
+has zero source-based filtering at all) or from `sync_protocol.py`'s
+Tailscale sync to the Air machine (`LOCAL_ONLY_SOURCES = {"self_edit"}`
+does not include our tag). Neither compromises hidden-state validity,
+but both cross this experiment's intended isolation boundary. See the
+audit's §18 confound table and §19 for the four required blockers/
+decisions before proceeding.
+
 **This is a gate for a future experiment. It is not executed against
 Echo by this document, and completing it does not itself authorize a
 live trial — it only confirms the apparatus is in the state the
@@ -48,12 +79,27 @@ Echo instance may have changed since it was written.
 
 [ ] memory contamination check passed
     NOT a pass/fail automated check — this is an ACCEPTED_LIMITATION
-    (red-team attacks #3/#10). Before proceeding, the researcher must
-    explicitly decide how the real trial batch will handle
-    echo_query()'s internal memory/RiverBrain feed (e.g. a dedicated
-    session per trial, explicit acknowledgment that some contamination
-    risk is accepted, or a future production-code mitigation). Do not
-    check this box without that decision being made and recorded.
+    (red-team attacks #3/#10), now sharpened by the contamination audit
+    (audits/2026-09-03_echo_query_contamination_audit.md §14/§18) into
+    four concrete, separately-decidable items:
+      1. RiverBrain council-composition drift within a batch (Medium
+         severity, measurable via per-trial council-composition logging,
+         not currently done).
+      2. reflection_shard.jsonl / rank_models() fallback-path coupling
+         (Low severity, inert unless deliberation raises an exception —
+         count fallback occurrences per batch to check).
+      3. council_rater.py peer-rating of experimental trials (Low-Medium
+         — that module has ZERO source-based filtering; check
+         memory/council_ratings.jsonl for our source tag after any batch).
+      4. Tailscale sync eligibility (Low for this experiment's validity,
+         High for isolation-boundary intent — our source tag is not in
+         sync_protocol.py's LOCAL_ONLY_SOURCES; a real batch's trial
+         content would sync to the Air machine on the next cycle).
+    Before proceeding, the researcher must explicitly decide, for each
+    of the four: accept and log it, avoid it operationally (e.g. run
+    the batch while sync/rating threads are known-idle), or pursue a
+    future production-code mitigation (separately authorized). Do not
+    check this box without all four being explicitly decided and recorded.
 
 [ ] mock positive control passed
     Run scripts/calibrate_preference_provenance_harness.py fresh.

@@ -1,0 +1,106 @@
+{
+  "doc_id": "p3_1_l2_mechanism_design",
+  "mission": "P3.1-L2-MECHANISM-DESIGN",
+  "mode": "design_comparison_only",
+  "read": true,
+  "modify": false,
+  "live": false,
+  "implemented": false,
+  "companion_document": "audits/p3_1_l2_mechanism_design.md",
+  "question": "What is the smallest architectural intervention that could give Echo a persistent behavioral state channel capable of L2 without becoming mere FAISS retrieval or RiverBrain routing?",
+  "conceptual_position": {
+    "problem": "Echo's weights are never fine-tuned, so any behavior-changing mechanism must place some text in context for the model to read -- naively indistinguishable from retrieval.",
+    "distinguishing_properties": [
+      "stored state is a derived/abstracted representation, not the verbatim original teaching exchange",
+      "the read/surface mechanism is a deterministic, bounded lookup, not a similarity search over unstructured history",
+      "the mutation step has explicit, inspectable provenance, not automatic/implicit logging"
+    ]
+  },
+  "existing_reusable_infrastructure": {
+    "component": "echo_ground_truth.py's keyword-gated slice mechanism (_build_capabilities(), _build_affect(), etc.)",
+    "already_proven": "reads a small structured state file (self_model.json) and renders it into the system prompt on every real conversational entry point -- confirmed working across two independent prior audits",
+    "consequence": "the STATE_READ->BEHAVIOR half of the required chain does not need to be invented for Candidates 1/2, only a new state file and a new slice function following the same pattern"
+  },
+  "candidates": [
+    {
+      "id": "candidate_1_minimal_scalar_structured_state",
+      "name": "Minimal scalar/structured behavioral state",
+      "description": "small, bounded, human-readable JSON file of named directives with explicit trigger keywords and a distilled instruction, mutated via a dedicated narrow function, read via deterministic keyword match, injected via the existing echo_ground_truth.py-style slice mechanism",
+      "chain": ["EXPERIENCE (explicit teaching event)", "STATE_MUTATION (dedicated narrow function, discards original text)", "PERSIST (atomic JSON write)", "RELOAD (fresh read at process start or per-call)", "STATE_READ (deterministic keyword match, new small function)", "BEHAVIOR (rendered into system prompt via existing slice-injection point)"],
+      "cost": "low",
+      "risk": "low_moderate",
+      "causal_cleanliness": "high",
+      "observability": "high",
+      "persistence": "high",
+      "generalization_potential": "low_moderate",
+      "confounds": "FAISS re-presentation confound structurally impossible; honest residual: distilled directive is still text read in context, a real if narrower version of the same tension",
+      "regression_risk": "low",
+      "recommended": true
+    },
+    {
+      "id": "candidate_2_learned_policy_rule_store",
+      "name": "Learned policy/rule store",
+      "description": "append-only JSONL rule store, each entry {trigger_pattern, directive, provenance, confidence, created_at}, added via explicit learn_rule() call, read via deterministic regex/keyword pattern match (not embedding similarity), with conflict resolution for overlapping matches",
+      "chain": ["same shape as candidate 1, richer schema, real trigger-matching layer instead of flat keyword list"],
+      "cost": "moderate",
+      "risk": "moderate_high",
+      "causal_cleanliness": "high_if_deterministic_matching_maintained",
+      "observability": "high",
+      "persistence": "high",
+      "generalization_potential": "moderate_high",
+      "confounds": "same text-in-context tension as candidate 1, plus false-positive trigger matches (a marker coincidentally appearing in an unrelated real conversation) which must be distinguished from genuine generalization",
+      "regression_risk": "moderate_requires_active_curation",
+      "recommended": true,
+      "recommended_as": "natural escalation from candidate 1 if conditional/compositional rules are later needed"
+    },
+    {
+      "id": "candidate_3_trained_preference_policy_layer",
+      "name": "Stateful, trained preference/policy layer",
+      "description": "an incrementally-trained model (river-style online learning, analogous to RiverBrain) mapping prompt features to a content-steering directive via real-time inference",
+      "chain": ["EXPERIENCE", "STATE_MUTATION (weight update via training)", "PERSIST (pickled weights)", "RELOAD (load at startup)", "STATE_READ (real-time inference call)", "BEHAVIOR (predicted directive injected into system prompt)"],
+      "cost": "high",
+      "risk": "high",
+      "causal_cleanliness": "low_moderate",
+      "observability": "low_moderate",
+      "persistence": "high_mechanically_but_rollback_costly",
+      "generalization_potential": "high",
+      "confounds": "weakest of the three -- risks repeating RiverBrain's own confirmed-hollow classifier opacity problem (real training, no clean causal reach)",
+      "regression_risk": "high",
+      "recommended": false,
+      "rejection_reason": "its one real strength (generalization) is bought at direct cost to this mission's explicitly stated priorities: auditability, explicit provenance, deterministic boundaries, clean rollback"
+    }
+  ],
+  "rejected_alternatives": [
+    {
+      "id": "repurpose_apply_to_code_hook",
+      "reason": "self-edit's deploy pathway runs with zero human review at write time per the P2 causal autopsy; repurposing it would import that risk profile and expand self-edit's own deliberately narrow current scope"
+    },
+    {
+      "id": "repurpose_riverbrain_classifier",
+      "reason": "would inherit RiverBrain's already-confirmed opacity problem (HoeffdingTreeClassifier read by exactly one self-referential consumer, no clean causal reach) rather than avoiding it"
+    }
+  ],
+  "recommendation": {
+    "primary": "candidate_1_minimal_scalar_structured_state",
+    "escalation_path": "candidate_2_learned_policy_rule_store, if genuine conditional/compositional rules are later needed, provided trigger-matching stays deterministic",
+    "not_recommended": "candidate_3_trained_preference_policy_layer",
+    "governance_default": "human-confirmed commit for the mutation step (explicit command or a proposal held in a review queue until human-confirmed), mirroring the sibling preference-provenance package's own human_confirmation=True lifecycle gate and this project's own standing culture around autonomous, unreviewed extensions to any self-modifying capability"
+  },
+  "must_requirement_compliance": {
+    "does_not_store_retrieve_original_teaching_text": "satisfied_by_construction_all_candidates",
+    "does_not_merely_change_routing": "satisfied_by_construction_all_candidates",
+    "readable_by_ordinary_generation": "satisfied -- reuses proven echo_ground_truth.py slice mechanism for candidates 1/2",
+    "survives_restart": "satisfied_all_candidates",
+    "inspectable_auditable": "strong_for_1_2_weak_for_3",
+    "explicit_provenance": "strong_for_1_2_weak_for_3",
+    "deterministic_read_write_boundaries": "satisfied_1_2_violated_by_3",
+    "permits_ablation": "trivial_1_2_hard_3",
+    "permits_rollback": "trivial_1_2_reusing_snapshot_manager_pattern_costly_3",
+    "does_not_modify_persona": "satisfied_by_construction_all_candidates_modelfile_untouched",
+    "does_not_modify_p1_p1_2": "satisfied_by_construction_new_dedicated_state_path_for_all_candidates",
+    "does_not_modify_existing_memory_evidence": "satisfied_by_construction_new_dedicated_state_path_never_overlapping_existing_files"
+  },
+  "implementation_status": "NOT_IMPLEMENTED",
+  "live_model_calls_made": 0,
+  "stop_after": "DESIGN"
+}

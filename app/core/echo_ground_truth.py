@@ -39,6 +39,15 @@ _COUNCIL_MD_PATH = "COUNCIL.md"
 _SALIENCE_STATE_PATH = os.path.join(_MEMORY_DIR, "salience_state.json")
 _FRICTION_WINDOW_SIZE = 50
 
+# behavioral_state.py's directive store (P3.1-IMPLEMENT-C1, Candidate 1 from
+# audits/p3_1_l2_mechanism_design.md) -- NOT a learning mechanism. A small,
+# bounded, human-confirmed directive store, checked deterministically
+# against every prompt (introspective or not) via _build_behavioral()
+# below. Distinguished from every other slice in this file: those are all
+# gated on _is_introspective() (questions ABOUT Echo herself); this one is
+# evaluated independently, because a stored directive's trigger keywords
+# are about ordinary topics, not self-reference.
+
 # ---------------------------------------------------------------------------
 # Slice detection — mirrors TOOL_AWARE_TASKS pattern
 # ---------------------------------------------------------------------------
@@ -994,6 +1003,37 @@ def _build_architecture() -> str:
 # Public API
 # ---------------------------------------------------------------------------
 
+def _build_behavioral(matches: "list[dict]") -> str:
+    """
+    P3.1-IMPLEMENT-C1, Candidate 1. Renders currently-matching entries from
+    behavioral_state.py's small, bounded, human-confirmed directive store.
+
+    NOT a learning mechanism, and not presented as one to the model: each
+    directive is rendered as an explicit, disclaimed instruction (matching
+    this file's own established pattern for every other injected block —
+    see the GROUND-TRUTH header in get_structural_self_facts() and Finding
+    9's directive-misattribution fix elsewhere in this project's history),
+    never phrased as a claim about something Echo "learned" or "remembers."
+
+    `matches` is the exact, already-computed list from
+    behavioral_state.get_matching_directives(prompt) — this function does
+    no matching of its own, it only renders. Deterministic ordering
+    (mission requirement #12): directives are rendered in the exact order
+    behavioral_state.py itself returns them (creation order), never
+    re-sorted or ranked here.
+    """
+    if not matches:
+        return ""
+    lines = [
+        "Behavioral directives (source: memory/behavioral_directives.json — "
+        "human-confirmed instructions, not something Echo learned or recalls; "
+        "apply them as explicit standing instructions for this response):"
+    ]
+    for d in matches:
+        lines.append(f"  - {d['directive_text']}")
+    return "\n".join(lines)
+
+
 def get_structural_self_facts(prompt: str = "") -> str:
     """
     Return a ground-truth context block containing only the slices relevant
@@ -1002,6 +1042,24 @@ def get_structural_self_facts(prompt: str = "") -> str:
     Pass prompt="" to get all slices (used by echo_self_probe.py diagnostics).
     """
     slices = _relevant_slices(prompt) if prompt else set(_SLICE_SIGNALS.keys())
+
+    # behavioral_state.py's directive matches are evaluated independently of
+    # _is_introspective() -- a directive's trigger keywords are about
+    # ordinary topics, not questions about Echo herself, so this must not
+    # be gated behind the same introspection check every other slice uses.
+    # Additive only: every existing slice's own gating/logic below is
+    # unchanged; this only widens `slices` when a real, deterministic
+    # keyword match exists.
+    behavioral_matches = []
+    if prompt:
+        try:
+            from app.core import behavioral_state
+            behavioral_matches = behavioral_state.get_matching_directives(prompt)
+        except Exception as e:
+            logger.debug("[GroundTruth] Behavioral directive check unavailable: %s", e)
+        if behavioral_matches:
+            slices = set(slices) | {"behavioral"}
+
     if not slices:
         return ""
 
@@ -1010,6 +1068,9 @@ def get_structural_self_facts(prompt: str = "") -> str:
         intr = _read_json(_INTROSPECTION_PATH)
 
         sections = []
+
+        if "behavioral" in slices:
+            sections.append(_build_behavioral(behavioral_matches))
 
         if "self_edit" in slices:
             sections.append(_build_self_edit(sm, intr, _backup_count()))

@@ -1,0 +1,119 @@
+{
+  "doc_id": "p3_1_c1_implementation",
+  "mission": "P3.1-IMPLEMENT-C1",
+  "mode": "controlled_implementation",
+  "live_model_calls_made": 0,
+  "experiment_run": false,
+  "p3_protocol_altered": false,
+  "historical_evidence_modified": false,
+  "learning_claim_made": false,
+  "files_changed": {
+    "new": [
+      {"path": "app/core/behavioral_state.py", "sha256": "6c50f6b7ee9cfd4ca8fb9261be72c6706a05a08f78b0793a161598290871b130"},
+      {"path": "scripts/verify_behavioral_state.py", "sha256": "d7973eccf7c11f886f4bc921af40e35743aea593ccdb476267831c3bcdfcc822"},
+      {"path": "audits/echo0_baseline.md", "note": "created before implementation, appended after"},
+      {"path": "audits/echo0_baseline.json", "note": "created before implementation, appended after"}
+    ],
+    "modified": [
+      {
+        "path": "app/core/echo_ground_truth.py",
+        "baseline_sha256": "a0805b45d02075276332c7b758610212ba1e14502ba907395df00cf1d706279d",
+        "final_sha256": "6b487e1ce9c61d4f68ea0f85a04df5eeedd54bdad5cdaca26dff60fa3692f4ef",
+        "change_type": "strictly additive",
+        "not_on_edit_forbidden_targets": true
+      },
+      {
+        "path": "scripts/verify_preference_provenance_experiment.py",
+        "final_sha256": "4067b41bf580859d9e7a7a078203894cfc6c6d3acda0af1702d7b42893a3b6b8",
+        "change_type": "unrelated one-line isolation-exclusion-list fix, benign pre-existing gap from the prior P3 mission"
+      }
+    ],
+    "untouched_confirmed": ["Modelfile", "memory/task_type_classifier.pkl", "app/core/self_edit_manager.py", "app/core/river_deliberation.py", "app/core/memory_bridge.py", "app/core/echo_core.py", "app/core/introspection_channel.py", "app/core/self_model_updater.py", "app/subsystems/reflection_shard.py", "app/core/echo_model_orchestrator.py", "all P1/P1.2/Learning-Investigation/P2/P3 files"]
+  },
+  "causal_path": {
+    "sequence": ["EXPERIENCE", "explicit_proposed_directive", "HUMAN_APPROVAL", "DERIVED_STATE", "PERSIST", "RESTART", "DETERMINISTIC_READ", "EXISTING_GENERATION_SLICE", "BEHAVIOR"],
+    "edges_with_source_evidence": {
+      "EXPERIENCE->proposed_directive": "behavioral_state.propose_and_confirm_directive() -- the only function that creates new state",
+      "proposed_directive->HUMAN_APPROVAL": "identity check 'if human_confirmed is not True: raise BehavioralStateError' -- proven by test refusing a truthy-but-not-True value (1)",
+      "HUMAN_APPROVAL->DERIVED_STATE": "function signature has no parameter for raw/original text -- proven via inspect.signature() introspection test and a real 200-char verbatim-exchange-absence test",
+      "DERIVED_STATE->PERSIST": "_atomic_write_json(): temp-file + os.replace, this project's established convention",
+      "PERSIST->RESTART": "load_state() performs a fresh disk read, no module-level cache -- proven by del+reimport module simulation",
+      "RESTART->DETERMINISTIC_READ": "get_matching_directives(): exact lowercased substring match only -- proven by 5x repeated-call stability + unrelated-input rejection + creation-order multi-match test",
+      "DETERMINISTIC_READ->EXISTING_GENERATION_SLICE": "echo_ground_truth.py's get_structural_self_facts() new independent behavioral_matches check, dispatched through the same sections/system_note() mechanism every existing slice uses",
+      "EXISTING_GENERATION_SLICE->BEHAVIOR": "rendered directive becomes literal system-prompt content via the same disclaimed system_note() wrapping every other slice uses -- causal reach ends here; no live call made to confirm a model follows it"
+    }
+  },
+  "state_schema": {
+    "path": "memory/behavioral_directives.json",
+    "fields": ["version", "directives[].id", "directives[].trigger_keywords", "directives[].directive_text", "directives[].provenance", "directives[].created_at"],
+    "bounds": {"MAX_DIRECTIVES": 20, "MAX_TRIGGER_KEYWORDS_PER_DIRECTIVE": 5, "MAX_TRIGGER_KEYWORD_LEN": 60, "MAX_DIRECTIVE_TEXT_LEN": 300, "MAX_BACKUPS_RETAINED": 10}
+  },
+  "mutation_path": {
+    "functions": ["propose_and_confirm_directive", "delete_directive", "rollback_to_backup"],
+    "human_confirmation_required": true,
+    "autonomous_mutation_path_exists": false,
+    "verification": "grep -rn behavioral_state --include=*.py . finds only the module itself, the new echo_ground_truth.py read-only import, and this implementation's own test/audit files -- zero autonomous-loop call sites"
+  },
+  "read_path": {
+    "function": "get_matching_directives",
+    "method": "deterministic lowercased substring match",
+    "similarity_search": false,
+    "faiss_dependency": false,
+    "riverbrain_dependency": false,
+    "called_from": ["app/core/echo_ground_truth.py's get_structural_self_facts()"]
+  },
+  "provenance_path": {
+    "audit_log": "memory/behavioral_directives_audit.jsonl",
+    "events_logged": ["propose_and_confirm", "delete", "rollback", "read_match"],
+    "read_match_logs_prompt_hash_not_prompt_text": true
+  },
+  "rollback_path": {
+    "backup_dir": "memory/behavioral_directives_backups",
+    "retention": 10,
+    "functions": ["rollback_to_backup", "delete_directive"],
+    "human_confirmation_required": true
+  },
+  "tests": {
+    "script": "scripts/verify_behavioral_state.py",
+    "result": "49/49 passing",
+    "categories_covered": [
+      "human_confirmation_required_for_mutation",
+      "raw_teaching_exchange_not_stored",
+      "persists_across_simulated_restart",
+      "deterministic_lookup",
+      "unrelated_input_no_match",
+      "faiss_never_consulted_verified_by_poisoning",
+      "riverbrain_never_consulted_verified_by_poisoning",
+      "provenance_survives_restart",
+      "rollback_works",
+      "bounds_enforced",
+      "no_accidental_autonomous_writes",
+      "echo_ground_truth_integration",
+      "all_sibling_test_suites_remain_green"
+    ]
+  },
+  "regressions_found": false,
+  "sibling_suite_results_after_implementation": {
+    "verify_preference_provenance_experiment.py": "105/105",
+    "verify_choice_parser_benchmark.py": "58/58 + 1 documented exemption",
+    "verify_learning_investigation_harness.py": "58/58",
+    "verify_p3_causal_learning_apparatus.py": "35/35"
+  },
+  "remaining_confounds": [
+    "does not and cannot prove injected directive text changes model output -- no live call made",
+    "the 'is this genuinely different from FAISS-style retrieval' philosophical tension from p3_1_l2_mechanism_design.md still applies -- this mechanism still places text in context for a frozen-weight model to read; what differs is derivation/determinism/provenance, not the fact of text-in-context itself",
+    "no mechanism validates that a proposed directive_text is a FAITHFUL distillation of whatever motivated it -- only that a human explicitly confirmed the mutation"
+  ],
+  "matches_candidate_1_exactly": true,
+  "production_state_verification": {
+    "modelfile_unchanged": true,
+    "task_type_classifier_pkl_unchanged": true,
+    "river_brain_pkl_change_attributable_to_live_server_not_this_work": true,
+    "no_real_behavioral_directives_json_created": true,
+    "preserved_evidence_intact": {
+      "learning_pilot": true,
+      "p1_p1_2_preference_provenance": true
+    }
+  },
+  "stop_after": "IMPLEMENTATION+TESTS"
+}

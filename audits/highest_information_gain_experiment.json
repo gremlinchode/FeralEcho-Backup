@@ -1,0 +1,171 @@
+{
+  "doc_id": "highest_information_gain_experiment",
+  "date": "2026-09-03",
+  "mission": "Identify the single highest-information-gain experiment to distinguish H1 (integration) / H2 (capability ceiling) / H3 (measurement) / H4 (model ceiling). Design only -- nothing was implemented or executed.",
+  "evidence_synthesis": {
+    "self_edit_targeting_loop": "Real, closed, Level 3 (persistent targeting adaptation). No statistically defensible Level-4 improvement (n=103 quality deltas, mean=+0.103, t=1.65, not significant; lag-1 autocorrelation r=-0.145; 100% of tracked outcomes targeted 'coding' regardless of which signal 'won'). A purpose-built prospective A/B/C arbitration experiment could not complete within practical time bounds due to confirmed live-server resource contention (Ollama has no configured parallelism).",
+    "preference_formation": "P1.2's live validation is a clean, real NULL: 10/10 position-tracking not content-tracking, confabulation observed under pressure. Current evidence ladder position: E0-E1, mock-responder only.",
+    "memory_causality": "Retrieval write+read both real and live. Finding 76's real ablation (n=30, personal task only, temp>0) found the behavioral effect indistinguishable from sampling noise (p=0.48/0.37) -- a genuinely open null, not yet resolved at temp=0 or for other task types.",
+    "c1_behavioral_persistence": "Real, 100% architecturally reliable across restart (state_existence/retrieval/exposure, n=9 trials); live model compliance 75% (n=4) -- small-N but the cleanest, fastest-to-replicate causal chain investigated so far.",
+    "echo_projects_multi_file_generation": "0/61 real historical cycles have ever passed both F1 and F2 -- a hard, measured ceiling, with no failure-to-adjustment edge at all.",
+    "tool_use": "Registration and listing are real; get_tool() invocation has zero real call sites anywhere -- a complete, confirmed absence, not a degraded edge.",
+    "reflection_metacognition": "Two separate mechanisms exist and must not be conflated: self_edit_manager's structured outcome logging (real verification data reaches reflection_shard.jsonl) vs. reflection_shard.py's own generative free-association loop (zero access to verification/outcome data). shadow_model.propose_from_reflection() is a pure >=2-keyword heuristic with a demonstrated real override effect on at least one live targeting decision, but with no detectable effect on the historically-tracked, quality-evaluated production record (100% coding target regardless).",
+    "orchestration_routing": "RiverBrain's tag-boost mechanism is real and empirically working (qwen2.5-coder:7b now leads real coding-task mean among well-sampled models, n~9,777-99,027 across buckets) -- but this is confirmed ROUTING-level adaptation (which model answers), never shown to improve actual task OUTCOME quality, only WHICH model gets picked.",
+    "autonomy_recovery": "Multiple gated background loops confirmed live and mature (snapshot/restore, crash-avoidance with dual evidence sources, watchdog-collision guard) -- the most robustly-demonstrated capability category investigated.",
+    "cross_cutting_gap": "Across self-edit, echo_projects, and Finding 43's own direct-conversational-coding test, the SAME underlying question keeps recurring unresolved: is poor coding-task performance caused by the pipeline (safety gates, prompt framing, targeting friction -- an integration/architecture problem) or by the underlying local model pool's own capability ceiling on genuinely hard tasks (a model-ceiling problem)? No experiment in this investigation's history has cleanly isolated these two explanations from each other using an objective, execution-verified endpoint free of self-edit's own AST-based scorer (confirmed saturated near ceiling) or gate-passage framing."
+  },
+  "hypotheses": {
+    "H1_integration": "Primary limitation is insufficient connection between existing real capabilities; small architectural closures would produce substantially greater emergent/adaptive behavior.",
+    "H2_capability_ceiling": "Existing components are already near the practical ceiling imposed by current models/hardware/architecture; further connection produces little meaningful improvement.",
+    "H3_measurement": "Echo may have useful interactions/capabilities that current instrumentation fails to detect.",
+    "H4_model_ceiling": "The architecture could support the desired loops, but the local model pool itself is the limiting factor."
+  },
+  "candidate_experiments_considered": [
+    {
+      "name": "Raw-model vs. pipeline-framed vs. council-deliberated coding-task benchmark (RECOMMENDED)",
+      "info_gain": "very high -- directly, simultaneously bears on H1, H2, and H4, and embeds a natural H3 check (AST-score vs. real-execution discrepancy)",
+      "causal_clarity": "high -- isolates pipeline effects from model effects from orchestration effects using a single shared task set and a single objective, execution-based endpoint",
+      "falsifiability": "high -- see outcome-interpretation table; multiple distinct, mutually-exclusive result patterns map to different hypotheses",
+      "reproducibility": "high -- deterministic tasks, temperature controllable (including 0), all via existing, already-verified sandboxed-execution infrastructure",
+      "sample_efficiency": "high -- no organic-traffic waiting window required (unlike the self-edit quality_score.delta endpoint); each trial is a synchronous call+sandbox-run, seconds to tens of seconds",
+      "zero_cost": "yes -- local models only, existing infrastructure only",
+      "safety": "high -- runs entirely inside the same kernel-sandboxed execution path (sandbox/run_script.py) already used and verified by code_verification.py; no production file is ever touched",
+      "engineering_effort": "low -- reuses verify_in_sandbox()/run_sandbox_script_isolated(), _ollama_query() (Design B), rank_models(); the only new artifact needed is the benchmark task set itself"
+    },
+    {
+      "name": "Memory retrieval temp=0 replication across all 5 task types",
+      "info_gain": "medium-high for the specific memory question, but narrow -- resolves H3 vs. true-null for ONE mechanism (retrieval), does not bear on H1/H2/H4 for the rest of the system",
+      "causal_clarity": "high for its own narrow question",
+      "falsifiability": "high",
+      "reproducibility": "high (temp=0 directly available)",
+      "sample_efficiency": "medium -- requires real conversational turns per task type, though not as slow as self-edit's 25-minute post-deploy window",
+      "zero_cost": "yes",
+      "safety": "high",
+      "engineering_effort": "low -- direct extension of Finding 76's own already-built harness",
+      "why_not_chosen": "narrower scope than the recommended experiment; addresses H3 for one mechanism but leaves the higher-stakes, cross-cutting H1-vs-H4 coding-capability question (the single most recurring unresolved tension across three separate investigated loops) untouched"
+    },
+    {
+      "name": "C1 compliance rate at larger N (20-50 trials)",
+      "info_gain": "medium -- firms up an already-fairly-established estimate (75% at n=4); a cleaner effect size but a narrower question (does persistent state control behavior at all, already largely answered)",
+      "causal_clarity": "high",
+      "falsifiability": "medium -- unlikely to change the qualitative picture much, since the architecture side is already confirmed 100% reliable; mostly narrows a confidence interval rather than distinguishing hypotheses",
+      "reproducibility": "very high -- fastest, simplest replication of any candidate (single system-prompt injection + single call)",
+      "sample_efficiency": "very high",
+      "zero_cost": "yes",
+      "safety": "high",
+      "engineering_effort": "very low",
+      "why_not_chosen": "does not, by itself, distinguish H1/H2/H4 -- C1 is a standalone, human-directive-mediated mechanism, not a test of whether EXISTING capabilities are well-connected or ceiling-limited"
+    },
+    {
+      "name": "Full-power self-edit arbitration A/B/C RCT (71-128 trials/condition, maintenance window)",
+      "info_gain": "high in principle, but retrospective evidence already strongly suggests a near-null result (t=1.65, r=-0.145, 100% single-target history) -- most of the plausible information has already been extracted retrospectively",
+      "causal_clarity": "high",
+      "falsifiability": "high",
+      "reproducibility": "medium -- requires a maintenance window (live server paused) to avoid the resource-contention confound directly encountered in the prior attempt",
+      "sample_efficiency": "low -- requires the largest N of any candidate (up to ~128/condition) and, for the true primary endpoint, real ~25-minute post-deploy windows per trial",
+      "zero_cost": "yes",
+      "safety": "high (dry_run=True)",
+      "engineering_effort": "medium -- the harness already exists (scripts/run_level4_arbitration_experiment.py) but needs a maintenance-window scheduling decision, outside this investigation's own control",
+      "why_not_chosen": "lowest sample efficiency of any candidate, and the marginal information gain over the already-extensive retrospective analysis is comparatively small relative to its cost"
+    },
+    {
+      "name": "Council-rating cursor repair, offline replay simulation",
+      "info_gain": "low-medium -- narrow, single-mechanism test (would fixing this one dead edge matter?), does not address the broader H1-H4 question",
+      "causal_clarity": "high for its own question",
+      "falsifiability": "medium",
+      "reproducibility": "high",
+      "sample_efficiency": "high",
+      "zero_cost": "yes",
+      "safety": "high (offline replay against a copy of historical data, no production write)",
+      "engineering_effort": "low",
+      "why_not_chosen": "answers a real but narrow question about one specific dormant edge, not the cross-cutting capability-ceiling question this mission asks for"
+    },
+    {
+      "name": "Preference-formation re-test with an alternative, more sensitive measurement design",
+      "info_gain": "medium -- primarily an H3 test for one already-well-characterized domain",
+      "causal_clarity": "medium -- a null result could still be attributed to design choice rather than true absence",
+      "falsifiability": "medium",
+      "reproducibility": "high",
+      "sample_efficiency": "medium",
+      "zero_cost": "yes",
+      "safety": "high",
+      "engineering_effort": "medium-high -- would require a genuinely new experimental design, not a reuse of existing infrastructure",
+      "why_not_chosen": "P1.2 already invested substantial rigor in this domain and returned a clean, informative null; the marginal value of a third pass is lower than a first pass at the still-unresolved coding-capability-ceiling question"
+    }
+  ],
+  "recommended_experiment": {
+    "name": "Raw-model vs. pipeline-framed vs. council-deliberated coding-task capability benchmark",
+    "one_line_summary": "Give the same set of objectively-verifiable coding tasks to (1) a raw, clean, single-model call, (2) the same task framed and generated through self-edit's own pipeline machinery (F1 static scan + sandboxed test, no deploy), and (3) full multi-model council deliberation -- score every candidate ONLY by real, sandboxed execution against a real check, never by AST count, gate-passage, or self-report -- to determine whether Echo's repeated real-world coding failures (self-edit's non-convergent families, echo_projects' 0/61) are caused by pipeline/architecture friction (H1), a genuine model-capability ceiling (H4), a broader ceiling further connection can't move (H2), or by an instrumentation blind spot (H3, tested via AST-score-vs-real-execution discrepancy on the same candidates)."
+  },
+  "exact_design": {
+    "task_set": "N=15 objectively-verifiable Python coding tasks in 3 tiers of 5 each: TIER 1 (trivial sanity check -- matched to tasks self-edit/echo_projects have historically PASSED, e.g. 'write a function that deduplicates a list while preserving order'); TIER 2 (medium -- matched to typical echo_projects spec complexity, e.g. 'implement a fixed-capacity LRU cache with O(1) get/put'); TIER 3 (hard -- matched to the EXACT class of task self-edit's own retired prose_stripping/quality_scoring families and Finding 43's direct-conversational fabrication case failed at, e.g. 'given this real buggy function [X], fix the bug without changing its signature' using a real, previously-failed self-edit candidate as the seed). Each task ships with a real, executable pytest-style assertion script, never a self-reported claim.",
+    "conditions": {
+      "condition_1_raw_model": "app.core.river_deliberation._ollama_query(model_name, task_prompt, temperature=0.0, task_type='coding') -- a single, clean, Design B call with NO self-edit framing, NO F1/F2 gating, and critically NOT routed through echo_query()/deliberate_and_learn() (avoids any RiverBrain.learn() side effect on production statistics).",
+      "condition_2_pipeline_framed": "the identical task, wrapped in the real _build_targeted_prompt()-style framing self-edit actually uses, run through the real F1 scan (scan_for_unsafe_operations()) and the real kernel sandbox (sandbox/run_script.py's run_sandbox_script_isolated(), the same path F2 uses) -- but WITHOUT ever calling execute_self_edit()/perform_self_edit() directly, to avoid writing to memory/SELF_EDIT.log, self_edit_convergence.json, or any real production self-edit state.",
+      "condition_3_council": "the identical task via river_deliberation.deliberate_and_learn(task_type='coding', ...) -- full real multi-model deliberation + synthesis, tagged with a distinct source (e.g. 'capability_ceiling_benchmark') so it is identifiable and excludable from any later production analysis, same discipline this project already applies to other benchmark/probe traffic."
+    },
+    "scoring": "PASS/FAIL only, determined by actually executing the candidate's code inside sandbox/run_script.py's real kernel isolation against the task's real assertion script -- reusing code_verification.py's already-proven verify_in_sandbox()/run_sandbox_script_isolated() functions directly, not reimplementing them. AST-based quality score (echo_quality_scorer._score_response_quality()) is ALSO recorded per candidate, purely to compute the H3 discrepancy check (does a candidate that scores 4/4 on the AST metric ever fail real execution, or vice versa) -- never used as the primary endpoint itself."
+  },
+  "controls": [
+    "same task set across all three conditions (within-task comparison, not just within-condition aggregate)",
+    "same model pool available to all conditions (no model added/removed between conditions)",
+    "temperature fixed at 0.0 for conditions 1 and 2 (deterministic, reproducible); condition 3 necessarily uses per-councillor jittered temperature as already established production behavior -- documented as an intentional, disclosed asymmetry, not an oversight",
+    "randomized task order within each condition's run to control for any session-level drift",
+    "a single, fixed model choice for conditions 1 and 2 (recommend rank_models('coding')'s top real pick at experiment start, held fixed) to isolate the pipeline-vs-raw comparison from a routing-choice confound; condition 3's own real, current routing logic is left untouched (that IS the thing being tested for condition 3)",
+    "zero writes to any real production file (self_edit_generated.py, SELF_EDIT.log, self_edit_convergence.json, river_brain.pkl via condition 1/2's deliberate avoidance of echo_query()/deliberate_and_learn() for those two conditions; condition 3's real RiverBrain.learn() call is accepted as a real, tagged, identifiable, and (if desired) later-excludable production effect, consistent with how this project already tags and excludes benchmark/probe traffic)"
+  ],
+  "primary_endpoint": "Real, sandboxed-execution-verified PASS rate per condition, per difficulty tier (a 3x3 proportion table, 15 tasks x 3 conditions = 45 total scored trials for the statistically-strongest design).",
+  "secondary_endpoints": [
+    "AST-score vs. real-execution-verdict discrepancy rate (the H3 check) -- proportion of candidates where the two measures disagree",
+    "pass-rate by difficulty tier within each condition (does the pipeline specifically degrade HARD tasks more than trivial ones, or uniformly)",
+    "candidate latency per condition (does pipeline overhead itself explain anything, independent of pass/fail)",
+    "for condition 2 specifically: F1-block rate vs. F2-fail rate vs. real-execution-fail rate, replicating echo_projects' own useful 3-way breakdown (79% F1-blocked / 21% reached F2, 100% of those failed) for a DIFFERENT task population, to see if that same pattern generalizes"
+  ],
+  "sample_size": {
+    "statistically_strongest": {
+      "target_effect": "a large, practically meaningful pass-rate difference of ~20-25 percentage points between conditions (e.g., 45% vs. 20%)",
+      "power_calc": "two-proportion z-test, alpha=0.05, power=0.80: n ~= 49-58 tasks per condition for a 20-25pp difference",
+      "recommended_n": "50 tasks per condition (150 total trials), stratified evenly across the 3 difficulty tiers (roughly 17 per tier per condition)",
+      "honest_caveat": "smaller, still-real differences (e.g., 10pp) would require ~290+ tasks per condition -- a genuinely large-effect result is what this sample size is designed to detect reliably; a null at n=50/condition does not rule out a smaller real effect"
+    },
+    "smallest_useful_pilot": {
+      "recommended_n": "5 tasks per tier x 2 conditions (raw model vs. pipeline-framed only, dropping condition 3 for the pilot to cut cost) = 15 total scored trials",
+      "purpose": "detect only a STARK, qualitative difference -- e.g., 'the raw model solves at least half the tasks the pipeline-framed condition fails on entirely' -- explicitly NOT confirmatory, a go/no-go signal for whether the full-power design is worth running",
+      "interpretation_discipline": "per this mission's own explicit instruction, a promising pilot result must not be reported as evidence of H1 -- only as justification to run the statistically-strongest design"
+    }
+  },
+  "confounds": [
+    {"confound": "live-server resource contention", "mitigation": "directly encountered and diagnosed in the prior Level-4 experiment attempt; this design's conditions 1 and 2 deliberately avoid echo_query()/deliberate_and_learn() specifically to reduce (not eliminate) contention with the live server's own autonomous loops, which route through those functions; recommend running during a lower-activity window if a maintenance window is unavailable"},
+    {"confound": "model choice held fixed for conditions 1/2 but not 3", "mitigation": "disclosed explicitly as an intentional asymmetry (condition 3's real routing IS the thing being tested), not hidden"},
+    {"confound": "task difficulty miscalibration", "mitigation": "Tier 3 tasks are deliberately seeded from REAL historical self-edit/echo_projects failure cases, not invented from scratch, to ensure genuine difficulty-matching rather than an arbitrary guess"},
+    {"confound": "AST-scorer discrepancy check contaminating the primary endpoint", "mitigation": "AST score is recorded but never used to determine pass/fail -- only real execution does"},
+    {"confound": "prompt-framing differences beyond pipeline vs. raw (e.g., condition 2's framing happening to be worse-written prose, independent of the pipeline's gates)", "mitigation": "use the SAME underlying task description text in both conditions, varying only the wrapper (self-edit-style framing vs. a plain, direct instruction) -- isolates framing-as-pipeline-artifact from the task itself"},
+    {"confound": "single-shot vs. retry asymmetry (condition 2 could, in principle, use self-edit's real within-cycle retry mechanism, condition 1 does not)", "mitigation": "explicitly decide and disclose whether retry is included in condition 2 before running -- recommended: EXCLUDE retry from this benchmark's condition 2, to isolate pure pipeline/gating friction from retry-driven improvement, with retry's own effect proposed as a clearly separate, future extension"}
+  ],
+  "outcome_interpretation_table": [
+    {"result": "Raw model pass rate is low across all tiers, including Tier 1 (trivial)", "supports": ["H4", "H2"], "weakens": ["H1"], "interpretation": "The underlying local model pool cannot reliably produce correct code even in a clean, unconfounded, single-shot context -- no architectural connectivity fix can repair this; the ceiling is the model."},
+    {"result": "Raw model pass rate is high/reasonable (especially Tier 1-2), but pipeline-framed pass rate is much lower on the SAME tasks", "supports": ["H1"], "weakens": ["H4", "H2"], "interpretation": "The self-edit pipeline's own framing/gating is actively destroying real, demonstrated model capability -- a concrete, fixable architecture problem, not a model ceiling."},
+    {"result": "Raw model and pipeline-framed are similar (both moderate/low), but council-deliberated is notably higher", "supports": ["H1 (a different form)"], "weakens": ["H2 for this domain"], "interpretation": "Orchestration/integration of MORE of Echo's existing capability (multiple models + synthesis) unlocks real gains beyond any single component -- the fix is routing self-edit through council more, not fixing the current single-model pipeline."},
+    {"result": "Raw model, pipeline-framed, and council-deliberated are all similar, with no tier-dependent stratification", "supports": ["H2"], "weakens": ["H1"], "interpretation": "Neither cleaning the pipeline nor adding more integration/orchestration changes the outcome -- consistent with an already-reached ceiling that further connection cannot move."},
+    {"result": "A specific historical self-edit/echo_projects failure task is cleanly solved by the raw model", "supports": ["H1"], "weakens": ["H4 (for that specific case)"], "interpretation": "Direct, concrete falsification of 'the model can't do this' for that case -- proves pipeline friction, not model incapacity, caused that specific historical failure."},
+    {"result": "A meaningful proportion of candidates show an AST-score/real-execution discrepancy (e.g., scores 4/4 but fails execution, or scores <4 but passes)", "supports": ["H3"], "weakens": [], "interpretation": "The existing AST-based fitness metric is missing real information a better instrument reveals -- directly relevant to why self-edit's fitness gate is confirmed saturated yet quality outcomes remain noisy; this specific finding would be actionable independent of the H1/H2/H4 result."}
+  ],
+  "exact_infrastructure_required": [
+    "app.core.river_deliberation._ollama_query(model_name, prompt, temperature=0.0, task_type='coding') -- condition 1, Design B, already proven clean across four prior audits",
+    "app.core.self_edit_manager.scan_for_unsafe_operations(code) -- condition 2's F1 step, unmodified",
+    "sandbox.run_script.run_sandbox_script_isolated(script_path, timeout) -- the shared, real, kernel-isolated execution primitive for BOTH condition 2's F2-equivalent step and the primary endpoint's pass/fail verification for ALL conditions",
+    "app.core.code_verification.verify_in_sandbox(script, timeout) / verify_response_code(response_text) -- reused directly for the objective pass/fail check, not reimplemented",
+    "app.core.river_deliberation.deliberate_and_learn(task_type='coding', ...) -- condition 3, tagged with a distinct, identifiable source for later exclusion if desired",
+    "app.core.echo_model_orchestrator.rank_models('coding') -- to pick and FIX the single model used in conditions 1 and 2",
+    "echo_quality_scorer._score_response_quality(code, task_type='coding') -- for the secondary H3 discrepancy check only, never the primary endpoint",
+    "a new, small benchmark-task definition file (does not exist yet) -- the only genuinely new artifact this design requires; everything else reuses existing, already-verified functions"
+  ],
+  "what_not_to_change_before_running": [
+    "Do not modify self_edit_manager.py's F1/F2 gates, the fitness gate, or any safety boundary -- condition 2 exists specifically to test the CURRENT pipeline as-is.",
+    "Do not modify the shadow/empirical arbitration logic -- this experiment is orthogonal to the targeting question already investigated; conflating the two would reintroduce exactly the confound this design is built to avoid.",
+    "Do not modify echo_quality_scorer.py's AST-based scoring -- it is used here only as a secondary, disclosed comparison point, and any change would break comparability with all prior retrospective analysis that depends on its current behavior.",
+    "Do not route conditions 1 or 2 through echo_query()/deliberate_and_learn() -- doing so would call RiverBrain.learn() and contaminate real production model_task_stats with benchmark traffic, exactly the class of contamination this project's own history (Finding 3, Finding 85's echo_projects_coding bucket) has repeatedly had to find and fix after the fact.",
+    "Do not run this during a real production self-edit deploy window without first checking for cooldown/lock contention -- though this experiment's own calls do not touch the deploy lock, running it alongside heavy live-server activity risks reproducing the exact resource-contention failure the prior Level-4 experiment encountered.",
+    "Do not pre-select tasks the current pipeline is already known to pass easily as the ONLY tasks tested -- Tier 3's real historical-failure seeding is essential; a benchmark stacked with only easy tasks would manufacture a false H2 result."
+  ]
+}

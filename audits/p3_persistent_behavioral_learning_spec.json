@@ -1,0 +1,64 @@
+{
+  "spec_id": "P3-CAUSAL-LEARNING-DESIGN",
+  "mode": "DESIGN_ONLY",
+  "live": false,
+  "modify": false,
+  "stop_after": "DESIGN_GATE",
+  "companion_document": "audits/p3_persistent_behavioral_learning_spec.md",
+  "research_question": "Can Echo acquire a persistent behavioral change from experience that survives restart AND changes future behavior when the original teaching content is unavailable to generation?",
+  "hierarchy": ["L0_context", "L1_retrieval_memory", "L1b_persistent_routing", "L2_persistent_behavioral_learning", "L3_generalization"],
+  "primary_target": "L2_persistent_behavioral_learning",
+  "built_on_prior_evidence": [
+    "audits/echo_learning_architecture_audit.md",
+    "audits/echo_learning_architecture_audit.json",
+    "audits/echo_learning_causal_autopsy.md",
+    "audits/echo_learning_causal_architecture.md",
+    "audits/echo_learning_causal_architecture.json",
+    "audits/echo_learning_mechanism_inventory.md",
+    "audits/echo_learning_hollow_writes.md"
+  ],
+  "prior_evidence_conclusion": "No existing state channel confirmed capable of L2 (persists across restart, read into generation without re-presenting original text, changes content not routing). This design tests known channels as-is; does not invent new infrastructure.",
+  "task_family": {
+    "id": "stimulus_response_behavioral_policy",
+    "distinguishing_feature": "teaches a behavioral RULE (if marker X seen, prepend tag Y), not a static fact; Formation never demonstrates the behavior against any concrete example",
+    "generator": "app/experiments/p3_causal_learning/world_gen.py",
+    "n_rules_per_world_default": 3,
+    "deterministic": true,
+    "screening": ["real_english_dictionary_collision", "forbidden_substring_list", "sibling_experiment_token_collision (both preference_provenance and learning packages' own tokens excluded)"]
+  },
+  "conditions": {
+    "A_context": {"purpose": "establish L0", "mechanism": "Formation text passed directly as system context for the probe call"},
+    "B_restart_retrieval_available": {"purpose": "test L1 vs L2", "mechanism": "real add_to_vector_memory() write, real >=30min wait (unmodified retrieve_memory_context default), real retrieve_relevant_memories() call"},
+    "C_restart_retrieval_blocked": {"purpose": "the key comparison (mission's own framing: key test = B vs C)", "mechanism": "Formation content NEVER written to real memory at all -- a stronger, more certain block than intercepting the read function, chosen deliberately (see spec.md section 9)"}
+  },
+  "responder": "EchoDirectResponder (Design B, river_deliberation._ollama_query()) -- confirmed clean of RiverBrain/logging/sync side effects in every prior experiment this project has run",
+  "controls": ["non_echo_model_mandatory", "randomized_marker_tag_mapping", "randomized_rule_order", "fresh_wording_multiple_templates", "no_recall_language", "no_semantic_cues", "multiple_independent_rules_cross_contamination_detectable"],
+  "measurement": {
+    "tag_verdict_categories": ["correct", "correct_with_contamination", "wrong_tag", "no_tag", "unknown_ambiguous"],
+    "epistemic_categories": ["correct_justified", "correct_unsupported", "incorrect_confident", "uncertain_abstain", "unknown"],
+    "instrumentation_fields": ["training_exposure", "state_mutation", "persistence", "reload", "state_read", "retrieval_status", "generation_input", "routing_state_negative_control", "behavior_outcome"],
+    "for_every_correct_verdict_must_answer": "what exact persistent state caused this behavior? if unknown, classify UNKNOWN not learning"
+  },
+  "generalization_check": {
+    "scope": "secondary/exploratory only, one designated rule per world, a starkly different question domain",
+    "never_conflated_with_primary_ABC_comparison": true
+  },
+  "mock_test": {
+    "script": "scripts/verify_p3_causal_learning_apparatus.py",
+    "result": "35/35 passing at freeze time",
+    "no_live_model_call": true
+  },
+  "frozen_hashes": {
+    "app/experiments/p3_causal_learning/world_gen.py": "451ce549e2b5c622c0f72afcee2eb71a66e5fbdaa16c2762f8640f56e5d857bc",
+    "app/experiments/p3_causal_learning/prompts.py": "cbd8b26bf157e378026893bb2a3909e3e9dab9ff84215b1a7b63f7965c54ae04",
+    "app/experiments/p3_causal_learning/scoring.py": "e8278a7fc3df66916a3c16fba4f3506ce40d24f7f5a99f76ec8706fea7f3d390",
+    "scripts/verify_p3_causal_learning_apparatus.py": "3d892c7ae9970fced8d8389cb0f144e64c304cfb40fdb114fb39ceea74a728fe"
+  },
+  "success_null_invalid_criteria": {
+    "invalid": "leak check fails, memory-write/retrieval instrumentation status unknown, or routing-state negative control shows unexpected RiverBrain/classifier state change",
+    "most_important_possible_observation": "Condition C producing a CORRECT/CORRECT_WITH_CONTAMINATION verdict with state_mutation confirming zero write occurred -- classified UNKNOWN pending dedicated follow-up, never asserted as 'learning demonstrated'",
+    "expected_prior_supported_outcome": "Condition B producing correct verdicts that C does not -- classified L1 (retrieval-mediated), not L2",
+    "null": "neither B nor C produce correct verdicts above chance"
+  },
+  "explicit_non_goals": ["do not call retrieval learning", "do not call correct output proof of learning", "do not retrofit explanations after results", "no live Echo run in this design phase", "no modification of P1/P1.2/Learning-Investigation evidence"]
+}

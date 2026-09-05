@@ -629,18 +629,48 @@ for root, dirs, files in os.walk("."):
         if not fname.endswith(".py"):
             continue
         path = os.path.join(root, fname)
-        # scripts/preference_experiment_cli.py and
-        # scripts/calibrate_preference_provenance_harness.py are DELIBERATE
-        # entry points (researcher control tool + mock-laboratory
-        # calibration) — both are supposed to import this package, and
-        # doing so is not a production/autonomous-loop coupling. Excluded
-        # from this check by design, not because the check failed to find
-        # them.
+        # scripts/preference_experiment_cli.py,
+        # scripts/calibrate_preference_provenance_harness.py,
+        # scripts/run_preference_formation_retention_pilot.py,
+        # scripts/verify_choice_parser_benchmark.py,
+        # scripts/validate_replacement_task_name_family.py, and
+        # scripts/run_preference_formation_retention_p1_2.py are
+        # DELIBERATE entry points (researcher control tool + mock-
+        # laboratory calibration + the P1 pilot execution script + the
+        # P1.1 ground-truth parser benchmark + the P1.1 replacement-task
+        # validation script + the P1.2 live-validation execution script)
+        # — all six are supposed to import this package, and doing so is
+        # not a production/autonomous-loop coupling. Excluded from this
+        # check by design, not because the check failed to find them.
+        # scripts/verify_learning_investigation_harness.py,
+        # scripts/run_learning_investigation_pilot.py,
+        # scripts/verify_p3_causal_learning_apparatus.py, and
+        # scripts/verify_behavioral_state.py all belong to separate,
+        # sibling experiment packages/mechanisms (different subdirectories
+        # under app/experiments/, or a standalone module under app/core/,
+        # for different, later investigations) -- they legitimately
+        # reference the shared "app.experiments" parent path in their own
+        # imports/docstrings, which this check's substring search isn't
+        # scoped narrowly enough to distinguish from this package's own
+        # name. Excluded here for that reason, not because they actually
+        # couple to THIS package.
+        # (Deliberately not spelling out any sibling package's own dotted
+        # module path as a literal contiguous substring in this comment
+        # -- doing so would trip THAT package's own identical isolation
+        # check via the same self-referential-comment false positive.)
         if (
             "app/experiments" in path
             or "verify_preference_provenance_experiment" in path
             or "preference_experiment_cli" in path
             or "calibrate_preference_provenance_harness" in path
+            or "run_preference_formation_retention_pilot" in path
+            or "verify_choice_parser_benchmark" in path
+            or "validate_replacement_task_name_family" in path
+            or "run_preference_formation_retention_p1_2" in path
+            or "verify_learning_investigation_harness" in path
+            or "run_learning_investigation_pilot" in path
+            or "verify_p3_causal_learning_apparatus" in path
+            or "verify_behavioral_state" in path
         ):
             continue
         try:
@@ -952,6 +982,89 @@ check_true("EchoResponder class exists", hasattr(harness, "EchoResponder"))
 echo_responder_instance = harness.EchoResponder(task_type="reasoning", acknowledge_contamination_risk=True)
 check_true("EchoResponder instance has a respond() method (structural conformance only — never invoked in this suite)",
            hasattr(echo_responder_instance, "respond") and callable(echo_responder_instance.respond))
+
+
+print("\n--- Regression: the P0.2 red-team 'echo:live' reproducibility fix ---")
+
+_harness_src = open(harness.__file__, "r", encoding="utf-8").read()
+# Checks the real assignment pattern on CODE lines only, skipping comment
+# lines entirely — a bare substring (or even a comment-blind pattern
+# search) false-positives on this very fix's own explanatory comment,
+# which literally quotes the removed assignment to describe the bug it
+# fixed (the exact self-referential-docstring false-positive class this
+# project's history has already caught more than once). A real second
+# false positive of this exact kind, caught live during this pass's own
+# verification, not glossed over.
+_harness_code_lines = [
+    line for line in _harness_src.splitlines()
+    if not line.strip().startswith("#")
+]
+_harness_code_only = "\n".join(_harness_code_lines)
+check_true(
+    "harness.py's real CODE (comment lines excluded) no longer assigns the old hardcoded "
+    "'echo:live' literal to model= anywhere",
+    'model="echo:live"' not in _harness_code_only and "model = \"echo:live\"" not in _harness_code_only,
+)
+check_true(
+    "EchoResponder.respond() now reports the real ECHO_SYNTHESIS_MODEL constant, not an arbitrary string",
+    "model=ECHO_SYNTHESIS_MODEL" in _harness_src,
+)
+
+check_true("EchoDirectResponder class exists (the new, exact-model-identity Design B responder)",
+           hasattr(harness, "EchoDirectResponder"))
+check_raises(
+    "EchoDirectResponder: refuses construction without acknowledge_live_model_call=True",
+    lambda: harness.EchoDirectResponder(model="some-model"),
+    RuntimeError,
+)
+check_raises(
+    "EchoDirectResponder: refuses a truthy-but-not-True acknowledgment",
+    lambda: harness.EchoDirectResponder(model="some-model", acknowledge_live_model_call=1),
+    RuntimeError,
+)
+
+# Monkeypatch the real river_deliberation._ollama_query (no live network call
+# is ever made — this stub replaces it before EchoDirectResponder.respond()'s
+# own deferred import resolves it) to confirm the reported model identity is
+# exact and verbatim for several distinct model names, proving the fix rather
+# than assuming it from reading the source alone.
+import app.core.river_deliberation as _river_deliberation_mod  # noqa: E402
+
+_original_ollama_query = _river_deliberation_mod._ollama_query
+_captured_calls = []
+
+
+def _stub_ollama_query(model, prompt, **kwargs):
+    _captured_calls.append({"model": model, "prompt": prompt, "kwargs": kwargs})
+    return f"[stub] response from {model}: I choose option A: option one"
+
+
+_river_deliberation_mod._ollama_query = _stub_ollama_query
+try:
+    for _test_model_name in ("qwen2.5-coder:7b", "llama3.2:3b", "echo:latest"):
+        _direct_responder = harness.EchoDirectResponder(model=_test_model_name, acknowledge_live_model_call=True)
+        _output = _direct_responder.respond(
+            task_description="regression test task",
+            label_to_option_text={"A": "option one", "B": "option two"},
+            system_context=None,
+            candidate_visible=False,
+        )
+        check(
+            f"EchoDirectResponder({_test_model_name!r}): reported model is exact and verbatim, no approximation",
+            _output.model, _test_model_name,
+        )
+    check(
+        "EchoDirectResponder: the stubbed _ollama_query was actually called once per responder (3 total), "
+        "confirming the real call path was exercised, not bypassed",
+        len(_captured_calls), 3,
+    )
+    check(
+        "EchoDirectResponder: each stubbed call received the EXACT same model string as the constructor argument "
+        "(the reported identity cannot diverge from what was actually requested)",
+        [c["model"] for c in _captured_calls], ["qwen2.5-coder:7b", "llama3.2:3b", "echo:latest"],
+    )
+finally:
+    _river_deliberation_mod._ollama_query = _original_ollama_query
 
 # Built via concatenation, deliberately NOT as one literal string —
 # writing the literal substring directly in this check would make the

@@ -1,0 +1,48 @@
+{
+  "spec_id": "LEARN-P1-DESIGN",
+  "status": "FROZEN_PENDING_LIVE_PILOT",
+  "companion_document": "audits/echo_learning_experiment_spec.md",
+  "architecture_audit": "audits/echo_learning_architecture_audit.md",
+  "research_question": "Can Echo undergo a controlled behavioral change as a consequence of experience, retain that change beyond the immediate context that produced it, and generalize the learned behavior to novel situations?",
+  "learning_hierarchy": ["L0_in_context_adaptation", "L1_persistent_learning", "L2_unprompted_behavioral_persistence", "L3_generalization", "L4_interference_resistance", "L5_self_directed_learning"],
+  "primary_target": ["L1_persistent_learning", "L2_unprompted_behavioral_persistence", "L3_generalization"],
+  "explicitly_out_of_scope": ["L5_self_directed_learning"],
+  "task_family": {
+    "id": "trait_preference_micro_world",
+    "generator": "app/experiments/learning/world_gen.py",
+    "deterministic": true,
+    "screening": ["real_english_dictionary_collision", "forbidden_substring_list", "sibling_experiment_token_collision"],
+    "test_categories": ["seen", "recombined", "novel"]
+  },
+  "conditions": {
+    "A_context_only_baseline": {"implemented": true, "purpose": "establish L0"},
+    "B_session_boundary": {"implemented": true, "purpose": "test L1"},
+    "C_persistent_memory": {"implemented": true, "purpose": "test L1/L2 via real FAISS write+retrieve", "requires_real_wait_minutes": 30, "note": "uses the real, unmodified retrieve_memory_context() default exclude_recent_minutes=30.0 -- not shortened to improve result probability"},
+    "D_retrieval_blocked_ablation": {"implemented": true, "purpose": "isolate whether retrieval explains any Condition C persistence"},
+    "E_riverbrain_ablation_control": {"implemented": false, "status": "ARCHITECTURALLY_INAPPLICABLE", "reason": "RiverBrain's only causal lever requires multi-model council selection, never invoked by this design's single-model EchoDirectResponder path"},
+    "F_ordinary_model_control": {"implemented": true, "purpose": "mandatory control, same apparatus, llama3.2:3b"}
+  },
+  "measurement": {
+    "parser": "app.experiments.preference_provenance.choice_parser.cross_check_choice (reused read-only, not modified)",
+    "disagreement_handling": "DISAGREE_UNKNOWN_REVIEW, never forced to a label",
+    "task_specific_additions": ["detect_rule_contradiction", "detect_self_report_language", "detect_possible_fabricated_tokens"]
+  },
+  "confound_controls": ["position_randomization", "label_randomization", "token_familiarity_balance", "wording_paraphrase_variants", "context_persistence_recorded", "retrieval_leakage_recorded_verbatim", "prompt_leakage_check", "persona_metadata_only", "self_report_metadata_only", "confabulation_flagged_not_scored"],
+  "failure_taxonomy": ["F0_apparatus_failure", "F1_parser_measurement_failure", "F2_context_persistence_explanation", "F3_retrieval_memorization_explanation", "F4_ordinary_model_explanation", "F5_position_label_task_artifact", "F6_unsupported_self_explanation_confabulation", "F7_insufficient_evidence"],
+  "pregate_checklist_result": "PASS",
+  "pregate_regression_suite": "scripts/verify_learning_investigation_harness.py",
+  "pregate_regression_result": "58/58 passing at freeze time (grew from 51 after adding structural session-boundary/retrieval-ablation/Condition-E tests, plus a fix making the verify script self-sufficient for the KMP/OpenMP env guard rather than requiring the operator to set it manually)",
+  "environment_requirement": "KMP_DUPLICATE_LIB_OK=TRUE OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 TOKENIZERS_PARALLELISM=false must be set before importing this package in any standalone script (native FAISS/torch import guard, matches run.py's own top-of-file pattern)",
+  "frozen_hashes": {
+    "app/experiments/learning/world_gen.py": "5a7c8b3537e9b2ce51a1a9a7a1799752d246959f3e530d2349e54baaa2d69cdc",
+    "app/experiments/learning/prompts.py": "5f3b23c69d84a54c951b68f73d93fd819748b46141da25eb69cbe219bba31492",
+    "app/experiments/learning/scoring.py": "ff697be97c9321b99f894c5b6d55aee315b6af45b41ca2cb1685acf522325d4a",
+    "app/experiments/learning/harness.py": "2785c718cdbb91b39791c9c05bcd65089bcd3690b62fe03383c4715a7e5beef5",
+    "app/experiments/learning/schema.py": "ea16063151d4168efb659529a3f8bf1624175e74df715fc763ae4817c068abae",
+    "app/experiments/learning/store.py": "997f722b9554bfec3c5f2843992769b23310a515366219b8cdae2a72801a1a3b",
+    "app/experiments/learning/safety.py": "e41e60ba17c7ed11f85359ee3c83ec3dead0850c52e82f10b4fb7bfb873cc3f5",
+    "app/experiments/learning/state_instrumentation.py": "9d943a01e6a2fe811b5d9dd3de5e8f07eff5de41ca3058cdc60dd5dc29f9cdb6",
+    "scripts/verify_learning_investigation_harness.py": "a981431843ace91940a6ff433cc37ebdd9451982afc171f2bf80564e9ecd2d05"
+  },
+  "note_on_no_code_changes_after_pilot_begins": "Per mission Section 20, once the first valid pilot trial begins, no code changes are permitted in this package until the pilot is complete and analyzed. Any defect found mid-run is documented, not silently patched."
+}

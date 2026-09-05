@@ -1,0 +1,145 @@
+{
+  "artifact_type": "tier4_confirmatory_report",
+  "analysis_timestamp": "2026-09-04",
+  "protocol": {
+    "path": "audits/tier4_confirmatory_protocol.md",
+    "sha256": "82a4a68fdc1c4a2b1346cf7429e648cbcbc83895a0deeb21140115dfad0e3c77",
+    "frozen_before_task_authoring": true,
+    "frozen_before_any_confirmatory_execution": true
+  },
+  "source_artifacts": [
+    "audits/tier4_apparatus/stage1_results.jsonl",
+    "audits/tier4_apparatus/stage2_results.jsonl",
+    "audits/tier4_apparatus/tier4_stage1_task_suite.json",
+    "audits/tier4_apparatus/tier4_stage2_task_suite.json"
+  ],
+  "modifications_to_raw_artifacts": "none",
+  "reruns_or_retries": "none",
+  "sample_size": {"stage1": 42, "stage2": 42, "pooled": 84, "candidates_total": 336},
+  "raw_integrity": {
+    "stage1": {"records": 168, "duplicates": 0, "missing_pairs": 0, "model_pinning_pct": 100,
+               "arch_council_real_calls_incl_warmup": 5, "infrastructure_failures": 0,
+               "truncations": 0, "errors": 0,
+               "council_composition": ["echo:latest", "mlx:qwen3", "qwen2.5-coder:7b"],
+               "council_composition_variance": "none, 42/42 identical"},
+    "stage2": {"records": 168, "duplicates": 0, "missing_pairs": 0, "model_pinning_pct": 100,
+               "arch_council_real_calls_incl_warmup": 5, "infrastructure_failures": 0,
+               "truncations": 0, "errors": 0,
+               "council_composition": ["echo:latest", "mlx:qwen3", "qwen2.5-coder:7b"],
+               "council_composition_variance": "none, 42/42 identical"},
+    "stage1_stage2_task_overlap": 0
+  },
+  "arm_pass_rates": {
+    "BASE_1": {"stage1": [37,42,0.881], "stage2": [37,42,0.881], "pooled": [74,84,0.881], "pooled_wilson_95ci": [0.795,0.934]},
+    "BASE_N": {"stage1": [32,42,0.762], "stage2": [35,42,0.833], "pooled": [67,84,0.798], "pooled_wilson_95ci": [0.700,0.870]},
+    "ARCH_PIPELINE_ISOLATED": {"stage1": [27,42,0.643], "stage2": [27,42,0.643], "pooled": [54,84,0.643], "pooled_wilson_95ci": [0.536,0.737]},
+    "ARCH_COUNCIL": {"stage1": [30,42,0.714], "stage2": [27,42,0.643], "pooled": [57,84,0.679], "pooled_wilson_95ci": [0.573,0.769]}
+  },
+  "primary_comparison_BASE_N_vs_ARCH_COUNCIL": {
+    "stage1": {"n":42, "rate_a":0.7619, "rate_b":0.7143, "diff_pp":-4.76, "discordant_favor_a":8, "discordant_favor_b":6, "exact_mcnemar_p":0.7905},
+    "stage2": {"n":42, "rate_a":0.8333, "rate_b":0.6429, "diff_pp":-19.05, "discordant_favor_a":11, "discordant_favor_b":3, "exact_mcnemar_p":0.0574},
+    "pooled": {"n":84, "rate_a":0.7976, "rate_b":0.6786, "diff_pp":-11.9, "discordant_favor_a":19, "discordant_favor_b":9, "exact_mcnemar_p":0.0872},
+    "pilot_comparison": {"n":8, "rate_a":0.75, "rate_b":0.375, "diff_pp":-37.5, "discordant_favor_a":3, "discordant_favor_b":0, "exact_mcnemar_p":0.25},
+    "pre_registered_pooled_significance_threshold": 0.048,
+    "threshold_crossed": false,
+    "direction_replicated_across_all_3_independent_samples": true,
+    "magnitude_replicated": false
+  },
+  "secondary_comparisons_pooled": {
+    "BASE_1_vs_BASE_N": {"n":84, "rate_a":0.881, "rate_b":0.798, "diff_pp":-8.33, "discordant":[12,5], "exact_mcnemar_p":0.1435},
+    "BASE_1_vs_ARCH_PIPELINE_ISOLATED": {"n":84, "rate_a":0.881, "rate_b":0.643, "diff_pp":-23.81, "discordant":[24,4], "exact_mcnemar_p":0.0002, "significant": true},
+    "BASE_1_vs_ARCH_COUNCIL": {"n":84, "rate_a":0.881, "rate_b":0.679, "diff_pp":-20.24, "discordant":[23,6], "exact_mcnemar_p":0.0023, "significant": true}
+  },
+  "failure_mode_breakdown_pooled": {
+    "BASE_1": {"PASS":74, "TASK_LOGIC_FAILURE":10, "GENERATION_TRUNCATED":0, "INFRASTRUCTURE_FAILURE":0},
+    "BASE_N": {"PASS":67, "TASK_LOGIC_FAILURE":17, "GENERATION_TRUNCATED":0, "INFRASTRUCTURE_FAILURE":0},
+    "ARCH_PIPELINE_ISOLATED": {"PASS":54, "TASK_LOGIC_FAILURE":30, "GENERATION_TRUNCATED":0, "INFRASTRUCTURE_FAILURE":0},
+    "ARCH_COUNCIL": {"PASS":57, "TASK_LOGIC_FAILURE":27, "GENERATION_TRUNCATED":0, "INFRASTRUCTURE_FAILURE":0}
+  },
+  "mechanism_analysis_synthesis_destruction": {
+    "method": "re-scored every captured pre-synthesis attempt/councillor response (mechanism_calls, full text) against the real sandboxed ground truth, zero new model calls",
+    "BASE_N": {"n":84, "real_synthesis_pass_rate":0.798, "oracle_rate_any_component_passes":0.952,
+               "gap_lost_to_synthesis_pp":15.5, "failures_examined":17,
+               "failures_with_a_correct_component":13, "failures_with_correct_component_pct":76.5,
+               "all_components_correct_but_synthesis_wrong":3,
+               "synthesis_correct_despite_zero_correct_components":0,
+               "all_components_wrong_genuinely_hard":4},
+    "ARCH_COUNCIL": {"n":84, "real_synthesis_pass_rate":0.679, "oracle_rate_any_component_passes":0.964,
+               "gap_lost_to_synthesis_pp":28.6, "failures_examined":27,
+               "failures_with_a_correct_component":25, "failures_with_correct_component_pct":92.6,
+               "all_components_correct_but_synthesis_wrong":4,
+               "synthesis_correct_despite_zero_correct_components":1,
+               "all_components_wrong_genuinely_hard":3},
+    "illustrative_examples": [
+      {"task_id":"cs09","stage":1,"arm":"BASE_N",
+       "description":"all 3 same-model attempts (temp 0.55/0.7/0.85) independently produced a complete, correct ThreadSafeMultiCounter class; synthesis kept only the __main__ demo block and dropped the class definition entirely, failing with NameError"},
+      {"task_id":"bf06","stage":2,"arm":"ARCH_COUNCIL",
+       "description":"all 3 heterogeneous councillors (qwen2.5-coder:7b, mlx:qwen3, echo:latest) produced byte-for-byte identical correct code for find_missing(); synthesis fabricated an unprompted 'n = len(nums) - 1' not present in any input, breaking correct logic with zero real disagreement to reconcile"}
+    ]
+  },
+  "compute_budget": {
+    "arch_council_real_calls_per_candidate": 5,
+    "base_n_calls_per_candidate": 4,
+    "asymmetry_preserved_not_normalized": true,
+    "compute_normalized_side_probe_run": false,
+    "reasoning": "the oracle-vs-synthesis gap (15.5-28.6pp) is an order of magnitude larger than any plausible effect from one extra content-discarded call, and was established via re-scoring already-generated text with zero new model calls -- judged not to be where the explanatory power lies, so further real compute was not spent chasing it"
+  },
+  "h1_h4_verdicts": [
+    {"hypothesis":"H1", "statement":"architecture beats matched-budget baseline",
+     "comparison":"BASE_N_vs_ARCH_COUNCIL_pooled", "effect_size_pp":-11.9, "threshold_pp":25,
+     "threshold_crossed":false, "direction":"opposite of H1", "p":0.0872, "verdict":"NOT_SUPPORTED"},
+    {"hypothesis":"H2", "statement":"model ceiling explains underperformance",
+     "evidence":"oracle rate 95-96% vs real synthesis 68-80%",
+     "verdict":"REFRAMED", "note":"the model's own ceiling is not the binding constraint; the synthesis step's reliability is -- a more specific mechanistic claim than H2's original framing"},
+    {"hypothesis":"H3", "statement":"measurement limitation",
+     "evidence":"0 infrastructure failures, 0 truncations across 336 candidates",
+     "verdict":"NOT_SUPPORTED"},
+    {"hypothesis":"H4", "statement":"apparent Council advantage is compute/diversity not orchestration",
+     "evidence":"BASE_N wins pooled by 11.9pp (non-significant)",
+     "verdict":"SUPPORTED_PER_PREREGISTERED_RULE", "note":"refined: heterogeneous-model synthesis is measurably harder (loses 28.6pp) than same-model synthesis (loses 15.5pp), a specific mechanism rather than a generic diversity/compute story"},
+    {"hypothesis":"unplanned_secondary_self_edit_framing", "statement":"self-edit framing hurts general coding performance vs bare prompting",
+     "comparison":"BASE_1_vs_ARCH_PIPELINE_ISOLATED_pooled", "effect_size_pp":-23.81, "p":0.0002,
+     "verdict":"SUPPORTED_AND_STATISTICALLY_DECISIVE"}
+  ],
+  "falsified_hypotheses": [],
+  "what_this_establishes": [
+    "the Tier-3 pilot's 37.5pp gap was substantially inflated by small-sample noise; the confirmatory pooled estimate is 11.9pp and not statistically significant",
+    "the direction of the pilot finding replicated across 3 independent samples; the magnitude did not",
+    "the underlying model pool's raw generative capability is high (95-96% oracle) and is not the binding constraint on any arm",
+    "synthesis/combination is the primary, quantified bottleneck, worse for heterogeneous Council synthesis (28.6pp lost) than same-model BASE_N synthesis (15.5pp lost)",
+    "Echo's self-edit generation framing measurably and significantly hurts general coding performance relative to bare prompting (p=0.0002)",
+    "the evaluator held up cleanly at 10x pilot scale with zero infrastructure failures or truncations"
+  ],
+  "what_this_does_not_establish": [
+    "that Council orchestration is never useful on any task class or council composition",
+    "a full resolution of the model-diversity-vs-orchestration confound (H4's original boundary) -- the mechanism is located, not fully attributed to diversity as a principle",
+    "that the synthesis defect is unfixable",
+    "anything about Echo's literal production self-edit call path or multi-turn/non-coding performance",
+    "an isolated measurement of the temperature-vs-synthesis-defect confound for BASE_1 vs BASE_N/ARCH_COUNCIL -- named but not separated by a dedicated sub-experiment"
+  ],
+  "recommendation": {
+    "verdict": "REFACTOR",
+    "rationale": "the oracle analysis proves the raw ingredients for a much better result (95-96% capability) already exist inside every real execution; the specific combination/synthesis mechanism is where that capability is measurably lost, worse for the more architecturally elaborate arm",
+    "next_steps": [
+      "a targeted synthesis-prompt or synthesis-procedure fix aimed at code-completeness (e.g. a post-synthesis completeness/structure check)",
+      "re-test the corrected synthesis mechanism against a fresh, disjoint, third task suite before declaring the fix successful",
+      "resolve the temperature confound directly via a targeted sub-experiment (BASE_N at temperature 0.0)",
+      "separately decide whether to address ARCH_PIPELINE_ISOLATED's self-edit-framing penalty (p=0.0002, strong enough to act on now)"
+    ],
+    "architectural_change_recommended_on_disappointment_alone": false
+  },
+  "statistical_methodology": {
+    "paired_test": "exact two-sided McNemar test via direct binomial coefficient summation",
+    "verified_against_known_values": true,
+    "confidence_interval_method": "Wilson score interval",
+    "reused_from_tier3_scoring_analysis": true
+  },
+  "evidence_preservation": {
+    "raw_artifacts_modified": false,
+    "new_model_calls_for_mechanism_analysis": 0,
+    "new_artifacts_created": [
+      "audits/tier4_confirmatory_report.md",
+      "audits/tier4_confirmatory_report.json"
+    ]
+  }
+}

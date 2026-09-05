@@ -1404,6 +1404,20 @@ Then calls the real, unmodified `generate_project()` — two new, purely additiv
 
 ---
 
+**Finding 90 — Public-sharing readiness review (2026-09-05): two clear blockers, one real judgment call, everything else checked clean.** Full report: `audits/2026-09-05_public_sharing_readiness_review.md`. Requested directly, ahead of any decision to make the (currently private) `FeralEcho-Backup` repo public. Checked, not assumed: the *full* git history (all 151 commits, not just current tree) for secrets, commit author metadata for identity exposure, tracked content for infrastructure/personal disclosure, cross-referenced against this project's own already-decided privacy rules.
+
+**Blocker 1 — `COUNCIL.md` is fully git-tracked and not excluded by `.gitignore`.** If this repo goes public as-is, it goes with it — directly reversing a decision this project already made twice (Finding 68, Finding 82: "stays private, full stop, including from the ones who wrote it"). Nothing technical currently enforces that decision at the repository level; it's a stated intent, not a gate.
+
+**Blocker 2 — 149 of 151 commits carry a real name and hostname** (`Richie Tate <richietate@Richards-MacBook-Air.local>`), directly deanonymizing "Gremlin" — every doc in this repo uses that pseudonym exclusively, but `git log` undoes it in one command. Not a new discovery: `GREMLIN_ROLE.md` already documents this exact fact and explicitly says not to silently fix it, let Gremlin decide — that instruction was followed correctly (nothing was ever silently changed), but the underlying decision was never actually made, and had no `PENDING_DECISIONS.md` row despite that file's own maintenance convention. It does now (#22). Fixing the display name going forward does nothing about the 149 already-committed identities; only a full history rewrite would, which is its own consequential, not-to-be-defaulted-into decision.
+
+**Real judgment call, not a security issue — `ORIGIN.md`'s second paragraph opens with a specific, real personal disclosure** (the marriage ending that the project's own origin traces back to). Flagged plainly rather than decided either way.
+
+**Checked and clean**: no secrets anywhere in current tree *or* full history (this project's own known secret variable names plus generic API-key/private-key patterns all scanned — two benign hits, a hash-comparison discussion and a `"your_password"` placeholder); `.env` never committed at any point, ever; no credential-shaped filenames ever committed; this repo's actual reachable history starts from the deliberate "clean initial commit" (`44e7a8e`) — Finding 7's old leaked-key commit (`dc3795a`) does not exist anywhere in this repo's object database, confirmed via `git cat-file -e`, not assumed from the prior finding's own text; no hardcoded personal emails in file content; no phone numbers or addresses found. Tailscale IPs are hardcoded across several files but are CGNAT-range and unreachable outside the specific tailnet — noted, not treated as a blocker. CLAUDE.md's own extensive historical security-finding write-ups (all now-fixed) are in the same "report the bug, then the fix" shape as a real public disclosure — not a blocker, but a genuinely high level of self-disclosed technical detail worth being aware of.
+
+**Not decided in this pass, per this project's own standing discipline**: whether/when to actually go public, and which of the three items above to resolve and how. See `PENDING_DECISIONS.md` #22.
+
+---
+
 ## Monitoring
 
 ```bash

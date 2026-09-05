@@ -20,6 +20,7 @@ import hashlib
 import json
 import os
 import random
+import shutil
 import socket
 import sys
 import tempfile
@@ -108,14 +109,62 @@ def _noop_log_council_deliberation(*a, **k):
     _side_effects_detected.append({"fn": "_log_council_deliberation", "args_preview": str(a)[:80]})
 
 
+_isolation_metadata = {}  # set by install_isolation() -- real_path/scratch_path,
+                          # kept separate from _side_effects_detected so a real
+                          # redirect never gets miscounted as a detected breach
+
+
 def install_isolation():
     """Patch every known production-write call site this pilot's own call
     paths could reach. Nothing on disk is edited -- these are in-process
-    module-attribute patches, scoped to this script's own process only."""
+    module-attribute patches, scoped to this script's own process only.
+
+    Tier-8 forensic finding (2026-09-05, audits/tier8_experimental_isolation
+    _forensic.md): the proxy below blocks explicit .learn()/.save() calls
+    reached THROUGH get_river_brain(), but it does NOT stop RiverBrain's own
+    background _writer_thread -- that thread is started unconditionally
+    inside RiverBrain.__init__(), which runs (via RiverBrain.load()) the
+    moment get_river_brain() is first called, i.e. BEFORE this function's
+    proxy patch can exist to block anything. That thread independently
+    calls _do_save() every ~60s for the life of the process, writing
+    directly to the real, shared memory/river_brain.pkl -- confirmed to
+    have fired ~229 times, unblocked and invisible to
+    _side_effects_detected, during the real Tier-4 stage1/stage2 runs
+    alone. Patching AFTER construction (as this function used to) cannot
+    close this, because the act of obtaining a real object to wrap is
+    itself what starts the thread.
+
+    Fix (Architecture A from the Tier-8 report): redirect the module-level
+    RIVER_BRAIN_PATH constant to an isolated scratch copy of the real file
+    BEFORE the first get_river_brain() call, not after. RIVER_BRAIN_PATH is
+    referenced as a bare global inside RiverBrain.load()/_do_save() (never
+    captured into a local/default-argument anywhere -- confirmed by direct
+    grep before this fix was written), so every subsequent read AND every
+    subsequent write -- including the background thread's, which this
+    proxy can never otherwise reach -- resolves against the redirected
+    path for the rest of this process's life. The real production file is
+    never opened for writing by this process at any point. Read-fidelity
+    is unaffected: the scratch copy is byte-identical to the real file at
+    the moment of copy, so the proxy's read-through methods (score_model,
+    is_well_observed, model_task_stats, ...) still reflect real historical
+    production state exactly as before this fix.
+    """
     from app.core import echo_model_orchestrator as emo
     from app.core import river_deliberation as rd
 
-    real_rb = emo.get_river_brain()
+    real_path = emo.RIVER_BRAIN_PATH
+    scratch_dir = tempfile.mkdtemp(prefix="river_brain_isolated_")
+    scratch_path = os.path.join(scratch_dir, os.path.basename(real_path))
+    if os.path.exists(real_path):
+        shutil.copy2(real_path, scratch_path)
+    emo.RIVER_BRAIN_PATH = scratch_path
+    _isolation_metadata["real_river_brain_path"] = real_path
+    _isolation_metadata["scratch_river_brain_path"] = scratch_path
+    print(f"[ISOLATION] RiverBrain state redirected: real={real_path} -> "
+          f"scratch={scratch_path} (production file will not be written by "
+          f"this process, including by its background writer thread)")
+
+    real_rb = emo.get_river_brain()  # now loads from AND persists to scratch_path only
     proxy = _ReadOnlyRiverBrainProxy(real_rb)
 
     emo.get_river_brain = lambda: proxy

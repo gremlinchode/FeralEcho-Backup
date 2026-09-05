@@ -565,6 +565,28 @@ logging.basicConfig(level=logging.DEBUG)
 # --- Prompt Constants --------
 # -----------------------------
 CODE_OUTPUT_RULES = (
+    # DO NOT reuse this prompt block (or generate_code_from_plan(), which
+    # is the only real caller) for general-purpose/conversational coding
+    # tasks. Confirmed empirically, not just suspected: the Tier-4
+    # confirmatory experiment (n=84, hash-frozen protocol, audits/
+    # tier4_confirmatory_report.md) isolated this exact framing —
+    # CODE_OUTPUT_RULES plus the live self_edit_generated.py file content
+    # prepended to an otherwise-ordinary coding prompt — and found it
+    # significantly HURTS performance relative to bare prompting
+    # (p=0.0002, -23.81 percentage points, pooled). The likely mechanism,
+    # per rule 8/9 below: this block tells the model "you ARE
+    # self_edit_generated.py" and "only import from the FeralEcho module
+    # inventory... if a name is not in the inventory it does not exist" —
+    # both correct and necessary for this function's real job (replacing
+    # that one file), both actively confusing/constraining for a model
+    # asked to solve an unrelated problem (e.g. it may avoid a needed
+    # stdlib import it doesn't see explicitly enumerated). Checked
+    # directly, not assumed: as of this comment, generate_code_from_plan()
+    # has exactly two real callers, self_edit_manager.py's own pipeline
+    # and wolf_friction_bridge.py's dry-run simulator — both legitimate,
+    # intended uses where this framing is correct. This comment exists so
+    # a future feature needing "generate some code" does not reach for
+    # this function by convenience and inherit a demonstrated regression.
     "STRICT OUTPUT RULES — violations cause system failure:\n"
     "1. Your response must contain ONLY valid Python code. Nothing else.\n"
     "2. The very first character of your response must be one of: # ( import def class \n"
@@ -1759,6 +1781,12 @@ def generate_code_from_plan(plan: str, temperature: float | None = None) -> tupl
     v2.2: returns (code, model_name) tuple so sandbox outcomes
     can be fed back into river with the correct model identity.
     Previously model name was lost after echo_query returned.
+
+    SELF-EDIT ONLY — see CODE_OUTPUT_RULES' own comment above for the
+    Tier-4-confirmed evidence that this function's framing measurably
+    hurts general/conversational coding tasks. Do not call this for
+    anything other than generating a real self_edit_generated.py
+    candidate or simulating one (wolf_friction_bridge.py's dry run).
     """
     try:
         # Include current file contents so the model knows what it is editing

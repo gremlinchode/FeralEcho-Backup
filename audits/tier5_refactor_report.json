@@ -1,0 +1,98 @@
+{
+  "artifact_type": "tier5_refactor_report",
+  "analysis_timestamp": "2026-09-04",
+  "mission": "REFACTOR (not KEEP, not RETIRE) the synthesis pipeline based on Tier-4 confirmatory evidence",
+  "source_evidence": [
+    "audits/tier4_confirmatory_report.md",
+    "audits/tier4_confirmatory_report.json"
+  ],
+  "tier4_artifacts_modified": false,
+  "files_changed": [
+    "app/core/river_deliberation.py",
+    "app/core/code_verification.py",
+    "app/core/self_edit_manager.py"
+  ],
+  "new_files": [
+    "scripts/verify_synthesis_refactor.py",
+    "scripts/verify_synthesis_refactor_live.py",
+    "scripts/verify_synthesis_refactor_control.py",
+    "audits/tier5_refactor_report.md",
+    "audits/tier5_refactor_report.json"
+  ],
+  "root_causes": [
+    {"cause": "generic synthesis prompt licenses rewriting, applied uniformly to code", "evidence": "SYNTHESIS_SYSTEM_TEMPLATE wording, unchanged for non-coding, replaced for coding"},
+    {"cause": "no agreement detection before invoking synthesis", "evidence": "bf06: byte-identical candidates still went through a real LLM rewrite that fabricated a bug"},
+    {"cause": "no post-synthesis structural completeness check", "evidence": "cs09: dropped class definition is syntactically valid, invisible to ast.parse alone"},
+    {"cause": "self-edit framing has 2 real call sites, both legitimate, not currently leaking", "evidence": "grep confirmed CODE_OUTPUT_RULES used only in self_edit_manager.py; risk is future misuse, not a live bug"}
+  ],
+  "changes": {
+    "river_deliberation.py": [
+      "SYNTHESIS_SYSTEM_TEMPLATE_CODING (new, coding-only, preservation-oriented)",
+      "detect_full_agreement() (pure, AST-based structural equality check)",
+      "find_missing_agreed_definitions() (pure, post-synthesis completeness check)",
+      "select_best_fallback_candidate() (prefers syntactically valid candidates over longest)",
+      "structured logging to memory/synthesis_integrity_log.jsonl (hash+preview, not full text)"
+    ],
+    "code_verification.py": [
+      "_FENCE_RE gained re.IGNORECASE (real pre-existing bug found during live validation, also benefits verify_response_code())"
+    ],
+    "self_edit_manager.py": [
+      "guard comments on CODE_OUTPUT_RULES and generate_code_from_plan() citing Tier-4 evidence, zero behavior change"
+    ],
+    "blast_radius": "gated to task_type == 'coding' only; non-coding synthesis byte-for-byte unaffected, confirmed by regression test"
+  },
+  "tests": {
+    "script": "scripts/verify_synthesis_refactor.py",
+    "total_checks": 20,
+    "passing": 20,
+    "mission_tests_covered": [1, 2, 3, 4, 5, 6, 7],
+    "additional_tests_found_during_pass": [
+      "Test1_prose_wrapped_complete_synthesis_not_falsely_flagged",
+      "Test8_capitalized_python_fence"
+    ],
+    "historical_failure_replay": {
+      "bf06": "detect_full_agreement() fires, zero synthesis calls made, correct code returned",
+      "cs09": "find_missing_agreed_definitions() fires, falls back to a candidate containing the required class"
+    },
+    "honest_scope_limits": {
+      "test3": "general unsupported-operation detection only proven for the full-agreement case, not internal-logic mutation within an agreed structure",
+      "test5": "syntactic-validity preference only, not execution/test-based preference (no general oracle exists for arbitrary conversational coding questions)"
+    }
+  },
+  "live_validation": {
+    "task_count": 5,
+    "tasks_verified_correct_before_use": true,
+    "runs": [
+      {"run": 1, "description": "fix applied, bug present", "pass_rate": "5/5", "completeness_fallback_rate": "5/5", "finding": "raw-text ast.parse bug: every synthesis with leading prose looked empty"},
+      {"run": 2, "description": "bug 1 fixed", "pass_rate": "5/5", "completeness_fallback_rate": "1/5", "finding": "case-sensitive fence regex bug: capitalized 'Python' fence never matched"},
+      {"run": 3, "description": "both bugs fixed", "pass_rate": "5/5", "completeness_fallback_rate": "0/5", "finding": "clean, zero false positives in this sample"},
+      {"run": "control", "description": "mechanisms patched to no-op (pre-refactor behavior)", "pass_rate": "5/5", "note": "sample too small/easy to show a pass-rate delta; validation's real value was catching the 2 bugs above, not measuring effect size"}
+    ],
+    "self_edit_live_regression": "not run (source-level checks only); deliberate scope decision given self-edit's real production side effects"
+  },
+  "results_summary": {
+    "bf06_class_failures": "eliminated by construction (no synthesis call occurs on full agreement)",
+    "cs09_class_failures": "caught and corrected via fallback, not prevented at generation",
+    "failure_modes_moved": "none identified",
+    "bugs_found_and_fixed_during_this_pass": 2
+  },
+  "remaining_risks": [
+    "no general semantic/operation-level diff -- only definition-name-level completeness is checked",
+    "no true execution-based evidence ranking for arbitrary conversational coding questions (no external oracle exists outside experimental harnesses)",
+    "logging deliberately stores hash+preview not full text, which slowed real-bug diagnosis and required targeted full-capture diagnostics",
+    "small validation sample (5 tasks, 1 session, 1 council composition, 1 pinned model)",
+    "fallback selection has no oracle either -- can be wrong in ways this refactor cannot detect",
+    "self-edit's own live generation path not re-exercised end-to-end in this pass"
+  ],
+  "next_experiment": {
+    "design": "fresh, disjoint, hash-frozen 20-30 task suite, run twice under identical real conditions (refactor active vs. mechanisms patched to no-op), paired McNemar comparison",
+    "primary_endpoint": "paired pass-rate comparison on identical tasks across the two conditions",
+    "secondary_endpoint": "real full_agreement_shortcut / completeness_fallback trigger rates at a larger, more diverse scale",
+    "reuses": "scripts/verify_synthesis_refactor_control.py's existing no-op patching pattern"
+  },
+  "evidence_preservation": {
+    "tier4_artifacts_modified": false,
+    "new_live_data_preserved": "memory/synthesis_integrity_log.jsonl",
+    "verification_scripts_kept_as_reusable_artifacts": true
+  }
+}

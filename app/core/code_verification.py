@@ -39,7 +39,19 @@ import tempfile
 
 logger = logging.getLogger(__name__)
 
-_FENCE_RE = re.compile(r"```(?:python)?\s*\n(.*?)```", re.DOTALL)
+# re.IGNORECASE added 2026-09-04 (Tier-4-confirmatory refactor, found
+# during live validation of the synthesis-preservation fix, not
+# hypothesized): a real echo:latest response used a "```Python" fence
+# (capital P). Python's re module is case-sensitive by default, so
+# (?:python)? never matched, the fence was found nowhere at all, and
+# extract_python_blocks() silently returned zero blocks for a response
+# that had real code in it -- confirmed directly via a full-response
+# diagnostic capture, not inferred. This is a pre-existing gap in an
+# already-shipped path (verify_response_code(), Finding 43/44's
+# conversational code-verification caveat) that predates this refactor;
+# fixing it here benefits that path too, not just the new synthesis
+# checks that exposed it.
+_FENCE_RE = re.compile(r"```(?:python)?\s*\n(.*?)```", re.DOTALL | re.IGNORECASE)
 
 # A bare print(...) call — matched only against the code portion of a
 # line (see find_claimed_example, which splits off any trailing comment

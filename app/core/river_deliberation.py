@@ -144,6 +144,23 @@ _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 _COUNCIL_DELIBERATION_LOG = os.path.join(_PROJECT_ROOT, "memory", "council_deliberations.jsonl")
 _council_log_lock = threading.Lock()
 
+# ── Synthesis integrity log (2026-09-04, Tier-4 confirmatory refactor) ──
+# Separate from _COUNCIL_DELIBERATION_LOG (which records the deliberation
+# as a whole) -- this one is scoped narrowly to the specific question the
+# Tier-4 confirmatory experiment raised: did synthesis preserve, discard,
+# or fabricate content relative to what the candidates actually said. See
+# audits/tier5_refactor_report.md for the full evidence this responds to
+# (cs09: a complete class definition dropped entirely; bf06: three
+# byte-identical candidates unanimously agreed, synthesis still introduced
+# an unsupported "- 1"). Logs a bounded preview + sha1 hash per candidate,
+# not full raw text by default -- this project has already been burned
+# once by unbounded raw-text logging (CLAUDE.md Finding 51/58's log-
+# retention work), and a hash is sufficient to prove/disprove "did the
+# output match a candidate" without repeating that mistake.
+_SYNTHESIS_INTEGRITY_LOG = os.path.join(_PROJECT_ROOT, "memory", "synthesis_integrity_log.jsonl")
+_synthesis_integrity_log_lock = threading.Lock()
+_SYNTHESIS_INTEGRITY_PREVIEW_CHARS = 200
+
 # ── Global Workspace world-surprise cache (Emergence roadmap Phase 4b) ──
 # river_deliberation.py does not import echo_core.py itself (avoids a
 # circular dependency risk on a file this project already treats with
@@ -326,6 +343,53 @@ Your role:
   between two equally-weighted opinions.
 
 Respond now to the original question."""
+
+# ── Coding-specific synthesis template (2026-09-04, Tier-4 confirmatory
+# refactor) ──────────────────────────────────────────────────────────────
+# SYNTHESIS_SYSTEM_TEMPLATE above was written for, and is left completely
+# unchanged for, personal/creative/reasoning/general synthesis -- "stay
+# true to your own voice," "integrate the best insights," "don't resolve
+# tension artificially" are the right instructions for those. They are
+# the wrong instructions for code: "integrate in your own voice" reads,
+# to a real model, as license to paraphrase and rewrite -- and the Tier-4
+# confirmatory experiment (n=84, hash-frozen protocol, audits/
+# tier4_confirmatory_report.md) caught this in production terms twice,
+# concretely: a complete, correct class definition silently dropped
+# (task cs09), and an unsupported "- 1" fabricated into code that all
+# three councillors had produced identically (task bf06) -- neither a
+# case of picking the wrong option among genuine disagreement, both
+# cases of the "own voice" framing licensing invention where none was
+# needed. This template says the opposite: preserve verbatim where
+# candidates agree, prefer reuse over paraphrase, treat any code not
+# traceable to a candidate as suspect. Selected only when
+# task_type == "coding" (see deliberate_and_learn() below) -- every
+# other task type is unaffected, byte for byte.
+SYNTHESIS_SYSTEM_TEMPLATE_CODING = """\
+You are Echo, producing the final code for a coding task. Multiple
+independent attempts at solving it are shown below.
+{opinions}
+
+Your role is preservation, not authorship:
+- If the attempts agree (even loosely -- same approach, same structure),
+  preserve their shared implementation as exactly as you can. Do not
+  paraphrase or rewrite code that is already correct and agreed upon.
+- Do not invent, add, or change any operator, constant, condition, or
+  line of logic that does not appear in at least one of the attempts
+  below. If you cannot point to which attempt a piece of code came from,
+  do not include it.
+- Preserve every function and class definition that appears in the
+  attempts. Do not return only a usage example or demonstration and omit
+  the actual implementation it depends on.
+- If the attempts genuinely disagree on how to solve the problem, pick
+  the specific attempt whose approach you judge most likely correct and
+  reuse it as closely as possible -- do not blend incompatible
+  approaches into a new one none of the attempts actually contain.
+- If one attempt looks clearly the most complete and correct, prefer
+  returning it with minimal changes over constructing something new.
+- Output only the final code, importable/runnable on its own, with no
+  narration about what you changed or why.
+
+Respond now with the final code."""
 
 
 # ── Low-level Ollama call ─────────────────────────────────────
@@ -718,6 +782,232 @@ def _format_opinions(
     return "\n\n".join(lines)
 
 
+# ── Synthesis integrity mechanisms (2026-09-04, Tier-4 confirmatory
+# refactor) ──────────────────────────────────────────────────────────────
+# Every function in this section is pure (no I/O, no model calls, no
+# global state) and independently testable -- exactly the "explicit
+# interfaces, testable components" the refactor mission asked for. All
+# are scoped to task_type == "coding" at the call site in
+# deliberate_and_learn(); none of them run, or can affect, any other
+# task type's synthesis.
+#
+# What these do NOT do, stated plainly: they do not execute candidate
+# code against any test suite. Ordinary conversational coding questions
+# have no external ground truth to run against (unlike the Tier-4
+# experiment's own frozen task suites, which do) -- app.core.
+# code_verification.py's real sandbox (verify_in_sandbox) already exists
+# for the one case where a self-consistency check is possible (a
+# response with its own claimed print()-output example), applied
+# AFTER synthesis, downstream, unchanged by this refactor. What these
+# functions add is upstream and narrower: does the synthesized output
+# structurally preserve what the candidates already, verifiably agreed
+# on, before any question of runtime correctness is even reachable.
+
+def _extract_candidate_code(text: str) -> "str | None":
+    """Best-effort extraction of the code portion of a raw model response.
+    Tries the last fenced ```...``` block first (mirrors self_edit_manager
+    .py's own "last block wins" convention for responses that reason
+    first and settle on an answer last -- the same real shape observed
+    in this project's own model outputs); falls back to the whole
+    response if no fence is present, since a councillor asked a direct
+    coding question routinely just returns bare code with no markdown at
+    all (confirmed directly in the Tier-4 raw data, e.g. task bf06's
+    real councillor responses). Returns None only if the input is empty
+    or an error sentinel -- never raises."""
+    if not text or "[ERROR]" in text or "[DEGRADED]" in text:
+        return None
+    try:
+        from app.core.code_verification import extract_python_blocks
+        blocks = extract_python_blocks(text)
+    except Exception:
+        blocks = []
+    if blocks:
+        return blocks[-1].strip()
+    return text.strip()
+
+
+def _ast_normalize(code: str) -> "str | None":
+    """Parses `code` and returns a whitespace/comment/quote-style
+    -independent structural fingerprint (ast.dump of the parsed tree), or
+    None if it does not parse. Two candidates producing this same
+    fingerprint are the same program, not merely similar-looking text --
+    a stronger and more honest equality check than a raw string
+    comparison, which would treat trivially-reformatted-but-identical
+    code as a disagreement."""
+    try:
+        import ast as _ast
+        return _ast.dump(_ast.parse(code))
+    except Exception:
+        return None
+
+
+def detect_full_agreement(valid_opinions: dict) -> "str | None":
+    """Returns the shared code text if every opinion's extracted code is
+    structurally identical (same AST, see _ast_normalize) and at least
+    two opinions are present, else None. This is the direct fix for the
+    Tier-4 bf06 failure mode: three councillors produced byte-identical
+    correct code, and the real synthesis call -- invoked unconditionally,
+    with no agreement check of any kind -- still fabricated an
+    unsupported "- 1" that broke it. When every candidate already agrees,
+    there is nothing for a synthesis model to usefully contribute, and
+    every real synthesis call carries a nonzero risk of introducing
+    exactly this kind of unforced error -- so the correct number of
+    synthesis calls in a case of genuine, verified unanimity is zero, not
+    one. Requires >=2 opinions (a single opinion needing "agreement" with
+    itself is a different, already-handled case -- see the solo-Echo-
+    council path in deliberate_and_learn()). Pure; never raises."""
+    if len(valid_opinions) < 2:
+        return None
+    codes = []
+    for response in valid_opinions.values():
+        extracted = _extract_candidate_code(response)
+        if extracted is None:
+            return None
+        codes.append(extracted)
+    fingerprints = [_ast_normalize(c) for c in codes]
+    if any(f is None for f in fingerprints):
+        return None  # at least one candidate doesn't even parse -- not agreement
+    if len(set(fingerprints)) == 1:
+        # All structurally identical -- return the first candidate's own
+        # text verbatim (not a re-synthesized copy of it).
+        return codes[0]
+    return None
+
+
+def _extract_top_level_names(code: str) -> set:
+    """Returns the set of top-level function/class names defined in
+    `code`, or an empty set if it doesn't parse. Used to detect the
+    specific, general-purpose (no external oracle needed) information-
+    loss signal the Tier-4 cs09 failure demonstrated: every candidate
+    independently defined the same class; the real synthesis call kept
+    only a __main__ demo block referencing it and dropped the definition
+    itself, failing with NameError. A definition every candidate agreed
+    on, missing from the synthesis output, is real, checkable evidence
+    of loss -- independent of whether the missing code would have
+    actually been correct."""
+    try:
+        import ast as _ast
+        tree = _ast.parse(code)
+    except Exception:
+        return set()
+    names = set()
+    for node in tree.body:
+        if isinstance(node, (_ast.FunctionDef, _ast.AsyncFunctionDef, _ast.ClassDef)):
+            names.add(node.name)
+    return names
+
+
+def find_missing_agreed_definitions(valid_opinions: dict, synthesis_code: str) -> set:
+    """Returns the set of top-level def/class names that appear in EVERY
+    opinion that itself parses successfully, but are absent from
+    `synthesis_code`'s own top-level definitions. An empty result means
+    either no such universally-agreed name exists, or synthesis
+    preserved everything it should have -- both are fine outcomes and
+    are not distinguished here (the caller only needs to know whether to
+    fall back, not why an empty set occurred). Pure; never raises."""
+    per_opinion_names = []
+    for response in valid_opinions.values():
+        extracted = _extract_candidate_code(response)
+        if extracted is None:
+            continue
+        names = _extract_top_level_names(extracted)
+        if names:  # only opinions that parse AND define something count
+            per_opinion_names.append(names)
+    if not per_opinion_names:
+        return set()
+    agreed = set.intersection(*per_opinion_names)
+    if not agreed:
+        return set()
+    # BUG FOUND AND FIXED DURING LIVE VALIDATION (2026-09-04), recorded
+    # here rather than silently corrected: this originally called
+    # _extract_top_level_names(synthesis_code) directly on the RAW
+    # synthesis text. A real synthesis response routinely opens with
+    # prose before its code fence ("Here's the final code:\n\n```..."),
+    # which ast.parse() rejects outright -- _extract_top_level_names
+    # fails closed to an empty set on any parse failure, which made
+    # EVERY agreed name look "missing" regardless of whether the
+    # synthesis's own code was actually fine. Confirmed live: 5/5
+    # validation tasks triggered this path, and a full-capture diagnostic
+    # call showed the real synthesis output (task val01) correctly
+    # contained the required function inside a bare ``` fence -- the
+    # check was reading the prose in front of it, not the code. Fixed by
+    # extracting the synthesis's own code the same way every candidate's
+    # code is already extracted above, symmetric on both sides of the
+    # comparison as it always should have been.
+    extracted_synthesis = _extract_candidate_code(synthesis_code)
+    synthesis_names = _extract_top_level_names(extracted_synthesis) if extracted_synthesis else set()
+    return agreed - synthesis_names
+
+
+def select_best_fallback_candidate(valid_opinions: dict) -> str:
+    """Chooses which individual candidate to return when synthesis is
+    rejected (empty/error, or a detected completeness failure). Prefers
+    a candidate whose extracted code actually parses over one that
+    doesn't, breaking ties by length (a longer, still-valid candidate is
+    more likely to be the complete implementation rather than a partial
+    one) -- a small, deliberate improvement over the pre-existing
+    "longest raw response wins" fallback used elsewhere in this function
+    for the empty/errored-synthesis case, which has no way to prefer a
+    working candidate over a longer broken one. Never raises; always
+    returns some value from a non-empty input (falls back to raw
+    max-length text if literally nothing parses)."""
+    parsing = []
+    for response in valid_opinions.values():
+        extracted = _extract_candidate_code(response)
+        if extracted is not None and _ast_normalize(extracted) is not None:
+            parsing.append(response)
+    pool = parsing if parsing else list(valid_opinions.values())
+    return max(pool, key=len)
+
+
+def _sha1_preview(text: str) -> dict:
+    import hashlib
+    return {
+        "sha1": hashlib.sha1((text or "").encode("utf-8", errors="replace")).hexdigest(),
+        "preview": (text or "")[:_SYNTHESIS_INTEGRITY_PREVIEW_CHARS],
+        "length": len(text or ""),
+    }
+
+
+def _log_synthesis_integrity(
+    task_type: str, trace_id: "str | None", valid_opinions: dict,
+    selection_method: str, final_response: str, missing_names: "set | None" = None,
+    diagnostic: "dict | None" = None,
+) -> None:
+    """Best-effort, lock-guarded append to _SYNTHESIS_INTEGRITY_LOG. Never
+    raises, never blocks the real synthesis decision it's observing --
+    same "instrumentation never blocks the computation it's attached to"
+    convention as every other logger in this codebase (e.g.
+    _log_council_deliberation below). selection_method is one of:
+    "full_agreement_shortcut", "synthesis_accepted",
+    "completeness_fallback", "empty_or_error_fallback" -- the pre-existing
+    empty-council/all-errored/solo-echo early returns are intentionally
+    NOT logged here, matching _log_council_deliberation's own existing
+    scope boundary (see deliberate_and_learn's docstring)."""
+    try:
+        record = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "trace_id": trace_id,
+            "task_type": task_type,
+            "n_valid_opinions": len(valid_opinions),
+            "candidates": [
+                {"model": model, **_sha1_preview(response)}
+                for model, response in valid_opinions.items()
+            ],
+            "selection_method": selection_method,
+            "missing_agreed_definitions": sorted(missing_names) if missing_names else [],
+            "final_response": _sha1_preview(final_response),
+        }
+        if diagnostic:
+            record["diagnostic"] = diagnostic
+        with _synthesis_integrity_log_lock:
+            os.makedirs(os.path.dirname(_SYNTHESIS_INTEGRITY_LOG), exist_ok=True)
+            with open(_SYNTHESIS_INTEGRITY_LOG, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record) + "\n")
+    except Exception as e:
+        logging.debug(f"[SYNTHESIS-INTEGRITY] logging failed: {e}")
+
+
 # ── Core pipeline ─────────────────────────────────────────────
 def deliberate_and_learn(
     prompt: str,
@@ -963,6 +1253,33 @@ def deliberate_and_learn(
         river_brain.learn(synth_model, task_type, response)
         return response
 
+    # ── 4b. Full-agreement short-circuit (2026-09-04, Tier-4 confirmatory
+    # refactor, coding tasks only) ─────────────────────────────
+    # See detect_full_agreement()'s own docstring for the full reasoning:
+    # when every candidate already agrees (structurally, not just by
+    # string match), a real LLM synthesis call adds risk (a real,
+    # observed unforced fabrication in the Tier-4 data, task bf06) with
+    # no possible benefit (there is nothing left to reconcile). Scoped to
+    # task_type == "coding" only -- personal/creative/reasoning/general
+    # synthesis is completely untouched by this block; a non-coding task
+    # falls straight through to the unmodified synthesis path below,
+    # exactly as before this refactor existed.
+    if task_type == "coding":
+        agreed_code = detect_full_agreement(valid_opinions)
+        if agreed_code is not None:
+            logging.info(
+                f"[DELIBERATION] Full agreement across {len(valid_opinions)} candidates "
+                "— skipping synthesis call, returning agreed code directly"
+            )
+            for model, opinion in valid_opinions.items():
+                if model != synth_model:
+                    river_brain.learn(model, task_type, opinion)
+            river_brain.learn(synth_model, task_type, agreed_code)
+            _log_synthesis_integrity(
+                task_type, trace_id, valid_opinions, "full_agreement_shortcut", agreed_code,
+            )
+            return agreed_code
+
     # ── 5. Build synthesis system message ─────────────────────
     # Compute per-opinion token budget so no synthesis call overflows
     # num_ctx.  Budget = window - safety_margin - template_overhead - prompt - system.
@@ -1004,10 +1321,17 @@ def deliberate_and_learn(
         _prompt_tokens, _opinions_budget, _per_opinion,
     )
     formatted = _format_opinions(valid_opinions, per_opinion_tokens=_per_opinion)
-    synthesis_instructions = SYNTHESIS_SYSTEM_TEMPLATE.format(
-        task_type=task_type,
-        opinions=formatted,
-    )
+    # 2026-09-04, Tier-4 confirmatory refactor: coding tasks get the
+    # preservation-oriented template (see its own docstring above);
+    # every other task type is completely unaffected -- byte-identical
+    # to SYNTHESIS_SYSTEM_TEMPLATE's prior behavior.
+    if task_type == "coding":
+        synthesis_instructions = SYNTHESIS_SYSTEM_TEMPLATE_CODING.format(opinions=formatted)
+    else:
+        synthesis_instructions = SYNTHESIS_SYSTEM_TEMPLATE.format(
+            task_type=task_type,
+            opinions=formatted,
+        )
     # The original context notes (circadian/stillness/temporal/scripture/
     # tool-list) still apply to the synthesis step too — fold `system` in
     # ahead of the council-specific synthesis instructions, both system-side.
@@ -1024,9 +1348,56 @@ def deliberate_and_learn(
 
     if not final_response or "[ERROR]" in final_response:
         logging.warning("[DELIBERATION] Synthesis failed — returning best single council response")
-        best = max(valid_opinions.values(), key=len)
+        best = select_best_fallback_candidate(valid_opinions)
         river_brain.learn(synth_model, task_type, best)
+        _log_synthesis_integrity(task_type, trace_id, valid_opinions, "empty_or_error_fallback", best)
         return best
+
+    # ── 6b. Post-synthesis completeness check (2026-09-04, Tier-4
+    # confirmatory refactor, coding tasks only) ─────────────────
+    # See find_missing_agreed_definitions()'s own docstring: this is the
+    # direct fix for the Tier-4 cs09 failure mode -- every candidate
+    # independently defined the same class, synthesis kept only a
+    # __main__ demo referencing it and dropped the class itself, failing
+    # with a plain NameError. A definition every parseable candidate
+    # agreed on, missing from synthesis's own output, is checkable
+    # evidence of real information loss -- not a guess about quality.
+    # When detected, the synthesis output is REJECTED (not repaired --
+    # this project has no reliable way to surgically patch a partial
+    # LLM output) in favor of the same fallback selection used for an
+    # empty/errored synthesis. Scoped to task_type == "coding" only.
+    _selection_method = "synthesis_accepted"
+    if task_type == "coding":
+        missing = find_missing_agreed_definitions(valid_opinions, final_response)
+        if missing:
+            logging.warning(
+                f"[DELIBERATION] Synthesis dropped agreed-upon definition(s) {sorted(missing)} "
+                "— rejecting synthesis, falling back to best candidate"
+            )
+            fallback = select_best_fallback_candidate(valid_opinions)
+            for model, opinion in valid_opinions.items():
+                if model != synth_model:
+                    river_brain.learn(model, task_type, opinion)
+            river_brain.learn(synth_model, task_type, fallback)
+            # Diagnostic detail (2026-09-04, added after a real ambiguity
+            # during live validation -- a fallback fired and the 200-char
+            # preview alone wasn't enough to tell a true positive from a
+            # further extraction edge case without a full-text capture).
+            # Small, bounded (name sets, not text) -- resolves this class
+            # of question permanently without storing full raw text.
+            _extracted_synth = _extract_candidate_code(final_response)
+            _diagnostic = {
+                "synthesis_extracted_names": sorted(_extract_top_level_names(_extracted_synth or "")),
+                "per_candidate_names": {
+                    model: sorted(_extract_top_level_names(_extract_candidate_code(resp) or ""))
+                    for model, resp in valid_opinions.items()
+                },
+            }
+            _log_synthesis_integrity(
+                task_type, trace_id, valid_opinions, "completeness_fallback", fallback,
+                missing_names=missing, diagnostic=_diagnostic,
+            )
+            return fallback
 
     # Information-flow integrity fix (2026-09-02): apply any supplied
     # correction to the real, final synthesis text — before it trains
@@ -1058,6 +1429,9 @@ def deliberate_and_learn(
         if model != synth_model:
             river_brain.learn(model, task_type, opinion)
     river_brain.learn(synth_model, task_type, final_response)
+
+    if task_type == "coding":
+        _log_synthesis_integrity(task_type, trace_id, valid_opinions, _selection_method, final_response)
 
     try:
         _log_council_deliberation(

@@ -1448,6 +1448,14 @@ Verified: syntax-checked every touched file; full `scripts/verify_liveness_ledge
 
 ---
 
+**Finding 93 — RAOC harness code built and verified; no trial run (2026-09-05).** New package, `app/experiments/raoc/`, implementing `audits/echo_raoc_outcome_conditioning_experiment.md`'s §15 implementation plan: `schema.py` (a deliberately separate data shape from `preference_provenance/schema.py`'s `RawTrial`, per the protocol's own instruction not to conflate the two), `approach_classifier.py` (the pre-specified, deliberately coarse AST-based recursion-vs-loop check), `outcome_generator.py` (the single template function producing all three non-CONTROL conditions' injected text from one real `objective_verify()`-shaped result, so True/Sham-reversed differ only in which real/flipped result is substituted), `task_pairs.py` (scans the already-captured, real Tier-4 corpus for genuine historical approach-divergent pairs — no new model generation), `harness.py` (trial orchestration, reusing Design B's `_ollama_query()` plus the real `objective_verify()`/`clean_code()` sandbox apparatus), and `calibrate.py` (the mock-model calibration script specified but **not executed**).
+
+**Verified with real data, without making a single real model call**: the approach classifier was tested against 5 synthetic known-answer cases (all correct) and then against all 168 real Tier-4 stage1 candidate_code samples — a genuinely non-degenerate real distribution (7 recursive, 86 iterative, 75 unknown), not everything collapsing into one bucket. The task-pair scanner, run against the real corpus, found 3 real historical pairs on its own, including a genuine real failure case with a real, specific error (`cs01`: `NameError: name 'ThreadSafeCounter' is not defined`) — not a fabricated example. The full `harness.run_trial()` pipeline (prompt construction → scoring → approach classification → direction-matching) was exercised end-to-end using `MockModel` (a fixed, context-blind stand-in, zero real LLM calls) against one of those real pairs and a real target task's real test suite via the actual `objective_verify()` sandbox — confirmed the CONTROL condition correctly has no injected context, the TRUE_OUTCOME condition correctly built its statement from the pair's real recorded outcome, and `matches_outcome_direction` correctly read `False` for a mock that structurally cannot respond to context. None of this touched `memory/raoc_trials.jsonl` (the real experiment log) or made a network/model call of any kind.
+
+**Deliberately not done in this pass, per explicit instruction**: `calibrate.py` was written but not run — even the mock-only calibration pass is treated as the next, separately-gated step, not something to execute while building the harness. No pilot, no real-Echo trial, no interpretation of any result as evidence for or against H1. That step requires its own explicit go-ahead.
+
+---
+
 ## Monitoring
 
 ```bash

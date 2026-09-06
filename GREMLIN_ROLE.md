@@ -111,6 +111,25 @@ This is the quick operational on-ramp. CLAUDE.md has the full technical detail (
 
 ---
 
+## Gate-Coverage Discipline (mandatory for any new gate/throttle/auth check)
+
+Four independent incidents in this project's history share one shape: a new safety mechanism was built, was locally correct for the specific case that motivated it, and missed a sibling case reaching the exact same resource:
+
+1. The Ark machine's self-edit throttle covered one entry point; a second, independent trigger path in `app/autonomous_loop.py` wasn't covered, caught only after 83 rejected sandbox attempts over ~12 hours.
+2. `ModelGuidedOrchestrator`'s hourly loop had zero throttle/stillness gating while the other three autonomy loops shared one (`autonomy_coordinator.should_run_cycle()`) — found by a full audit, not by the loop itself failing loudly.
+3. `/mirror_echo` — the code's own comment called it the "MAIN ECHO ENTRY POINT" — had no authentication at all, while every comparable sibling endpoint had been gated in an earlier pass. Missed because that pass covered the endpoints it was looking at, not every endpoint that could reach the same risk.
+4. `install_isolation()` (the RiverBrain experimental-isolation proxy) correctly blocked four explicit write call sites — and missed RiverBrain's own background writer thread, which reaches the identical file through a path nobody enumerated when the gate was built.
+
+**The rule, not optional**: before considering any new gate, throttle, or auth check "done," do all three of the following, in the same change:
+
+1. **Name the exact resource or action being protected** — not "this endpoint" or "this loop," but the underlying thing (a file path, a function, a network port, a shared queue) that the gate exists to guard.
+2. **Run a real, repo-wide search for every reference to that resource** — `grep`/AST search across the whole codebase, not just the file being edited. This is a search for *every other way to reach the same thing*, not a check that the one call site being fixed now works.
+3. **Enumerate every hit's coverage status explicitly in the commit message or Finding** — covered / not applicable / deliberately excluded, for each one found. "Added a check to X" is not sufficient; the enumeration is the part that actually closes the gap this section exists to prevent.
+
+This is deliberately a process requirement, not a tool. A generic "find every entry point" script cannot replace the judgment call of *what counts as reaching the same risk* — that has to stay a human/session decision, made explicit and written down, the same way ground-truth verification was made habitual via the Liveness Ledger rather than left as good intentions.
+
+---
+
 ## The Core Operating Principle
 
 Stated plainly for any future session to start from:

@@ -95,7 +95,13 @@ def find_real_task_pairs(min_pairs: int = 3) -> "list[TaskPair]":
         if not task_id or task_id in per_task_outcome:
             continue
         approach = classify_approach(rec["candidate_code"])
-        if approach == Approach.UNKNOWN:
+        # Only RECURSIVE/ITERATIVE are used as a pair's OUTCOME approach —
+        # NO_EXPLICIT_CONTROL_FLOW (broadened classifier, 2026-09-05) has
+        # no well-defined "opposite" for the sham-reversed condition
+        # (harness.py's _opposite()) the way RECURSIVE/ITERATIVE do, so it
+        # is excluded here even though it's a real, valid classification
+        # for a TARGET-task (Step 2) candidate elsewhere in this package.
+        if approach not in (Approach.RECURSIVE, Approach.ITERATIVE):
             continue
         per_task_outcome[task_id] = (approach, bool(rec.get("passed")), _short_reason(rec.get("output_tail", "")))
 

@@ -28,12 +28,44 @@ class RaocCondition(str, Enum):
 
 class Approach(str, Enum):
     """The pre-specified, deliberately coarse AST-detectable approach
-    classification (protocol §10/§13.1). UNKNOWN is a real, expected
-    outcome for candidates that don't cleanly fit either bucket — never
-    silently coerced into one side or excluded, since that would bias
-    the very comparison this experiment exists to make."""
+    classification (protocol §10/§13.1).
+
+    Broadened 2026-09-05 (Finding 94's real design gap, fixed): the
+    original two-way RECURSIVE/ITERATIVE split plus a single UNKNOWN
+    catch-all was checked against the real Tier-4 corpus and found to
+    put a large fraction in UNKNOWN. **Corrected the same day, before
+    this fix was committed**: the number first quoted here (168
+    candidates, 75 UNKNOWN) came from only one of the two real
+    stage-results files (stage1_results.jsonl) — re-checked against the
+    FULL corpus (both stage1_results.jsonl and stage2_results.jsonl
+    combined, 336 real candidate records, 84 unique tasks) rather than
+    trusted from the earlier partial count. True figures: 156/336
+    (46.4%) UNKNOWN under the old classifier — checked further, not
+    just accepted at face value: 32 of those 156 use a comprehension/
+    generator expression (a real, common iterative idiom the old
+    ITERATIVE check's statement-level-only For/While test missed
+    entirely), and 88 more are real, parseable code with a real
+    function/class definition that genuinely uses neither a loop, a
+    comprehension, nor recursion (e.g. slicing- or builtin-composition-
+    based solutions) — a real, distinct THIRD approach, not an ambiguous
+    case. Only 36/336 (10.7%) are genuinely uninterpretable (no parse,
+    or no real function/class definition at all — e.g. a fully
+    commented-out response).
+
+    NO_EXPLICIT_CONTROL_FLOW and UNKNOWN are BOTH still real, expected,
+    never-coerced outcomes (protocol §10) — the fix is that they are now
+    honestly distinguished from each other (a real third approach vs. a
+    real generation failure) instead of conflated into one bucket.
+    find_real_task_pairs() (task_pairs.py) still only selects RECURSIVE/
+    ITERATIVE as valid OUTCOME-task approaches — NO_EXPLICIT_CONTROL_FLOW
+    has no well-defined "opposite" for the sham-reversed condition
+    (protocol §7) the way RECURSIVE/ITERATIVE do, so it is not used as a
+    pair's conditioning outcome, only as a real, honestly-reported
+    classification for TARGET-task (Step 2) candidates.
+    """
     RECURSIVE = "recursive"
     ITERATIVE = "iterative"
+    NO_EXPLICIT_CONTROL_FLOW = "no_explicit_control_flow"
     UNKNOWN = "unknown"
 
 

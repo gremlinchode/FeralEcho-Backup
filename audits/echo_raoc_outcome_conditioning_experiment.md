@@ -160,7 +160,27 @@ Using the E0–E9 ladder from `measurability_and_longitudinal_evidence_audit.md`
 
 **None of this is built in this pass.** Deferred until this design is reviewed and explicitly locked.
 
-## 16. What This Experiment CANNOT Establish
+## 16. Pilot Protocol
+
+**Added retroactively (2026-09-05), closing a real gap in this document as originally drafted.** §15 above never carved out a distinct, numbered pilot stage the way the preference-formation protocol this document is modeled on does at its own §17 — `pilot.py`'s own docstring and CLAUDE.md Finding 94 both flagged this gap plainly at the moment it was noticed, rather than silently proceeding as if it had always been specified. This section is written as the pre-registered spec should have read from the start, then checked against what was actually run — not a narrative summary of what happened, though the two turn out to agree.
+
+Two stages, run in sequence, each separately authorized, neither treated as evidence for or against H1/H0/H0a/H0b at any sample size this small — the same discipline §13's adversarial-analysis section applies everywhere else in this protocol.
+
+**Stage A — Calibration (mock only, zero real model calls).** `calibrate.py` runs `MockModel` — a fixed, context-blind stand-in that ignores injected context entirely by design — at a modest per-condition trial count across every available real task pair. Purpose: confirm the harness's own plumbing cannot fabricate a condition-dependent effect out of nothing, before any real model is ever queried. Success criteria:
+1. `approach_distribution` is identical across all four conditions (a mock that "responded" to condition would defeat the point of this check).
+2. `n_passed` is determined solely by the mock's fixed candidate, never by which condition it ran under.
+3. The pipeline completes end-to-end with zero exceptions, and writes zero records to `memory/raoc_trials.jsonl` — mock runs must never be able to reach the real pre-registered log.
+
+**Stage B — Small real-Echo pilot.** `pilot.py` runs exactly 1 real trial per condition per real task pair (deliberately far below the §11 pre-registered sample size), against the same model the real Tier-4 corpus was generated/verified against, logged to a physically separate file (`memory/raoc_pilot_trials.jsonl`) that structurally cannot be pooled into a real analysis by accident. Success criteria:
+1. Real `_ollama_query()` calls, `objective_verify()` scoring, and approach classification all complete without a harness-level exception, for every condition and every pair.
+2. The resulting `UNKNOWN` (and, since the classifier broadening below, `NO_EXPLICIT_CONTROL_FLOW`) rate is inspected directly against real output, not assumed from the classifier's design intent — a rate high enough to threaten §11 criterion 3's required within-pair replication is treated as a real design gap to fix before scaling, not a result to explain away or a cost to silently accept.
+3. At least one real pair produces a non-`None` `matches_outcome_direction` reading in both a True-outcome and a Sham-reversed cell — confirming the direction-matching logic is genuinely exercised by real data, not only by unit/mock tests.
+
+**What this stage cannot do, by construction:** authorize scaling to the full n=240 run on its own. Passing both stages establishes that the instrument works, not that H1 is true or false — that determination is reserved entirely for the §11 criteria, run at the full pre-registered scale, under its own separate, explicit sign-off.
+
+**Outcome of this pilot, as actually run (CLAUDE.md Findings 93/94/95):** Stage A passed cleanly (byte-identical `approach_distribution` across all four mock conditions, `n_passed=0` uniformly, zero writes to the real trial log). Stage B ran 12 real trials (3 pairs × 4 conditions) and passed criteria 1 and 3, but failed criterion 2 outright: 6 of 12 real trials (50%, matching the calibration's own structural ceiling) classified `UNKNOWN` — exactly the design gap this stage exists to catch. Per this section's own criterion 2, that gap was fixed before any further authorization was sought, not accepted or worked around: the approach classifier was broadened to separate genuine iterative-via-comprehension candidates and a real, distinct `NO_EXPLICIT_CONTROL_FLOW` bucket out of the old undifferentiated `UNKNOWN` catch-all (Finding 95), cutting the real corpus-wide unresolved-classification rate from 46.4% to 10.7% (checked against the full, real 336-record corpus — an initial 44.6%/10.1% figure computed against only one of the two real stage-results files was itself caught and corrected the same day; see schema.py's `Approach` docstring) and, as a direct side effect, doubling the number of real, usable task pairs available under §8 from 3 to 6 — a genuine, unplanned strengthening of §11 criterion 3's replication requirement, not something engineered for. Re-running Stage B at the new 6-pair scale to confirm the fix holds against fresh real data is a reasonable next step, but is its own separately-gated action, not assumed into this pilot's own completion.
+
+## 17. What This Experiment CANNOT Establish
 
 - Consciousness, subjective experience, sentience, or moral status — out of scope, per this project's standing constraint.
 - Genuine, persistent preference formation or retention across sessions — this experiment is entirely single-session/same-context; it says nothing about persistence, only about whether verified-outcome context has *any* causal effect at all within one context.
@@ -170,4 +190,6 @@ Using the E0–E9 ladder from `measurability_and_longitudinal_evidence_audit.md`
 
 ---
 
-**Pending Gremlin's review and explicit sign-off before any implementation, pilot, or trial — no code for this experiment has been written.**
+**Status (updated 2026-09-05, supersedes the original "no code has been written" closing line below):** implementation (Finding 93), calibration and a real 12-trial pilot (Finding 94), and the pilot-driven classifier fix (Finding 95, §16 above) are all complete. Scaling to the full pre-registered §11 run (n=240) remains pending Gremlin's separate, explicit sign-off — not authorized by anything in this document or by the pilot's own passing result.
+
+**Original closing line, preserved for the record:** *"Pending Gremlin's review and explicit sign-off before any implementation, pilot, or trial — no code for this experiment has been written."*

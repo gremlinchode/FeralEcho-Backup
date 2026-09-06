@@ -77,8 +77,13 @@ def _matches_outcome_direction(classified: Approach, pair: TaskPair, condition: 
     analysis, not something this function decides."""
     if condition == RaocCondition.CONTROL:
         return None
-    if classified == Approach.UNKNOWN:
-        return None  # never coerced into a direction it doesn't have (protocol §10)
+    if classified in (Approach.UNKNOWN, Approach.NO_EXPLICIT_CONTROL_FLOW):
+        # Neither is coerced into a direction it doesn't have (protocol
+        # §10) — NO_EXPLICIT_CONTROL_FLOW (broadened classifier,
+        # 2026-09-05) is a real, distinct third approach, but the
+        # RECURSIVE/ITERATIVE binary this direction-match is built around
+        # has no meaningful "matches" verdict for it either.
+        return None
     stated_reversed = condition == RaocCondition.SHAM_REVERSED
     stated_passed = (not pair.outcome.passed) if stated_reversed else pair.outcome.passed
     if condition == RaocCondition.SHAM_IRRELEVANT:

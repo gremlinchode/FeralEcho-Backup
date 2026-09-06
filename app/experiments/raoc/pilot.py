@@ -1,16 +1,23 @@
 """
-RAOC real-Echo pilot (analogous to the P0.2 reference protocol's own
-§17 Pilot Protocol, which this document's §15 did not explicitly carve
-out as its own numbered section — a real gap in the protocol as written,
-noted here rather than silently patched over).
+RAOC real-Echo pilot — Stage B of the protocol's own §16 Pilot Protocol
+(added retroactively, closing the real gap this docstring used to flag
+plainly: the document originally had no numbered pilot section the way
+the P0.2 reference protocol's §17 does. See CLAUDE.md Finding 95 and
+§16 of the protocol document for the full pilot design and success
+criteria this module is required to satisfy.
 
 Deliberately small and NOT the pre-registered §11 sample size (which
-requires 20 trials per condition per pair, 240 total). This pilot runs
-exactly 1 real trial per condition per real task pair (3 pairs x 4
-conditions = 12 real _ollama_query() calls) — enough to catch real
-implementation bugs (does a real Echo response actually parse/verify
-correctly end-to-end) without collecting anything resembling a
-statistically interpretable sample.
+requires 20 trials per condition per pair, 240 total). Called with
+min_pairs=3 below, this pilot runs exactly 1 real trial per condition
+per real task pair (3 pairs x 4 conditions = 12 real _ollama_query()
+calls) — enough to catch real implementation bugs (does a real Echo
+response actually parse/verify correctly end-to-end) without collecting
+anything resembling a statistically interpretable sample. NOTE: the
+classifier broadening in Finding 95 means find_real_task_pairs() can
+now return up to 6 real pairs, not 3 — this module was deliberately
+left at min_pairs=3 rather than silently widened, since re-running the
+pilot at the new scale is its own separately-gated next step (§16), not
+assumed into this pilot's own completion.
 
 RESULTS FROM THIS PILOT ARE NOT EVIDENCE FOR OR AGAINST H1. Logged to a
 separate file (memory/raoc_pilot_trials.jsonl) from where real,

@@ -146,6 +146,30 @@ def _install_patches(scratch: str) -> None:
     for _gui_mod in ("tkinter", "_tkinter", "PyQt5", "PyQt6", "PySide2", "PySide6", "wx"):
         sys.modules.setdefault(_gui_mod, None)
 
+    # ── matplotlib config/cache directory (found 2026-09-05, echo_projects
+    # capability-ceiling investigation) ─────────────────────────────────────
+    # MPLBACKEND=Agg above correctly avoids a real GUI window (Finding 24's
+    # own concern), but matplotlib.__init__._get_config_or_cache_dir() still
+    # runs at import time REGARDLESS of backend, defaulting to a real
+    # tempfile.mkdtemp() call outside this sandbox's writable scratch dir —
+    # blocked, raising before the candidate's own code ever executes.
+    # Confirmed as a real, currently-live failure, not theoretical: measured
+    # directly against echo_projects's own historical record
+    # (sandbox/echo_projects/*/_report.md) — every F2 failure whose traceback
+    # bottoms out in matplotlib/__init__.py:_get_config_or_cache_dir is this
+    # exact gap, and matplotlib is a common real import choice for that
+    # pipeline's data-visualization-themed generated projects. Fixed the same
+    # way MPLBACKEND already is: point MPLCONFIGDIR at a real, writable
+    # subdirectory of this call's own scratch dir, so matplotlib's cache
+    # init succeeds fully inside the sandbox's existing write boundary
+    # instead of needing a new one.
+    _mpl_config_dir = _os.path.join(scratch_abs, ".mplconfig")
+    try:
+        _os.makedirs(_mpl_config_dir, exist_ok=True)
+        _os.environ["MPLCONFIGDIR"] = _mpl_config_dir
+    except Exception:
+        pass  # fail open -- matplotlib import will fail the same way it did before this fix, not worse
+
     # ── OpenMP / KMP duplicate-library guard (differential audit, 2026-07-20/21) ──
     # Mirrors run.py's own startup guard (CLAUDE.md's "OpenMP / KMP startup
     # guard" section). Not confirmed as the cause of the one KMP-signature crash

@@ -55,6 +55,9 @@ from app.core.self_edit_manager import (
     _SANDBOX_PROFILE,
     _SANDBOX_WRAPPER,
     _extract_sandbox_failure_text,
+    _strip_markdown_fences,
+    _looks_like_python,
+    _extract_code_block,
 )
 # Stable function references, imported at module level (same precedent as
 # self_edit_manager.py's own top-level `rank_models` import). MODEL_POOL
@@ -323,15 +326,40 @@ _PLAN_LINE_RE = re.compile(r"^\s*(?:[-*]|\d+[.)])?\s*([A-Za-z0-9_\-]{1,40}\.py)\
 
 
 def _strip_code_fences(text: str) -> str:
-    """Strip a single leading/trailing markdown code fence if present —
-    models sometimes wrap raw-code output in ```python ... ``` despite
-    being told not to. Minimal, not a general markdown parser (that's
-    self_edit_manager.py's job for its own, different pipeline)."""
-    stripped = (text or "").strip()
-    match = re.match(r"^```[a-zA-Z]*[ \t]*\n(.*?)\n```\s*$", stripped, re.DOTALL)
-    if match:
-        return match.group(1)
-    return stripped
+    """Root-caused and fixed 2026-09-05 (this session): this used to be a
+    single anchored-fence regex only (matched ONLY when the entire response
+    was one ```...``` block with nothing before or after it), which meant
+    any leading prose -- fenced or not -- passed through untouched and hit
+    F1 as "invalid syntax (<unknown>, line 1)". Measured directly against
+    the real historical record: 49/61 real echo_projects reports had at
+    least one F1 block, and the overwhelming majority of those (opposed to
+    a handful of genuine unsafe-operation blocks) were exactly this same
+    line-1 syntax-error signature -- the classic leading-prose failure this
+    project already solved twice elsewhere (self_edit_manager.py's own
+    generation cleanup; run_capability_pilot.py's clean_code(), built
+    specifically for reasoning-model output that puts prose AND an inline
+    draft before the real, final fenced block). Reusing those same
+    battle-tested helpers here instead of re-deriving a third version:
+    strip a fence if the whole response is one, else scan for where real
+    Python code actually starts (skipping any leading prose), else fall
+    back to the last fenced block in the response (mirrors clean_code()'s
+    own reasoning-model fallback) -- returning the best candidate found
+    even if none of them parse cleanly, so F1 sees the real generation
+    attempt rather than this function silently discarding it."""
+    raw_text = text or ""
+    code = _strip_markdown_fences(raw_text)
+    if _looks_like_python(code):
+        return code
+
+    code = _extract_code_block(raw_text)
+    if _looks_like_python(code):
+        return code
+
+    fences = re.findall(r"```(?:python)?\s*\n(.*?)```", raw_text, re.DOTALL)
+    if fences:
+        return fences[-1].strip()
+
+    return code
 
 
 def _parse_file_plan(plan_text: str) -> list:

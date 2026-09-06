@@ -1509,6 +1509,22 @@ check("echo_messaging_auth_classification: always auth_failure (a real timeout/5
 r = ll._evaluate_echo_messaging_auth_classification(None)
 check("echo_messaging_auth_classification: _classify_delivery_status not importable at all", r["pass"], False, r["evidence"])
 
+# ── council_cursor_health ────────────────────────────────────────────────
+r = ll._evaluate_council_cursor_health({"position": 33471}, 12869)
+check("council_cursor_health: real historical regression (stuck at 33471 vs a 12,869-line rotated log)", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_council_cursor_health({"position": 5000}, 12869)
+check("council_cursor_health: healthy, cursor well within current log length", r["pass"], True, r["evidence"])
+
+r = ll._evaluate_council_cursor_health({"position": 12869}, 12869)
+check("council_cursor_health: boundary, cursor exactly caught up to current log length", r["pass"], True, r["evidence"])
+
+r = ll._evaluate_council_cursor_health(None, 12869)
+check("council_cursor_health: cursor file not yet created (not_deployed, not a failure)", r["pass"], True, r["evidence"])
+
+r = ll._evaluate_council_cursor_health({"position": 100}, None)
+check("council_cursor_health: interaction_log.jsonl missing, fail closed", r["pass"], False, r["evidence"])
+
 
 print()
 if FAILURES:

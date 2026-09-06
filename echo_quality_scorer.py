@@ -384,10 +384,27 @@ def _score_response_quality(response: str, task_type: str = "general") -> int:
         if _has_static_errors(tree):
             return 1
 
+        # Threshold recalibrated 2026-09-05 (research digest cross-check,
+        # this session): the old c>=3 -> 4 boundary was confirmed saturated
+        # against real data, not just suspected -- measured directly against
+        # all 25 real, currently-retained self-edit deploys
+        # (app/core/self_edit_backups/*.py): every single one had
+        # complexity >= 3, so all 25 scored the maximum 4/4, with the
+        # self-edit fitness gate (Finding 19: "reject unless candidate scores
+        # at least as well as current") effectively unable to discriminate
+        # since ties always pass. The real observed distribution was
+        # [3,3,3,3,3,3,3,3,3,4,4,4,4,4,5,5,5,5,5,7,7,8,8,8,8] -- a genuine
+        # gap at complexity=6 (nothing in the real sample lands there)
+        # separates the bottom 19/25 (76%) from the top 6/25 (24%). The new
+        # boundary sits exactly in that real gap, not a round number chosen
+        # in advance -- same methodology this project already used once for
+        # seam_engine.py's _MIN_VARIANCE threshold. This does not change
+        # scores 0-2's behavior (not reported as saturated, no evidence
+        # they need to move) or the function's 0-4 output contract.
         c = _ast_complexity(tree)
         if c == 0:
             return 2
-        elif c < 3:
+        elif c < 6:
             return 3
         else:
             return 4

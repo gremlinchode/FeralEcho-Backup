@@ -2748,28 +2748,47 @@ def perform_self_edit(prompt=None, intensity=None, creativity=None, dry_run=None
 
     if prompt is None:
         if target_task_type is None:
-            # First: check shadow model corrections — these are highest-trust signals
+            # Priority order reversed 2026-09-05 (research digest cross-check,
+            # this session, independently re-verified against the real,
+            # live memory/shadow_accuracy.jsonl — 2054 real entries, overall
+            # focus_matches accuracy 16.1%, last-500-entry accuracy 13.2%,
+            # i.e. WORSE than the ~20% a uniform-random guess across 5 task
+            # types would get). The shadow model's suggestion was previously
+            # checked FIRST and treated as an unconditional override ("highest-
+            # trust signal") ahead of SelfModelUpdater's empirical,
+            # RiverBrain-driven weak-task-type signal (measured 71.8%
+            # accurate) — the opposite of what the real accuracy data
+            # supports. Confirmed live consequence: 100% of 103 real,
+            # quality-tracked self-edit outcomes targeted "coding" regardless
+            # of what either signal actually said. Empirical signal now
+            # checked first; the shadow model's suggestion is kept only as a
+            # last-resort fallback (still better-than-nothing informative
+            # when the primary signal is genuinely unavailable, e.g. an
+            # import failure) rather than removed outright — this fix is
+            # scoped to the priority-order bug, not a decision to retire the
+            # shadow-model mechanism itself.
             try:
-                import json as _json
-                from pathlib import Path as _Path
-                _shadow_path = _Path("memory/shadow_self_model.json")
-                if _shadow_path.exists():
-                    _shadow = _json.loads(_shadow_path.read_text())
-                    _focus = _shadow.get("targets", {}).get("next_self_edit_focus")
-                    if _focus:
-                        logging.info(f"[SELF-EDIT] Shadow model correction → target={_focus}")
-                        target_task_type = _focus
-            except Exception as _se:
-                logging.debug(f"[SELF-EDIT] Shadow focus read failed: {_se}")
+                from app.core.self_model_updater import SelfModelUpdater
+                target_task_type = SelfModelUpdater().get_weak_task_type()
+            except Exception as e:
+                logging.warning(f"[SELF-EDIT] SelfModelUpdater unavailable: {e}")
 
-            # Fallback: ask SelfModelUpdater for the weakest task type
             if target_task_type is None:
                 try:
-                    from app.core.self_model_updater import SelfModelUpdater
-                    target_task_type = SelfModelUpdater().get_weak_task_type()
-                except Exception as e:
-                    logging.warning(f"[SELF-EDIT] SelfModelUpdater unavailable: {e}")
-                    target_task_type = "coding"
+                    import json as _json
+                    from pathlib import Path as _Path
+                    _shadow_path = _Path("memory/shadow_self_model.json")
+                    if _shadow_path.exists():
+                        _shadow = _json.loads(_shadow_path.read_text())
+                        _focus = _shadow.get("targets", {}).get("next_self_edit_focus")
+                        if _focus:
+                            logging.info(f"[SELF-EDIT] Shadow model fallback (empirical signal unavailable) → target={_focus}")
+                            target_task_type = _focus
+                except Exception as _se:
+                    logging.debug(f"[SELF-EDIT] Shadow focus read failed: {_se}")
+
+            if target_task_type is None:
+                target_task_type = "coding"
 
         prompt = _build_targeted_prompt(target_task_type, creativity)
 

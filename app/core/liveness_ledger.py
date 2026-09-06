@@ -3422,6 +3422,61 @@ def _check_code_analysis_retrieval_exclusion() -> dict:
     return _evaluate_code_analysis_retrieval_exclusion(awareness_source, memory_bridge_source)
 
 
+# ── council_rater.py's cursor stays valid across interaction_log.jsonl rotation ──
+#
+# Real regression found 2026-09-05 (research digest, cross-referenced this
+# session): council_cursor.json was stuck at position 33471 against a
+# 12,869-line interaction_log.jsonl (rotated by night_cycle.py's log
+# retention, Finding 51's 100MB cap) since 2026-07-26 -- learn_from_
+# council_rating() had been silently dead for over a month, directly
+# contradicting CLAUDE.md's own Finding 67 ("built and verified live"),
+# with nothing catching the regression. council_rater.py's _poll_and_rate()
+# was fixed the same session to detect cursor > log length and self-heal
+# (reset to the current end, matching _init_cursor_if_absent()'s own
+# no-backfill precedent). This check is the ongoing guard so a future
+# rotation-vs-cursor gap can't go unnoticed the same way again.
+
+_COUNCIL_CURSOR_PATH = os.path.join(_MEMORY_DIR, "council_cursor.json")
+
+
+def _evaluate_council_cursor_health(cursor_data: "dict | None", log_line_count: "int | None") -> dict:
+    if cursor_data is None:
+        return _result(True, "memory/council_cursor.json does not exist yet — not yet initialized, not a failure.")
+    if log_line_count is None:
+        return _result(False, "memory/interaction_log.jsonl does not exist — cannot verify cursor validity, failing closed.")
+    try:
+        position = int(cursor_data.get("position", 0))
+    except (TypeError, ValueError):
+        return _result(False, f"council_cursor.json's position field is not a valid integer: {cursor_data.get('position')!r}.")
+    if position > log_line_count:
+        return _result(
+            False,
+            f"council_cursor.json position ({position}) exceeds interaction_log.jsonl's current "
+            f"line count ({log_line_count}) — the log was rotated underneath the cursor and it has "
+            f"not self-corrected. learn_from_council_rating() is silently receiving zero new entries "
+            f"every poll cycle.",
+            {"cursor_position": position, "log_line_count": log_line_count},
+        )
+    return _result(
+        True,
+        f"council_cursor.json position ({position}) is within interaction_log.jsonl's current "
+        f"line count ({log_line_count}) — cursor is valid.",
+        {"cursor_position": position, "log_line_count": log_line_count},
+    )
+
+
+def _check_council_cursor_health() -> dict:
+    cursor_data = _read_json(_COUNCIL_CURSOR_PATH)
+    log_line_count = None
+    try:
+        if os.path.exists(_INTERACTION_LOG):
+            with open(_INTERACTION_LOG, encoding="utf-8") as f:
+                log_line_count = sum(1 for _ in f)
+    except Exception:
+        log_line_count = None
+    return _evaluate_council_cursor_health(cursor_data, log_line_count)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -3473,6 +3528,7 @@ _CHECKS = (
     "code_analysis_retrieval_exclusion",
     "architecture_slice_bounded",
     "echo_messaging_auth_classification",
+    "council_cursor_health",
 )
 
 
@@ -3549,6 +3605,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "code_analysis_retrieval_exclusion": _check_code_analysis_retrieval_exclusion,
         "architecture_slice_bounded": _check_architecture_slice_bounded,
         "echo_messaging_auth_classification": _check_echo_messaging_auth_classification,
+        "council_cursor_health": _check_council_cursor_health,
     }
 
     ledger = {"generated_at": _now_iso()}

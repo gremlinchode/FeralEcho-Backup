@@ -587,6 +587,40 @@ def _poll_and_rate() -> int:
         with open(_INTERACTION_LOG, encoding="utf-8") as f:
             lines = f.readlines()
 
+        # Self-healing rotation detection: interaction_log.jsonl is one of
+        # night_cycle.py's log-retention rotation targets (Finding 51,
+        # 100MB cap) -- rotate_if_oversized() gzips the current content and
+        # truncates the live file to 0 bytes. A raw line-position cursor has
+        # no awareness of this: lines[cursor:] on a cursor past the new,
+        # shorter file's end silently returns [] rather than erroring, so
+        # this permanently returned 0 new entries after every rotation with
+        # nothing to ever notice or self-correct (confirmed live: cursor
+        # stuck at 33471 against a 12,869-line post-rotation file, dead
+        # since the rotation that produced this gap). Detect and reset
+        # rather than silently starving forever.
+        if cursor > len(lines):
+            # Reset to the current end, not 0 -- matches _init_cursor_if_absent()'s
+            # own established precedent ("skip historical entries so we don't
+            # backfill 10k+ ratings"). A rotation is conceptually a fresh start,
+            # not a gap to catch up on; backfilling the whole post-rotation
+            # history in one poll cycle would flood real rating calls for
+            # entries nobody was waiting on.
+            logger.warning(
+                "[Council] Cursor %d exceeds current log length %d -- "
+                "log was rotated underneath it. Resetting cursor to current "
+                "end (skipping backlog, not backfilling).",
+                cursor, len(lines),
+            )
+            cursor = len(lines)
+            # Persist the corrected cursor immediately, not just the local
+            # variable -- the very next line returns early when new_lines
+            # is empty (the expected case right after a reset, since cursor
+            # now equals len(lines)), which would otherwise skip the normal
+            # end-of-function _save_cursor() call and leave the stale value
+            # on disk to be re-detected and "reset" on every future poll
+            # forever, without ever actually saving the fix.
+            _save_cursor(cursor)
+
         new_lines = lines[cursor:]
         if not new_lines:
             return 0

@@ -1532,13 +1532,19 @@ def _recent_experiment_note() -> str:
     return ""
 
 
-def plan_code_logic(prompt: str, mastery_note: str = "") -> str:
+def plan_code_logic(prompt: str, mastery_note: str = "", trace_id: "str | None" = None) -> str:
     """
     mastery_note: optional excerpt from advise_before_edit()'s real
     code-quality guidance (audit finding: previously computed and journaled
     every cycle but never reached this prompt at all). Capped to keep the
     planning call's token cost bounded — this is a nudge, not the full
     review dump.
+
+    trace_id (2026-09-05, Plan 5 correlation-ID pass): optional, passed
+    straight through to echo_query() so this call's interaction_log.jsonl/
+    council_deliberations.jsonl entries can be joined to the rest of the
+    same self-edit attempt. Defaults to None — identical to today's
+    behavior for any caller that doesn't pass one.
     """
     try:
         inventory = _build_live_self_edit_inventory() + "\n\n" + _build_module_inventory()
@@ -1561,7 +1567,7 @@ def plan_code_logic(prompt: str, mastery_note: str = "") -> str:
             f"{experiment_block}\n\n"
             f"Task: {prompt}"
         )
-        plan = echo_query(plan_prompt, task_type="coding")
+        plan = echo_query(plan_prompt, task_type="coding", trace_id=trace_id)
 
         if not plan or not plan.strip() or plan.strip().lower().startswith("thinking"):
             logging.warning("[PROMPT GUARD] Plan output looks like reasoning prose. Using fallback plan.")
@@ -1775,7 +1781,7 @@ def _apply_self_edit_output(code: str) -> str:
     return code
 
 
-def generate_code_from_plan(plan: str, temperature: float | None = None) -> tuple:
+def generate_code_from_plan(plan: str, temperature: float | None = None, trace_id: "str | None" = None) -> tuple:
     """
     Generate Python code guided by the logic plan.
     v2.2: returns (code, model_name) tuple so sandbox outcomes
@@ -1787,6 +1793,10 @@ def generate_code_from_plan(plan: str, temperature: float | None = None) -> tupl
     hurts general/conversational coding tasks. Do not call this for
     anything other than generating a real self_edit_generated.py
     candidate or simulating one (wolf_friction_bridge.py's dry run).
+
+    trace_id (2026-09-05, Plan 5 correlation-ID pass): optional, passed
+    straight through to echo_query() — same additive, backward-compatible
+    contract as plan_code_logic()'s own trace_id parameter.
     """
     try:
         # Include current file contents so the model knows what it is editing
@@ -1809,7 +1819,7 @@ def generate_code_from_plan(plan: str, temperature: float | None = None) -> tupl
         # help, since choose_model()'s entropy/ranking here was previously
         # reading a stat self-edit itself never contributed to.
         model_name, _ = choose_model(code_prompt, task_type="self_edit_coding")
-        code = echo_query(code_prompt, task_type="coding", temperature=temperature)
+        code = echo_query(code_prompt, task_type="coding", temperature=temperature, trace_id=trace_id)
 
         if not code:
             logging.warning("generate_code returned empty, using stub.")
@@ -1865,6 +1875,16 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
     ignored everywhere; see perform_self_edit() and EchoOptuna.objective()
     for why this matters (Optuna trial-waste fix).
     """
+    # Plan 5 correlation-ID pass (2026-09-05): one trace_id per real
+    # self-edit attempt, threaded through every echo_query() call this
+    # attempt makes (plan, codegen, retry) and into record_pending_outcome()
+    # below, so interaction_log.jsonl/council_deliberations.jsonl entries
+    # from one attempt can be joined to its self_edit_outcomes.jsonl row.
+    # Deliberately scoped to this function's own real attempts — dry-run
+    # trials get their own trace_id too (same mint point, harmless since
+    # dry runs never reach record_pending_outcome, which only fires on the
+    # real production-deploy success path).
+    trace_id = str(uuid.uuid4())
     # Map intensity 0.0–1.0 → temperature 0.2–1.2
     temperature: float | None = None
     if intensity is not None:
@@ -1910,7 +1930,7 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
     # Step 1: Logic plan (held in memory only — save_plan() was writing 10,333
     # plan files to self_edit_plans/ that were never read by any code path)
     try:
-        plan = plan_code_logic(prompt, mastery_note=mastery_advice)
+        plan = plan_code_logic(prompt, mastery_note=mastery_advice, trace_id=trace_id)
     except Exception as _e:
         reflection_entry["result"] = "failed"
         save_reflection(reflection_entry)
@@ -1919,7 +1939,7 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
 
     # Step 2: Code generation — now returns (code, model_name)
     try:
-        code, model_name = generate_code_from_plan(plan, temperature=temperature)
+        code, model_name = generate_code_from_plan(plan, temperature=temperature, trace_id=trace_id)
     except Exception as _e:
         reflection_entry["result"] = "failed"
         save_reflection(reflection_entry)
@@ -1992,7 +2012,7 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
         # Resolve retry model name for tracking. "self_edit_coding" per
         # Finding 35's fix — same reasoning as the primary attempt above.
         retry_model_name, _ = choose_model(retry_prompt, task_type="self_edit_coding")
-        retry_code = echo_query(retry_prompt, task_type="coding")
+        retry_code = echo_query(retry_prompt, task_type="coding", trace_id=trace_id)
 
         if retry_code:
             retry_code = _strip_markdown_fences(retry_code)
@@ -2173,7 +2193,7 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
             save_reflection(reflection_entry)
             try:
                 from app.core.self_edit_outcome_tracker import record_pending_outcome
-                record_pending_outcome(task_type)
+                record_pending_outcome(task_type, trace_id=trace_id)
             except Exception as _ote:
                 logging.debug(f"[SELF-EDIT-OUTCOME] record_pending_outcome failed: {_ote}")
             try:

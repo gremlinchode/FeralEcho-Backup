@@ -12,6 +12,7 @@ import logging
 import random
 import os
 import json
+import uuid
 from datetime import datetime
 
 
@@ -686,7 +687,12 @@ def reflect(prompt: str) -> str:
                 pass
 
         system = "\n\n".join(system_parts) if system_parts else None
-        response = echo_query(prompt, task_type="personal", system=system)
+        # Plan 5 correlation-ID pass (2026-09-05): a locally-minted trace_id
+        # per real reflection call, so this entry is joinable in
+        # interaction_log.jsonl/council_deliberations.jsonl even though no
+        # caller currently threads a shared ID in from further up the
+        # autonomous loop -- purely additive, no existing behavior changes.
+        response = echo_query(prompt, task_type="personal", system=system, trace_id=str(uuid.uuid4()))
 
         if not response or "[ERROR]" in response:
             logging.warning(f"[SCHEDULER] Reflection returned empty or error")
@@ -786,7 +792,9 @@ def run_self_model_reflection():
             system = get_structural_self_facts(prompt) or None
         except Exception as gte:
             logging.debug(f"[SCHEDULER] ground-truth guard unavailable: {gte}")
-        response = echo_query(prompt, task_type="personal", system=system)
+        # Plan 5 correlation-ID pass (2026-09-05): see reflect()'s identical
+        # comment above -- same additive, locally-minted-ID approach.
+        response = echo_query(prompt, task_type="personal", system=system, trace_id=str(uuid.uuid4()))
 
         if response and "[ERROR]" not in response:
             if MEMORY_AVAILABLE:
@@ -906,7 +914,12 @@ def emergent_loop():
                         "Write one question only. No preamble, no affirmations. "
                         "Start directly with the question."
                     )
-                    next_question = echo_query(harvest_prompt, task_type="personal")
+                    # Plan 5 correlation-ID pass (2026-09-05): own trace_id,
+                    # not threaded from the reflection call above it (that
+                    # response was already logged under its own ID by the
+                    # call that produced it) -- this is a genuinely separate
+                    # real interaction_log.jsonl entry in its own right.
+                    next_question = echo_query(harvest_prompt, task_type="personal", trace_id=str(uuid.uuid4()))
                     if next_question:
                         # Scan all lines for a genuine question — skip flattery openers
                         lines = [l.strip() for l in next_question.strip().split("\n") if l.strip()]

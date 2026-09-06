@@ -69,14 +69,23 @@ def _load_jsonl(path: Path) -> list:
     return out
 
 
-def record_pending_outcome(task_type: str, edit_timestamp: "str | None" = None) -> None:
-    """Called once, right after a self-edit deploys successfully."""
+def record_pending_outcome(task_type: str, edit_timestamp: "str | None" = None, trace_id: "str | None" = None) -> None:
+    """Called once, right after a self-edit deploys successfully.
+
+    trace_id (2026-09-05, Plan 5 correlation-ID pass): optional, the same
+    ID execute_self_edit() minted for this attempt's echo_query() calls —
+    lets this row be joined to the interaction_log.jsonl/
+    council_deliberations.jsonl entries from the same real attempt.
+    Purely additive; defaults to None, identical to today's behavior for
+    any caller that doesn't pass one.
+    """
     ts = edit_timestamp or datetime.utcnow().isoformat()
     entry = {
         "edit_id": ts,
         "task_type": task_type,
         "edit_timestamp": ts,
         "status": "pending",
+        "trace_id": trace_id,
     }
     try:
         with _outcomes_lock:

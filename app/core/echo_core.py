@@ -287,6 +287,7 @@ class EchoCore:
     def publish_salience(
         self, source: str, kind: str, summary: str,
         detail: dict | None = None, salience: float | None = None,
+        trace_id: "str | None" = None,
     ) -> None:
         """
         Convenience wrapper so every publisher builds the same payload
@@ -296,12 +297,20 @@ class EchoCore:
         what liveness_ledger.py's global_workspace check counts distinct
         values of to verify genuine multi-subsystem integration, not one
         publisher talking to itself.
+
+        trace_id (2026-09-05, Plan 5 correlation-ID pass): optional,
+        forwarded into the persisted workspace_log.jsonl entry below so a
+        workspace event raised during a specific traced request/cycle can
+        be joined back to it. Purely additive — every existing caller
+        (10+ real call sites, none passing this positionally) is
+        unaffected.
         """
         self.publish(kind, {
             "source": source,
             "summary": summary,
             "detail": detail or {},
             "salience": salience,
+            "trace_id": trace_id,
             "ts": datetime.now(timezone.utc).isoformat(),
         })
 
@@ -350,6 +359,7 @@ class EchoCore:
                 "detail": payload.get("detail") or {},
                 "salience": payload.get("salience"),
                 "wide_broadcast": bool(payload.get("wide_broadcast", False)),
+                "trace_id": payload.get("trace_id"),
             }
             with open(_WORKSPACE_LOG_PATH, "a", encoding="utf-8") as f:
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")

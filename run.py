@@ -8,6 +8,7 @@ from datetime import datetime
 import os
 import sys
 import time
+import uuid
 
 # ── OpenMP / KMP duplicate-library guard ──────────────────────────────────────
 # Without this, two native packages (e.g. faiss + numpy-MKL) each loading their
@@ -575,6 +576,7 @@ def mirror_echo():
 
                 echo_reply_text = echo_model_orchestrator.echo_query(
                     msg, task_type=task_type, source="user_conversation", system=system_context,
+                    trace_id=str(uuid.uuid4()),
                 )
             except Exception as eq_err:
                 logger.warning(f"[MIRROR_ECHO] echo_query failed: {eq_err}")

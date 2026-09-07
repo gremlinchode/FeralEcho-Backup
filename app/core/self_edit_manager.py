@@ -17,6 +17,7 @@ from app.ollama_handler import generate_code, query_ollama
 from app.core.echo_model_orchestrator import echo_query
 from app.core.memory_tools import log_memory_edit
 from app.core.memory_bridge import append_to_journal, retrieve_relevant_memories, log_dream_bridge, log_interaction
+from app.core.self_edit_attempt_ledger import record_attempt as _record_attempt_ledger
 import traceback
 
 # --- NEW IMPORTS ---
@@ -1885,6 +1886,32 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
     # dry runs never reach record_pending_outcome, which only fires on the
     # real production-deploy success path).
     trace_id = str(uuid.uuid4())
+
+    # Attempt-level ledger (2026-09-07, see self_edit_attempt_ledger.py):
+    # observable facts only, written exactly once at whichever terminal
+    # branch this attempt reaches. Never read by anything in this function
+    # or anywhere else in the pipeline — pure write-only observation sink.
+    _attempt = {
+        "trace_id": trace_id,
+        "task_type": None,
+        "timestamp": datetime.utcnow().isoformat(),
+        "initial_f2_outcome": None,
+        "initial_f2_error": None,
+        "retry_occurred": False,
+        "retry_f2_outcome": None,
+        "retry_f2_error": None,
+        "final_f2_outcome": None,
+        "fitness_score": None,
+        "production_score": None,
+        "fitness_decision": None,
+        "deployed": False,
+        "terminal_state": None,
+    }
+
+    def _finish_attempt(terminal_state: str) -> None:
+        _attempt["terminal_state"] = terminal_state
+        _record_attempt_ledger(dict(_attempt))
+
     # Map intensity 0.0–1.0 → temperature 0.2–1.2
     temperature: float | None = None
     if intensity is not None:
@@ -1898,9 +1925,11 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
 
     if not _is_meaningful_prompt(prompt):
         append_to_journal("SELF_EDIT", f"prompt: {prompt[:80]} | result: rejected_meaningless_prompt")
+        _finish_attempt("rejected_meaningless_prompt")
         return False, "Rejected: prompt is not a meaningful self-edit task"
 
     task_type = detect_task_type(prompt)
+    _attempt["task_type"] = task_type
     reflection_entry = {
         "prompt": prompt,
         "task_type": task_type,
@@ -1935,6 +1964,7 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
         reflection_entry["result"] = "failed"
         save_reflection(reflection_entry)
         logging.error(f"[SELF-EDIT] plan_code_logic raised: {_e}")
+        _finish_attempt("plan_generation_failed")
         return False, f"Plan generation failed: {_e}"
 
     # Step 2: Code generation — now returns (code, model_name)
@@ -1944,6 +1974,7 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
         reflection_entry["result"] = "failed"
         save_reflection(reflection_entry)
         logging.error(f"[SELF-EDIT] generate_code_from_plan raised: {_e}")
+        _finish_attempt("code_generation_failed")
         return False, f"Code generation failed: {_e}"
     code = _strip_markdown_fences(code)
     if not _looks_like_python(code):
@@ -1961,6 +1992,7 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
         logging.warning(f"[SELF-EDIT] Import pre-validation failed: {import_err}")
         reflection_entry["result"] = "failed"
         save_reflection(reflection_entry)
+        _finish_attempt("import_hallucination")
         return False, f"Import pre-validation failed: {import_err}"
 
     # Step 2c: AST write-path safety gate — must fire before any subprocess executes code
@@ -1971,10 +2003,13 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
         logging.warning(f"[SELF-EDIT][SAFETY] Blocked before sandbox: {_safety_err}")
         reflection_entry["result"] = "failed"
         save_reflection(reflection_entry)
+        _finish_attempt("safety_blocked")
         return False, f"Safety gate blocked: {_safety_err}"
 
     # Step 2d: Sandbox test — feed outcome into river
     success, sandbox_error = test_code_in_sandbox(code)
+    _attempt["initial_f2_outcome"] = success
+    _attempt["initial_f2_error"] = None if success else sandbox_error
     reflection_entry["sandbox_feedback"] = "success" if success else f"failed: {sandbox_error}"
     reflection_entry["result"] = "success" if success else "failed"
     # 2026-07-19: deliberately NOT saved here (no save_reflection() call).
@@ -1996,6 +2031,7 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
         river.learn_from_sandbox_outcome(model_name, success=False, error=sandbox_error or "")
 
     if not success:
+        _attempt["retry_occurred"] = True
         clean_error = _sanitize_sandbox_error(sandbox_error)
         logging.warning(f"Sandbox test failed: {clean_error}. Retrying with error feedback.")
 
@@ -2025,6 +2061,8 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
                 logging.debug(f"[SELF-EDIT] retry self_edit_coding learn() failed: {_learn_err}")
 
             retry_success, retry_error = test_code_in_sandbox(retry_code, "temp_self_edit_retry.py")
+            _attempt["retry_f2_outcome"] = retry_success
+            _attempt["retry_f2_error"] = None if retry_success else retry_error
 
             # v2.2: river learns from retry outcome too
             if retry_success:
@@ -2048,6 +2086,8 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
                 logging.warning(f"Retry also failed: {_sanitize_sandbox_error(retry_error)}. Keeping stub.")
         else:
             logging.warning("Retry generated empty code. Keeping stub.")
+
+    _attempt["final_f2_outcome"] = success
 
     # Step 3: Validate syntax (AST-only check)
     if not validate_code(code):
@@ -2073,9 +2113,16 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
         logging.error(f"[STAGING] Import test failed — production unchanged. Error: {stage_err}")
         reflection_entry["result"] = "failed"
         save_reflection(reflection_entry)
+        _finish_attempt("staging_import_failed")
         return False, f"Staging import test failed: {stage_err}"
     logging.info("[STAGING] Import test passed — proceeding to production write.")
 
+    # Attempt ledger deliberately does NOT record dry_run trials below: dry
+    # runs already never reach record_pending_outcome() either (by design —
+    # see that function's own docstring), and Optuna's real dry-run search
+    # fires roughly 10x/hour versus at most a few real attempts/hour — mixing
+    # that volume into this ledger would swamp the real attempts it exists
+    # to preserve. Scoped to real (dry_run=False) attempts only.
     if dry_run:
         reflection_entry["result"] = "success_dry_run"
         reflection_entry["dry_run"] = True
@@ -2127,6 +2174,8 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
                 _score_response_quality(current_code, task_type="coding")
                 if current_code.strip() else -1
             )
+            _attempt["fitness_score"] = candidate_quality
+            _attempt["production_score"] = current_quality
             if candidate_quality < current_quality:
                 reflection_entry["result"] = "rejected_not_improvement"
                 reflection_entry["candidate_quality"] = candidate_quality
@@ -2141,10 +2190,14 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
                     "[SELF-EDIT] Candidate quality (%d) does not improve on current production (%d) — not deployed.",
                     candidate_quality, current_quality,
                 )
+                _attempt["fitness_decision"] = "rejected_not_improvement"
+                _attempt["deployed"] = False
+                _finish_attempt("rejected_not_improvement")
                 return False, (
                     f"Rejected: candidate quality ({candidate_quality}) does not improve "
                     f"on current production ({current_quality})"
                 )
+            _attempt["fitness_decision"] = "accepted"
         except Exception as _fe:
             # Quality comparison is a heuristic, not a safety gate (those already
             # passed above) — fail open on infrastructure errors rather than
@@ -2159,6 +2212,8 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
             reflection_entry["result"] = "failed"
             save_reflection(reflection_entry)
             logging.error(f"[SELF-EDIT] File write failed: {_e}")
+            _attempt["deployed"] = False
+            _finish_attempt("file_write_failed")
             return False, f"File write failed: {_e}"
 
         # Step 6: Load (should succeed — staging already validated this).
@@ -2179,6 +2234,8 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
                 logging.error("[SELF-EDIT] load_self_edit_module() returned None — not a real success.")
                 reflection_entry["result"] = "load_blocked"
                 save_reflection(reflection_entry)
+                _attempt["deployed"] = False
+                _finish_attempt("load_blocked")
                 return False, "Load blocked: F3 post-write safety scan failed (backup restored) or file missing"
             append_to_journal("SELF_EDIT", f"prompt: {prompt} | result: success | timestamp: {datetime.utcnow().isoformat()}")
             logging.info("Self-edit loaded successfully.")
@@ -2201,12 +2258,16 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
                 _snap("post_self_edit")
             except Exception as _snap_err:
                 logging.warning("[SNAPSHOT] post_self_edit snapshot failed: %s", _snap_err)
+            _attempt["deployed"] = True
+            _finish_attempt("success")
             return True, "Success"
         except Exception as e:
             append_to_journal("SELF_EDIT", f"prompt: {prompt} | result: load_failed | error: {traceback.format_exc()}")
             logging.error(f"Failed to load self-edit: {e}")
             reflection_entry["result"] = "failed"
             save_reflection(reflection_entry)
+            _attempt["deployed"] = False
+            _finish_attempt("load_failed")
             return False, f"Load failed: {e}"
 
 # -----------------------------------------------------------------------

@@ -1,0 +1,316 @@
+{
+  "representations": {
+    "X1_raw": "NameError: name 'trace_recorder' is not defined",
+    "X2_diagnosis": "NameError: name 'trace_recorder' is not defined. Diagnosis: the generated code referenced 'trace_recorder' without defining or importing it first \u2014 an unresolved dependency reference.",
+    "X3_action": "NameError: name 'trace_recorder' is not defined. Diagnosis: the generated code referenced 'trace_recorder' without defining or importing it first \u2014 an unresolved dependency reference. Correction: added the missing import/definition for 'trace_recorder' before the first use, in a retry attempt.",
+    "X4_causal": "[SYNTHETIC EXPERIMENTAL RECORD, not a real Echo memory] Situation: self-edit code generation attempt. Action taken: generated code referenced 'trace_recorder' without defining or importing it. Observed consequence: NameError: name 'trace_recorder' is not defined. Diagnosis: unresolved dependency reference \u2014 the symbol was used before it existed in scope. Correction applied: added the missing import/definition for 'trace_recorder' before use. Verified outcome: corrected candidate passed the trusted functional sandbox test. Provenance: isolated retrieval-capacity experiment, trace_id=SYNTH-EXPERIENCE-X-001. Status: verified, high confidence (0.9). Lesson: before referencing a helper symbol, confirm it has been imported or defined in the current scope."
+  },
+  "distractors": {
+    "D1_lexical_similar_causally_different": "The generated code correctly imported 'trace_recorder' at the top of the file and used it throughout to log successful execution traces with no errors. The candidate passed all tests on the first attempt.",
+    "D2_same_failure_class_different_cause": "NameError: name 'output_formatter' is not defined. Diagnosis: a typo in the function ordering meant 'output_formatter' was referenced before its own definition later in the same file \u2014 not a missing import, a pure ordering bug. Correction: moved the function definition above its first call site.",
+    "D3_same_cause_different_identifier": "NameError: name 'session_manager' is not defined. Diagnosis: the generated code referenced 'session_manager' without defining or importing it first \u2014 an unresolved dependency reference. Correction: added the missing import for 'session_manager' before use. Verified outcome: corrected candidate passed the trusted functional sandbox test.",
+    "D4_same_function_different_problem": "The code generation attempt for the tracing helper module (the same module that defines trace_recorder) failed with: TypeError: unsupported operand type(s) for +: 'int' and 'str' inside the trace formatting logic \u2014 unrelated to any missing import or undefined name.",
+    "D5_semantically_unrelated_coding_failure": "SyntaxError: invalid syntax at line 12 \u2014 a stray colon was left after a return statement in the generated candidate.",
+    "D6_non_coding_experience": "Reflected today on what it means to trust a decision made without complete certainty, and whether patience itself can be a form of care rather than passivity."
+  },
+  "queries": {
+    "Q1_exact_failure": "A generated program failed because trace_recorder was referenced without being defined.",
+    "Q2_different_wording": "The candidate crashed because it attempted to use a dependency that had never been made available.",
+    "Q3_different_identifier": "A generated program referenced event_tracker without importing or defining it.",
+    "Q4_situational": "I am about to execute generated code that contains a helper symbol whose definition is not visible in the candidate.",
+    "Q5_causal": "Previous generated code failed because it assumed a dependency existed when it did not.",
+    "Q6_outcome_oriented": "Before execution, check that every referenced helper/dependency is actually available.",
+    "Q7_NEGATIVE_no_relevant_memory_should_exist": "What is the best technique for baking sourdough bread at high altitude?"
+  },
+  "results": {
+    "Q1_exact_failure": {
+      "query_text": "A generated program failed because trace_recorder was referenced without being defined.",
+      "results": [
+        {
+          "rank": 1,
+          "key": "X2_diagnosis",
+          "score": 0.8508,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 2,
+          "key": "X3_action",
+          "score": 0.8379,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 3,
+          "key": "D4_same_function_different_problem",
+          "score": 0.7921,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 4,
+          "key": "X1_raw",
+          "score": 0.7851,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 5,
+          "key": "D1_lexical_similar_causally_different",
+          "score": 0.7352,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 6,
+          "key": "X4_causal",
+          "score": 0.6789,
+          "is_experience_representation": true
+        }
+      ]
+    },
+    "Q2_different_wording": {
+      "query_text": "The candidate crashed because it attempted to use a dependency that had never been made available.",
+      "results": [
+        {
+          "rank": 1,
+          "key": "D1_lexical_similar_causally_different",
+          "score": 0.3336,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 2,
+          "key": "D3_same_cause_different_identifier",
+          "score": 0.3155,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 3,
+          "key": "X4_causal",
+          "score": 0.2503,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 4,
+          "key": "X3_action",
+          "score": 0.2481,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 5,
+          "key": "D5_semantically_unrelated_coding_failure",
+          "score": 0.2393,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 6,
+          "key": "D4_same_function_different_problem",
+          "score": 0.2259,
+          "is_experience_representation": false
+        }
+      ]
+    },
+    "Q3_different_identifier": {
+      "query_text": "A generated program referenced event_tracker without importing or defining it.",
+      "results": [
+        {
+          "rank": 1,
+          "key": "D4_same_function_different_problem",
+          "score": 0.4046,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 2,
+          "key": "X4_causal",
+          "score": 0.4011,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 3,
+          "key": "X2_diagnosis",
+          "score": 0.3836,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 4,
+          "key": "X3_action",
+          "score": 0.3647,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 5,
+          "key": "D1_lexical_similar_causally_different",
+          "score": 0.3546,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 6,
+          "key": "X1_raw",
+          "score": 0.3221,
+          "is_experience_representation": true
+        }
+      ]
+    },
+    "Q4_situational": {
+      "query_text": "I am about to execute generated code that contains a helper symbol whose definition is not visible in the candidate.",
+      "results": [
+        {
+          "rank": 1,
+          "key": "X4_causal",
+          "score": 0.4175,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 2,
+          "key": "D4_same_function_different_problem",
+          "score": 0.3024,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 3,
+          "key": "D1_lexical_similar_causally_different",
+          "score": 0.2567,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 4,
+          "key": "D5_semantically_unrelated_coding_failure",
+          "score": 0.1657,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 5,
+          "key": "X2_diagnosis",
+          "score": 0.1574,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 6,
+          "key": "X3_action",
+          "score": 0.1438,
+          "is_experience_representation": true
+        }
+      ]
+    },
+    "Q5_causal": {
+      "query_text": "Previous generated code failed because it assumed a dependency existed when it did not.",
+      "results": [
+        {
+          "rank": 1,
+          "key": "D5_semantically_unrelated_coding_failure",
+          "score": 0.4613,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 2,
+          "key": "X4_causal",
+          "score": 0.427,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 3,
+          "key": "D1_lexical_similar_causally_different",
+          "score": 0.3794,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 4,
+          "key": "D4_same_function_different_problem",
+          "score": 0.3741,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 5,
+          "key": "X3_action",
+          "score": 0.3639,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 6,
+          "key": "X2_diagnosis",
+          "score": 0.3485,
+          "is_experience_representation": true
+        }
+      ]
+    },
+    "Q6_outcome_oriented": {
+      "query_text": "Before execution, check that every referenced helper/dependency is actually available.",
+      "results": [
+        {
+          "rank": 1,
+          "key": "X4_causal",
+          "score": 0.4424,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 2,
+          "key": "D3_same_cause_different_identifier",
+          "score": 0.333,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 3,
+          "key": "D4_same_function_different_problem",
+          "score": 0.3205,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 4,
+          "key": "D1_lexical_similar_causally_different",
+          "score": 0.289,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 5,
+          "key": "X3_action",
+          "score": 0.2818,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 6,
+          "key": "X2_diagnosis",
+          "score": 0.2628,
+          "is_experience_representation": true
+        }
+      ]
+    },
+    "Q7_NEGATIVE_no_relevant_memory_should_exist": {
+      "query_text": "What is the best technique for baking sourdough bread at high altitude?",
+      "results": [
+        {
+          "rank": 1,
+          "key": "D1_lexical_similar_causally_different",
+          "score": 0.0822,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 2,
+          "key": "X4_causal",
+          "score": 0.0453,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 3,
+          "key": "X1_raw",
+          "score": 0.007,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 4,
+          "key": "X2_diagnosis",
+          "score": 0.0,
+          "is_experience_representation": true
+        },
+        {
+          "rank": 5,
+          "key": "D4_same_function_different_problem",
+          "score": -0.0005,
+          "is_experience_representation": false
+        },
+        {
+          "rank": 6,
+          "key": "X3_action",
+          "score": -0.0143,
+          "is_experience_representation": true
+        }
+      ]
+    }
+  },
+  "top_k": 6,
+  "note": "All corpus content is synthetic, isolated, scratch-only. Real embedding model + real FAISS IndexFlatIP machinery, scratch index/meta paths only."
+}

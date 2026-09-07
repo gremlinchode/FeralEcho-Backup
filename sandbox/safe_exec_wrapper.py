@@ -39,6 +39,37 @@ the write-block itself real OS-level enforcement (the existing patches
 below) instead of the temporary, additional in-process monkeypatch
 self_edit_manager.py used to install and tear down around just this call.
 
+--mode=functional_verify -- <output_path>: Phase 1 functional quality
+signal (audits/2026-09-06_phase1_functional_quality_signal.md), added
+2026-09-06. Deliberately not wired into any live call site — see that
+report for scope and status. Loads MODULE_PATH (a self-edit-candidate-
+shaped file, already staged by the caller) and, after it imports
+successfully, enumerates every top-level function and class *defined in
+this module* (obj.__module__ == the loaded module's own synthetic name —
+excludes anything the candidate merely imports, e.g. Counter/defaultdict),
+smoke-tests each with a minimal synthetic call (0 required params -> call
+with none; exactly 1 required param -> call with the string "test",
+matching the existing --mode=apply_to_code smoke-test convention already
+established just above; 2+ required params -> recorded as
+skipped_unsupported_signature rather than guessed, since guessing multiple
+argument values has a high false-positive risk this mode is not designed
+to absorb). Every call is individually wrapped in its own try/except, so a
+raise is captured as structured data, never an uncaught subprocess crash —
+SANDBOX_OK is still printed on harness success regardless of whether any
+individual smoke-tested call raised. Writes a JSON summary
+({"tested": [{"name", "kind", "outcome", "error"}], "any_tested": bool,
+"any_raised": bool}) to <output_path>. This intentionally does NOT test
+class methods individually, only module-level callables and bare class
+construction — a stated scope limit, not an oversight (see the report's
+"Environmental limitations" section). This also intentionally does not
+attempt to verify semantic correctness against any external spec — no
+such spec exists per self-edit family today, and inventing one was
+explicitly out of scope for this phase. It answers exactly one question:
+does this candidate's own top-level code raise when invoked with a
+generic, non-adversarial input — the same question that would have
+caught the real, already-diagnosed undefined-CodeGenerator-reference bug
+in the currently-deployed self_edit_generated.py.
+
 Patches applied before exec_module():
   builtins.open / io.open / _io.open   — all Python-level open() entry points
   io.FileIO / io.RawIOBase             — C file descriptor wrappers
@@ -336,11 +367,14 @@ if __name__ == "__main__":
     for _flag in _flags:
         if _flag.startswith("--mode="):
             _mode = _flag.split("=", 1)[1]
-    if _mode not in ("import", "script", "apply_to_code"):
-        print(f"Unknown --mode={_mode!r}, expected 'import', 'script', or 'apply_to_code'", file=sys.stderr)
+    if _mode not in ("import", "script", "apply_to_code", "functional_verify"):
+        print(f"Unknown --mode={_mode!r}, expected 'import', 'script', 'apply_to_code', or 'functional_verify'", file=sys.stderr)
         sys.exit(1)
     if _mode == "apply_to_code" and len(_extra_argv) < 2:
         print("--mode=apply_to_code requires -- <input_path> <output_path>", file=sys.stderr)
+        sys.exit(1)
+    if _mode == "functional_verify" and len(_extra_argv) < 1:
+        print("--mode=functional_verify requires -- <output_path>", file=sys.stderr)
         sys.exit(1)
 
     # This script is invoked directly (`sys.executable safe_exec_wrapper.py
@@ -386,6 +420,8 @@ if __name__ == "__main__":
         spec = importlib.util.spec_from_file_location("__main__", module_path)
     elif _mode == "apply_to_code":
         spec = importlib.util.spec_from_file_location("_sandbox_apply_to_code", module_path)
+    elif _mode == "functional_verify":
+        spec = importlib.util.spec_from_file_location("_sandbox_functional_verify", module_path)
     else:
         spec = importlib.util.spec_from_file_location("_sandbox_test", module_path)
     m = importlib.util.module_from_spec(spec)
@@ -418,6 +454,60 @@ if __name__ == "__main__":
             sys.exit(1)
         with open(_out_path, "w", encoding="utf-8") as f:
             f.write(_result)
+        print("SANDBOX_OK")
+        sys.exit(0)
+
+    if _mode == "functional_verify":
+        import inspect as _inspect
+        import json as _json
+
+        _out_path = _extra_argv[0]
+        _results: list = []
+        for _name, _obj in vars(m).items():
+            if _name.startswith("_"):
+                continue
+            _kind = None
+            if _inspect.isfunction(_obj) and getattr(_obj, "__module__", None) == m.__name__:
+                _kind = "function"
+            elif _inspect.isclass(_obj) and getattr(_obj, "__module__", None) == m.__name__:
+                _kind = "class"
+            else:
+                continue  # imported name, constant, or anything not a candidate-defined callable
+
+            try:
+                _target = _obj if _kind == "function" else _obj.__init__
+                _params = [
+                    p for p in _inspect.signature(_target).parameters.values()
+                    if p.default is _inspect.Parameter.empty
+                    and p.kind in (
+                        _inspect.Parameter.POSITIONAL_ONLY,
+                        _inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    )
+                ]
+                if _kind == "class" and _params and _params[0].name == "self":
+                    _params = _params[1:]
+            except (TypeError, ValueError) as _sig_err:
+                _results.append({"name": _name, "kind": _kind, "outcome": "skipped_unsupported_signature", "error": str(_sig_err)})
+                continue
+
+            if len(_params) == 0:
+                _args = ()
+            elif len(_params) == 1:
+                _args = ("test",)
+            else:
+                _results.append({"name": _name, "kind": _kind, "outcome": "skipped_unsupported_signature", "error": f"{len(_params)} required params"})
+                continue
+
+            try:
+                _obj(*_args)
+                _results.append({"name": _name, "kind": _kind, "outcome": "executed_ok", "error": None})
+            except Exception as _call_err:
+                _results.append({"name": _name, "kind": _kind, "outcome": "raised", "error": f"{type(_call_err).__name__}: {_call_err}"})
+
+        _any_tested = any(r["outcome"] in ("executed_ok", "raised") for r in _results)
+        _any_raised = any(r["outcome"] == "raised" for r in _results)
+        with open(_out_path, "w", encoding="utf-8") as f:
+            _json.dump({"tested": _results, "any_tested": _any_tested, "any_raised": _any_raised}, f)
         print("SANDBOX_OK")
         sys.exit(0)
 

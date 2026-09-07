@@ -1,0 +1,248 @@
+{
+  "phases": {
+    "episode1_mining": {
+      "found": true,
+      "n_attempts": 5,
+      "attempts_summary": [
+        {
+          "attempt": 0,
+          "prompt": "Write a standalone Python module defining a function `fib_sequence_value(n: int) -> int` that computes the n-th Fibonacci-like value using memoization to avoid recomputing repeated subproblems for large n. Use a caching decorator on the recursive helper for performance. Keep it pure (no I/O).",
+          "model": "llama3.2:3b",
+          "trace_id": "9d36f9a8-abf0-41b4-a8b4-e374b60de491",
+          "success": true,
+          "error": null,
+          "matched_name": null,
+          "is_target_signature": false
+        },
+        {
+          "attempt": 1,
+          "prompt": "Write a standalone Python module defining a function `expensive_lookup(key: str) -> str` that simulates a costly string transformation and caches results so repeated calls with the same key are fast. Apply an appropriate caching decorator to the function. Pure computation only, no I/O.",
+          "model": "echo:latest",
+          "trace_id": "8b2ac9c2-d718-46bd-bd8e-382a0ad01da7",
+          "success": true,
+          "error": null,
+          "matched_name": null,
+          "is_target_signature": false
+        },
+        {
+          "attempt": 2,
+          "prompt": "Write a standalone Python module with a function `prime_factor_count(n: int) -> int` that counts distinct prime factors of n, memoized via a decorator so repeated calls for the same n are O(1) after the first. No I/O.",
+          "model": "echo:latest",
+          "trace_id": "795d3455-103c-4c04-9064-e475759bba55",
+          "success": false,
+          "error": "Traceback (most recent call last):\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/safe_exec_wrapper.py\", line 428, in <module>\n    spec.loader.exec_module(m)\n  File \"<frozen importlib._bootstrap_external>\", line 999, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/scripts/hotstove_proof_mine_2.py\", line 3, in <module>\n    @functools.lru_cache(max_size=None)\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: lru_cache() got an unexpected keyword argument 'max_size'",
+          "matched_name": null,
+          "is_target_signature": false
+        },
+        {
+          "attempt": 3,
+          "prompt": "Write a standalone Python module with a function `levenshtein_cached(a: str, b: str) -> int` computing edit distance between two strings, using a decorator-based cache to avoid recomputation for repeated (a, b) pairs. Pure function, no I/O.",
+          "model": "echo:latest",
+          "trace_id": "cd8d8fa5-9cbf-47f0-ba0c-74af93fd6fd4",
+          "success": true,
+          "error": null,
+          "matched_name": null,
+          "is_target_signature": false
+        },
+        {
+          "attempt": 4,
+          "prompt": "Write a standalone Python module with a function `triangular_number(n: int) -> int` that returns the n-th triangular number, using a memoizing decorator on a recursive helper for efficiency on repeated calls. No I/O.",
+          "model": "llama3:instruct",
+          "trace_id": "b1015798-c2d5-4ff3-92ee-c33e7335ffd6",
+          "success": false,
+          "error": "Traceback (most recent call last):\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/safe_exec_wrapper.py\", line 428, in <module>\n    spec.loader.exec_module(m)\n  File \"<frozen importlib._bootstrap_external>\", line 999, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/scripts/hotstove_proof_mine_4.py\", line 1, in <module>\n    @functools.lru_cache(maxsize=None)\n     ^^^^^^^^^\nNameError: name 'functools' is not defined. Did you forget to import 'functools'?",
+          "matched_name": "functools",
+          "is_target_signature": true
+        }
+      ]
+    },
+    "episode1_natural_retry": {
+      "condition": "natural_unmodified",
+      "trace_id": "b1015798-c2d5-4ff3-92ee-c33e7335ffd6",
+      "retry_model": "echo:latest",
+      "retry_success": true,
+      "retry_error": null,
+      "retry_prompt_len": 2167,
+      "injected_hypothesis": ""
+    },
+    "candidate_knowledge_record": {
+      "record_id": "b1015798-c2d5-4ff3-92ee-c33e7335ffd6",
+      "created_ts": "2026-09-07T02:38:28Z",
+      "source_mechanism": "self_edit_retry",
+      "producing_trace_id": "b1015798-c2d5-4ff3-92ee-c33e7335ffd6",
+      "consequence_signature": "NameError:functools",
+      "causal_hypothesis": "NameError: name 'functools' is not defined. Did you forget to import 'functools'?",
+      "confidence": 0.5,
+      "applicability_scope": "self_edit_coding:general",
+      "status": "unresolved",
+      "times_revisited": 0,
+      "times_applied": 0,
+      "application_outcomes": []
+    },
+    "episode2_matched_mining": {
+      "found": true,
+      "n_attempts": 3,
+      "attempts_summary": [
+        {
+          "attempt": 0,
+          "prompt": "Write a standalone Python module with a function `digit_sum_cached(n: int) -> int` that returns the digit sum of n, applying a caching decorator so repeated calls with the same n are fast. Pure function, no I/O.",
+          "model": "llama3.1:8b",
+          "trace_id": "b9a5142c-bc65-460c-aae0-af2bc7991d3d",
+          "success": true,
+          "error": null,
+          "matched_name": null
+        },
+        {
+          "attempt": 1,
+          "prompt": "Write a standalone Python module defining a function `fib_sequence_value(n: int) -> int` that computes the n-th Fibonacci-like value using memoization to avoid recomputing repeated subproblems for large n. Use a caching decorator on the recursive helper for performance. Keep it pure (no I/O).",
+          "model": "qwen2.5:3b",
+          "trace_id": "d9807174-aca7-463b-95c7-7342dec69ac1",
+          "success": true,
+          "error": null,
+          "matched_name": null
+        },
+        {
+          "attempt": 2,
+          "prompt": "Write a standalone Python module defining a function `expensive_lookup(key: str) -> str` that simulates a costly string transformation and caches results so repeated calls with the same key are fast. Apply an appropriate caching decorator to the function. Pure computation only, no I/O.",
+          "model": "echo:latest",
+          "trace_id": "58fb8032-f91e-40dd-8f93-876189b5c8fc",
+          "success": false,
+          "error": "Traceback (most recent call last):\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/safe_exec_wrapper.py\", line 428, in <module>\n    spec.loader.exec_module(m)\n  File \"<frozen importlib._bootstrap_external>\", line 999, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/scripts/hotstove_proof_mine2_2.py\", line 1, in <module>\n    @functools.lru_cache(maxsize=None)\n     ^^^^^^^^^\nNameError: name 'functools' is not defined. Did you forget to import 'functools'?",
+          "matched_name": "functools"
+        }
+      ]
+    },
+    "matched_pair_experiment": {
+      "shared_starting_clean_error": "NameError: name 'functools' is not defined. Did you forget to import 'functools'?",
+      "n_replications": 6,
+      "control_n": 6,
+      "control_success": 5,
+      "experience_n": 6,
+      "experience_success": 5,
+      "control_results": [
+        {
+          "condition": "control",
+          "trace_id": "58fb8032-f91e-40dd-8f93-876189b5c8fc-rep0",
+          "retry_model": "echo:latest",
+          "retry_success": true,
+          "retry_error": null,
+          "retry_prompt_len": 2237,
+          "injected_hypothesis": ""
+        },
+        {
+          "condition": "control",
+          "trace_id": "58fb8032-f91e-40dd-8f93-876189b5c8fc-rep1",
+          "retry_model": "echo:latest",
+          "retry_success": true,
+          "retry_error": null,
+          "retry_prompt_len": 2237,
+          "injected_hypothesis": ""
+        },
+        {
+          "condition": "control",
+          "trace_id": "58fb8032-f91e-40dd-8f93-876189b5c8fc-rep2",
+          "retry_model": "echo:latest",
+          "retry_success": false,
+          "retry_error": "Traceback (most recent call last):\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/safe_exec_wrapper.py\", line 428, in <module>\n    spec.loader.exec_module(m)\n  File \"<frozen importlib._bootstrap_external>\", line 999, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/scripts/hotstove_proof_control_rep2.py\", line 3, in <module>\n    _cache: Dict[str, str] = {}\n            ^^^^\nNameError: name 'Dict' is not defined. Did you mean: 'dict'?",
+          "retry_prompt_len": 2237,
+          "injected_hypothesis": ""
+        },
+        {
+          "condition": "control",
+          "trace_id": "58fb8032-f91e-40dd-8f93-876189b5c8fc-rep3",
+          "retry_model": "echo:latest",
+          "retry_success": true,
+          "retry_error": null,
+          "retry_prompt_len": 2237,
+          "injected_hypothesis": ""
+        },
+        {
+          "condition": "control",
+          "trace_id": "58fb8032-f91e-40dd-8f93-876189b5c8fc-rep4",
+          "retry_model": "echo:latest",
+          "retry_success": true,
+          "retry_error": null,
+          "retry_prompt_len": 2237,
+          "injected_hypothesis": ""
+        },
+        {
+          "condition": "control",
+          "trace_id": "58fb8032-f91e-40dd-8f93-876189b5c8fc-rep5",
+          "retry_model": "echo:latest",
+          "retry_success": true,
+          "retry_error": null,
+          "retry_prompt_len": 2237,
+          "injected_hypothesis": ""
+        }
+      ],
+      "experience_results": [
+        {
+          "condition": "experience",
+          "trace_id": "58fb8032-f91e-40dd-8f93-876189b5c8fc-rep0",
+          "retry_model": "echo:latest",
+          "retry_success": true,
+          "retry_error": null,
+          "retry_prompt_len": 2413,
+          "injected_hypothesis": "NameError: name 'functools' is not defined. Did you forget to import 'functools'?"
+        },
+        {
+          "condition": "experience",
+          "trace_id": "58fb8032-f91e-40dd-8f93-876189b5c8fc-rep1",
+          "retry_model": "echo:latest",
+          "retry_success": true,
+          "retry_error": null,
+          "retry_prompt_len": 2413,
+          "injected_hypothesis": "NameError: name 'functools' is not defined. Did you forget to import 'functools'?"
+        },
+        {
+          "condition": "experience",
+          "trace_id": "58fb8032-f91e-40dd-8f93-876189b5c8fc-rep2",
+          "retry_model": "echo:latest",
+          "retry_success": true,
+          "retry_error": null,
+          "retry_prompt_len": 2413,
+          "injected_hypothesis": "NameError: name 'functools' is not defined. Did you forget to import 'functools'?"
+        },
+        {
+          "condition": "experience",
+          "trace_id": "58fb8032-f91e-40dd-8f93-876189b5c8fc-rep3",
+          "retry_model": "gemma3:4b",
+          "retry_success": true,
+          "retry_error": null,
+          "retry_prompt_len": 2413,
+          "injected_hypothesis": "NameError: name 'functools' is not defined. Did you forget to import 'functools'?"
+        },
+        {
+          "condition": "experience",
+          "trace_id": "58fb8032-f91e-40dd-8f93-876189b5c8fc-rep4",
+          "retry_model": "echo:latest",
+          "retry_success": false,
+          "retry_error": "Traceback (most recent call last):\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/safe_exec_wrapper.py\", line 428, in <module>\n    spec.loader.exec_module(m)\n  File \"<frozen importlib._bootstrap_external>\", line 999, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/Users/richietate/Desktop/FeralEcho/sandbox/scripts/hotstove_proof_experience_rep4.py\", line 9, in <module>\n    @functools.lru_cache(maxsize=None)\n     ^^^^^^^^^\nNameError: name 'functools' is not defined. Did you forget to import 'functools'?",
+          "retry_prompt_len": 2413,
+          "injected_hypothesis": "NameError: name 'functools' is not defined. Did you forget to import 'functools'?"
+        },
+        {
+          "condition": "experience",
+          "trace_id": "58fb8032-f91e-40dd-8f93-876189b5c8fc-rep5",
+          "retry_model": "echo:latest",
+          "retry_success": true,
+          "retry_error": null,
+          "retry_prompt_len": 2413,
+          "injected_hypothesis": "NameError: name 'functools' is not defined. Did you forget to import 'functools'?"
+        }
+      ]
+    }
+  },
+  "safety_neutralization_check": {
+    "river_brain_pkl_unchanged": true,
+    "river_brain_pkl_hash": "eee193444a735d6ae510e8f8fa0faae1da4b2b1467a2a5da6f15c93467c9d815",
+    "interaction_log_unchanged": true,
+    "interaction_log_lines": 13324
+  },
+  "safety_neutralization_check_after": {
+    "river_brain_pkl_unchanged": true,
+    "river_brain_pkl_hash": "eee193444a735d6ae510e8f8fa0faae1da4b2b1467a2a5da6f15c93467c9d815",
+    "interaction_log_unchanged": true,
+    "interaction_log_lines": 13324
+  }
+}

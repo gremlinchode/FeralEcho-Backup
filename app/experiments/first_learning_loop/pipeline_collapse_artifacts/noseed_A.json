@@ -1,0 +1,12 @@
+{
+  "model": "echo:latest",
+  "options": {
+    "num_ctx": 8192,
+    "num_predict": 300,
+    "temperature": 0.7
+  },
+  "prompt": "Write a short Python function that adds two numbers, with a one-sentence docstring.",
+  "raw_response": "Here's a simple Python function that adds two numbers:\n\n```\ndef add_numbers(a: int, b: int) -> int:\n    \"\"\"Return the sum of two integers.\"\"\"\n    return a + b\n```",
+  "sha256": "859e523de5912b77a54a9645b1cdff446132e43af52dd6a7ac95fbcedd8f75e0",
+  "elapsed_s": 3.112333059310913
+}

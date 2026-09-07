@@ -1,0 +1,15 @@
+{
+  "result": [
+    false,
+    "Rejected: candidate quality (3) does not improve on current production (4)"
+  ],
+  "river_calls_during_real_attempt": {
+    "learn": 10,
+    "learn_sbo": 1,
+    "save": 3,
+    "_do_save": 2
+  },
+  "river_brain_pkl_hash_before": "eee193444a735d6ae510e8f8fa0faae1da4b2b1467a2a5da6f15c93467c9d815",
+  "river_brain_pkl_hash_after": "eee193444a735d6ae510e8f8fa0faae1da4b2b1467a2a5da6f15c93467c9d815",
+  "river_brain_pkl_unchanged": true
+}

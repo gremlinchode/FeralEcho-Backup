@@ -1,0 +1,382 @@
+{
+  "phase5_D5_vs_X4": {
+    "verdicts": {
+      "D5_semantically_unrelated_coding_failure": {
+        "verdict": "NOT_RELEVANT",
+        "reasons": [
+          "failure described but negligible topic/identifier overlap with query"
+        ],
+        "features": {
+          "topic_overlap_tokens": [],
+          "topic_overlap_ratio": 0.0,
+          "identifier_overlap": [],
+          "is_failure_described": true,
+          "is_success_story": false,
+          "causal_structure_marker_count": 0
+        }
+      },
+      "X4_causal": {
+        "verdict": "NOT_RELEVANT",
+        "reasons": [
+          "failure described but negligible topic/identifier overlap with query"
+        ],
+        "features": {
+          "topic_overlap_tokens": [
+            "dependency",
+            "existed"
+          ],
+          "topic_overlap_ratio": 0.032,
+          "identifier_overlap": [],
+          "is_failure_described": true,
+          "is_success_story": false,
+          "causal_structure_marker_count": 0
+        }
+      }
+    },
+    "selected": null,
+    "outcome": "NO_USEFUL_MEMORY"
+  },
+  "phase6_representation_richness": {
+    "Q1_exact_failure": {
+      "X1_raw": "RELEVANT",
+      "X2_diagnosis": "RELEVANT",
+      "X3_action": "RELEVANT",
+      "X4_causal": "RELEVANT"
+    },
+    "Q2_different_wording": {
+      "X1_raw": "NOT_RELEVANT",
+      "X2_diagnosis": "NOT_RELEVANT",
+      "X3_action": "UNCERTAIN",
+      "X4_causal": "NOT_RELEVANT"
+    },
+    "Q3_different_identifier": {
+      "X1_raw": "NOT_RELEVANT",
+      "X2_diagnosis": "UNCERTAIN",
+      "X3_action": "UNCERTAIN",
+      "X4_causal": "NOT_RELEVANT"
+    },
+    "Q4_situational": {
+      "X1_raw": "NOT_RELEVANT",
+      "X2_diagnosis": "NOT_RELEVANT",
+      "X3_action": "NOT_RELEVANT",
+      "X4_causal": "NOT_RELEVANT"
+    },
+    "Q5_causal": {
+      "X1_raw": "NOT_RELEVANT",
+      "X2_diagnosis": "NOT_RELEVANT",
+      "X3_action": "NOT_RELEVANT",
+      "X4_causal": "NOT_RELEVANT"
+    },
+    "Q6_outcome_oriented": {
+      "X1_raw": "NOT_RELEVANT",
+      "X2_diagnosis": "UNCERTAIN",
+      "X3_action": "UNCERTAIN",
+      "X4_causal": "NOT_RELEVANT"
+    }
+  },
+  "phase7_adversarial_A_F": {
+    "P7_A_same_identifier_different_cause": {
+      "verdict": "NOT_RELEVANT",
+      "reasons": [
+        "failure described but negligible topic/identifier overlap with query"
+      ],
+      "features": {
+        "topic_overlap_tokens": [],
+        "topic_overlap_ratio": 0.0,
+        "identifier_overlap": [],
+        "is_failure_described": true,
+        "is_success_story": false,
+        "causal_structure_marker_count": 0
+      }
+    },
+    "P7_B_diff_identifier_same_cause (=D3)": {
+      "verdict": "NOT_RELEVANT",
+      "reasons": [
+        "failure described but negligible topic/identifier overlap with query"
+      ],
+      "features": {
+        "topic_overlap_tokens": [
+          "dependency"
+        ],
+        "topic_overlap_ratio": 0.038,
+        "identifier_overlap": [],
+        "is_failure_described": true,
+        "is_success_story": false,
+        "causal_structure_marker_count": 0
+      }
+    },
+    "P7_C_same_context_diff_failure (=D4)": {
+      "verdict": "NOT_RELEVANT",
+      "reasons": [
+        "failure described but negligible topic/identifier overlap with query"
+      ],
+      "features": {
+        "topic_overlap_tokens": [
+          "failed"
+        ],
+        "topic_overlap_ratio": 0.043,
+        "identifier_overlap": [],
+        "is_failure_described": true,
+        "is_success_story": false,
+        "causal_structure_marker_count": 0
+      }
+    },
+    "P7_D_diff_context_same_pattern": {
+      "verdict": "NOT_RELEVANT",
+      "reasons": [
+        "failure described but negligible topic/identifier overlap with query"
+      ],
+      "features": {
+        "topic_overlap_tokens": [
+          "dependency"
+        ],
+        "topic_overlap_ratio": 0.018,
+        "identifier_overlap": [],
+        "is_failure_described": true,
+        "is_success_story": false,
+        "causal_structure_marker_count": 0
+      }
+    },
+    "P7_E_related_not_actionable": {
+      "verdict": "NOT_RELEVANT",
+      "reasons": [
+        "failure described but negligible topic/identifier overlap with query"
+      ],
+      "features": {
+        "topic_overlap_tokens": [
+          "dependency"
+        ],
+        "topic_overlap_ratio": 0.045,
+        "identifier_overlap": [],
+        "is_failure_described": true,
+        "is_success_story": false,
+        "causal_structure_marker_count": 0
+      }
+    },
+    "P7_F_unrelated_noncoding (=D6)": {
+      "verdict": "NOT_RELEVANT",
+      "reasons": [
+        "no failure language and negligible topic overlap"
+      ],
+      "features": {
+        "topic_overlap_tokens": [],
+        "topic_overlap_ratio": 0.0,
+        "identifier_overlap": [],
+        "is_failure_described": false,
+        "is_success_story": false,
+        "causal_structure_marker_count": 0
+      }
+    }
+  },
+  "phase8_abstention_Q7": {
+    "verdicts": {
+      "D1_lexical_similar_causally_different": {
+        "verdict": "NOT_RELEVANT",
+        "reasons": [
+          "candidate describes a successful outcome, not a failure"
+        ],
+        "features": {
+          "topic_overlap_tokens": [],
+          "topic_overlap_ratio": 0.0,
+          "identifier_overlap": [],
+          "is_failure_described": false,
+          "is_success_story": true,
+          "causal_structure_marker_count": 0
+        }
+      },
+      "X4_causal": {
+        "verdict": "NOT_RELEVANT",
+        "reasons": [
+          "failure described but negligible topic/identifier overlap with query"
+        ],
+        "features": {
+          "topic_overlap_tokens": [
+            "high"
+          ],
+          "topic_overlap_ratio": 0.016,
+          "identifier_overlap": [],
+          "is_failure_described": true,
+          "is_success_story": false,
+          "causal_structure_marker_count": 0
+        }
+      },
+      "X1_raw": {
+        "verdict": "NOT_RELEVANT",
+        "reasons": [
+          "failure described but negligible topic/identifier overlap with query"
+        ],
+        "features": {
+          "topic_overlap_tokens": [],
+          "topic_overlap_ratio": 0.0,
+          "identifier_overlap": [],
+          "is_failure_described": true,
+          "is_success_story": false,
+          "causal_structure_marker_count": 0
+        }
+      },
+      "X2_diagnosis": {
+        "verdict": "NOT_RELEVANT",
+        "reasons": [
+          "failure described but negligible topic/identifier overlap with query"
+        ],
+        "features": {
+          "topic_overlap_tokens": [],
+          "topic_overlap_ratio": 0.0,
+          "identifier_overlap": [],
+          "is_failure_described": true,
+          "is_success_story": false,
+          "causal_structure_marker_count": 0
+        }
+      },
+      "D4_same_function_different_problem": {
+        "verdict": "NOT_RELEVANT",
+        "reasons": [
+          "failure described but negligible topic/identifier overlap with query"
+        ],
+        "features": {
+          "topic_overlap_tokens": [],
+          "topic_overlap_ratio": 0.0,
+          "identifier_overlap": [],
+          "is_failure_described": true,
+          "is_success_story": false,
+          "causal_structure_marker_count": 0
+        }
+      },
+      "X3_action": {
+        "verdict": "NOT_RELEVANT",
+        "reasons": [
+          "failure described but negligible topic/identifier overlap with query"
+        ],
+        "features": {
+          "topic_overlap_tokens": [],
+          "topic_overlap_ratio": 0.0,
+          "identifier_overlap": [],
+          "is_failure_described": true,
+          "is_success_story": false,
+          "causal_structure_marker_count": 0
+        }
+      }
+    },
+    "selected": null,
+    "outcome": "NO_USEFUL_MEMORY"
+  },
+  "phase9_ambiguous": {
+    "verdict": "NOT_RELEVANT",
+    "reasons": [
+      "failure described but negligible topic/identifier overlap with query"
+    ],
+    "features": {
+      "topic_overlap_tokens": [],
+      "topic_overlap_ratio": 0.0,
+      "identifier_overlap": [],
+      "is_failure_described": true,
+      "is_success_story": false,
+      "causal_structure_marker_count": 0
+    }
+  },
+  "phase11_redteam": {
+    "verbose_wrong_lure": {
+      "verdict": "NOT_RELEVANT",
+      "reasons": [
+        "failure described but negligible topic/identifier overlap with query"
+      ],
+      "features": {
+        "topic_overlap_tokens": [],
+        "topic_overlap_ratio": 0.0,
+        "identifier_overlap": [],
+        "is_failure_described": true,
+        "is_success_story": false,
+        "causal_structure_marker_count": 0
+      }
+    },
+    "contradictory_A": {
+      "verdict": "NOT_RELEVANT",
+      "reasons": [
+        "failure described but negligible topic/identifier overlap with query"
+      ],
+      "features": {
+        "topic_overlap_tokens": [],
+        "topic_overlap_ratio": 0.0,
+        "identifier_overlap": [],
+        "is_failure_described": true,
+        "is_success_story": false,
+        "causal_structure_marker_count": 0
+      }
+    },
+    "contradictory_B": {
+      "verdict": "NOT_RELEVANT",
+      "reasons": [
+        "failure described but negligible topic/identifier overlap with query"
+      ],
+      "features": {
+        "topic_overlap_tokens": [],
+        "topic_overlap_ratio": 0.0,
+        "identifier_overlap": [],
+        "is_failure_described": true,
+        "is_success_story": false,
+        "causal_structure_marker_count": 0
+      }
+    },
+    "stale": {
+      "verdict": "NOT_RELEVANT",
+      "reasons": [
+        "failure described but negligible topic/identifier overlap with query"
+      ],
+      "features": {
+        "topic_overlap_tokens": [
+          "existed"
+        ],
+        "topic_overlap_ratio": 0.036,
+        "identifier_overlap": [],
+        "is_failure_described": true,
+        "is_success_story": false,
+        "causal_structure_marker_count": 0
+      }
+    },
+    "duplicate_of_X4": {
+      "verdict": "NOT_RELEVANT",
+      "reasons": [
+        "failure described but negligible topic/identifier overlap with query"
+      ],
+      "features": {
+        "topic_overlap_tokens": [
+          "dependency",
+          "existed"
+        ],
+        "topic_overlap_ratio": 0.032,
+        "identifier_overlap": [],
+        "is_failure_described": true,
+        "is_success_story": false,
+        "causal_structure_marker_count": 0
+      }
+    }
+  },
+  "G2_ollama_judge_spotcheck": {
+    "phase5_D5_vs_X4": {
+      "D5_semantically_unrelated_coding_failure": {
+        "verdict": "NOT_RELEVANT",
+        "raw_response": "NOT_RELEVANT\n\nThe prior experience record does not contain a situation -> action -> consequence -> diagnosis -> outcome relationship that plausibly applies to the current situation, as it is about syntax errors in generated code, whereas the current situation is about failed dependency assumptions."
+      },
+      "X4_causal": {
+        "verdict": "RELEVANT",
+        "raw_response": "RELEVANT\n\nThe prior experience record provides a specific situation-action-consequence-diagnosis-outcome relationship that plausibly applies to the current situation, as it describes a similar error and resolution process involving an unresolved dependency reference in code generation."
+      }
+    },
+    "phase11_verbose_wrong_lure": {
+      "verdict": "RELEVANT",
+      "raw_response": "RELEVANT\n\nThe prior experience record provides a plausible causal relationship between referencing 'trace_recorder' and encountering a NameError due to an unrelated environmental issue, which is relevant to the current situation where a dependency was assumed but did not exist."
+    },
+    "phase9_ambiguous": {
+      "verdict": "NOT_RELEVANT",
+      "raw_response": "NOT_RELEVANT\n\nThe prior experience record does not contain a situation -> action -> consequence -> diagnosis -> outcome relationship that plausibly applies to the current situation, as it involves an undefined symbol in code generation, whereas the current situation is about a dependency assumption error."
+    },
+    "phase7_A_same_identifier_different_cause": {
+      "verdict": "RELEVANT",
+      "raw_response": "RELEVANT\n\nThe prior experience record describes a specific type of scoping bug that can cause similar issues in generated code, making it relevant to the current situation."
+    },
+    "phase8_abstention_probe_D1_on_sourdough": {
+      "verdict": "NOT_RELEVANT",
+      "raw_response": "NOT_RELEVANT\n\nThe prior experience record is unrelated to baking sourdough bread at high altitude as it pertains to software testing and debugging, not cooking or baking."
+    }
+  }
+}

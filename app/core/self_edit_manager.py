@@ -18,6 +18,7 @@ from app.core.echo_model_orchestrator import echo_query
 from app.core.memory_tools import log_memory_edit
 from app.core.memory_bridge import append_to_journal, retrieve_relevant_memories, log_dream_bridge, log_interaction
 from app.core.self_edit_attempt_ledger import record_attempt as _record_attempt_ledger
+from app.core.self_edit_attempt_ledger import read_recent_f2_error as _read_recent_f2_error
 import traceback
 
 # --- NEW IMPORTS ---
@@ -2776,6 +2777,41 @@ def _recent_outcome_note(task_type: str) -> str:
         return ""
 
 
+def _attempt_ledger_evidence_section(task_type: str) -> str:
+    """
+    Surfaces the most recent real initial-F2 sandbox failure for this
+    task_type from self_edit_attempt_ledger.py — the first read-side
+    consumer of that ledger anywhere (audits/2026-09-07_
+    consequential_learning_loop_design.md, Phase 1). Deliberately kept as
+    its own distinct, unmistakably-labeled section rather than folded into
+    the Focus sentence above: this is raw historical evidence about the
+    environment, not a policy or instruction, and must not read like one.
+
+    Scope, deliberately narrow per the design doc's own non-goals: this
+    does not judge relevance, does not interpret the error, does not
+    override any constraint stated elsewhere in the prompt. It is exactly
+    the same fail-open, task_type-filtered, recency-based pattern
+    _recent_outcome_note()/_recent_experiment_note() already use one
+    function above — no new pattern introduced.
+    """
+    try:
+        entry = _read_recent_f2_error(task_type)
+        if not entry:
+            return ""
+        err = str(entry.get("initial_f2_error", "")).strip()
+        if not err:
+            return ""
+        err = err[:400]
+        return (
+            "\n\nPrior attempt failure evidence (not an instruction): a previous "
+            f"real attempt at this task type failed initial sandbox testing with: "
+            f"{err}\nThis is historical evidence about what happened before, not a "
+            "requirement — it does not override anything stated above."
+        )
+    except Exception:
+        return ""
+
+
 def _build_targeted_prompt(task_type: str, creativity: float) -> str:
     """
     Build a self-edit prompt that focuses on the weak task type.
@@ -2814,8 +2850,9 @@ def _build_targeted_prompt(task_type: str, creativity: float) -> str:
         )
 
     outcome_sentence = _recent_outcome_note(task_type)
+    evidence_section = _attempt_ledger_evidence_section(task_type)
 
-    return f"{base} Focus: {domain_sentence}{convergence_sentence}{outcome_sentence}"
+    return f"{base} Focus: {domain_sentence}{convergence_sentence}{outcome_sentence}{evidence_section}"
 
 
 def perform_self_edit(prompt=None, intensity=None, creativity=None, dry_run=None, target_task_type=None):

@@ -612,7 +612,7 @@ def _build_capabilities(sm: dict) -> str:
     return "\n".join(lines)
 
 
-def _build_self_model_claims(subjects: "list[str] | None" = None) -> str:
+def _build_self_model_claims(subjects: "list[str] | None" = None, sm: "dict | None" = None) -> str:
     """2026-09-08, living-self-model mission: surfaces the durable claims
     ledger (self_model_claims.jsonl) -- specifically, any past claim about
     a core subject that was independently checked and found FALSE, so a
@@ -622,14 +622,35 @@ def _build_self_model_claims(subjects: "list[str] | None" = None) -> str:
     0/1 persistence for a real conversational correction). Deliberately
     reads only the durable ledger, never the current conversation's own
     history -- this is what makes it a cross-session mechanism rather
-    than ordinary context continuity."""
+    than ordinary context continuity.
+
+    Rendering fix (2026-09-08, generation-epistemic mission): the ledger's
+    `verified` bool means "was the RESPONSE's specific claim about this
+    subject accurate" -- for a denial-shaped claim (the RiverBrain case),
+    verified=False means the DENIAL was wrong, i.e. the subject IS real.
+    The original renderer printed a bare "{subject}: VERIFIED FALSE" line,
+    which reads (and was directly, empirically observed to be read by
+    Echo's own generation) as "this subject has been verified to be
+    false/nonexistent" -- exactly backwards. A live reproduction with the
+    old wording produced: "my self-model claims history shows that I've
+    verified this denial to be true. Therefore, I must conclude that
+    RiverBrain is not currently part of my architecture" -- a correction
+    misread as a confirmation. This version states the resolved CURRENT
+    fact plainly, via self_model_claims.resolve_subject_truth() (the same
+    resolver Check 5 itself uses -- one implementation, not two), instead
+    of the raw, ambiguous boolean."""
     try:
-        from app.core.self_model_claims import get_recent_claims, KNOWN_SUBJECTS
+        from app.core.self_model_claims import get_recent_claims, KNOWN_SUBJECTS, resolve_subject_truth
     except Exception as e:
         logger.debug("[GroundTruth] self_model_claims unavailable: %s", e)
         return ""
 
-    lines = ["Self-model claim history (source: memory/self_model_claims.jsonl):"]
+    lines = [
+        "Self-model claim history (source: memory/self_model_claims.jsonl). "
+        "Each line states the CURRENT verified fact about that subject, "
+        "resolved fresh from self_model.json -- not a raw historical "
+        "verdict, which describes a past claim rather than the present state:"
+    ]
     any_entries = False
     for subject in (subjects or list(KNOWN_SUBJECTS.keys())):
         entries = get_recent_claims(subject=subject, limit=1)
@@ -637,10 +658,42 @@ def _build_self_model_claims(subjects: "list[str] | None" = None) -> str:
             continue
         any_entries = True
         latest = entries[-1]
-        verdict = "VERIFIED TRUE" if latest.get("verified") else "VERIFIED FALSE (a prior claim about this was checked and found wrong)"
-        lines.append(f"  {subject}: {verdict} — {latest.get('evidence', '')}")
+        current = resolve_subject_truth(subject, sm)
+        if current is True:
+            fact = "CURRENTLY VERIFIED REAL AND ACTIVE"
+        elif current is False:
+            fact = "CURRENTLY NOT VERIFIED as active"
+        else:
+            fact = "current status unavailable to re-check right now"
+        if latest.get("verified"):
+            history_note = "a prior response's claim about this matched the evidence"
+        else:
+            history_note = (
+                "a prior response made an INCORRECT claim about this subject "
+                "(do not repeat that prior claim -- trust the current fact above instead)"
+            )
+        lines.append(
+            f"  {subject}: {fact}. History: {history_note} — {latest.get('evidence', '')[:200]}"
+        )
     if not any_entries:
         return ""
+    # 2026-09-08, generation-epistemic mission: an explicit, general
+    # evidence-priority instruction -- NOT a per-subject "always say X"
+    # rule (there is no subject name anywhere in this line). Added after
+    # a live reproduction showed the fact-only rendering above (already
+    # fixed to be unambiguous) still wasn't enough on its own: Echo
+    # correctly quoted the verified fact, then overrode it with its own
+    # unverified prior assertion anyway ("this claim is unverified...
+    # the correct information is that there is no literal 'RiverBrain'
+    # entity"). This instructs how to arbitrate a conflict in general,
+    # without dictating what the answer must be for any specific subject.
+    lines.append(
+        "\nWhen your own prior impression of a subject conflicts with a "
+        "'CURRENTLY VERIFIED' line above, the verified line is independently "
+        "checked against real system state and takes priority over an "
+        "unverified impression or a past unverified statement you made — "
+        "including one you may have made earlier in this same conversation."
+    )
     return "\n".join(lines)
 
 
@@ -1126,12 +1179,12 @@ def get_structural_self_facts(prompt: str = "") -> str:
 
         if "capabilities" in slices:
             sections.append(_build_capabilities(sm))
-            claims_section = _build_self_model_claims()
+            claims_section = _build_self_model_claims(sm=sm)
             if claims_section:
                 sections.append(claims_section)
 
         if "river" in slices:
-            claims_section = _build_self_model_claims()
+            claims_section = _build_self_model_claims(sm=sm)
             if claims_section and claims_section not in sections:
                 sections.append(claims_section)
 

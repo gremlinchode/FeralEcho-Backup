@@ -282,11 +282,25 @@ def _load_self_model() -> "dict | None":
 # (handled by reusing _sentence_is_checkable's existing hypothetical/
 # uncertainty suppression below); "RiverBrain doesn't exist" and "there is
 # no RiverBrain" are.
+#
+# Two branches added 2026-09-08 (generation-epistemic mission): a live
+# reproduction caught two genuine denial phrasings the original four
+# patterns missed entirely -- "there's no evidence to suggest that
+# RiverBrain is a real subsystem" and "I do not have a specific RiverBrain
+# component" -- both real Echo output, neither hedged/hypothetical, both
+# confident denials in substance. Root cause: the original patterns all
+# required the negation word directly adjacent (within 40 chars) to
+# exist/real/literal/actual; "no evidence to suggest X is real" puts the
+# negation on "evidence," not on the reality claim itself, and "don't have
+# a component" denies possession/existence without using any of those four
+# words at all.
 _DENIAL_RE = re.compile(
     r"\b(doesn'?t|does\s+not|isn'?t|is\s+not|no)\b[^.\n]{0,40}\b(exist|real|"
     r"literal|actual)\b"
     r"|\bnot\s+(?:a\s+)?(?:real|literal|actual)\b"
-    r"|\bno\s+such\b",
+    r"|\bno\s+such\b"
+    r"|\b(don'?t|do\s+not|doesn'?t|does\s+not)\b[^.\n]{0,30}\bhave\b"
+    r"|\bno\s+evidence\b[^.\n]{0,60}\b(real|exist|literal|actual)\b",
     re.IGNORECASE,
 )
 
@@ -304,7 +318,7 @@ def find_false_negative_component_claims(text: str, self_model: "dict | None" = 
         return []
 
     try:
-        from app.core.self_model_claims import KNOWN_SUBJECTS
+        from app.core.self_model_claims import KNOWN_SUBJECTS, resolve_subject_truth
     except Exception as e:
         logger.debug(f"[SELF_KNOWLEDGE_VERIFY] self_model_claims unavailable: {e}")
         return []
@@ -334,24 +348,10 @@ def find_false_negative_component_claims(text: str, self_model: "dict | None" = 
         if not any(not _UNCERTAINTY_MARKER_RE.search(s) for s in denial_sentences):
             continue  # every occurrence hedged with genuine first-person doubt
 
-        # Resolve the dotted path against the real self_model dict. Stop at
-        # the first list-valued node (e.g. "...checks" is itself the
-        # ground truth -- "does this dict have entries" -- rather than
-        # walking into an arbitrary key inside it).
-        node = self_model
-        real_value = None
-        try:
-            for part in path.split("."):
-                if not isinstance(node, dict):
-                    node = None
-                    break
-                node = node.get(part)
-            real_value = node
-        except Exception:
-            real_value = None
-
-        is_really_true = bool(real_value) and real_value not in (0, "0")
-        if is_really_true:
+        # Resolve via the shared helper (self_model_claims.resolve_subject_truth)
+        # so this walk has exactly one implementation, not two silently
+        # drifting copies -- see that function's own docstring.
+        if resolve_subject_truth(subject, self_model):
             false_denials.append(subject)
 
     return false_denials

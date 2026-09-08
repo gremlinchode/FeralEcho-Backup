@@ -56,6 +56,36 @@ KNOWN_SUBJECTS = {
 }
 
 
+def resolve_subject_truth(subject: str, self_model: "dict | None") -> "bool | None":
+    """Resolve KNOWN_SUBJECTS[subject]'s dotted path against a real
+    self_model.json dict. Returns True if the resolved value is truthy
+    (and not the strings/ints "0"), False if it resolves to something
+    falsy, None if the subject is unknown or self_model is unavailable.
+
+    2026-09-08, generation-epistemic mission: extracted from
+    self_knowledge_verification.py's find_false_negative_component_claims()
+    so this exact resolution logic has exactly one implementation, read by
+    both that check and echo_ground_truth.py's claims-history renderer —
+    two independent copies of this same walk is the identical failure
+    shape already found twice this session (CATEGORIES, TASK_TYPE_MAP:
+    two implementations of "the same fact" silently drifting apart)."""
+    if not self_model:
+        return None
+    path = KNOWN_SUBJECTS.get(subject)
+    if not path:
+        return None
+    node = self_model
+    try:
+        for part in path.split("."):
+            if not isinstance(node, dict):
+                node = None
+                break
+            node = node.get(part)
+    except Exception:
+        return None
+    return bool(node) and node not in (0, "0")
+
+
 def record_claim(
     subject: str,
     verified: bool,

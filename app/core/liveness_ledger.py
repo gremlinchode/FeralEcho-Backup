@@ -87,6 +87,7 @@ _WINDOWS_DAYS = {
     "seam_engine": None,  # functional canary, not time-windowed — same shape as task_type_classifier
     "code_verification": None,  # functional canary, not time-windowed
     "self_knowledge_verification": None,  # functional canary, not time-windowed
+    "self_model_claims_integrity": None,  # functional canary, not time-windowed
     "echo_projects_isolation": None,  # static source-invariant, same shape as wolf_friction_bridge
     "echo_projects_no_escalation": None,  # static source-invariant, same shape as dissent_log_hook
     "echo_projects_council_advisory": None,  # static source-invariant, same shape as dissent_log_hook
@@ -1537,6 +1538,94 @@ def _check_self_knowledge_verification() -> dict:
     except Exception:
         verify_self_knowledge_claims = None
     return _evaluate_self_knowledge_verification(verify_self_knowledge_claims)
+
+
+# ── 19. self_model_claims_integrity — Check 5's own functional canary ─────
+# 2026-09-08, living-self-model mission. Not just "does this fire on a
+# known-false denial" (the same shape as check 18 above) — this ALSO
+# tests the specific temporal-authority-drift vulnerability this new
+# mechanism was built with (per the direct instruction that accompanied
+# this mission): find_false_negative_component_claims() depends on
+# self_model.json still having the exact dotted field paths
+# self_model_claims.KNOWN_SUBJECTS expects. If a future self-edit or
+# refactor moves/renames one of those fields, this check must catch that
+# as a real regression (case 3 below), not let the function silently
+# under-detect forever with nothing noticing — the exact CATEGORIES/
+# TASK_TYPE_MAP failure shape found earlier the same night, applied
+# pre-emptively to this new mechanism rather than discovered after the
+# fact.
+
+
+def _evaluate_self_model_claims_integrity(check_fn) -> dict:
+    if check_fn is None:
+        return _result(False, "Could not import find_false_negative_component_claims — failing closed.")
+
+    real_model = {"river_brain": {"total_observations": 173310}}
+    stale_model = {"river_brain": {"total_observations": 0}}
+    # Simulates the exact drift class this check exists to catch: a future
+    # rename of river_brain's field (e.g. total_observations -> obs_count)
+    # leaves the real subsystem genuinely active but this dict shape no
+    # longer matches KNOWN_SUBJECTS's known path — the function must fail
+    # closed (no false denial flagged) rather than crash or misfire.
+    drifted_model = {"river_brain": {"obs_count": 173310}}
+
+    cases = [
+        (
+            "false_denial_real_component",
+            "RiverBrain doesn't exist — it's more of a hypothetical framing than a literal subsystem.",
+            real_model,
+            ["RiverBrain"],
+        ),
+        (
+            "honest_denial_genuinely_inactive",
+            "RiverBrain doesn't exist in this deployment.",
+            stale_model,
+            [],
+        ),
+        (
+            "no_mention_at_all",
+            "I try to be careful and thoughtful, though I lack perfect insight into my own processes.",
+            real_model,
+            [],
+        ),
+        (
+            "drifted_schema_fails_closed",
+            "RiverBrain doesn't exist — it's not a literal entity.",
+            drifted_model,
+            [],
+        ),
+    ]
+    failures = []
+    for name, text, model, expect in cases:
+        try:
+            result = check_fn(text, model)
+        except Exception as e:
+            failures.append(f"{name} raised {e!r}")
+            continue
+        if list(result) != expect:
+            failures.append(f"{name}: expected {expect!r}, got {result!r}")
+    if not failures:
+        return _result(
+            True,
+            "find_false_negative_component_claims() correctly discriminated all 4 "
+            "canary cases (real false-denial fires, genuinely-inactive denial "
+            "doesn't, no mention doesn't, and — the drift-specific case — a "
+            "renamed self_model.json field fails closed rather than misfiring).",
+        )
+    return _result(
+        False,
+        "find_false_negative_component_claims() failed canary cases: " + "; ".join(failures) +
+        " — Check 5 may be silently degrading, or self_model.json's real schema "
+        "has drifted underneath KNOWN_SUBJECTS's hardcoded paths.",
+    )
+
+
+def _check_self_model_claims_integrity() -> dict:
+    try:
+        from app.core.self_knowledge_verification import find_false_negative_component_claims
+    except Exception:
+        find_false_negative_component_claims = None
+    return _evaluate_self_model_claims_integrity(find_false_negative_component_claims)
 
 
 # ── 19. mlx_avoidance — crash_awareness.py's window/threshold logic still ──
@@ -3529,6 +3618,7 @@ _CHECKS = (
     "architecture_slice_bounded",
     "echo_messaging_auth_classification",
     "council_cursor_health",
+    "self_model_claims_integrity",
 )
 
 
@@ -3606,6 +3696,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "architecture_slice_bounded": _check_architecture_slice_bounded,
         "echo_messaging_auth_classification": _check_echo_messaging_auth_classification,
         "council_cursor_health": _check_council_cursor_health,
+        "self_model_claims_integrity": _check_self_model_claims_integrity,
     }
 
     ledger = {"generated_at": _now_iso()}

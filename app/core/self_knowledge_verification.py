@@ -259,6 +259,104 @@ def _load_self_model() -> "dict | None":
         return None
 
 
+# ============================================================
+# Check 5 — false-NEGATIVE core-subsystem-denial detection.
+#
+# 2026-09-08, living-self-model mission. Checks 1-4 above only ever catch
+# a POSITIVE fabrication (Echo confidently claims something exists/is true
+# that isn't). None of them can catch the opposite, empirically-confirmed
+# failure from the same night's Self-Transparency Audit: Echo affirmed
+# RiverBrain's existence in four separate live conversations, then flatly
+# denied it exists in a fifth ("not a literal entity... hypothetical"),
+# while river_brain.pkl genuinely held 160,000+ real observations
+# throughout. This check closes that specific, proven gap -- deliberately
+# narrow, same discipline as every check above: a small, explicit
+# allowlist of core subsystems with cheap, unambiguous ground truth in
+# self_model.json (see self_model_claims.KNOWN_SUBJECTS), not a general
+# "is this negative claim true" verifier.
+# ============================================================
+
+# A denial sentence: the subject name co-occurring with a negation of
+# existence/reality in the same sentence. Deliberately conservative --
+# "I'm not sure if RiverBrain is the right name for it" is NOT a denial
+# (handled by reusing _sentence_is_checkable's existing hypothetical/
+# uncertainty suppression below); "RiverBrain doesn't exist" and "there is
+# no RiverBrain" are.
+_DENIAL_RE = re.compile(
+    r"\b(doesn'?t|does\s+not|isn'?t|is\s+not|no)\b[^.\n]{0,40}\b(exist|real|"
+    r"literal|actual)\b"
+    r"|\bnot\s+(?:a\s+)?(?:real|literal|actual)\b"
+    r"|\bno\s+such\b",
+    re.IGNORECASE,
+)
+
+
+def find_false_negative_component_claims(text: str, self_model: "dict | None" = None) -> "list[str]":
+    """Core subsystems (from self_model_claims.KNOWN_SUBJECTS) that `text`
+    confidently denies exist, where self_model.json's own real data shows
+    the opposite (a nonzero/truthy value at the subject's known path).
+    Returns [] if nothing checkable, everything checked out, or ground
+    truth is unavailable -- never raises, fails closed toward
+    under-detection exactly like checks 1-4."""
+    if self_model is None:
+        self_model = _load_self_model()
+    if not self_model:
+        return []
+
+    try:
+        from app.core.self_model_claims import KNOWN_SUBJECTS
+    except Exception as e:
+        logger.debug(f"[SELF_KNOWLEDGE_VERIFY] self_model_claims unavailable: {e}")
+        return []
+
+    sentences = _SENTENCE_SPLIT_RE.split(text)
+    false_denials: "list[str]" = []
+
+    for subject, path in KNOWN_SUBJECTS.items():
+        if subject not in text:
+            continue
+        mentions = [s for s in sentences if subject in s]
+        denial_sentences = [s for s in mentions if _DENIAL_RE.search(s)]
+        if not denial_sentences:
+            continue
+        # Deliberately NOT reusing _sentence_is_checkable() here -- that
+        # function's _HYPOTHETICAL_RE suppression was built for POSITIVE
+        # fabrication claims ("if X existed..." genuinely isn't a claim
+        # about reality), but a denial sentence describing itself as
+        # "more of a hypothetical framing than a literal subsystem" IS the
+        # confident claim under test, not a counterfactual setup --
+        # confirmed against this check's own real motivating case (Echo's
+        # actual 2026-09-08 denial used exactly that phrasing). Only
+        # suppress a denial for genuine first-person UNCERTAINTY
+        # ("I'm not sure whether RiverBrain exists"), not for
+        # "hypothetical"/"suppose"/"if X had" language, which in a denial
+        # sentence is typically part of the denial's own rhetoric.
+        if not any(not _UNCERTAINTY_MARKER_RE.search(s) for s in denial_sentences):
+            continue  # every occurrence hedged with genuine first-person doubt
+
+        # Resolve the dotted path against the real self_model dict. Stop at
+        # the first list-valued node (e.g. "...checks" is itself the
+        # ground truth -- "does this dict have entries" -- rather than
+        # walking into an arbitrary key inside it).
+        node = self_model
+        real_value = None
+        try:
+            for part in path.split("."):
+                if not isinstance(node, dict):
+                    node = None
+                    break
+                node = node.get(part)
+            real_value = node
+        except Exception:
+            real_value = None
+
+        is_really_true = bool(real_value) and real_value not in (0, "0")
+        if is_really_true:
+            false_denials.append(subject)
+
+    return false_denials
+
+
 def verify_self_knowledge_claims(response_text: str) -> "tuple[str | None, bool | None]":
     """Orchestrates verification for a full response. Returns
     (caveat, verified) — same tri-state contract as
@@ -278,6 +376,20 @@ def verify_self_knowledge_claims(response_text: str) -> "tuple[str | None, bool 
             )
 
         self_model = _load_self_model()
+
+        # Check 5 -- run before the others, since a false-negative
+        # component denial is a more specific, higher-confidence signal
+        # than the generic catch-all Check 4 below, and should not be
+        # masked by an unrelated earlier match.
+        false_denials = find_false_negative_component_claims(response_text, self_model)
+        if false_denials:
+            names = ", ".join(false_denials)
+            return (
+                f"\n\n⚠️ Note: this response denies that {names} exists/is real — "
+                f"the current self-model shows real, active evidence to the "
+                f"contrary. Treat the denial as unverified, not the underlying fact.",
+                False,
+            )
 
         claimed_count = find_check_count_claim(response_text)
         if claimed_count is not None and self_model is not None:

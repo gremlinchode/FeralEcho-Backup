@@ -79,10 +79,21 @@ EDIT_FORBIDDEN_TARGETS = frozenset({
     "app/core/touch_sense.py",
     "app/core/vision_sense.py",
     "app/core/hearing_sense.py",
+    "app/core/self_model_claims.py",
+    "app/core/self_knowledge_verification.py",
     "run.py",
     "Modelfile",
     "echo_principles.json",
 })
+# app/core/self_model_claims.py and app/core/self_knowledge_verification.py
+# added 2026-09-08 (living-self-model implementation) -- same reasoning as
+# self_model_updater.py/reflection_shard.py's own entries above: both are
+# the mechanism meant to keep Echo's self-knowledge honest (a stateless
+# real-time verifier and its durable claims ledger); a self-edit that
+# quietly weakened either one (e.g. flipping a verified bool's polarity,
+# or disabling the proposed_by != verified_by guard) would corrupt the
+# thing this whole 2026-09-08 investigation exists to make trustworthy,
+# with nothing else positioned to catch it.
 
 # -----------------------------------------------------------------------
 # F1 — AST-level write-path safety gate

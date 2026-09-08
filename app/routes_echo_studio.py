@@ -251,6 +251,34 @@ def _generate_chat_response_body(conversation_id: str, original_msg: str, mode: 
                     if sk_caveat:
                         final += sk_caveat
                         notes_parts.append("self_knowledge_caveat_applied")
+                    # 2026-09-08, living-self-model mission: persist definitive
+                    # verdicts (True or False, never the common None-i.e.-
+                    # nothing-checkable case) to the durable claims ledger.
+                    # verified_by is fixed to the module name, never derived
+                    # from the response text -- Echo's own output can never
+                    # become its own verifier (self_model_claims.record_claim()
+                    # also enforces this structurally).
+                    if _sk_verified is not None:
+                        try:
+                            from app.core.self_model_claims import record_claim, KNOWN_SUBJECTS
+                            # Best-effort specific subject: if the caveat (or,
+                            # for a True verdict, the response itself) names one
+                            # of the known core subjects, record under that name
+                            # instead of the generic fallback -- makes
+                            # get_recent_claims(subject=...) actually useful for
+                            # the RiverBrain-style case this mechanism targets.
+                            _haystack = (sk_caveat or "") + " " + final
+                            _subject = next(
+                                (s for s in KNOWN_SUBJECTS if s in _haystack),
+                                "self_knowledge_claim",
+                            )
+                            record_claim(
+                                subject=_subject,
+                                verified=_sk_verified,
+                                evidence=(sk_caveat or "claim matched real ground truth")[:300],
+                            )
+                        except Exception as claim_err:
+                            logger.debug(f"[echo_studio] self-model claim record failed: {claim_err}")
             except Exception as sk_err:
                 logger.debug(f"[echo_studio] self-knowledge verification failed: {sk_err}")
         return final, (",".join(notes_parts) if notes_parts else None)

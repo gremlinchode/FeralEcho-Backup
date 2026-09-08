@@ -612,6 +612,38 @@ def _build_capabilities(sm: dict) -> str:
     return "\n".join(lines)
 
 
+def _build_self_model_claims(subjects: "list[str] | None" = None) -> str:
+    """2026-09-08, living-self-model mission: surfaces the durable claims
+    ledger (self_model_claims.jsonl) -- specifically, any past claim about
+    a core subject that was independently checked and found FALSE, so a
+    prior correction has an actual chance to be seen again in a fresh
+    conversation instead of vanishing at the session boundary (the exact
+    gap the 2026-09-08 Self-Transparency Audit's R-T14 result found:
+    0/1 persistence for a real conversational correction). Deliberately
+    reads only the durable ledger, never the current conversation's own
+    history -- this is what makes it a cross-session mechanism rather
+    than ordinary context continuity."""
+    try:
+        from app.core.self_model_claims import get_recent_claims, KNOWN_SUBJECTS
+    except Exception as e:
+        logger.debug("[GroundTruth] self_model_claims unavailable: %s", e)
+        return ""
+
+    lines = ["Self-model claim history (source: memory/self_model_claims.jsonl):"]
+    any_entries = False
+    for subject in (subjects or list(KNOWN_SUBJECTS.keys())):
+        entries = get_recent_claims(subject=subject, limit=1)
+        if not entries:
+            continue
+        any_entries = True
+        latest = entries[-1]
+        verdict = "VERIFIED TRUE" if latest.get("verified") else "VERIFIED FALSE (a prior claim about this was checked and found wrong)"
+        lines.append(f"  {subject}: {verdict} — {latest.get('evidence', '')}")
+    if not any_entries:
+        return ""
+    return "\n".join(lines)
+
+
 def _build_affect(sm: dict) -> str:
     """
     Emergence roadmap Phase 5, Finding 1: grounds "how are you feeling" in
@@ -1094,6 +1126,14 @@ def get_structural_self_facts(prompt: str = "") -> str:
 
         if "capabilities" in slices:
             sections.append(_build_capabilities(sm))
+            claims_section = _build_self_model_claims()
+            if claims_section:
+                sections.append(claims_section)
+
+        if "river" in slices:
+            claims_section = _build_self_model_claims()
+            if claims_section and claims_section not in sections:
+                sections.append(claims_section)
 
         if "affect" in slices:
             sections.append(_build_affect(sm))

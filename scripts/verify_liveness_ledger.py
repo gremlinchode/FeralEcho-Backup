@@ -1525,6 +1525,65 @@ check("council_cursor_health: cursor file not yet created (not_deployed, not a f
 r = ll._evaluate_council_cursor_health({"position": 100}, None)
 check("council_cursor_health: interaction_log.jsonl missing, fail closed", r["pass"], False, r["evidence"])
 
+# ── f2_stdin_contract (Mission 27/28, audits/2026-09-09_f2_stdin_contract_implementation.md) ──
+try:
+    from sandbox.safe_exec_wrapper import _BlockedStdin as _real_blocked_stdin
+    with open("sandbox/safe_exec_wrapper.py", encoding="utf-8") as _f:
+        _real_wrapper_source = _f.read()
+    r = ll._evaluate_f2_stdin_contract(_real_blocked_stdin, _real_wrapper_source)
+    check("f2_stdin_contract: real _BlockedStdin, real wiring", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] f2_stdin_contract real-class case: import failed ({e})")
+
+import io as _io_check
+
+class _DegradedStdin_SilentReadline(_io_check.TextIOBase):
+    def read(self, size=-1):
+        raise PermissionError("blocked")
+    def readline(self, size=-1):
+        return ""  # silently returns empty string instead of raising -- the exact DEVNULL-style false-pass class this contract exists to prevent
+    def readlines(self, hint=-1):
+        raise PermissionError("blocked")
+
+r = ll._evaluate_f2_stdin_contract(_DegradedStdin_SilentReadline, "sys.stdin = _BlockedStdin()")
+check(
+    "f2_stdin_contract: readline() silently returns '' instead of raising (false-pass regression)",
+    r["pass"], False, r["evidence"],
+)
+
+class _DegradedStdin_FakeTerminal(_io_check.TextIOBase):
+    def read(self, size=-1):
+        raise PermissionError("blocked")
+    def readline(self, size=-1):
+        raise PermissionError("blocked")
+    def readlines(self, hint=-1):
+        raise PermissionError("blocked")
+    def isatty(self):
+        return True  # would misrepresent itself as a real terminal to candidate code
+
+r = ll._evaluate_f2_stdin_contract(_DegradedStdin_FakeTerminal, "sys.stdin = _BlockedStdin()")
+check(
+    "f2_stdin_contract: isatty() drifted to True (misrepresents as a real terminal)",
+    r["pass"], False, r["evidence"],
+)
+
+r = ll._evaluate_f2_stdin_contract(None, "sys.stdin = _BlockedStdin()")
+check("f2_stdin_contract: _BlockedStdin not importable at all", r["pass"], False, r["evidence"])
+
+class _CorrectStdin(_io_check.TextIOBase):
+    def read(self, size=-1):
+        raise PermissionError("blocked")
+    def readline(self, size=-1):
+        raise PermissionError("blocked")
+    def readlines(self, hint=-1):
+        raise PermissionError("blocked")
+
+r = ll._evaluate_f2_stdin_contract(_CorrectStdin, "def _install_patches():\n    pass  # wiring silently removed\n")
+check(
+    "f2_stdin_contract: class behavior still correct but _install_patches() no longer wires it in",
+    r["pass"], False, r["evidence"],
+)
+
 
 print()
 if FAILURES:

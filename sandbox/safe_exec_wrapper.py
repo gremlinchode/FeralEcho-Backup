@@ -83,9 +83,45 @@ Patches applied before exec_module():
   shutil copy/move/rmtree/copytree    — unconditionally blocked
   importlib.reload                     — blocks patch-undoing via reload
   ctypes.CDLL / ctypes.cdll / cffi    — blocks direct libc syscall access
+  sys.stdin                            — replaced with _BlockedStdin (see below)
+
+── stdin policy (audits/2026-09-09_f2_stdin_enforcement_boundary.md, Mission 27/28) ──
+Autonomous sandboxed execution has no interactive stdin, established as
+project-level practice at multiple prompt-construction sites (CLAUDE.md,
+Mission 25) and enforced here at the one shared layer every real caller of
+this wrapper already routes through (echo_projects.py's F2, self_edit_
+manager.py's F2/apply_to_code, sandbox/run_script.py's two functions and
+their five further downstream callers) — Mission 27 traced all of them and
+found none legitimately needs real stdin. sys.stdin is replaced with
+_BlockedStdin, a minimal io.TextIOBase subclass overriding only read(),
+readline(), and readlines() to raise PermissionError with this file's own
+existing "[SANDBOX] ..." convention (matching every other blocked
+operation here, not run_script.py's separate RuntimeError-based
+_insert_input_mock() precedent in a different file). readline()'s override
+alone is sufficient to also cover next(sys.stdin)/iteration, since
+io.IOBase's own inherited __next__ calls self.readline() internally —
+verified directly, not assumed. input() is covered transparently too, with
+no separate builtins.input patch: CPython's input() calls
+sys.stdin.readline() whenever sys.stdin is not the interpreter's original
+object, verified directly. isatty()/fileno()/readable()/seekable()/
+writable()/encoding/errors/newlines/closed/flush()/close()/context-manager
+support are all deliberately left at io.TextIOBase's own inherited
+defaults (False/UnsupportedOperation/None/no-op as appropriate) rather
+than reimplemented — each already produces an honest answer for a
+non-functional stream with zero extra code, and overriding them further
+would risk accidentally emulating a real terminal rather than truthfully
+reporting there isn't one.
+
+sandbox/run_script.py's _insert_input_mock() (a source-text insertion
+mocking builtins.input only, covering two of run_script.py's own callers)
+is intentionally left in place, unmodified, as harmless defense-in-depth —
+it will simply never trigger once sys.stdin.readline() fails first.
+Whether to simplify or remove it later is a separate, future decision, not
+part of this change.
 """
 
 import builtins as _builtins
+import io
 import os as _os
 import sys
 
@@ -153,6 +189,35 @@ def _make_safe_rename(scratch_abs: str, original_rename):
 
 def _blocked(*args, **kwargs):
     raise PermissionError("[SANDBOX] Call unconditionally blocked in sandbox")
+
+
+class _BlockedStdin(io.TextIOBase):
+    """Replaces sys.stdin inside the sandboxed subprocess. Only read()/
+    readline()/readlines() are overridden — everything else (isatty(),
+    fileno(), readable(), seekable(), writable(), encoding, errors,
+    newlines, closed, flush(), close(), context-manager support) is left
+    at io.TextIOBase's own inherited defaults, which are already honest
+    for a non-functional stream (isatty()->False, fileno()->
+    UnsupportedOperation, readable()/seekable()/writable()->False,
+    flush()/close()->no-op) without any code here. readline()'s override
+    alone also covers next(sys.stdin)/iteration and, transparently,
+    input() itself — see the module docstring's stdin-policy section for
+    why, verified directly rather than assumed."""
+
+    def read(self, size=-1):
+        raise PermissionError(
+            "[SANDBOX] stdin.read() blocked — autonomous sandboxed execution has no interactive stdin"
+        )
+
+    def readline(self, size=-1):
+        raise PermissionError(
+            "[SANDBOX] stdin.readline() blocked — autonomous sandboxed execution has no interactive stdin"
+        )
+
+    def readlines(self, hint=-1):
+        raise PermissionError(
+            "[SANDBOX] stdin.readlines() blocked — autonomous sandboxed execution has no interactive stdin"
+        )
 
 
 def _install_patches(scratch: str) -> None:
@@ -343,6 +408,14 @@ def _install_patches(scratch: str) -> None:
     if _cffi:
         try: _cffi.FFI = _blocked
         except AttributeError: pass
+
+    # ── stdin policy (Mission 27/28, audits/2026-09-09_f2_stdin_enforcement_boundary.md) ──
+    # Applied unconditionally, like every other patch above -- not gated on
+    # --mode=, matching the fact that no real caller of this wrapper (traced
+    # exhaustively in Mission 27) legitimately needs real stdin under any
+    # mode. See the module docstring's stdin-policy section for the full
+    # design rationale.
+    sys.stdin = _BlockedStdin()
 
 
 if __name__ == "__main__":

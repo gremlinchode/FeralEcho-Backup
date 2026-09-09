@@ -615,9 +615,11 @@ def _build_autonomous_spec() -> tuple:
         spec = (
             "Design and build a small, self-contained Python program that "
             "explores, models, or illustrates the following idea in some "
-            "concrete way (a simulation, a toy model, an interactive text "
-            "scenario, a data visualization, etc.) — creative interpretation "
-            f"is expected: {question}"
+            "concrete way (a simulation, a toy model, a text-based narrative "
+            "with predefined branching choices, a data visualization, etc.) "
+            "— creative interpretation is expected, but the program must run "
+            "to completion on its own, with no real-time human input required "
+            f"or expected: {question}"
         )
         origin_note = f"autonomous cycle, inspired by curiosity garden entry: {question}"
         return spec, "garden", origin_note

@@ -3566,6 +3566,108 @@ def _check_council_cursor_health() -> dict:
     return _evaluate_council_cursor_health(cursor_data, log_line_count)
 
 
+def _evaluate_f2_stdin_contract(blocked_stdin_cls, install_patches_source: "str | None") -> dict:
+    """Two-part check, mirroring log_retention's/janitor_safety's own
+    functional-canary + source-anchor shape:
+
+    (1) Functional: instantiate the real _BlockedStdin class (imported by
+    the caller, not reimplemented here) and confirm read()/readline()/
+    readlines() each raise PermissionError, that iteration (which routes
+    through io.IOBase's inherited __next__ -> self.readline()) raises too,
+    and that isatty() stays the honest False default rather than silently
+    drifting into looking like a real terminal. Deliberately does NOT
+    temporarily reassign the live process's own sys.stdin to test input()
+    end-to-end — this check runs inside introspection_channel's real,
+    shared production process every 120s, and swapping a live process's
+    stdin, even briefly, is a real risk this check doesn't need to take:
+    input()'s routing through sys.stdin.readline() once sys.stdin isn't
+    the original object is stable, well-documented CPython behavior,
+    directly verified in isolated processes during Mission 27/28
+    (audits/2026-09-09_f2_stdin_enforcement_boundary.md,
+    audits/2026-09-09_f2_stdin_contract_implementation.md) — not something
+    that needs re-proving live every cycle the way the class's own raise
+    behavior does.
+
+    (2) Static: confirms _install_patches()'s real source still assigns
+    sys.stdin = _BlockedStdin() — same source-anchor shape as
+    wolf_friction_bridge/dissent_log_hook, protecting against a future
+    edit that keeps the class but forgets to wire it in (or vice versa).
+    """
+    if blocked_stdin_cls is None:
+        return _result(False, "sandbox.safe_exec_wrapper._BlockedStdin could not be imported.")
+
+    try:
+        instance = blocked_stdin_cls()
+        raised = {}
+        for method_name, call in (
+            ("read", lambda: instance.read()),
+            ("readline", lambda: instance.readline()),
+            ("readlines", lambda: instance.readlines()),
+            ("iteration", lambda: next(instance)),
+        ):
+            try:
+                call()
+                raised[method_name] = False
+            except PermissionError:
+                raised[method_name] = True
+            except Exception:
+                raised[method_name] = False  # wrong exception type -- still a failure below
+
+        isatty_honest = instance.isatty() is False
+
+        if not all(raised.values()):
+            missing = [k for k, v in raised.items() if not v]
+            return _result(
+                False,
+                f"_BlockedStdin no longer raises PermissionError for: {missing} — "
+                f"the F2 stdin contract has silently regressed for at least one "
+                f"stdin-consumption form.",
+                {"raised": raised, "isatty_honest": isatty_honest},
+            )
+        if not isatty_honest:
+            return _result(
+                False,
+                "_BlockedStdin.isatty() no longer returns False — it would now "
+                "misrepresent itself as a real terminal to candidate code.",
+                {"raised": raised, "isatty_honest": isatty_honest},
+            )
+    except Exception as e:
+        return _result(False, f"_BlockedStdin functional check itself raised: {e!r} — failing closed.")
+
+    if install_patches_source is None:
+        return _result(False, "Could not read sandbox/safe_exec_wrapper.py's own source to verify wiring.")
+    if "sys.stdin = _BlockedStdin()" not in install_patches_source:
+        return _result(
+            False,
+            "_BlockedStdin's own behavior is still correct, but _install_patches() "
+            "no longer assigns sys.stdin = _BlockedStdin() anywhere in its source — "
+            "the class exists but is no longer wired into the sandbox execution path.",
+        )
+
+    return _result(
+        True,
+        "_BlockedStdin correctly raises PermissionError for read()/readline()/"
+        "readlines()/iteration, isatty() stays honestly False, and "
+        "_install_patches() still installs it.",
+        {"raised": raised, "isatty_honest": isatty_honest},
+    )
+
+
+def _check_f2_stdin_contract() -> dict:
+    try:
+        from sandbox.safe_exec_wrapper import _BlockedStdin
+    except Exception:
+        _BlockedStdin = None
+    source = None
+    try:
+        wrapper_path = os.path.join(_PROJECT_ROOT, "sandbox", "safe_exec_wrapper.py")
+        with open(wrapper_path, encoding="utf-8") as f:
+            source = f.read()
+    except Exception:
+        source = None
+    return _evaluate_f2_stdin_contract(_BlockedStdin, source)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -3619,6 +3721,7 @@ _CHECKS = (
     "echo_messaging_auth_classification",
     "council_cursor_health",
     "self_model_claims_integrity",
+    "f2_stdin_contract",
 )
 
 
@@ -3697,6 +3800,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "echo_messaging_auth_classification": _check_echo_messaging_auth_classification,
         "council_cursor_health": _check_council_cursor_health,
         "self_model_claims_integrity": _check_self_model_claims_integrity,
+        "f2_stdin_contract": _check_f2_stdin_contract,
     }
 
     ledger = {"generated_at": _now_iso()}

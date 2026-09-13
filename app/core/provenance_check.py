@@ -2,6 +2,19 @@
 # ============================================================
 # PROVENANCE — LEAF PRIMITIVE 1 OF 4: working_tree_file_identity()
 # ============================================================
+# (Leaf primitive 2 of 4, runtime_process_identity_and_self_report(),
+# added 2026-09-13 -- see the second module-level docstring block below,
+# just above its own definition, for its full contract. Summary: it
+# provides externally-observed OS process facts (via psutil) about a
+# given PID, plus the literal contents of two ALREADY-EXISTING runtime
+# self-report artifacts this process itself writes (memory/echo_server.pid,
+# memory/echo_sentinel.json) -- kept in two structurally separate
+# sub-objects, never merged, per audits/2026-09-12_provenance_layer2_
+# boundary_review.md's own required contract. It does NOT inspect
+# sys.modules, does NOT prove module loading/import/execution, and does
+# NOT introduce any verified/active/live-shaped boolean -- see that
+# function's own docstring for the exact, narrow epistemic boundary.)
+# ============================================================
 # Implements ONLY the smallest safe slice identified by the completed
 # provenance research arc's final design gate:
 #   audits/2026-09-10_phase2_provenance_reconciliation.md
@@ -76,10 +89,15 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import subprocess
 from datetime import datetime, timezone
 from typing import Optional
+
+import psutil  # already installed in this project's environment; confirmed
+               # by audits/2026-09-11_provenance_leaf_primitives_validation.md
+               # and re-confirmed live this session -- no new dependency added.
 
 # ---------------------------------------------------------------------------
 # Project-root resolution -- same walk-up-to-run.py algorithm already used
@@ -498,3 +516,412 @@ def working_tree_file_identity(path) -> dict:
             exists=None, size=None, mtime=None, sha256=None,
             tracked=None, head_blob_sha256=None,
         )
+
+
+# ============================================================
+# PROVENANCE — LEAF PRIMITIVE 2 OF 4: runtime_process_identity_and_self_report()
+# ============================================================
+# Implements the primitive identified by
+# audits/2026-09-12_provenance_layer2_boundary_review.md Section 6/7 as
+# the smallest safe next step: Candidate A (externally-observed OS process
+# facts) merged with Candidate C (reading two ALREADY-EXISTING runtime
+# self-report artifacts) -- explicitly NOT Candidate B
+# (runtime_self_reported_module_origin / sys.modules inspection), which
+# that review found requires new in-process code this mission is not
+# authorized to add (no new Flask route, no new echo_tool_dispatch.py
+# tool, no restart of PID 7644).
+#
+# Self-report artifacts (NOT invented here -- both already exist, already
+# written by run.py/app/core/dmn_guardian.py, confirmed by direct source
+# read this session):
+#   memory/echo_server.pid    -- plain text PID, written once at startup
+#                                 (run.py `if __name__ == "__main__":`
+#                                 block), unlinked only on a clean SIGTERM/
+#                                 SIGINT shutdown (run.py's shutdown_handler)
+#                                 -- a crash leaves it stale, a real,
+#                                 disclosed possibility this module never
+#                                 silently resolves.
+#   memory/echo_sentinel.json -- JSON {stage, pid, start_utc,
+#                                 last_heartbeat_utc, uptime_s}, written at
+#                                 two fixed startup stages (run.py's
+#                                 _write_sentinel()) and with its
+#                                 last_heartbeat_utc field independently
+#                                 refreshed every ~60s by
+#                                 app/core/dmn_guardian.py's own guardian
+#                                 cycle (confirmed live this session: two
+#                                 reads two minutes apart showed the field
+#                                 advance by exactly two minutes). Never
+#                                 unlinked -- a crashed run's frozen
+#                                 last-known state persists until the next
+#                                 startup overwrites it.
+#
+# Same evidentiary discipline as Leaf Primitive 1: pure I/O-gathering
+# helpers that can fail only into an explicit None/False -- never an
+# exception -- feeding one pure composition function
+# (_compose_process_report()) that performs zero I/O, so its decision
+# logic (the `correlation` block) is directly unit-testable against
+# synthetic evidence.
+#
+# THE CORE RULE THIS SECTION EXISTS TO ENFORCE, PER THE BOUNDARY REVIEW:
+# `external_process` (genuinely independent OS observation) and
+# `runtime_self_report` (content the target process wrote about itself)
+# are two DIFFERENT evidence kinds and are NEVER merged into one
+# undifferentiated object. `correlation` reports only whether the two
+# AGREE on specific, named facts (a PID integer, a start-time delta) --
+# agreement is evidence that two sources agree, nothing more. No field
+# anywhere in this section is named or shaped like `verified`, `active`,
+# `live`, `connected`, or `trusted`, and none may ever be added to this
+# primitive's output -- that is a boundary, not a style preference.
+# ============================================================
+
+_SERVER_PID_FILE_RELPATH = "memory/echo_server.pid"
+_SENTINEL_FILE_RELPATH = "memory/echo_sentinel.json"
+_SENTINEL_EXPECTED_FIELDS = ("stage", "pid", "start_utc", "last_heartbeat_utc", "uptime_s")
+
+# Tolerance for judging whether an externally-observed OS process creation
+# time and the sentinel's self-reported start_utc "agree." Not an arbitrary
+# round number: the one real, live gap measured this session between
+# psutil's create_time() and run.py's _SENTINEL_START capture (which
+# happens after several heavy imports -- faiss, sentence-transformers, etc.
+# -- have already run) was ~4.4 seconds. 120s is deliberately generous
+# beyond that single sample (covering a much slower cold boot -- CLAUDE.md
+# Finding 40 records a real ~35s time-to-serving) while staying far
+# tighter than any genuine PID-identity mismatch, which would differ by
+# minutes/hours/days, not tens of seconds.
+_START_TIME_MATCH_TOLERANCE_SECONDS = 120
+
+
+# ---------------------------------------------------------------------------
+# Evidence gathering -- external process observation. Every failure mode
+# (nonexistent PID, access denied, the process vanishing mid-observation --
+# a real race, not hypothetical) maps to an explicit None/False per field,
+# never an exception.
+# ---------------------------------------------------------------------------
+
+def _external_process_observation(pid: int) -> dict:
+    """Genuinely independent OS-level observation of `pid`, via psutil --
+    zero cooperation required from the target process. Never raises."""
+    result = {
+        "exists": False,
+        "create_time_utc": None,
+        "cmdline": None,
+        "executable": None,
+        "cwd": None,
+        "status": None,
+        "access_denied": False,
+        "error": None,
+    }
+    try:
+        proc = psutil.Process(pid)
+    except psutil.NoSuchProcess:
+        return result
+    except Exception as exc:
+        result["error"] = f"process_lookup_failed:{type(exc).__name__}"
+        return result
+
+    result["exists"] = True
+
+    def _create_time_utc():
+        return datetime.fromtimestamp(proc.create_time(), tz=timezone.utc).isoformat()
+
+    for field, getter in (
+        ("create_time_utc", _create_time_utc),
+        ("cmdline", lambda: proc.cmdline() or None),
+        ("executable", proc.exe),
+        ("cwd", proc.cwd),
+        ("status", proc.status),
+    ):
+        try:
+            result[field] = getter()
+        except psutil.NoSuchProcess:
+            # Vanished mid-observation -- represented honestly: fields
+            # already gathered above are kept, `exists` is corrected, and
+            # nothing further is attempted.
+            result["exists"] = False
+            break
+        except psutil.AccessDenied:
+            result["access_denied"] = True
+        except Exception as exc:
+            result["error"] = f"{field}_failed:{type(exc).__name__}"
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Evidence gathering -- runtime self-report. Reads only the two artifacts
+# this project's own live process already writes. Never modifies them,
+# never triggers their writers. Only ever reads the fields the real writer
+# code (run.py, app/core/dmn_guardian.py) actually produces -- never
+# reinterprets an arbitrary extra key that might appear in the file.
+# ---------------------------------------------------------------------------
+
+def _read_server_pid_file() -> dict:
+    result = {
+        "path": _SERVER_PID_FILE_RELPATH,
+        "exists": False,
+        "readable": False,
+        "malformed": False,
+        "pid": None,
+        "error": None,
+    }
+    full_path = os.path.join(_PROJECT_ROOT, _SERVER_PID_FILE_RELPATH)
+    if not os.path.isfile(full_path):
+        return result
+    result["exists"] = True
+
+    try:
+        content = open(full_path, "r").read().strip()
+        result["readable"] = True
+    except OSError as exc:
+        result["error"] = f"read_failed:{type(exc).__name__}"
+        return result
+
+    try:
+        result["pid"] = int(content)
+    except ValueError:
+        result["malformed"] = True
+        result["error"] = "non_integer_content"
+
+    return result
+
+
+def _read_sentinel_file() -> dict:
+    result = {
+        "path": _SENTINEL_FILE_RELPATH,
+        "exists": False,
+        "readable": False,
+        "malformed": False,
+        "stage": None,
+        "pid": None,
+        "start_utc": None,
+        "last_heartbeat_utc": None,
+        "uptime_s": None,
+        "error": None,
+    }
+    full_path = os.path.join(_PROJECT_ROOT, _SENTINEL_FILE_RELPATH)
+    if not os.path.isfile(full_path):
+        return result
+    result["exists"] = True
+
+    try:
+        raw = open(full_path, "r").read()
+        result["readable"] = True
+    except OSError as exc:
+        result["error"] = f"read_failed:{type(exc).__name__}"
+        return result
+
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        result["malformed"] = True
+        result["error"] = "invalid_json"
+        return result
+
+    if not isinstance(data, dict):
+        result["malformed"] = True
+        result["error"] = "not_an_object"
+        return result
+
+    for field in _SENTINEL_EXPECTED_FIELDS:
+        if field in data:
+            result[field] = data[field]
+        # else: stays None -- genuinely absent, never fabricated.
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Pure composition -- zero I/O. The ONLY place `correlation` is decided,
+# from already-gathered evidence alone. A match reports only that two
+# sources agree on one specific fact -- never a verdict about module
+# loading, import, or execution (see the section-level docstring above).
+# ---------------------------------------------------------------------------
+
+def _compose_correlation(
+    *,
+    queried_pid: int,
+    external_create_time_utc: Optional[str],
+    server_file_pid: Optional[int],
+    sentinel_pid: Optional[int],
+    sentinel_start_utc: Optional[str],
+) -> dict:
+    def _pid_match(candidate: Optional[int]) -> Optional[bool]:
+        if candidate is None:
+            return None
+        return candidate == queried_pid
+
+    start_time_delta_seconds: Optional[float] = None
+    start_time_match_sentinel: Optional[bool] = None
+    if external_create_time_utc and sentinel_start_utc:
+        try:
+            t_external = datetime.fromisoformat(external_create_time_utc)
+            t_self = datetime.fromisoformat(sentinel_start_utc.rstrip("Z"))
+            if t_self.tzinfo is None:
+                t_self = t_self.replace(tzinfo=timezone.utc)
+            start_time_delta_seconds = abs((t_external - t_self).total_seconds())
+            start_time_match_sentinel = start_time_delta_seconds <= _START_TIME_MATCH_TOLERANCE_SECONDS
+        except (ValueError, TypeError):
+            start_time_delta_seconds = None
+            start_time_match_sentinel = None
+
+    return {
+        "pid_match_server_file": _pid_match(server_file_pid),
+        "pid_match_sentinel": _pid_match(sentinel_pid),
+        "start_time_match_sentinel": start_time_match_sentinel,
+        "start_time_delta_seconds": start_time_delta_seconds,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Public entry point
+# ---------------------------------------------------------------------------
+
+def runtime_process_identity_and_self_report(pid) -> dict:
+    """
+    Two explicitly separate streams of evidence about a process identified
+    by `pid`: what an independent OS-level observer can see about it, and
+    what this project's own already-existing runtime self-report artifacts
+    currently claim about it -- plus a small set of factual agreement
+    comparisons between the two. Never modifies anything; never raises.
+
+    Args:
+        pid: a positive int. Any other type, or a non-positive value, is
+             reported as `in_scope: False` with a machine-readable `error`
+             code -- never silently coerced into "process doesn't exist."
+
+    Returns a dict with exactly these top-level keys, always present:
+        pid (int)                  -- the caller's own argument, echoed
+                                       back verbatim.
+        in_scope (bool)            -- False iff the argument was invalid.
+                                       All evidence blocks are None in that
+                                       case.
+        error (str or None)        -- a short machine-readable reason when
+                                       in_scope is False; otherwise None.
+        external_process (dict or None)
+                                    -- see below. None only when in_scope
+                                       is False.
+        runtime_self_report (dict or None)
+                                    -- see below. None only when in_scope
+                                       is False.
+        correlation (dict or None) -- see below. None only when in_scope
+                                       is False.
+
+    `external_process` -- genuinely independent OS-level observation
+    (psutil), zero cooperation required from the target process:
+        exists (bool)               -- was a process with this PID found.
+        create_time_utc (str/None)  -- OS-recorded process creation time.
+        cmdline (list[str]/None)    -- OS-recorded argv.
+        executable (str/None)       -- OS-recorded interpreter path.
+        cwd (str/None)              -- OS-recorded working directory.
+        status (str/None)           -- OS-recorded process status
+                                        (e.g. "running", "sleeping").
+        access_denied (bool)        -- True if one or more fields above
+                                        could not be read due to OS
+                                        permissions (same-user processes on
+                                        this platform are not expected to
+                                        hit this, but it is represented
+                                        explicitly rather than assumed
+                                        impossible).
+        error (str/None)            -- a short machine-readable reason for
+                                        an unexpected (non-AccessDenied,
+                                        non-NoSuchProcess) failure, if any.
+
+    `runtime_self_report` -- the LITERAL current contents of two
+    already-existing files this project's own process writes about
+    itself. Neither sub-object's content has any independent witness; it
+    is exactly what the target process (or a now-dead prior instance of
+    it) claimed, at whatever moment each file was last written:
+        server_pid_file: {path, exists, readable, malformed, pid, error}
+            -- memory/echo_server.pid's literal integer content, if any.
+        sentinel_file: {path, exists, readable, malformed, stage, pid,
+                          start_utc, last_heartbeat_utc, uptime_s, error}
+            -- memory/echo_sentinel.json's literal field values, read only
+               for the five keys its real writer code actually produces.
+               A crashed prior run's frozen last-known state is
+               indistinguishable, by this primitive alone, from a
+               currently-live process's state -- see `correlation` and
+               the module-level note on shutdown/crash asymmetry above.
+
+    `correlation` -- factual agreement comparisons ONLY, never a verdict:
+        pid_match_server_file (bool/None)   -- server_pid_file.pid == pid,
+                                                or None if unavailable.
+        pid_match_sentinel (bool/None)      -- sentinel_file.pid == pid,
+                                                or None if unavailable.
+        start_time_match_sentinel (bool/None)
+                                             -- whether external_process's
+                                                create_time_utc and
+                                                sentinel_file's start_utc
+                                                are within
+                                                _START_TIME_MATCH_TOLERANCE_
+                                                SECONDS of each other, or
+                                                None if either side is
+                                                unavailable or unparseable.
+        start_time_delta_seconds (float/None)
+                                             -- the raw, disclosed delta
+                                                backing the field above.
+
+    What this function CAN establish: whether an OS process with this PID
+    currently exists and what the OS itself reports about it; what two
+    specific, already-existing self-report files currently claim about a
+    process; and whether those two evidence sources agree on a PID integer
+    and, approximately, a start time.
+
+    What this function explicitly CANNOT and does NOT establish, and must
+    never be interpreted as establishing: whether that process has loaded
+    any specific Python module (`sys.modules` inspection is architecturally
+    unavailable to an external observer -- confirmed empirically in
+    audits/2026-09-11_provenance_leaf_primitives_validation.md, not
+    reopened here); whether any function anywhere has been called; or
+    whether the process is "correct," "healthy," or "verified" in any
+    sense. Agreement between `external_process` and `runtime_self_report`
+    means only that two evidence sources currently agree on the specific,
+    named fact being compared -- nothing about module loading, import, or
+    execution follows from it. See audits/2026-09-12_provenance_layer2_
+    boundary_review.md Section 6 for the full reasoning behind this
+    boundary, and app/core/self_heal.py (tracked, clean, unmodified vs.
+    HEAD, confirmed zero real importers) for why file/process identity
+    evidence must never be read as runtime-use evidence.
+    """
+    try:
+        if not isinstance(pid, int) or isinstance(pid, bool) or pid <= 0:
+            return {
+                "pid": pid,
+                "in_scope": False,
+                "error": "invalid_pid_argument",
+                "external_process": None,
+                "runtime_self_report": None,
+                "correlation": None,
+            }
+
+        external = _external_process_observation(pid)
+        server_file = _read_server_pid_file()
+        sentinel = _read_sentinel_file()
+
+        correlation = _compose_correlation(
+            queried_pid=pid,
+            external_create_time_utc=external["create_time_utc"],
+            server_file_pid=server_file["pid"],
+            sentinel_pid=sentinel["pid"],
+            sentinel_start_utc=sentinel["start_utc"],
+        )
+
+        return {
+            "pid": pid,
+            "in_scope": True,
+            "error": None,
+            "external_process": external,
+            "runtime_self_report": {
+                "server_pid_file": server_file,
+                "sentinel_file": sentinel,
+            },
+            "correlation": correlation,
+        }
+    except Exception as exc:  # last-resort safety net -- this function must never raise
+        return {
+            "pid": pid,
+            "in_scope": False,
+            "error": f"internal_error:{type(exc).__name__}",
+            "external_process": None,
+            "runtime_self_report": None,
+            "correlation": None,
+        }

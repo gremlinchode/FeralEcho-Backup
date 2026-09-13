@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 """
 verify_provenance_check.py -- discrimination tests for
-app/core/provenance_check.py's working_tree_file_identity(), the same
-style as scripts/verify_seam_engine.py / scripts/verify_liveness_ledger.py:
-prove the primitive's epistemic boundary, not merely that it runs without
+app/core/provenance_check.py, the same style as
+scripts/verify_seam_engine.py / scripts/verify_liveness_ledger.py: prove
+each primitive's epistemic boundary, not merely that it runs without
 raising.
 
-Scope: this is the ONLY primitive implemented so far (the smallest safe
-slice identified by audits/2026-09-11_provenance_implementation_boundary_
-audit.md). There is no runtime_process_identity(),
-runtime_self_reported_module_origin(), or reconcile() to test yet.
+Scope: two primitives now implemented.
+  - working_tree_file_identity()               (Layer 1, Cases 1-16)
+  - runtime_process_identity_and_self_report()  (Layer 2, Cases 17+,
+    added 2026-09-13 per audits/2026-09-12_provenance_layer2_boundary_
+    review.md's own contract)
+There is still no runtime_self_reported_module_origin() (sys.modules
+inspection) or reconcile() to test -- both remain out of scope, per that
+review's own explicit finding that the former requires new in-process
+code this mission is not authorized to add.
 
 STRICTLY READ-ONLY. This script never writes, stages, commits, resets, or
 otherwise mutates anything in the repository or the running system. It
@@ -29,18 +34,24 @@ this script):
 """
 import contextlib
 import hashlib
+import json
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 sys.path.insert(0, ".")
 import app.core.provenance_check as pc  # noqa: E402
 from app.core.provenance_check import (  # noqa: E402
     working_tree_file_identity,
     _compose_identity,
+    runtime_process_identity_and_self_report,
+    _compose_correlation,
+    _external_process_observation,
 )
+import psutil  # noqa: E402 -- already a project dependency (see provenance_check.py)
 
 TRACKED_CLEAN = "CLAUDE.md"
 TRACKED_MODIFIED = "app/core/echo_ground_truth.py"
@@ -516,6 +527,419 @@ def _prove_old_implementation_would_have_failed():
         return old_tracked is False and old_head_blob == target_content_hash
 
 
+# ---------------------------------------------------------------------------
+# LAYER 2: runtime_process_identity_and_self_report() -- added 2026-09-13
+# per audits/2026-09-12_provenance_layer2_boundary_review.md's own
+# contract. Three groups: external-process observation (mocked psutil for
+# the two race/permission cases that can't be reliably timed as a real
+# fixture -- the exact deterministic-mock discipline this codebase already
+# uses for the symlink regression tests above), self-report file reading
+# (isolated scratch memory/ directory, same _PROJECT_ROOT-redirect pattern
+# as the symlink tests, never touching the real memory/echo_server.pid or
+# memory/echo_sentinel.json), correlation (pure, direct calls to
+# _compose_correlation(), zero I/O), and epistemic-boundary structural
+# checks proving the output schema cannot be misread as a module-loading,
+# execution, or "verified runtime" claim.
+# ---------------------------------------------------------------------------
+
+def _find_nonexistent_pid():
+    candidate = 999999999
+    while psutil.pid_exists(candidate) and candidate > 1:
+        candidate -= 1
+    return candidate
+
+
+# --- External process (mission Cases 1-4) ----------------------------------
+
+def case_l2_ext_1_known_existing_pid():
+    """A real, known-existing PID (this test process itself) must report
+    exists=True with real, genuinely external fields populated."""
+    r = _external_process_observation(os.getpid())
+    return (
+        r["exists"] is True
+        and r["create_time_utc"] is not None
+        and r["cmdline"] is not None
+        and r["executable"] is not None
+        and r["cwd"] is not None
+        and r["status"] is not None
+        and r["access_denied"] is False
+    )
+
+
+def case_l2_ext_2_nonexistent_pid():
+    """A PID confirmed via psutil.pid_exists() to not exist must report
+    exists=False, every evidence field None, no error -- absence is not
+    an error condition."""
+    pid = _find_nonexistent_pid()
+    r = _external_process_observation(pid)
+    return (
+        r["exists"] is False
+        and r["create_time_utc"] is None
+        and r["cmdline"] is None
+        and r["executable"] is None
+        and r["cwd"] is None
+        and r["status"] is None
+        and r["error"] is None
+    )
+
+
+class _FakeVanishingProcess:
+    """Simulates psutil.Process construction succeeding, then a specific
+    field getter raising NoSuchProcess -- the real race Phase 8's Case 3
+    asks to be covered, tested deterministically via a mock rather than a
+    timing-dependent real kill (which cannot be made reliable)."""
+    def __init__(self, pid):
+        self.pid = pid
+
+    def create_time(self):
+        return 1234567890.0  # gathered successfully, before the "vanish"
+
+    def cmdline(self):
+        raise psutil.NoSuchProcess(self.pid)
+
+    def exe(self):
+        raise psutil.NoSuchProcess(self.pid)
+
+    def cwd(self):
+        raise psutil.NoSuchProcess(self.pid)
+
+    def status(self):
+        raise psutil.NoSuchProcess(self.pid)
+
+
+def case_l2_ext_3_vanishes_mid_observation():
+    """A process that disappears between construction and a later field
+    read must degrade honestly: fields already gathered are kept, `exists`
+    is corrected to False once the vanish is detected, and nothing raises."""
+    real_process_cls = psutil.Process
+    psutil.Process = _FakeVanishingProcess
+    try:
+        r = _external_process_observation(424242)
+    finally:
+        psutil.Process = real_process_cls
+    return (
+        r["exists"] is False
+        and r["create_time_utc"] is not None
+        and r["cmdline"] is None
+    )
+
+
+class _FakeAccessDeniedProcess:
+    """Simulates a field genuinely inaccessible due to OS permissions,
+    while other fields on the same process remain readable."""
+    def __init__(self, pid):
+        self.pid = pid
+
+    def create_time(self):
+        return 1234567890.0
+
+    def cmdline(self):
+        raise psutil.AccessDenied(self.pid)
+
+    def exe(self):
+        raise psutil.AccessDenied(self.pid)
+
+    def cwd(self):
+        return "/some/cwd"
+
+    def status(self):
+        return "running"
+
+
+def case_l2_ext_4_access_denied_field():
+    """A genuinely inaccessible field must set access_denied=True while
+    exists stays True and other, genuinely-readable fields still populate
+    -- not collapsed into one blanket failure."""
+    real_process_cls = psutil.Process
+    psutil.Process = _FakeAccessDeniedProcess
+    try:
+        r = _external_process_observation(424243)
+    finally:
+        psutil.Process = real_process_cls
+    return (
+        r["exists"] is True
+        and r["access_denied"] is True
+        and r["cmdline"] is None
+        and r["cwd"] == "/some/cwd"
+        and r["status"] == "running"
+    )
+
+
+# --- Self-report (mission Cases 5-10) ---------------------------------------
+
+@contextlib.contextmanager
+def _isolated_self_report_dir(server_pid_content=None, sentinel_content=None,
+                                sentinel_raw=None, unreadable_sentinel=False):
+    """Throwaway directory (never inside this project) containing a
+    memory/ subdirectory with the given self-report file contents, with
+    app.core.provenance_check._PROJECT_ROOT pointed at it for the `with`
+    block's duration. Never touches the real memory/echo_server.pid or
+    memory/echo_sentinel.json. Restores the real root and deletes the temp
+    directory unconditionally on exit, even if the caller raises.
+
+    server_pid_content: str or None -- written verbatim; None = file absent.
+    sentinel_content: dict or None -- json.dump()'d; None = file absent.
+    sentinel_raw: str or None -- written VERBATIM (bypasses json.dumps),
+        for constructing deliberately malformed JSON; takes precedence.
+    unreadable_sentinel: chmod 000 the sentinel file after writing it.
+    """
+    tmp = tempfile.mkdtemp(prefix="provenance_selfreport_")
+    real_root = pc._PROJECT_ROOT
+    try:
+        memory_dir = os.path.join(tmp, "memory")
+        os.makedirs(memory_dir, exist_ok=True)
+
+        if server_pid_content is not None:
+            with open(os.path.join(memory_dir, "echo_server.pid"), "w") as f:
+                f.write(server_pid_content)
+
+        sentinel_path = os.path.join(memory_dir, "echo_sentinel.json")
+        if sentinel_raw is not None:
+            with open(sentinel_path, "w") as f:
+                f.write(sentinel_raw)
+        elif sentinel_content is not None:
+            with open(sentinel_path, "w") as f:
+                json.dump(sentinel_content, f)
+
+        if unreadable_sentinel:
+            os.chmod(sentinel_path, 0o000)
+
+        pc._PROJECT_ROOT = os.path.realpath(tmp)
+        yield tmp
+    finally:
+        pc._PROJECT_ROOT = real_root
+        try:
+            os.chmod(os.path.join(tmp, "memory", "echo_sentinel.json"), 0o644)
+        except OSError:
+            pass
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def case_l2_sr_1_both_artifacts_present_valid():
+    with _isolated_self_report_dir(
+        server_pid_content="12345",
+        sentinel_content={
+            "stage": "serving", "pid": 12345,
+            "start_utc": "2026-01-01T00:00:00.000000Z",
+            "last_heartbeat_utc": "2026-01-01T00:05:00.000000Z",
+            "uptime_s": 300,
+        },
+    ):
+        sf = pc._read_server_pid_file()
+        sn = pc._read_sentinel_file()
+        return (
+            sf["exists"] is True and sf["readable"] is True
+            and sf["malformed"] is False and sf["pid"] == 12345
+            and sn["exists"] is True and sn["readable"] is True and sn["malformed"] is False
+            and sn["stage"] == "serving" and sn["pid"] == 12345
+            and sn["start_utc"] == "2026-01-01T00:00:00.000000Z"
+            and sn["uptime_s"] == 300
+        )
+
+
+def case_l2_sr_2_missing_pid_file():
+    with _isolated_self_report_dir(
+        server_pid_content=None,
+        sentinel_content={"stage": "serving", "pid": 1, "start_utc": "x",
+                            "last_heartbeat_utc": "y", "uptime_s": 1},
+    ):
+        sf = pc._read_server_pid_file()
+        return sf["exists"] is False and sf["readable"] is False and sf["pid"] is None
+
+
+def case_l2_sr_3_missing_sentinel():
+    with _isolated_self_report_dir(server_pid_content="1", sentinel_content=None):
+        sn = pc._read_sentinel_file()
+        return sn["exists"] is False and sn["readable"] is False and all(
+            sn[k] is None for k in ("stage", "pid", "start_utc", "last_heartbeat_utc", "uptime_s")
+        )
+
+
+def case_l2_sr_4_malformed_sentinel_json():
+    with _isolated_self_report_dir(server_pid_content="1", sentinel_raw="{not valid json!!"):
+        sn = pc._read_sentinel_file()
+        return (
+            sn["exists"] is True and sn["readable"] is True
+            and sn["malformed"] is True and sn["error"] == "invalid_json"
+        )
+
+
+def case_l2_sr_5_unreadable_artifact():
+    with _isolated_self_report_dir(
+        server_pid_content="1",
+        sentinel_content={"stage": "s", "pid": 1, "start_utc": "x",
+                            "last_heartbeat_utc": "y", "uptime_s": 1},
+        unreadable_sentinel=True,
+    ):
+        sn = pc._read_sentinel_file()
+        if sn["exists"] and not sn["readable"]:
+            return sn["error"] is not None
+        # A permission-bypassing environment (e.g. running as root) makes
+        # chmod 000 not actually block the read -- still a valid,
+        # non-crashing outcome; report it honestly rather than asserting
+        # a permission-denied result that may not hold on every host.
+        return sn["exists"] is True and sn["readable"] is True
+
+
+def case_l2_sr_6_missing_expected_field():
+    with _isolated_self_report_dir(
+        server_pid_content="1",
+        sentinel_content={"stage": "serving", "pid": 1, "start_utc": "x"},
+    ):
+        sn = pc._read_sentinel_file()
+        return (
+            sn["exists"] is True and sn["readable"] is True and sn["malformed"] is False
+            and sn["stage"] == "serving" and sn["pid"] == 1 and sn["start_utc"] == "x"
+            and sn["last_heartbeat_utc"] is None and sn["uptime_s"] is None
+        )
+
+
+def case_l2_sr_7_malformed_pid_file_non_integer():
+    with _isolated_self_report_dir(server_pid_content="not-a-pid"):
+        sf = pc._read_server_pid_file()
+        return (
+            sf["exists"] is True and sf["readable"] is True
+            and sf["malformed"] is True and sf["pid"] is None
+        )
+
+
+# --- Correlation (mission Cases 11-15) --------------------------------------
+
+def case_l2_corr_1_matching_pid():
+    r = _compose_correlation(queried_pid=100, external_create_time_utc=None,
+                               server_file_pid=100, sentinel_pid=100, sentinel_start_utc=None)
+    return r["pid_match_server_file"] is True and r["pid_match_sentinel"] is True
+
+
+def case_l2_corr_2_mismatching_pid():
+    r = _compose_correlation(queried_pid=100, external_create_time_utc=None,
+                               server_file_pid=200, sentinel_pid=300, sentinel_start_utc=None)
+    return r["pid_match_server_file"] is False and r["pid_match_sentinel"] is False
+
+
+def case_l2_corr_3_matching_start_identity():
+    r = _compose_correlation(
+        queried_pid=1, external_create_time_utc="2026-01-01T00:00:00+00:00",
+        server_file_pid=None, sentinel_pid=None,
+        sentinel_start_utc="2026-01-01T00:00:02.000000Z",  # 2s apart
+    )
+    return r["start_time_match_sentinel"] is True and r["start_time_delta_seconds"] == 2.0
+
+
+def case_l2_corr_4_mismatching_start_identity():
+    r = _compose_correlation(
+        queried_pid=1, external_create_time_utc="2026-01-01T00:00:00+00:00",
+        server_file_pid=None, sentinel_pid=None,
+        sentinel_start_utc="2026-01-01T05:00:00.000000Z",  # 5 hours apart
+    )
+    return (
+        r["start_time_match_sentinel"] is False
+        and r["start_time_delta_seconds"] > pc._START_TIME_MATCH_TOLERANCE_SECONDS
+    )
+
+
+def case_l2_corr_5_unknown_when_one_side_unavailable():
+    r = _compose_correlation(queried_pid=1, external_create_time_utc=None,
+                               server_file_pid=None, sentinel_pid=None, sentinel_start_utc=None)
+    return (
+        r["pid_match_server_file"] is None
+        and r["pid_match_sentinel"] is None
+        and r["start_time_match_sentinel"] is None
+        and r["start_time_delta_seconds"] is None
+    )
+
+
+# --- Epistemic boundary (mission Cases 16-19) -------------------------------
+
+def _flatten_keys(d, prefix=""):
+    keys = []
+    if isinstance(d, dict):
+        for k, v in d.items():
+            full = f"{prefix}.{k}" if prefix else k
+            keys.append(full)
+            keys.extend(_flatten_keys(v, full))
+    return keys
+
+
+def case_l2_epi_1_no_module_loading_claim():
+    """Proves the result schema contains no field name that could be
+    (mis)read as a sys.modules / import-origin claim."""
+    r = runtime_process_identity_and_self_report(os.getpid())
+    keys = [k.lower() for k in _flatten_keys(r)]
+    banned = ("module", "sys_modules", "imported", "import_origin")
+    return not any(any(b in k for b in banned) for k in keys)
+
+
+def case_l2_epi_2_no_execution_use_claim():
+    """Proves no field claims a function was called/executed/in use.
+    Deliberately checks 'executed'/'execution', not the bare substring
+    'execut', so the legitimate external_process.executable field (the
+    OS-reported interpreter PATH, not an execution claim) never
+    false-positives this check."""
+    r = runtime_process_identity_and_self_report(os.getpid())
+    keys = [k.lower() for k in _flatten_keys(r)]
+    banned = ("executed", "execution", "invoked", "was_called", "function_called", "in_use")
+    return not any(any(b in k for b in banned) for k in keys)
+
+
+def case_l2_epi_3_self_report_stays_identifiable():
+    r = runtime_process_identity_and_self_report(os.getpid())
+    return (
+        "runtime_self_report" in r
+        and isinstance(r["runtime_self_report"], dict)
+        and "server_pid_file" in r["runtime_self_report"]
+        and "sentinel_file" in r["runtime_self_report"]
+        and "server_pid_file" not in (r.get("external_process") or {})
+        and "sentinel_file" not in (r.get("external_process") or {})
+    )
+
+
+def case_l2_epi_4_external_stays_identifiable():
+    r = runtime_process_identity_and_self_report(os.getpid())
+    return (
+        "external_process" in r
+        and isinstance(r["external_process"], dict)
+        and "exists" in r["external_process"]
+        and "exists" not in (r.get("runtime_self_report") or {})
+    )
+
+
+def case_l2_epi_5_no_verified_active_live_boolean_label():
+    """Structurally proves no field is named/shaped like a stronger-than-
+    evidence label -- checked against the exact final path segment of
+    every field, not a loose substring match, so this can never
+    false-positive on an unrelated field that merely contains one of
+    these words as part of a longer name."""
+    r = runtime_process_identity_and_self_report(os.getpid())
+    banned_exact = {
+        "verified", "active", "live", "connected", "trusted",
+        "healthy", "correct", "runtime_verified", "echo_is_live",
+    }
+    last_segments = {k.split(".")[-1].lower() for k in _flatten_keys(r)}
+    return len(last_segments & banned_exact) == 0
+
+
+def case_l2_epi_6_never_raises_and_read_only():
+    """Rounds out the epistemic-boundary group with the same
+    never-raises/read-only discipline Layer 1's Cases 7-8 already
+    establish, applied to the new primitive."""
+    head_before = _git("rev-parse", "HEAD")
+    status_before = _git("status", "--porcelain")
+    weird_inputs = [None, "not-a-pid", -1, 0, 1.5, True, [], {}]
+    ok = True
+    for inp in weird_inputs:
+        try:
+            r = runtime_process_identity_and_self_report(inp)
+            if not isinstance(r, dict) or r["in_scope"] is not False:
+                ok = False
+        except Exception:
+            ok = False
+    runtime_process_identity_and_self_report(os.getpid())
+    head_after = _git("rev-parse", "HEAD")
+    status_after = _git("status", "--porcelain")
+    return ok and head_before == head_after and status_before == status_after
+
+
 CASES = [
     ("tracked file, clean working tree", case_1_tracked_clean),
     ("tracked file, modified vs HEAD", case_2_tracked_modified),
@@ -534,6 +958,28 @@ CASES = [
     ("[symlink] no silent substitution of sibling's git identity", case_14_symlink_identity_not_substituted_with_sibling),
     ("[symlink] symlinked-directory root escape still refused (no weakening)", case_15_symlinked_directory_escape_still_refused),
     ("[symlink] ordinary files unaffected by the two-branch fix", case_16_ordinary_files_unaffected_by_the_fix),
+    ("[L2 ext] known existing PID -> real external fields populate", case_l2_ext_1_known_existing_pid),
+    ("[L2 ext] nonexistent PID -> exists=False, no error", case_l2_ext_2_nonexistent_pid),
+    ("[L2 ext] vanishes mid-observation -> honest partial degrade, no raise", case_l2_ext_3_vanishes_mid_observation),
+    ("[L2 ext] access-denied field -> flagged, other fields unaffected", case_l2_ext_4_access_denied_field),
+    ("[L2 self-report] both artifacts present and valid", case_l2_sr_1_both_artifacts_present_valid),
+    ("[L2 self-report] missing PID file", case_l2_sr_2_missing_pid_file),
+    ("[L2 self-report] missing sentinel", case_l2_sr_3_missing_sentinel),
+    ("[L2 self-report] malformed sentinel JSON", case_l2_sr_4_malformed_sentinel_json),
+    ("[L2 self-report] unreadable artifact", case_l2_sr_5_unreadable_artifact),
+    ("[L2 self-report] missing expected field stays None, not malformed", case_l2_sr_6_missing_expected_field),
+    ("[L2 self-report] malformed PID file (non-integer content)", case_l2_sr_7_malformed_pid_file_non_integer),
+    ("[L2 correlation] matching PID -> True", case_l2_corr_1_matching_pid),
+    ("[L2 correlation] mismatching PID -> False", case_l2_corr_2_mismatching_pid),
+    ("[L2 correlation] matching start identity within tolerance", case_l2_corr_3_matching_start_identity),
+    ("[L2 correlation] mismatching start identity outside tolerance", case_l2_corr_4_mismatching_start_identity),
+    ("[L2 correlation] unknown when one side unavailable -> None, not False", case_l2_corr_5_unknown_when_one_side_unavailable),
+    ("[L2 epistemic] no module-loading claim anywhere in schema", case_l2_epi_1_no_module_loading_claim),
+    ("[L2 epistemic] no execution/use claim anywhere in schema", case_l2_epi_2_no_execution_use_claim),
+    ("[L2 epistemic] self-report evidence stays identifiable as self-report", case_l2_epi_3_self_report_stays_identifiable),
+    ("[L2 epistemic] external evidence stays identifiable as external", case_l2_epi_4_external_stays_identifiable),
+    ("[L2 epistemic] no verified/active/live/connected/trusted label anywhere", case_l2_epi_5_no_verified_active_live_boolean_label),
+    ("[L2 epistemic] never raises + read-only across weird inputs", case_l2_epi_6_never_raises_and_read_only),
 ]
 
 if __name__ == "__main__":

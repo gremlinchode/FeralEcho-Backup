@@ -1,0 +1,89 @@
+# Tier-5 Follow-Up Experiment Design (NOT RUN)
+
+**Status:** Design only. No code executed, no model calls made, no tasks authored beyond what's specified here as a plan. Companion to `research/FINDINGS.md` R-011 and `research/OPEN_QUESTIONS.md` Q-010.
+
+**Purpose:** resolve the aggregate-magnitude question the N=20 retest was mathematically unable to answer (`audits/2026-09-14_tier5_retest_adversarial_audit.md`) — not to "prove" the Tier-5 fixes work. The mechanistic case is already supported (R-011); this design targets only what remains open.
+
+---
+
+## 0. Pre-specified hypotheses (locked before any execution)
+
+- **H0**: the Tier-5 fixes produce no material change in aggregate coding pass rate relative to pre-refactor behavior.
+- **H1**: the Tier-5 fixes produce a material aggregate improvement.
+- Explicitly NOT tested by this design: whether Council-with-fixes beats non-Council single-model sampling (that is Tier-4's original question, a different comparison — this design's control is pre-Tier-5 Council, per R-011's own scope, not `BASE_N`).
+
+## 1. Sample size
+
+**Why ~32 is a floor, not a target.** At the retest's observed discordance rate (5/20 = 25% of pairs discordant), McNemar's exact test cannot reach p<.05 with fewer than roughly 6 discordant pairs skewed enough in one direction. Scaling 20→32 tasks at the same 25% discordance rate projects to ~8 discordant pairs — the point at which a sufficiently lopsided split (e.g., 7-1 or 8-0) first clears p<.05. **This is a floor in the weakest possible sense**: it assumes the true effect is large enough to produce a lopsided split at all. If the true effect is small-to-moderate, 32 tasks gives a coin-flip's chance of detecting it, not a reliable one.
+
+**~40-50 tasks — recommended as the actual target, not just a floor.** At 40-50 tasks and a similar discordance rate (~10-12 discordant pairs), the test can distinguish a moderate, consistent effect (e.g., a 65/35 split among discordant pairs) from noise with reasonable power, while remaining a single real-world session's worth of execution (the N=20 retest's own real per-task timings, 24-113s per condition, project to roughly 30-90 minutes of wall-clock execution for 40-50 tasks — comparable cost to the retest already run).
+
+**Tier-4 scale (~84 tasks) — necessary only if the true effect is genuinely small.** Tier-4's own confirmatory run at n=84 (≈37-40 discordant-pair-equivalent structure across its pooled design) still landed at p=0.087, non-significant. If the real effect on the *current, partially-fixed* Council is smaller than Tier-4's original (plausible, since the fixes are designed to close exactly the failure mode Tier-4 found), 84 tasks may still not be enough — this is disclosed as a real limitation of any single follow-up, not glossed over.
+
+**Recommendation: 40-50 tasks**, explicitly chosen as the practical middle ground — large enough to have real power against a moderate effect, small enough to run as one disciplined session. If the result is again inconclusive at this scale, that itself is informative (the true effect, if any, is likely small) and would be the trigger for a Tier-4-scale commitment, not a default next step.
+
+## 2. Paired design
+
+Preserved exactly as the N=20 retest and Tier-4 both used it: every task run under both conditions (treatment = real Tier-5 fixes active; control = same functions monkeypatched to permanent no-ops), same task, same model pool, same prompt — isolating the synthesis-mechanism as the only intended manipulated variable. McNemar's test (or its exact-binomial form at this scale) remains the correct primary test specifically because of this pairing; do not convert to an unpaired comparison for convenience.
+
+## 3. Condition order
+
+**Real gap found and must be closed.** The retest ran treatment before control for every task, unconditionally (confirmed directly in `scripts/run_tier5_retest.py`'s `main()` loop — `_set_treatment()` then `run_one_condition(..., "treatment", ...)`, then `_set_control()` then `run_one_condition(..., "control", ...)`, every iteration). The adversarial audit rated this "material, not fatal" for N=20; at N=40-50 a systematic order effect (e.g., model warm-up state, any shared cache/context bleeding between calls despite `install_isolation()`) becomes more consequential to rule out, not less.
+
+**Fix**: randomize condition order per task, with the randomization seed fixed and recorded (see §9) so the exact sequence is reproducible. A simple, auditable approach: seed a `random.Random(seed)` once at driver startup, and for each task draw one bit determining treatment-first or control-first — logged per task in the results record (`"order": "treatment_first"` or `"control_first"`), not just implied by row order in the JSONL.
+
+## 4. Task selection
+
+**Should the pool be newly sampled, expanded, or stratified?** Recommend: **extend, not replace.** Reuse the existing 20-task pool (`tier5_retest_task_pool_FROZEN.py`) as the base — it is already fresh, disjoint from every prior pool, hash-frozen, and confirmed to exercise real synthesis-loss scenarios (3 direct hits). Author 20-30 *additional* tasks using the identical `_t()` convention and the same 5 categories (`bug_fixing`, `algorithmic_edge_case`, `refactoring`, `input_validation_defensive`, `data_transformation_parsing`), maintaining the existing category balance rather than skewing toward categories that happened to show hits.
+
+**Avoid selecting for the mechanism.** The 20 original tasks were authored *before* seeing any outcome — this must hold for the extension too. Author the new tasks from the same category/difficulty brief used for the original 20 (available in `audits/tier5_retest/tier5_retest_task_pool_FROZEN.py`'s own docstring/`_t()` calls as a style reference), with zero knowledge of which specific tasks produced discordant results in the N=20 run. Do not deliberately add "tasks with multiple valid-looking implementations sharing common code" (the shape of the `r-iv04` hit) — that would be constructing evidence for the hypothesis, exactly what this design must avoid.
+
+**Multi-candidate structural check**: before freezing, verify (by direct diff, as the original pool's docstring already does) zero overlap with the original 20, Tier-4's 84, the 5 `VALIDATION_TASKS`, and `held_out_task_suite.json`.
+
+## 5. Prompt-leak noise
+
+**Finding, re-verified from the audit's own source**: 92 `[PROMPT GUARD] Reasoning leak detected` warnings across 40 real generations (≈2.3/generation) in the N=20 retest — model output frequently opening with prose ("Here is the final code:", etc.) that a guard strips before sandboxing. In 2/40 cells a leak survived stripping and reached the sandbox as a raw `SyntaxError`, contributing to 2 of the 5 discordant pairs (one treatment loss, one control loss — symmetric in this sample, no directional bias detected, but the sample is far too small to rule bias out).
+
+**Is this a Tier-5 confound?** No — confirmed independent of the treatment/control manipulation (`PROMPT GUARD` fires identically regardless of which functions are monkeypatched; it operates on raw model output before either condition's synthesis path). But it is real noise inflating the discordant-pair count with failures unrelated to the mechanism under test, which directly reduces this experiment's effective power (noise discordant pairs dilute the signal from real synthesis-mechanism discordant pairs).
+
+**Concrete mitigation for the follow-up, not a scoring-standard change**: log a `prompt_leak_detected: bool` field per generation (the `[PROMPT GUARD]` signal already exists and fires deterministically — just also write it to the results JSONL instead of only to the log). This does not change what counts as "passed" (the sandboxed test result stays the authoritative oracle, per §6's own instruction not to weaken scoring) — it lets the analysis phase report the primary result both including and excluding leak-affected cells as a disclosed sensitivity check, the same way the adversarial audit already did ad hoc from the stdout log. Making the leak flag structured data instead of grep-from-a-log removes a step the adversarial audit had to do manually.
+
+## 6. Ceiling effects
+
+**Current regime**: pass/fail against a real sandboxed test oracle (`objective_verify()`), no partial credit. At 85-90% pass rates observed in the N=20 retest, there is real headroom (10-15 percentage points below ceiling) for an aggregate effect to show up — this is not a ceiling-saturated regime the way R-004's old AST-complexity self-edit gate was (all candidates scoring a perfect 4/4). No scoring change is warranted or proposed; the existing binary oracle is appropriately strict and should not be loosened to manufacture an easier-to-detect effect, per the mission's own explicit instruction.
+
+**One real, disclosed limitation, not fixed here**: binary pass/fail collapses "completely correct" and "correct but Council rewrote it unnecessarily" into the same "passed" bucket — meaning a real but non-correctness-affecting synthesis alteration (stylistic rewriting, added redundant checks) would not register as *any* kind of effect in this design. That is out of scope for resolving the aggregate correctness question specifically, but is worth naming as a reason "no detected aggregate effect" would not mean "synthesis makes zero changes to correct candidates" — only "zero *measured* correctness changes."
+
+## 7. Mechanistic endpoint (secondary, pre-specified)
+
+Reuse the adversarial audit's own method exactly, made structural instead of manual: grep `tier5_retest_stdout.log`-equivalent for the exact line pattern `[DELIBERATION] Synthesis dropped agreed-upon definition(s)... falling back to best candidate` per task, and record a `completeness_check_fired: bool` field per treatment-condition generation (this can only fire under treatment, by construction — the control has the function monkeypatched to a no-op that never fires it). Report this count alongside the primary aggregate result as a secondary endpoint, not folded into it — the R-011 finding (3/20) is itself real evidence independent of whatever the aggregate result turns out to be, and should be reported that way again here regardless of the primary outcome's direction.
+
+## 8. Primary endpoint (pre-specified before execution)
+
+- **Primary outcome**: paired pass/fail (sandboxed `objective_verify()` result) per task per condition, exactly as the N=20 retest defined it.
+- **Primary test**: McNemar's exact test on the paired 2×2 discordant-pair table, computed the same way the adversarial audit's independent recomputation did (not re-derived differently).
+- **Decision rule, stated before running anything**:
+  - p < .05 **and** treatment favored → evidence for improvement (still coding-only, still not grounds for claiming generalization or "proof" — per R-011/D-006's own standing caution against overclaiming from one experiment).
+  - p < .05 **and** control favored → evidence against the fixes' aggregate benefit; would need explicit reconciliation against the real mechanistic hits (§7) rather than an automatic "revert" conclusion.
+  - p ≥ .05 → inconclusive at this scale; report the observed effect size and confidence interval honestly as an estimate, not as evidence of equivalence, exactly as R-011/the adversarial audit both insist on for the current data.
+- **No secondary metric may be substituted as the primary result after seeing data** — if `completeness_check_fired` counts look more favorable than the paired pass/fail result, that does not change which one is primary.
+
+## 9. Reproducibility
+
+Before execution, record and freeze: task-pool file + SHA256 hash (same convention as the N=20 pool); the randomization seed (§3) as a literal constant in the driver, logged in the results header; driver script identity (its own file hash, recorded at run start); Git HEAD (both `river_deliberation.py`'s and the whole repo's); Ollama model pool identity (`MODEL_POOL` contents at run time — a real, if unlikely, drift risk between sessions); a run start timestamp. Write results incrementally per completed condition (as the existing driver already does) so a future interruption preserves whatever real, valid data was captured — this convention already proved its value (§10).
+
+## 10. Interruption/sleep protection
+
+**What actually happened, stated precisely rather than assumed**: the N=20 retest's first attempt was interrupted by the M5 MacBook's lid being closed for travel, mid-execution, and the corruption signature was an implausibly large `generation_time` value (a wall-clock timer spanning the OS suspend) plus one task with zero result (the process killed by an external stream watchdog after 600s of silence). This is not a property this driver can prevent by itself — it is a host-environment event outside the Python process's control.
+
+**What can be detected, without introducing an unverified assumption**: add a simple, cheap sanity check per condition — flag (not silently drop) any recorded `generation_time` more than, say, 10x the running median of prior real generation times in the same run (a robust outlier threshold computed from the run's own data, not a hardcoded magic number chosen in advance without evidence — the N=20 run's own real range was 24-113s, so a 10x-median flag would have caught the ~18,000s outlier by an enormous margin without needing to know in advance what "too long" means). This is a **detection and disclosure** mechanism, not a prevention one — flagged rows should be excluded from the primary analysis exactly as `r-rf03` was, with the same explicit documentation the archived contamination already received, never silently dropped without a visible record.
+
+**What must not be done**: no assumption that a flagged/excluded row's `passed` value is still trustworthy just because the code ran to completion — an OS suspend mid-network-call can produce subtly wrong behavior (stale connection state, silent retry) that a bare timing check cannot fully rule out, matching the original discipline of discarding the whole `r-rf03` cell rather than trusting its `passed=True` at face value.
+
+**Practical operational note** (not a code requirement, a process one): given this exact failure already happened once on this exact machine, running the follow-up during a window with no planned lid-close/travel remains the cheapest real mitigation — worth stating plainly rather than only solving this in code.
+
+---
+
+## Architectural decision gate (restated per mission Phase 5)
+
+**No architectural change is authorized by this design document or by R-011.** This document specifies an experiment; it does not run one. The current, evidence-grounded position remains: retain the existing Tier-5 fixes (real, mechanistic, log-confirmed value; no evidence of harm) and treat the aggregate-magnitude question as open pending the experiment specified above, not pending assumption in either direction.

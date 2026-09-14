@@ -24,6 +24,7 @@ Labels: `[VERIFIED]` `[CONDITIONAL]` `[SUPERSEDED]` `[UNRESOLVED]` `[DESIGN]`
 - `[SUPERSEDED]` "RiverBrain's trust threshold requires more data to close." — the real blocker was that `mark_baseline_trusted()` had zero call sites for ~2.5 months; data was never the constraint (`R-007`, Finding 3→66).
 - `[CONDITIONAL]` RiverBrain's `model_task_stats["coding"]` reward signal is blind to whether generated code is actually *correct*, only to a structural-complexity-based proxy score — real but narrow (R-004; `CLAUDE.md` Finding 91).
 - `[VERIFIED]` Council-vs-baseline capability research (Tier-3 through Tier-8, `audits/tier3_*` through `audits/tier8_*`, terminal reports read this pass): synthesis, not generation, is the real bottleneck — raw candidate solve rate ~95-96%, synthesized output ~68-80%. Isolation forensics found and closed a real experimental-contamination gap (RiverBrain's background writer thread bypassing `install_isolation()`). — depth: terminal-report level.
+- `[VERIFIED]` The Tier-5 synthesis fixes (`detect_full_agreement`/`find_missing_agreed_definitions`) have real, log-confirmed mechanistic evidence of catching synthesis corruption in production-shaped conditions (3/20 tasks, clean N=20 retest). `[UNRESOLVED]` Their aggregate effect on coding correctness — this retest was mathematically unable to resolve it at N=20 (5 discordant pairs, max possible p=0.0625). See R-011/Q-010.
 
 ## Self-editing
 

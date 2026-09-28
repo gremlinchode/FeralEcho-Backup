@@ -170,22 +170,14 @@ class NightCycle:
         # 2026-07-23 — daily-gated echo_state/salience history archiving
         self._maybe_archive_echo_state_history()
 
-        # Shadow accuracy check — compare experimental targets to what actually happened
-        try:
-            from app.core.shadow_model import log_accuracy, check_and_correct
-            delta = log_accuracy()
-            if "focus_matches" in delta:
-                logging.info(
-                    "[NightCycle] Shadow accuracy | focus_matches=%s | shadow=%s | real=%s",
-                    delta["focus_matches"], delta.get("shadow_focus"), delta.get("real_focus"),
-                )
-            corrected = check_and_correct(delta)
-            if corrected:
-                logging.warning(
-                    "[NightCycle] Shadow drift corrected → new focus proposed: %s", corrected
-                )
-        except Exception as _se:
-            logging.debug("[NightCycle] Shadow accuracy check failed: %s", _se)
+        # Shadow accuracy check — retired 2026-09-13 (shadow_model_retirement
+        # mission). This block used to call app.core.shadow_model's
+        # log_accuracy()/check_and_correct() every cycle; removed after real
+        # measurement showed shadow's focus-match accuracy (16.1% over 2054
+        # real entries) was below the ~20% a uniform-random guess across 5
+        # task types would get. The shadow_model.py implementation is
+        # preserved, unmodified, with no live caller anywhere in the
+        # codebase — see audits/2026-09-13_shadow_model_retirement.md.
 
     def _maybe_snapshot_self_model(self) -> None:
         """Copy self_model.json to memory/history/ if no snapshot in the last 7 days."""

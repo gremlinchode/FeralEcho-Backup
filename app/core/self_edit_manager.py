@@ -2890,31 +2890,25 @@ def perform_self_edit(prompt=None, intensity=None, creativity=None, dry_run=None
             # supports. Confirmed live consequence: 100% of 103 real,
             # quality-tracked self-edit outcomes targeted "coding" regardless
             # of what either signal actually said. Empirical signal now
-            # checked first; the shadow model's suggestion is kept only as a
-            # last-resort fallback (still better-than-nothing informative
-            # when the primary signal is genuinely unavailable, e.g. an
-            # import failure) rather than removed outright — this fix is
-            # scoped to the priority-order bug, not a decision to retire the
-            # shadow-model mechanism itself.
+            # checked first.
+            #
+            # Retired 2026-09-13 (shadow_model_retirement mission): the
+            # shadow-fallback block that used to sit here was removed
+            # outright, not merely deprioritized. The same below-chance
+            # number cited above (16.1% overall, 13.2% over the most recent
+            # 500 entries — both worse than the ~20% a uniform-random guess
+            # across 5 task types would get) was judged sufficient to
+            # disconnect Shadow from every live decision path, not just
+            # demote it. See audits/2026-09-13_shadow_model_retirement.md
+            # and app/core/shadow_model.py's own retirement notice. If the
+            # empirical signal is unavailable, this now falls straight
+            # through to the "coding" default below; it no longer reads
+            # memory/shadow_self_model.json at all.
             try:
                 from app.core.self_model_updater import SelfModelUpdater
                 target_task_type = SelfModelUpdater().get_weak_task_type()
             except Exception as e:
                 logging.warning(f"[SELF-EDIT] SelfModelUpdater unavailable: {e}")
-
-            if target_task_type is None:
-                try:
-                    import json as _json
-                    from pathlib import Path as _Path
-                    _shadow_path = _Path("memory/shadow_self_model.json")
-                    if _shadow_path.exists():
-                        _shadow = _json.loads(_shadow_path.read_text())
-                        _focus = _shadow.get("targets", {}).get("next_self_edit_focus")
-                        if _focus:
-                            logging.info(f"[SELF-EDIT] Shadow model fallback (empirical signal unavailable) → target={_focus}")
-                            target_task_type = _focus
-                except Exception as _se:
-                    logging.debug(f"[SELF-EDIT] Shadow focus read failed: {_se}")
 
             if target_task_type is None:
                 target_task_type = "coding"

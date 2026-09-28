@@ -724,12 +724,14 @@ def reflect(prompt: str) -> str:
         # A second log_interaction() call here was producing duplicate rows with
         # model_name="emergent_scheduler" for every reflection. Removed.
 
-        # Shadow: auto-propose experimental focus from reflection content
-        try:
-            from app.core.shadow_model import propose_from_reflection
-            propose_from_reflection(response)
-        except Exception:
-            pass
+        # Shadow auto-propose — retired 2026-09-13 (shadow_model_retirement
+        # mission). This block used to call
+        # app.core.shadow_model.propose_from_reflection() on every
+        # reflection; removed along with every other live caller of
+        # shadow_model.py after real measurement showed its focus-match
+        # accuracy (16.1% over 2054 real entries) was below the ~20% a
+        # uniform-random guess across 5 task types would get. See
+        # audits/2026-09-13_shadow_model_retirement.md.
 
         return response
 

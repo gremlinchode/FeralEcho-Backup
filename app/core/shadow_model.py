@@ -1,13 +1,40 @@
 # app/core/shadow_model.py
 # ============================================================
-# SHADOW SELF-MODEL
+# SHADOW SELF-MODEL — RETIRED FROM LIVE USE (2026-09-13)
+# ============================================================
+# STATUS: INTENTIONALLY DISCONNECTED. Not imported by any live production
+# code path as of this date, confirmed directly (app/emergent_scheduler.py,
+# app/maintenance/night_cycle.py, and app/core/self_edit_manager.py's
+# perform_self_edit() fallback previously called into this module; all
+# three call sites were removed in the same change that added this
+# notice). The implementation below is preserved unmodified for
+# historical/research purposes — do not delete it, and do not silently
+# re-wire it into a live path.
+#
+# WHY: real, measured accuracy against the live memory/shadow_accuracy.jsonl
+# (2054 real entries) was ~16.1% overall, ~13.2% over the most recent 500 —
+# WORSE than the ~20% a uniform-random guess across the 5 real task types
+# would get. Whether this is genuine noise, a systematic inversion, a
+# category/label mapping bug, or another diagnosable defect has never been
+# investigated — that investigation was deliberately NOT performed as part
+# of this retirement. See audits/2026-09-13_shadow_model_retirement.md for
+# the full retirement archaeology and the open research question this
+# leaves standing.
+#
+# REVIVAL: requires a new, dedicated, cheap investigation into the
+# below-chance cause BEFORE any live code is re-wired to consume this
+# module's output again — not a default action, and not something to do
+# by momentum during an unrelated change.
+# ============================================================
+#
+# Original module docstring, preserved below for historical context:
+#
 # A lightweight experimental copy of self_model.json that Echo
 # can freely overwrite with proposed targets without touching
 # the production self-model.
 #
-# NightCycle reads shadow vs real and logs whether Echo's
-# self-predictions were accurate. Over time this measures
-# whether Echo's self-assessments are calibrated.
+# NightCycle previously read shadow vs real and logged whether Echo's
+# self-predictions were accurate, feeding a calibration measurement.
 # ============================================================
 
 import json

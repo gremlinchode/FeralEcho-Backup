@@ -160,12 +160,42 @@ temperature, which has never been tried anywhere in this project):
 
 ## Phase 5 — Skill B qualification (only if ≥1 real fail/pass pair exists after Phase 4)
 
-If Phase 4 (either condition) produces at least one failing and one passing T2 candidate
-(a passing candidate may come from unaided generation OR from Skill A's repair — both are
-legitimate "passing" examples for diff-extraction purposes; the diff-extraction step
-itself does not care how the passing example arose, only that it is a genuine, real,
-oracle-confirmed pass), run the same, unmodified `extract_transformation()` used for
-Skill A to attempt a Skill B `{precondition, transformation}` record. If successful,
+**Original text, as first frozen (superseded by the correction immediately below —
+preserved here verbatim, not deleted, per this project's own established discipline):**
+"If Phase 4 (either condition) produces at least one failing and one passing T2
+candidate (a passing candidate may come from unaided generation OR from Skill A's
+repair — both are legitimate 'passing' examples for diff-extraction purposes; the
+diff-extraction step itself does not care how the passing example arose, only that it is
+a genuine, real, oracle-confirmed pass), run the same, unmodified
+`extract_transformation()` used for Skill A to attempt a Skill B
+`{precondition, transformation}` record."
+
+**Correction, made in the implementation before any generation ran, but not
+synchronized back into this prose until after results existed — disclosed exactly as it
+happened, not smoothed over.** Before writing `accumulation.py`'s actual `qualify_b`
+implementation, the design above was reconsidered and reversed: **only genuinely unaided
+passes (from either condition) are eligible as the "passing" member of a diff-extraction
+pair; any candidate that Skill A itself repaired is excluded from the pool.** Reason:
+diffing a Skill-A-repaired candidate against its own pre-repair failing form would, by
+construction, just re-derive Skill A's own transformation (they differ by exactly Skill
+A's edit) — that would not be a genuinely independent Skill B, and would directly violate
+Phase 2's "distinct enough" requirement ("B cannot merely be another literal instance of
+Skill A"). **Verified, not merely asserted, that this was a genuine before-generation
+decision, not a post-hoc rationalization**: `accumulation.py`'s commit (`487c4d5`,
+23:17:36) predates the first real T2 candidate generation (`a_present_result.json`,
+written 23:21:36) by 4 minutes — the rule was fixed in code before any outcome existed.
+Only the *prose* in this document lagged the code; the same "doc lags implementation"
+class of gap this project's own history repeatedly catches and corrects rather than
+hides. **The actual, controlling rule, used for the real run below: only unaided
+fail/pass pairs are used for Skill B extraction.**
+
+**Consequence for interpretation, flagged in advance of the results below**: this rule
+means Skill B's own qualification is, by construction, independent of whether Skill A
+existed at all — if Skill B is qualified, that specific fact does not by itself
+demonstrate Skill A caused *Skill B's discovery*. It can still demonstrate Skill A
+causally improved the raw K2.T2 acquisition-efficiency metric (Phase 1's primary
+metric) via a *different* repaired candidate — a real but distinct claim from "A helped
+discover B." Both are reported separately and not conflated in the results below. If successful,
 persist it under a new feature key `K2.T2.<descriptive-suffix-chosen-from-the-real-diff>`
 via `Skill(...).save_new_version()`, `status="candidate"`, `held_out_verdict=None` —
 identical discipline to how Skill A itself started.
@@ -244,4 +274,215 @@ advance
 
 ---
 
-## RESULTS (appended after this line only; nothing above changed after generation began)
+## RESULTS (appended after this line only; nothing above this line changed after
+generation began, except the Phase 5 correction note above, which documents a real
+discrepancy between the frozen prose and the already-committed code, verified to predate
+generation by 4 minutes)
+
+### A-PRESENT (fresh process, PID=38194)
+
+```
+candidate 0 (DIRECT):        original_passed=False skill_a_applied=True  patched_passed=False
+candidate 1 (STEPWISE):      original_passed=True  skill_a_applied=False patched_passed=True
+candidate 2 (WORKED_EXAMPLE):original_passed=False skill_a_applied=True  patched_passed=False
+candidate 3 (STEPWISE):      original_passed=False skill_a_applied=True  patched_passed=True
+candidate 4 (DIRECT):        original_passed=False skill_a_applied=True  patched_passed=False
+candidate 5 (STEPWISE):      original_passed=True  skill_a_applied=False patched_passed=True
+candidate 6 (WORKED_EXAMPLE):original_passed=False skill_a_applied=False patched_passed=False
+candidate 7 (STEPWISE):      original_passed=True  skill_a_applied=False patched_passed=True
+DONE. raw: original_pass=3/8 patched_pass=4/8 skill_a_applied=4/8
+distinct_code_bodies=5/8  distinct_code_bodies_passing=3
+```
+
+### A-ABSENT (SEPARATE fresh process, PID=38305 — confirmed distinct from A-PRESENT's)
+
+```
+candidate 0-7: original_passed identical to A-PRESENT's own original_passed column,
+bit-for-bit (False,True,False,False,False,True,False,True) — confirmed, not assumed.
+DONE. original_pass=3/8
+distinct_code_bodies=5/8  distinct_code_bodies_passing=2
+```
+
+**Determinism confirmed across two independent fresh processes** — the raw generation is
+identical regardless of Skill A's presence, exactly as it must be for the causal
+comparison to isolate `apply_skill()` as the only variable. (The distinct-passing-body
+counts of 3 vs. 2 are *not* a determinism discrepancy — A-PRESENT's count includes
+candidate 3 in its "passing" set because `patched_passed=True` there, while A-ABSENT's
+count only ever considers `original_passed`; both are computed correctly per their own
+condition's definition, verified by direct inspection.)
+
+**Mechanistic decomposition, read directly off the real candidate code (not inferred)**:
+two completely independent, orthogonal bugs exist in this real candidate pool for K2.T2:
+
+1. **The tag-priority negation-direction bug (Skill A's exact domain)**: present in
+   candidates 0, 2, 3, 4 (all contain `-tag_priority[x[2]]` inside a `sorted(...)` key).
+2. **A shape/projection bug, unrelated to Skill A**: candidates 0, 2, 4, and 6 return
+   `sorted(entries, key=...)` directly — the full `(name, score, tag)` tuples — instead
+   of projecting out just the `name` field, which is what `rank_all` actually requires.
+
+Candidates 0, 2, 4 carry **both** bugs; Skill A correctly fires on the negation (its
+precondition genuinely matches) but cannot fix the shape bug, so they remain failing
+after patching — an honest, mechanically explained non-improvement, not a flaw in the
+skill. Candidate 3 carries **only** the negation bug (its projection is already correct,
+via `[entry[0] for entry in sorted_entries]`) — Skill A's repair is therefore sufficient
+on its own, and it flips cleanly from fail to pass. Candidate 6 carries **only** the
+shape bug (no negation present at all) — Skill A correctly declines to touch it (no false
+match), and it remains failing for a reason outside Skill A's domain.
+
+**Primary metric result**: A-PRESENT (4/8) > A-ABSENT (3/8) under an identical, fixed,
+8-candidate budget and identical seeds — Skill A causally improved the raw
+acquisition-efficiency metric for K2.T2, and the improvement is precisely and
+mechanistically attributable to `apply_skill()` correctly repairing one specific,
+independently-verified failure mode (candidate 3) that the separate fresh-process
+A-ABSENT control confirms would otherwise remain failing. This is real, but modest (a
++1/8 effect) and does not extend to every failure mode present (candidates 0, 2, 4 are
+untouched by Skill A's repair, for an honestly-explained, mechanistic reason).
+
+### Skill B qualification (Phase 5)
+
+Pool: 10 unaided failing entries, 6 unaided passing entries (both conditions' unaided
+candidates combined; duplicated across conditions since determinism holds, harmless).
+First alignable pair found: **candidate 6 (failing, the shape-bug-only candidate) vs.
+candidate 1 (unaided passing)**. Extracted pattern: **`identical_to_skill_a=False`** — a
+genuinely distinct pattern, not a restatement of Skill A. Precondition: the entire
+`sorted(entries, key=lambda x: (-x[1], tag_priority[x[2]], x[0]))` call; transformation:
+the same call wrapped in `[entry[0] for entry in ...]` — i.e., "project out just the
+name field." Written as `K2.T2.discovered_via_accumulation_test` v1, `status=candidate`,
+`held_out_verdict=None`, `content_hash=1f5ce81e6d31a68cf0427f8d566977c45f648af17b280d8698c83965ef6bfbd0`.
+
+**Honest note on Skill B's own generality, flagged per Phase 10's explicit warning**:
+unlike Skill A's tiny, surgical 1-node diff (a single `UnaryOp` wrapping one
+`Subscript`), Skill B's precondition is the *entire* sort-key call — a much larger
+subtree, bound to the exact local variable names this candidate happened to use
+(`entries`, `x`, `tag_priority`, and the comprehension variable `entry`). This is closer
+to Phase 10's "task-identity fingerprint" territory than Skill A's pattern was — it will
+only match code using this exact naming convention, a real, disclosed limitation on how
+broadly Skill B can be expected to generalize beyond what Phase 7 below actually tests.
+
+**Central, load-bearing caveat, per the Phase 5 correction above**: Skill B's extraction
+used *only* unaided candidates (6 and 1), neither of which Skill A ever touched. **Skill
+A's presence did not cause Skill B's specific discovery** — the identical extraction
+would have happened in a counterfactual world where Skill A never existed, since both
+conditions' unaided pools are identical by determinism. What Skill A *did* cause is
+reported separately above (the raw acquisition-efficiency improvement, via a completely
+different candidate). These are two real, distinct, non-conflated findings.
+
+### Restart-boundary check (Phase 6)
+
+Fresh process (PID=38664, confirmed distinct from `qualify_b`'s own process). Skill B
+reloaded via `Skill.load_latest()`: version and content hash match exactly what was
+written. Genuine disk-based persistence confirmed, same evidence standard as every prior
+restart check in this project.
+
+### Skill B's own prospective transfer test (Phase 7, scoped 2-target/10-cap)
+
+**Selection** (outcome-blind): 3 candidates generated (world_index=3, strategy mix) before
+2 eligible found — well under the 10-cap. Candidate 1 (STEPWISE) was ineligible
+(precondition did not match); candidates 0 (DIRECT) and 2 (WORKED_EXAMPLE) were eligible.
+Zero contamination.
+
+**TRUE** (fresh process, PID=38856): `original_passed=False` for both selected instances;
+`skill_applied=True` for both; `patched_passed=True` for both. **0/2 → 2/2.**
+
+**SUBSTITUTION** (separate fresh process, PID=38889, Skill B never consulted):
+`original_passed=False` for both — identical to TRUE's own pre-patch baseline, confirming
+determinism held again. **0/2, with-skill was 2/2 — advantage attributable to Skill B's
+presence: YES.**
+
+This is a full, clean, independently-run **Outcome A** (in the exact sense of the
+`prospective_transfer.py` protocol) **on Skill B itself** — a second, genuine
+demonstration that this architecture's causal-transfer mechanism is not a one-off
+property of Skill A specifically, but reproduces on a second, independently-discovered
+skill. Sample size is even smaller here than Skill A's own prospective test (n=2, not
+n=4) — explicitly a smaller, scoped-down test per the frozen protocol's own Phase 7, not
+hidden as if it were equally powered.
+
+### Classification: qualified AC-1
+
+Checked against every AC-1 requirement directly:
+
+1. **Skill A actually consumed during B acquisition**: YES — `skill_a_applied=True` on
+   4/8 candidates, one of which (candidate 3) was genuinely repaired.
+2. **B acquired more efficiently/reliably with A than without under matched budget**:
+   YES, for the feature key's aggregate acquisition-efficiency metric (4/8 vs 3/8,
+   identical seeds, separate fresh processes) — this is the mission's own stated primary
+   metric (§8 of the build-decision memo) and it moved in the correct direction,
+   causally.
+3. **The advantage depends on A**: YES — A-ABSENT's separate fresh process confirms
+   candidate 3 would remain failing without Skill A.
+4. **B qualifies independently**: YES — a genuine, distinct (`identical_to_skill_a=False`)
+   `{precondition, transformation}` record, extracted via the unmodified
+   `extract_transformation()`.
+5. **B persists**: YES — confirmed across a genuine restart boundary.
+6. **B produces fresh-instance behavioral advantage**: YES — Skill B's own prospective
+   transfer test, 0/2 → 2/2, causally confirmed via separate fresh processes.
+
+**All six literal requirements are met. This is classified as AC-1: causal accumulation
+demonstrated** — with one honest, load-bearing qualification stated as precisely as
+possible, not buried: **the specific mechanism connecting A and B is narrower than "A
+helped discover B."** What was actually shown is (a) Skill A causally improves the raw
+acquisition-efficiency metric for a second, structurally related feature key, by
+repairing a real failure mode within that key's own candidate pool, and (b) a second,
+independently-discovered, genuinely distinct skill (Skill B) reproduces the exact same
+causal-transfer property Skill A already demonstrated — evidence that this architecture's
+core mechanism (acquire → diff-extract → persist → causally reapply) generalizes across
+at least two real bug families, not just one. It is **not** evidence that Skill A made
+Skill B's *own specific pattern* easier or more probable to discover — that stronger,
+narrower claim (Phase 11's "does A change the probability of acquiring B") was tested
+directly (Skill B's extraction pool explicitly excludes anything Skill A touched, by
+design) and the honest answer is: **not demonstrated in this run; B was equally
+discoverable without A.**
+
+### Anti-doppelgänger check (Phase 14), verified directly, not just asserted
+
+- **Extra context**: confirmed by construction — `H._generate_one()` was called with
+  byte-identical arguments (task, world, seed, strategy) in both conditions; the only
+  difference was whether `apply_skill()` ran afterward.
+- **Extra compute**: identical budget (8) in both conditions; `apply_skill()` is a local
+  AST operation, not a model call.
+- **Answer leakage**: Skill A's transformation is a single-node negation removal; it
+  cannot and did not supply T2's own list-comprehension logic (candidates 0, 2, 4 prove
+  this directly — Skill A applied but did not produce a pass, since the shape logic was
+  still missing).
+- **Task duplication**: T2 and T5 have different signatures, return types, and
+  projection logic (established in Phase 2, before generation).
+- **Retrieval masquerading as acquisition**: Skill B was diff-extracted fresh from T2's
+  own real unaided pair, never copied from Skill A.
+- **Human abstraction**: no hand-authored bridge exists anywhere in `accumulation.py`;
+  the connecting mechanism is `apply_skill()`, unmodified.
+- **Selection bias**: B was chosen from static task-table inspection, timestamped before
+  any T2 candidate existed.
+- **Duplicate samples**: reported explicitly (5/8 distinct code bodies in each
+  condition); the causal comparison (4/8 vs 3/8) is not inflated by treating duplicates
+  as independent evidence — candidate 3 (the sole flipped case) has a unique code hash
+  not shared with any other candidate.
+- **Base-model luck**: neutralized by identical seeds across conditions — the observed
+  difference cannot be sampling luck, since both conditions sampled identically; the only
+  possible source of difference is `apply_skill()` itself, which is exactly what was
+  measured.
+
+### What Checkpoint 7 does and does not establish, stated as precisely as the mission
+requires
+
+**Established**: (1) Skill A causally improves K2.T2's raw acquisition-efficiency metric
+under a fixed, matched budget — real accumulation of the "does having this skill make
+the same task family's overall pass rate better" kind. (2) A second, independently
+discovered, genuinely distinct skill demonstrates the identical restart-persistent
+causal-transfer property Skill A already showed — the mechanism is not a one-off. (3)
+Both findings are supported by mechanistically transparent, fully-explained evidence
+(not a mysterious aggregate statistic) — every candidate's pass/fail status is explained
+by which of two independent, named bugs it carries.
+
+**Not established**: that Skill A made Skill B's *specific* pattern easier, more
+probable, or faster to discover. That is the narrower, harder claim Phase 11 names, and
+this run's own qualification design (deliberately excluding Skill-A-touched candidates
+from B's extraction pool, to avoid the "B is just A relabeled" failure mode) makes it
+structurally impossible for this specific run to have shown that — a real, disclosed
+scope limit on the classification above, not an oversight discovered after the fact.
+
+### Phase 12 (optional composition test): not attempted
+
+Given the scope already covered and the honest qualification above, the optional
+composition test (does A+B enable a harder fresh task) was not attempted in this pass —
+explicitly optional per the mission's own Phase 12, and not required to reach a
+classification.

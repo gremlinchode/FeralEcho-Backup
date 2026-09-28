@@ -255,10 +255,203 @@ def cmd_restart_check_b():
                      "pid": os.getpid(), "id_sys_modules": id(sys.modules)})
 
 
+SKILL_B_KEY = "K2.T2.discovered_via_accumulation_test"
+B_TRANSFER_TARGET_N = 2   # Phase 7, scoped down from Skill A's 4/20
+B_TRANSFER_HARD_CAP = 10
+B_TRANSFER_STRATEGIES = ("DIRECT", "STEPWISE", "WORKED_EXAMPLE", "STEPWISE",
+                          "DIRECT", "STEPWISE", "WORKED_EXAMPLE", "STEPWISE", "DIRECT", "STEPWISE")
+
+
+def _b_transfer_world():
+    d = ACCUM_DIR
+    path = d / f"world_{B_TRANSFER_WORLD_INDEX}.json"
+    if path.exists():
+        return read_json(path)
+    world = H.VT.build_world(world_index=B_TRANSFER_WORLD_INDEX, taken=set())
+    write_json_new(path, world)
+    return world
+
+
+def _known_b_hashes():
+    """Every code hash already generated/observed for K2.T2 in this accumulation test --
+    the a_present/a_absent candidates plus Skill B's own recorded provenance hashes.
+    Used only for the freshness check, never for eligibility."""
+    hashes = set()
+    for fname in ("a_present_result.json", "a_absent_result.json"):
+        p = ACCUM_DIR / fname
+        if p.exists():
+            for r in read_json(p)["results"]:
+                if r.get("code_hash"):
+                    hashes.add(r["code_hash"])
+    b = Skill.load_latest(SKILL_B_KEY)
+    if b:
+        for k in ("failing_code_hash", "passing_code_hash"):
+            if b.provenance.get(k):
+                hashes.add(b.provenance[k])
+    return hashes
+
+
+def cmd_transfer_b_select():
+    """Phase 7, outcome-blind selection for Skill B (mirrors prospective_transfer.py's
+    cmd_select() design, scoped down per the frozen protocol)."""
+    skill_b = Skill.load_latest(SKILL_B_KEY)
+    if skill_b is None:
+        sys.exit("[transfer_b_select] STOP: no Skill B found -- run qualify_b first.")
+    pattern = _pattern_for(skill_b)
+    print(f"[transfer_b_select] frozen Skill B: {SKILL_B_KEY} v{skill_b.version} "
+          f"content_hash={skill_b.content_hash()}")
+
+    world = _b_transfer_world()
+    task = H._find_task(world, B_TASK_ID)
+    known_hashes = _known_b_hashes()
+    print(f"[transfer_b_select] {len(known_hashes)} known prior K2.T2 code hashes loaded for contamination check.")
+
+    inspected = []
+    outcomes = {}
+    selected_indices = []
+    contamination = None
+
+    for i in range(B_TRANSFER_HARD_CAP):
+        seed = seed_for("TRANSFER_B", B_TASK_ID, i)
+        strategy = B_TRANSFER_STRATEGIES[i]
+        code, grade, raw = H._generate_one(task, world, seed, strategy)
+        outcomes[i] = grade  # stored, not inspected/printed here
+
+        if not code:
+            inspected.append({"index": i, "seed": seed, "strategy": strategy,
+                               "eligible": False, "reason": "no_code_extracted", "code_hash": None})
+            print(f"[transfer_b_select] candidate {i}: no code extracted -- ineligible")
+            continue
+
+        code_hash = sha256_text(code)
+        if code_hash in known_hashes:
+            contamination = {"index": i, "seed": seed, "code_hash": code_hash}
+            print(f"[transfer_b_select] CONTAMINATION at candidate {i}. Stopping.")
+            break
+
+        fixed = DE.apply_skill(code, B_FN_NAME, pattern)
+        eligible = fixed is not None
+        inspected.append({"index": i, "seed": seed, "strategy": strategy, "eligible": eligible,
+                           "reason": None if eligible else "precondition_did_not_match",
+                           "code_hash": code_hash, "code": code})
+        print(f"[transfer_b_select] candidate {i} (strategy={strategy}): eligible={eligible} "
+              f"(structural match only -- oracle outcome not yet inspected)")
+        if eligible:
+            selected_indices.append(i)
+        if len(selected_indices) >= B_TRANSFER_TARGET_N:
+            break
+
+    frozen = {"feature_key": SKILL_B_KEY, "skill_content_hash": skill_b.content_hash(),
+              "hard_cap": B_TRANSFER_HARD_CAP, "target_n": B_TRANSFER_TARGET_N,
+              "n_inspected": len(inspected), "selected_indices": selected_indices,
+              "contamination": contamination,
+              "candidates": [{k: v for k, v in c.items() if k != "code"} for c in inspected]}
+    write_json_new(ACCUM_DIR / "transfer_b_selection_frozen.json", frozen)
+    print(f"[transfer_b_select] SELECTION FROZEN: {len(selected_indices)}/{B_TRANSFER_TARGET_N} "
+          f"eligible among {len(inspected)} inspected (cap={B_TRANSFER_HARD_CAP}).")
+
+    if contamination is not None:
+        sys.exit("[transfer_b_select] OUTCOME D: contamination. STOP.")
+
+    write_json_new(ACCUM_DIR / "transfer_b_candidates_full.json", inspected)
+
+    if len(selected_indices) < B_TRANSFER_TARGET_N:
+        revealed = {i: bool(outcomes[i].get("passed")) for i in range(len(inspected))}
+        write_json_new(ACCUM_DIR / "transfer_b_outcomes_revealed_outcome_c.json", revealed)
+        print(f"[transfer_b_select] OUTCOME C: only {len(selected_indices)}/{B_TRANSFER_TARGET_N} "
+              f"eligible among {len(inspected)} inspected (cap reached). Coverage insufficient.")
+        return
+    print(f"[transfer_b_select] {B_TRANSFER_TARGET_N} eligible frozen: {selected_indices}. "
+          f"Proceed to transfer_b_true (fresh process), then transfer_b_substitution.")
+
+
+def cmd_transfer_b_true():
+    """Phase 7, fresh process, Skill B present."""
+    frozen = read_json(ACCUM_DIR / "transfer_b_selection_frozen.json")
+    if frozen.get("contamination") is not None:
+        sys.exit("[transfer_b_true] STOP: contamination recorded.")
+    selected = frozen["selected_indices"]
+    if len(selected) < B_TRANSFER_TARGET_N:
+        sys.exit(f"[transfer_b_true] STOP: only {len(selected)}/{B_TRANSFER_TARGET_N} eligible -- Outcome C.")
+
+    skill_b = Skill.load_latest(SKILL_B_KEY)
+    if skill_b.content_hash() != frozen["skill_content_hash"]:
+        sys.exit("[transfer_b_true] STOP: Skill B content_hash mismatch vs frozen selection.")
+    pattern = _pattern_for(skill_b)
+
+    import os
+    print(f"[transfer_b_true] loaded Skill B v{skill_b.version} content_hash={skill_b.content_hash()} "
+          f"(genuine restart: fresh process) PID={os.getpid()} id(sys.modules)={id(sys.modules)}")
+
+    world = _b_transfer_world()
+    task = H._find_task(world, B_TASK_ID)
+
+    results = []
+    for i in selected:
+        seed = seed_for("TRANSFER_B", B_TASK_ID, i)
+        strategy = B_TRANSFER_STRATEGIES[i]
+        code, grade, raw = H._generate_one(task, world, seed, strategy)
+        original_passed = bool(grade.get("passed"))
+        patched_passed = original_passed
+        applied = False
+        if not original_passed and code:
+            fixed_code = DE.apply_skill(code, B_FN_NAME, pattern)
+            if fixed_code is not None:
+                applied = True
+                test_code, _n = H.VT.make_hidden_tests(task, world, "VAL")
+                fixed_grade = H.OR.grade(fixed_code, test_code)
+                patched_passed = bool(fixed_grade.get("passed"))
+        results.append({"index": i, "seed": seed, "original_passed": original_passed,
+                         "skill_applied": applied, "patched_passed": patched_passed})
+        print(f"[transfer_b_true] instance {i}: original_passed={original_passed} "
+              f"skill_applied={applied} patched_passed={patched_passed}")
+
+    write_json_new(ACCUM_DIR / "transfer_b_true_result.json", {"results": results})
+    n_orig = sum(r["original_passed"] for r in results)
+    n_patched = sum(r["patched_passed"] for r in results)
+    print(f"[transfer_b_true] DONE. original={n_orig}/{len(results)} patched={n_patched}/{len(results)}")
+
+
+def cmd_transfer_b_substitution():
+    """Phase 7, fresh process, Skill B never consulted."""
+    frozen = read_json(ACCUM_DIR / "transfer_b_selection_frozen.json")
+    selected = frozen["selected_indices"]
+    if len(selected) < B_TRANSFER_TARGET_N:
+        sys.exit(f"[transfer_b_substitution] STOP: only {len(selected)}/{B_TRANSFER_TARGET_N} eligible.")
+    true_result = read_json(ACCUM_DIR / "transfer_b_true_result.json")
+
+    world = _b_transfer_world()
+    task = H._find_task(world, B_TASK_ID)
+
+    import os
+    print(f"[transfer_b_substitution] fresh process, Skill B never consulted. "
+          f"PID={os.getpid()} id(sys.modules)={id(sys.modules)}")
+
+    results = []
+    for r in true_result["results"]:
+        i, seed = r["index"], r["seed"]
+        strategy = B_TRANSFER_STRATEGIES[i]
+        code, grade, raw = H._generate_one(task, world, seed, strategy)
+        original_passed = bool(grade.get("passed"))
+        results.append({"index": i, "seed": seed, "original_passed": original_passed})
+        print(f"[transfer_b_substitution] instance {i}: original_passed={original_passed} (skill B absent)")
+
+    write_json_new(ACCUM_DIR / "transfer_b_substitution_result.json", {"results": results})
+    n_no_skill = sum(r["original_passed"] for r in results)
+    n_with_skill = sum(r["patched_passed"] for r in true_result["results"])
+    print(f"[transfer_b_substitution] DONE. no-skill={n_no_skill}/{len(results)} "
+          f"(with-skill was {n_with_skill}/{len(true_result['results'])})")
+    print(f"[transfer_b_substitution] advantage attributable to Skill B presence: "
+          f"{'YES' if n_with_skill > n_no_skill else 'NO'}")
+
+
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("phase", choices=["a_present", "a_absent", "qualify_b", "restart_check_b"])
+    ap.add_argument("phase", choices=["a_present", "a_absent", "qualify_b", "restart_check_b",
+                                       "transfer_b_select", "transfer_b_true", "transfer_b_substitution"])
     a = ap.parse_args()
     {"a_present": cmd_a_present, "a_absent": cmd_a_absent,
-     "qualify_b": cmd_qualify_b, "restart_check_b": cmd_restart_check_b}[a.phase]()
+     "qualify_b": cmd_qualify_b, "restart_check_b": cmd_restart_check_b,
+     "transfer_b_select": cmd_transfer_b_select, "transfer_b_true": cmd_transfer_b_true,
+     "transfer_b_substitution": cmd_transfer_b_substitution}[a.phase]()

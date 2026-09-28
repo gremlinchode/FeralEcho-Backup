@@ -3794,6 +3794,106 @@ def _check_f2_stdin_contract() -> dict:
     return _evaluate_f2_stdin_contract(_BlockedStdin, source)
 
 
+# ── task_type_map_sync — does echo_quality_scorer.py's real, live
+# task_type_id output still agree with echo_model_orchestrator.py's
+# canonical TASK_TYPE_MAP for every task type? Added 2026-09-17, following
+# an independent ground-truth mission
+# (audits/2026-09-17_task_type_map_sync_ground_truth_and_qualification.md)
+# that re-verified, via direct `git show`, a real, twice-recurred failure
+# shape in this exact pair of files:
+#   - Initial commit 44e7a8e (2026-06-28) through 3e241862 (2026-07-12):
+#     the scorer's copy lacked "reasoning" for 14 real days.
+#   - 47ccbcd (2026-07-16) through 6d98e18 (2026-07-23): the scorer's copy
+#     lacked "self_edit_coding" for 7 real days.
+# Both windows silently defaulted task_type_id to 0 (== "general") for
+# every affected task type's quality-scoring feature — no exception, no
+# log line, no test (grep -rln "TASK_TYPE_MAP" scripts/verify_*.py returns
+# zero files as of this check's own construction). Both incidents were
+# only ever caught by accident, during unrelated work.
+#
+# IMPORTANT, and the reason this is a functional canary rather than the
+# more obvious "import both dicts and compare" design a first draft of
+# this check used: echo_quality_scorer.py's TASK_TYPE_MAP is NOT a module-
+# level constant — it is declared *inside* _extract_quality_features_v2()'s
+# own function body (re-created fresh on every call), so `from
+# echo_quality_scorer import TASK_TYPE_MAP` always raises ImportError. A
+# static-import-and-compare version of this check would therefore have
+# been permanently, falsely red from the moment it shipped — exactly the
+# "phantom check" failure mode this whole Ledger exists to prevent, caught
+# here by testing the draft against real source before trusting it. This
+# version instead calls the real, live _extract_quality_features_v2() once
+# per canonical task type with a trivial synthetic input and confirms the
+# real returned task_type_id matches TASK_TYPE_MAP's value — a genuine
+# behavioral check against the real function, not a source-text pattern
+# match, and immune to this local-variable shape entirely.
+#
+# Deliberately scoped one direction only (every canonical key must produce
+# the right task_type_id from the scorer) rather than a full symmetric
+# diff: RiverBrain._init_classifiers() iterates TASK_TYPE_MAP.keys() from
+# the canonical map specifically to decide which task types exist at all,
+# so the canonical map is the real authority on "what task types exist"
+# for this consumer relationship — both historical incidents were the
+# canonical map gaining a key the scorer's copy didn't know about yet, not
+# the reverse.
+#
+# Also deliberately does NOT cover the separate, structurally different
+# cross-machine (M5-fork vs Air-fork) TASK_TYPE_MAP divergence found
+# 2026-09-09 (claude_relay/facts_m5.jsonl) — a check running inside one
+# process can only ever compare state reachable from that process; it
+# cannot see another machine's filesystem. That is a real, distinct,
+# currently-unaddressed risk category, not something this check overlooks
+# by accident — see the qualification report's own Stage 5/9.
+
+def _evaluate_task_type_map_sync(canonical, feature_fn) -> dict:
+    if canonical is None or feature_fn is None:
+        return _result(
+            False,
+            "Could not import echo_model_orchestrator.TASK_TYPE_MAP and/or "
+            "echo_quality_scorer._extract_quality_features_v2 — failing closed.",
+        )
+    if not isinstance(canonical, dict) or not canonical:
+        return _result(False, "TASK_TYPE_MAP is not a non-empty dict — failing closed.")
+
+    mismatches = {}
+    for task_type, expected_id in canonical.items():
+        try:
+            features = feature_fn("print(1)\n", task_type=task_type, model_name="liveness-canary")
+            actual_id = features.get("task_type_id") if isinstance(features, dict) else None
+        except Exception as e:
+            mismatches[task_type] = f"raised {e!r} instead of returning task_type_id={expected_id}"
+            continue
+        if actual_id != float(expected_id):
+            mismatches[task_type] = f"scorer returned task_type_id={actual_id!r}, canonical expects {expected_id!r}"
+
+    if mismatches:
+        return _result(
+            False,
+            "echo_quality_scorer._extract_quality_features_v2()'s real task_type_id output diverges "
+            f"from echo_model_orchestrator.TASK_TYPE_MAP for {len(mismatches)}/{len(canonical)} task "
+            f"type(s): {mismatches} — this is the exact recurring failure shape (2026-06-28..07-12, "
+            "2026-07-16..07-23) that previously, silently defaulted task_type_id to 0 (== general) for "
+            "days at a time.",
+        )
+    return _result(
+        True,
+        "echo_quality_scorer._extract_quality_features_v2()'s real task_type_id output matches "
+        f"echo_model_orchestrator.TASK_TYPE_MAP for all {len(canonical)} task types: "
+        f"{sorted(canonical.keys())}.",
+    )
+
+
+def _check_task_type_map_sync() -> dict:
+    try:
+        from app.core.echo_model_orchestrator import TASK_TYPE_MAP as _canonical_map
+    except Exception:
+        _canonical_map = None
+    try:
+        from echo_quality_scorer import _extract_quality_features_v2 as _feature_fn
+    except Exception:
+        _feature_fn = None
+    return _evaluate_task_type_map_sync(_canonical_map, _feature_fn)
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -3849,6 +3949,7 @@ _CHECKS = (
     "council_cursor_health",
     "self_model_claims_integrity",
     "f2_stdin_contract",
+    "task_type_map_sync",
 )
 
 
@@ -3929,6 +4030,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "council_cursor_health": _check_council_cursor_health,
         "self_model_claims_integrity": _check_self_model_claims_integrity,
         "f2_stdin_contract": _check_f2_stdin_contract,
+        "task_type_map_sync": _check_task_type_map_sync,
     }
 
     ledger = {"generated_at": _now_iso()}

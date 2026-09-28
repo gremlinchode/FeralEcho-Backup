@@ -16,7 +16,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
 
 _checks = []
 
@@ -47,7 +48,81 @@ def main():
     print("verify_skill_ledger_integration.py: ALL CHECKS PASSED.")
 
 
+def _check_clean_checkout_reproducibility() -> "tuple[bool, str]":
+    """Extracts ONLY the current HEAD commit's tracked files (via `git archive` --
+    never the working tree, never untracked files) into a fresh scratch directory,
+    then attempts the real production import chain from a genuinely separate
+    subprocess with no inherited PYTHONPATH and a cwd inside the extracted archive
+    only -- it cannot see the real dev tree or any untracked file in it.
+
+    Added 2026-09-28 as a permanent regression guard after a real failure: this
+    project's own working tree had `app/experiments/accumulation_probe/` and
+    `app/experiments/persistent_routing/` present as UNTRACKED files throughout the
+    entire VSL development and adversarial-gate history, so every prior test run
+    (including two full adversarial gates) passed locally while the actually
+    committed, actually pushed `main` could not import `app.core.echo_projects` at
+    all in a genuinely clean checkout. See
+    audits/2026-09-28_vsl_clean_checkout_reproducibility_failure.md for the full
+    forensic account and the repair. This check exists specifically so that class
+    of mistake cannot silently recur: it answers "can an independent clone of this
+    repository reproduce the bounded production import chain using only committed
+    state," not "does it work in my own populated working tree" -- those are
+    different questions, and only local tooling failure kept them conflated before
+    this check existed.
+
+    Returns (ok, detail) rather than raising -- a git-archive/subprocess failure for
+    an unrelated reason (e.g. git itself unavailable) is reported as a failed check
+    with real diagnostic detail, not a silent pass or an uncaught exception."""
+    import subprocess
+    import tarfile
+    import io
+
+    archive_proc = subprocess.run(["git", "archive", "HEAD"], capture_output=True, cwd=str(REPO_ROOT))
+    if archive_proc.returncode != 0:
+        return False, f"git archive HEAD failed: {archive_proc.stderr.decode(errors='replace')[:500]}"
+
+    with tempfile.TemporaryDirectory() as td:
+        try:
+            tarfile.open(fileobj=io.BytesIO(archive_proc.stdout)).extractall(td, filter="data")
+        except Exception as e:
+            return False, f"failed to extract git archive: {e}"
+
+        test_script = (
+            "import app.core.echo_projects\n"
+            "import app.core.skill_ledger.matcher\n"
+            "import app.core.skill_ledger.schemas\n"
+            "import app.core.skill_ledger.store\n"
+            "import app.core.skill_ledger.runtime\n"
+            "import app.core.skill_ledger.echo_adapter\n"
+            "print('CLEAN_CHECKOUT_IMPORT_OK')\n"
+        )
+        # Deliberately minimal environment: no inherited PYTHONPATH, so the only way
+        # these imports can succeed is via files that were actually in the archive
+        # (i.e., actually tracked by git) -- this is what makes the check meaningful
+        # rather than a check that could pass by accidentally reaching outside td.
+        minimal_env = {"PATH": os.environ.get("PATH", "")}
+        result = subprocess.run(
+            [sys.executable, "-B", "-c", test_script],
+            cwd=td, capture_output=True, text=True, env=minimal_env, timeout=120,
+        )
+        ok = result.returncode == 0 and "CLEAN_CHECKOUT_IMPORT_OK" in result.stdout
+        detail = "OK" if ok else (result.stderr.strip()[-1500:] or result.stdout.strip()[-500:])
+        return ok, detail
+
+
 def _run_all():
+    # ---- 0. Clean-checkout reproducibility (the permanent regression guard). ----
+    # Runs FIRST and unconditionally -- if the committed repository itself cannot
+    # produce a working import chain, every check below it would only be re-proving
+    # "the local working tree works," which is exactly the gap that let a real
+    # regression reach main and origin/main undetected.
+    ok, detail = _check_clean_checkout_reproducibility()
+    check("clean-checkout reproducibility: app.core.echo_projects/skill_ledger import "
+          "cleanly from a `git archive HEAD` extraction alone (no untracked files, no "
+          "inherited PYTHONPATH)", ok)
+    if not ok:
+        print(f"  (clean-checkout failure detail, truncated: {detail})")
+
     # ---- 1. Core imports cleanly; historical experiment suite unaffected. ----
     import subprocess
     result = subprocess.run(

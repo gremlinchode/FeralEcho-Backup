@@ -1901,24 +1901,60 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
 
     # Attempt-level ledger (2026-09-07, see self_edit_attempt_ledger.py):
     # observable facts only, written exactly once at whichever terminal
-    # branch this attempt reaches. Never read by anything in this function
-    # or anywhere else in the pipeline — pure write-only observation sink.
+    # branch this attempt reaches. Read by exactly one consumer today
+    # (_attempt_ledger_evidence_section(), which extracts ONLY the
+    # initial_f2_error key by name — see that function and
+    # read_recent_f2_error()'s own docstring). The three candidate-source
+    # fields below (2026-09-22, evidence-preservation qualification —
+    # audits/2026-09-22_self_edit_candidate_logging_qualification.md) are
+    # ARTIFACT PROVENANCE ONLY: what Echo generated and what it was a
+    # modification of. They are write-only with respect to generation —
+    # nothing in this file or elsewhere reads them back into a prompt,
+    # RiverBrain, model selection, fitness, or deployment. This is NOT
+    # influence provenance (whether a later attempt actually used this
+    # evidence) — that is a separate, unbuilt question; see the
+    # qualification report §13.
     _attempt = {
         "trace_id": trace_id,
         "task_type": None,
         "timestamp": datetime.utcnow().isoformat(),
         "initial_f2_outcome": None,
         "initial_f2_error": None,
+        "initial_candidate_code": None,
         "retry_occurred": False,
         "retry_f2_outcome": None,
         "retry_f2_error": None,
+        "retry_candidate_code": None,
         "final_f2_outcome": None,
         "fitness_score": None,
         "production_score": None,
         "fitness_decision": None,
         "deployed": False,
         "terminal_state": None,
+        # sha256 of app/core/self_edit_generated.py's exact byte content,
+        # read independently right before generation started for THIS
+        # attempt (below) — deliberately not reused from
+        # generate_code_from_plan()'s own internal read (that function has
+        # other real callers — wolf_friction_bridge.py, several research
+        # scripts — and its signature/behavior is intentionally unchanged
+        # by this pass). Named "_at_generation" (not the bare
+        # "parent_baseline_hash" originally proposed) because production
+        # can change between when a prompt is built and when the fitness
+        # gate later judges a candidate against CURRENT production — this
+        # field is pinned to the earlier, unambiguous moment. Uses the
+        # same bytes-only sha256 method as snapshot_manager._sha256_file(),
+        # not reimplemented here since hashlib.sha256 is a one-line stdlib
+        # call, but deliberately the same algorithm/mode (raw bytes, no
+        # format-specific loader) as that already-proven convention.
+        "parent_baseline_hash_at_generation": None,
     }
+
+    try:
+        import hashlib
+        with open(SELF_EDIT_FILE, "rb") as _pf:
+            _attempt["parent_baseline_hash_at_generation"] = hashlib.sha256(_pf.read()).hexdigest()
+    except Exception as _hash_err:
+        logging.debug(f"[SELF-EDIT-ATTEMPT-LEDGER] parent_baseline_hash_at_generation failed: {_hash_err}")
 
     def _finish_attempt(terminal_state: str) -> None:
         _attempt["terminal_state"] = terminal_state
@@ -2022,6 +2058,16 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
     success, sandbox_error = test_code_in_sandbox(code)
     _attempt["initial_f2_outcome"] = success
     _attempt["initial_f2_error"] = None if success else sandbox_error
+    # Captured HERE — the exact `code` string just passed to
+    # test_code_in_sandbox() above, before any retry logic below can
+    # reassign the `code` variable (see the `code = retry_code` line
+    # further down). This is the specific fix for the historical
+    # evidence-loss bug this field exists to close: reflection_entry's
+    # own "generated_code" field (a few lines above) is a DIFFERENT dict
+    # and gets silently overwritten by the retry's code later in this
+    # function — this field, in this dict, is set once and never
+    # reassigned, regardless of what the retry does.
+    _attempt["initial_candidate_code"] = code
     reflection_entry["sandbox_feedback"] = "success" if success else f"failed: {sandbox_error}"
     reflection_entry["result"] = "success" if success else "failed"
     # 2026-07-19: deliberately NOT saved here (no save_reflection() call).
@@ -2075,6 +2121,12 @@ def execute_self_edit(prompt: str, intensity: float | None = None, dry_run: bool
             retry_success, retry_error = test_code_in_sandbox(retry_code, "temp_self_edit_retry.py")
             _attempt["retry_f2_outcome"] = retry_success
             _attempt["retry_f2_error"] = None if retry_success else retry_error
+            # Captured HERE, same reasoning as initial_candidate_code above:
+            # this is the exact `retry_code` string just executed, kept
+            # entirely separate from `initial_candidate_code` — both
+            # survive to the ledger even though the OUTER `code` variable
+            # gets reassigned to retry_code a few lines below on success.
+            _attempt["retry_candidate_code"] = retry_code
 
             # v2.2: river learns from retry outcome too
             if retry_success:

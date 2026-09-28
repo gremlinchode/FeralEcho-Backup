@@ -89,7 +89,23 @@ def read_recent_f2_error(task_type: str, max_age_hours: float = _MAX_ENTRY_AGE_H
 
     Fails closed to None on any error — a read failure here must never be
     able to affect self-edit's own prompt construction. Malformed
-    individual lines are skipped, not fatal to the whole read."""
+    individual lines are skipped, not fatal to the whole read.
+
+    EXPLICIT CONTRACT (2026-09-22, evidence-preservation qualification —
+    audits/2026-09-22_self_edit_candidate_logging_qualification.md §6):
+    this returns the ENTIRE matching row, every field the ledger happens
+    to carry (including, as of this same change, initial_candidate_code
+    and retry_candidate_code) — it does NOT pre-filter to a safe subset.
+    Safety today depends entirely on the ONE real caller of this function
+    (self_edit_manager.py's _attempt_ledger_evidence_section()) extracting
+    only entry.get("initial_f2_error") by name and discarding everything
+    else. Any FUTURE caller of this function must do the same: extract
+    exactly the field(s) it needs by name. Do NOT serialize, log, or
+    forward the returned dict wholesale into a prompt or any other
+    generation-facing surface — doing so would leak the candidate-source
+    fields (write-only evidence) into an active, generation-facing path,
+    which is exactly the boundary this project's own instrumentation
+    discipline exists to hold."""
     try:
         if not _LEDGER_PATH.exists():
             return None

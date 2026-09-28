@@ -1626,6 +1626,89 @@ check(
     r["pass"], False, r["evidence"],
 )
 
+# Mission 30: fd 0 close (OS-level layer) -- distinct regression from the
+# Python-level sys.stdin wiring above. Python surface intact, OS surface
+# silently removed.
+r = ll._evaluate_f2_stdin_contract(_CorrectStdin, "sys.stdin = _BlockedStdin()\n# fd-0 close line silently removed\n")
+check(
+    "f2_stdin_contract: sys.stdin wiring intact but _os.close(0) silently removed (OS-level regression)",
+    r["pass"], False, r["evidence"],
+)
+assert r["os_fd0_blocked"] is False and r["python_stdin_blocked"] is True, \
+    "f2_stdin_contract: expected python_stdin_blocked=True, os_fd0_blocked=False to distinguish which layer regressed"
+print("[OK] f2_stdin_contract: python_stdin_blocked/os_fd0_blocked correctly distinguish which layer regressed")
+
+r = ll._evaluate_f2_stdin_contract(_CorrectStdin, "sys.stdin = _BlockedStdin()\n_os.close(0)\n")
+check(
+    "f2_stdin_contract: both sys.stdin wiring and _os.close(0) present (real-shaped, both layers correct)",
+    r["pass"], True, r["evidence"],
+)
+
+
+# ── task_type_map_sync — 2026-09-17, TASK_TYPE_MAP ground-truth mission ──
+# Historical fake this check exists to catch, reconstructed exactly: the
+# real 2026-07-16..07-23 incident, where echo_quality_scorer.py's local
+# TASK_TYPE_MAP copy (function-local, not importable) lacked
+# "self_edit_coding" for 7 real days — every real call with
+# task_type="self_edit_coding" silently returned task_type_id=0.0 instead
+# of 5.0 during that window, with no exception and no log line.
+
+_TTM_CANONICAL_REAL = {
+    "general": 0, "coding": 1, "creative": 2, "personal": 3,
+    "reasoning": 4, "self_edit_coding": 5, "echo_projects_coding": 6,
+}
+
+
+def _ttm_feature_fn_correct(response, task_type, model_name, prompt=None):
+    return {"task_type_id": float(_TTM_CANONICAL_REAL.get(task_type, 0))}
+
+
+def _ttm_feature_fn_drifted_missing_key(response, task_type, model_name, prompt=None):
+    # Reproduces the real 07-16..07-23 incident: the scorer's own copy is
+    # missing "self_edit_coding" entirely, so .get(task_type, 0) silently
+    # substitutes 0 (== general) for that one task type only.
+    stale_local_copy = {"general": 0, "coding": 1, "creative": 2, "personal": 3, "reasoning": 4}
+    return {"task_type_id": float(stale_local_copy.get(task_type, 0))}
+
+
+def _ttm_feature_fn_raises(response, task_type, model_name, prompt=None):
+    if task_type == "reasoning":
+        raise KeyError("reasoning")
+    return {"task_type_id": float(_TTM_CANONICAL_REAL.get(task_type, 0))}
+
+
+r = ll._evaluate_task_type_map_sync(_TTM_CANONICAL_REAL, _ttm_feature_fn_correct)
+check("task_type_map_sync: real-shaped, all task types agree", r["pass"], True, r["evidence"])
+
+r = ll._evaluate_task_type_map_sync(_TTM_CANONICAL_REAL, _ttm_feature_fn_drifted_missing_key)
+check(
+    "task_type_map_sync: reproduces the real 07-16..07-23 self_edit_coding drift incident",
+    r["pass"], False, r["evidence"],
+)
+assert "self_edit_coding" in r["evidence"] and "echo_projects_coding" in r["evidence"], \
+    "task_type_map_sync: evidence should name both real task types the stale local copy silently defaults to 0 for"
+print("       (confirmed evidence names the specific drifted task type(s), not just 'mismatch')")
+
+r = ll._evaluate_task_type_map_sync(_TTM_CANONICAL_REAL, _ttm_feature_fn_raises)
+check("task_type_map_sync: scorer function raises for one task type instead of degrading silently", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_task_type_map_sync(None, _ttm_feature_fn_correct)
+check("task_type_map_sync: canonical TASK_TYPE_MAP not importable", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_task_type_map_sync(_TTM_CANONICAL_REAL, None)
+check("task_type_map_sync: _extract_quality_features_v2 not importable", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_task_type_map_sync({}, _ttm_feature_fn_correct)
+check("task_type_map_sync: canonical map is empty — fails closed rather than vacuously passing", r["pass"], False, r["evidence"])
+
+try:
+    from app.core.echo_model_orchestrator import TASK_TYPE_MAP as _ttm_real_canonical
+    from echo_quality_scorer import _extract_quality_features_v2 as _ttm_real_feature_fn
+    r = ll._evaluate_task_type_map_sync(_ttm_real_canonical, _ttm_real_feature_fn)
+    check("task_type_map_sync: real function against real, current (in-sync) source", r["pass"], True, r["evidence"])
+except Exception as e:
+    print(f"[SKIP] task_type_map_sync real-source case: import failed ({e})")
+
 
 print()
 if FAILURES:

@@ -91,6 +91,27 @@ def consult(code: str, fn_name: str, feature_keys: "list | None" = None) -> Cons
     broader "what if every qualified skill were trusted" simulation (Phase 15's own
     stated purpose: "production-distribution evidence... integration safety", not a
     second research probe).
+
+    CONFLICT POLICY (Phase 7), stated explicitly rather than left implicit in the
+    iteration order below: candidates are tried in a fixed, deterministic order
+    (sorted feature_key), and the FIRST skill whose precondition matches wins --
+    this single call NEVER composes two skills' transformations together, and never
+    picks a "better" of two matching skills by any notion of specificity, success
+    rate, or recency. With exactly one real ACTIVE skill in production today this
+    policy is inherently conflict-free; it is written down now, before a second
+    ACTIVE skill ever exists, specifically so the behavior at that point is already
+    decided rather than improvised. Known, accepted limitations of this simple
+    policy, left as explicit future work rather than solved here: no
+    specificity-based tiebreak (a narrower precondition does not win over a broader
+    one that also matches), no outcome-stat-based ranking (a skill with a better
+    real track record is not preferred over one with a worse one), no composition
+    within one function (echo_adapter.py's consult_file() *does* allow different
+    skills to apply to *different* functions within the same file across repeated
+    consult() calls -- composition across files/functions, never within one).
+    Echo declines to apply any skill whenever no candidate's precondition matches,
+    or whenever mode is "disabled" -- there is no other decline condition today
+    (e.g. "ambiguous match" is not a distinct state; the first deterministic match
+    is always taken).
     """
     mode = get_mode()
     if mode == "disabled":

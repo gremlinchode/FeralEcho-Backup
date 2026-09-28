@@ -1,0 +1,2199 @@
+{
+ "audit": "FeralEcho architectural integrity and dormant-capability audit",
+ "date": "2026-09-20",
+ "mode": "read-only",
+ "labels": {
+  "OBSERVED": "read directly in source/runtime this session",
+  "SUPPORTED": "two independent lines agree; no positive test",
+  "INFERRED": "reasoned from observed facts",
+  "UNKNOWN": "not established",
+  "ABSENT": "searched and confirmed missing"
+ },
+ "git_head_before": "2fba42644c82b9f7096276f4dd338d615cf1bcce",
+ "working_tree_paths_before": 181,
+ "findings": [
+  {
+   "id": "F-01",
+   "report_section": "1",
+   "claim": "187 live-scope modules / 65,536 lines; 41 modules never imported by another live module",
+   "label": "OBSERVED",
+   "basis": "static scan",
+   "evidence": [
+    "scratchpad scan.py (AST import graph)",
+    "excludes archives, backups, generated project dirs, app/experiments, memory/, .claude/"
+   ]
+  },
+  {
+   "id": "F-02",
+   "report_section": "0",
+   "claim": "Running server executes the uncommitted working tree: HEAD 2fba426 (2026-09-13); 17 tracked files, 1,697 insertions/178 deletions uncommitted; server PID 29288 started 2026-09-20 07:30 local",
+   "label": "OBSERVED",
+   "basis": "runtime+git",
+   "evidence": [
+    "git diff --stat -- app run.py sandbox scripts",
+    "ps -o lstart -p $(cat memory/echo_server.pid)",
+    "memory/echo_sentinel.json stage=serving"
+   ]
+  },
+  {
+   "id": "F-03",
+   "report_section": "10",
+   "claim": "Liveness Ledger has 54 checks at runtime, all passing; CLAUDE.md headers say 22 (later 41)",
+   "label": "OBSERVED",
+   "basis": "runtime",
+   "evidence": [
+    "GET /admin/liveness-status",
+    "app/core/liveness_ledger.py:_CHECKS"
+   ]
+  },
+  {
+   "id": "F-04",
+   "report_section": "1",
+   "claim": "Last 1,192 logged interactions (~23h): 1,157 autonomous, 17 echo_projects_autonomous, 7 ambient_checkin, 7 partner_message, 4 user_conversation; task types: coding 698, personal 449, autonomous_fetch 22, echo_projects_coding 17",
+   "label": "OBSERVED",
+   "basis": "runtime",
+   "evidence": [
+    "memory/interaction_log.jsonl tail (6 MB)"
+   ]
+  },
+  {
+   "id": "F-05",
+   "report_section": "2",
+   "claim": "Council log tail: 856 rows = 439 real_deliberation (3 councillors) + 417 direct_echo_task (1 councillor)",
+   "label": "OBSERVED",
+   "basis": "runtime",
+   "evidence": [
+    "memory/council_deliberations.jsonl tail (8 MB)"
+   ]
+  },
+  {
+   "id": "F-06",
+   "report_section": "3,7",
+   "claim": "Model selection: chat = river_deliberation._select_council over RiverBrain.score_model (+ECHO_SCORE_BOOST, TAG_SCORE_BOOST, exploration); code generation and review councils = rank_models/choose_model blending legacy reflection counts (whole reflection_shard.jsonl parsed per call) via influence_weight, which is saturated at its 0.65 cap",
+   "label": "OBSERVED",
+   "basis": "source",
+   "evidence": [
+    "app/core/river_deliberation.py:_select_council",
+    "app/core/echo_model_orchestrator.py:rank_models,choose_model,influence_weight",
+    "callers: self_edit_manager.py:1834,2062,2324; echo_projects.py:428; snapshot_manager.py:695"
+   ]
+  },
+  {
+   "id": "F-07",
+   "report_section": "3,4,12",
+   "claim": "RiverBrain Hoeffding-tree classifiers: predict_one is used only to update accuracy_trackers; accuracy feeds introspection_channel -> PageHinkley -> river_drift_sustained review-only notice; no selection/gating consumer",
+   "label": "OBSERVED",
+   "basis": "source (grep)",
+   "evidence": [
+    "grep predict_one across app/run.py: only echo_model_orchestrator.py:821 and task_type_classifier (a different model)",
+    "grep accuracy_trackers: introspection_channel.py:284-288"
+   ]
+  },
+  {
+   "id": "F-08",
+   "report_section": "3,5,12",
+   "claim": "Single quality authority echo_quality_scorer._score_response_quality: code = parse validity + AST complexity buckets (no execution); prose = substance/penalty/scripture heuristics; 5 discrete values (recent mean 2.31); feeds RiverBrain, self-edit fitness gate, Optuna score, scheduler weights, outcome tracker",
+   "label": "OBSERVED",
+   "basis": "source+runtime",
+   "evidence": [
+    "echo_quality_scorer.py:344-410",
+    "memory/interaction_log.jsonl quality_score distribution {0..4}, mean 2.311"
+   ]
+  },
+  {
+   "id": "F-09",
+   "report_section": "1",
+   "claim": "RiverBrain selection statistics are trained predominantly on autonomous interactions",
+   "label": "SUPPORTED",
+   "basis": "source+runtime",
+   "evidence": [
+    "F-04 (97% autonomous in sampled window)",
+    "RiverBrain.learn called from echo_query/deliberate_and_learn for every interaction"
+   ]
+  },
+  {
+   "id": "F-10",
+   "report_section": "4,11,12",
+   "claim": "dream_cycle() is unreachable via the live path: its sole call (autonomous_awareness.py:428) sits in `if is_in_stillness():` and is guarded by should_run_cycle('awareness_dream'), which returns False whenever is_in_stillness() is True (both import stillness_state). dream_state.json last write 2026-07-15; 'awareness_dream' never appears in /admin/autonomy-status; only 2 dream.synthesis events in workspace_log",
+   "label": "SUPPORTED",
+   "basis": "source+runtime (no positive test)",
+   "evidence": [
+    "app/autonomous_awareness.py:413-430",
+    "app/core/autonomy_coordinator.py:51-56",
+    "memory/dream_state.json last_dream_time=1784149563 (2026-07-15)",
+    "GET /admin/autonomy-status keys"
+   ]
+  },
+  {
+   "id": "F-11",
+   "report_section": "4,5",
+   "claim": "self_model.json:recent_dream_synthesis derives from stale dream_state; no consumer beyond self_model.json",
+   "label": "OBSERVED",
+   "basis": "source+runtime",
+   "evidence": [
+    "app/core/self_model_updater.py:135,561",
+    "grep recent_dream_synthesis"
+   ]
+  },
+  {
+   "id": "F-12",
+   "report_section": "3,4",
+   "claim": "Global Workspace log (16,060 events): emergent_loop.salience 9,861; self_edit.dry_run_quality_delta 3,688; world_model.surprise 1,060; workspace.consumed 941 (river_deliberation 940, curiosity_engine 1, memory_bridge 0); reflection.meta_synthesis 423; seam.detected 84; dream.synthesis 2; self_edit.non_convergent 1; wide_broadcast=84 (all seam.detected)",
+   "label": "OBSERVED",
+   "basis": "runtime",
+   "evidence": [
+    "memory/workspace_log.jsonl full parse",
+    "liveness check global_workspace_consumption: 1 real consumer in last day"
+   ]
+  },
+  {
+   "id": "F-13",
+   "report_section": "3,12",
+   "claim": "Workspace consumer wiring: memory_bridge<-dream.synthesis; river_deliberation<-world_model.surprise; emergent_scheduler<-self_edit.non_convergent + wide_broadcast; reflection_shard<-wide_broadcast (spawns a model-calling observe() thread per event)",
+   "label": "OBSERVED",
+   "basis": "source",
+   "evidence": [
+    "app/core/echo_core.py:215-269",
+    "app/emergent_scheduler.py:188-197"
+   ]
+  },
+  {
+   "id": "F-14",
+   "report_section": "5,12",
+   "claim": "State vector last 100 readings: dims varying = vitality(3), curiosity_index(4), temporal_phase(7); processing_novelty~0.0002; coherence_tension 0.120+-0.0003; orientation_drift=1.0 exactly; friction_rate=0.0 exactly; edit_momentum~0.03; valence std 0.008. orientation_drift saturates from weekly_delta creative=-1.0 (tiny n)",
+   "label": "OBSERVED",
+   "basis": "runtime+source",
+   "evidence": [
+    "memory/echo_state_history.npy (100x9)",
+    "app/core/echo_state.py:183-193",
+    "memory/self_model.json weekly_delta"
+   ]
+  },
+  {
+   "id": "F-15",
+   "report_section": "5,12",
+   "claim": "Salience components: world_surprise 0.0017, coherence_tension 0.120, curiosity_urgency 0.9999, self_edit_streak 0.0 -> score 0.280; coupling_estimate 0.351 (consumer: self-report slice only)",
+   "label": "OBSERVED",
+   "basis": "runtime",
+   "evidence": [
+    "memory/salience_state.json"
+   ]
+  },
+  {
+   "id": "F-16",
+   "report_section": "5",
+   "claim": "Valence has four consumers (emergent scheduler weights, river exploration bias, optuna bounds, affect slice) but near-constant input",
+   "label": "SUPPORTED",
+   "basis": "source+runtime",
+   "evidence": [
+    "emergent_scheduler.py:504",
+    "river_deliberation.py:1254",
+    "echo_optuna.py:323",
+    "F-14"
+   ]
+  },
+  {
+   "id": "F-17",
+   "report_section": "5",
+   "claim": "behavioral_directives.json is empty; echo_ground_truth._build_behavioral consumes it",
+   "label": "OBSERVED",
+   "basis": "runtime+source",
+   "evidence": [
+    "memory/behavioral_directives.json {directives:[],version:1}",
+    "echo_ground_truth.py:1177-1178"
+   ]
+  },
+  {
+   "id": "F-18",
+   "report_section": "4,6",
+   "claim": "provenance_check.py (372 uncommitted lines; the only git subprocess use in live scope) has no live importer",
+   "label": "OBSERVED",
+   "basis": "static scan",
+   "evidence": [
+    "imports.json: importers=[scripts.verify_provenance_check]",
+    "provenance_check.py:258,281"
+   ]
+  },
+  {
+   "id": "F-19",
+   "report_section": "4,6",
+   "claim": "retrieval_provenance.jsonl is written per Echo Studio chat turn and has no reader",
+   "label": "OBSERVED",
+   "basis": "static scan",
+   "evidence": [
+    "routes_echo_studio.py:340-349",
+    "statemap: readers=0"
+   ]
+  },
+  {
+   "id": "F-20",
+   "report_section": "4",
+   "claim": "seam_log.jsonl has no reader (seam events reach workspace consumers)",
+   "label": "OBSERVED",
+   "basis": "static scan",
+   "evidence": [
+    "statemap"
+   ]
+  },
+  {
+   "id": "F-21",
+   "report_section": "4,15",
+   "claim": "dissent_log.jsonl (last write 1573h ago) and restore_alerts.jsonl (92 alerts: 78 ram_sustained_92pct, 14 ollama_down, all action_required=human_confirm with a restore command) have no readers",
+   "label": "OBSERVED",
+   "basis": "static+runtime",
+   "evidence": [
+    "memory/restore_alerts.jsonl",
+    "statemap"
+   ]
+  },
+  {
+   "id": "F-22",
+   "report_section": "4,6",
+   "claim": "council_deliberations.jsonl (29.8MB+8.2MB gz), synthesis_integrity_log.jsonl (9MB), quarantine_journal.jsonl (35MB), validator_audit.log (25MB), scheduler_selections.log: readers only rotation or offline scripts",
+   "label": "OBSERVED",
+   "basis": "static+runtime",
+   "evidence": [
+    "statemap",
+    "ls memory"
+   ]
+  },
+  {
+   "id": "F-23",
+   "report_section": "12",
+   "claim": "Self-edit attempt ledger (2026-09-07..09-20): 1,086 attempts; 14 deployed; terminal states staging_import_failed 840, safety_blocked 104, import_hallucination 95, rejected_not_improvement 33, success 14",
+   "label": "OBSERVED",
+   "basis": "runtime",
+   "evidence": [
+    "memory/self_edit_attempt_ledger.jsonl"
+   ]
+  },
+  {
+   "id": "F-24",
+   "report_section": "4,12",
+   "claim": "self_edit_generated.py has no live importer/caller; loaded via exec_module whose own comment states no functions are invoked by name; deployed file defines no top-level apply_to_code (liveness: 'honestly inert'); effects are telemetry",
+   "label": "OBSERVED",
+   "basis": "source+runtime",
+   "evidence": [
+    "self_edit_manager.py:996-1026",
+    "imports.json: never imported",
+    "liveness self_edit_apply_to_code evidence"
+   ]
+  },
+  {
+   "id": "F-25",
+   "report_section": "7,12",
+   "claim": "ToolManager has register/list/get only; no caller invokes get_tool; names are injected as 'Available tools:'; echo_tool_dispatch has 3 executable tools (read_file, search_memory, log_thought); thought_log.jsonl has no reader",
+   "label": "OBSERVED",
+   "basis": "source (grep)",
+   "evidence": [
+    "app/core/tool_manager.py",
+    "echo_model_orchestrator.py:~1509-1519",
+    "echo_tool_dispatch.py:88,109,129"
+   ]
+  },
+  {
+   "id": "F-26",
+   "report_section": "6",
+   "claim": "Human rating -> RiverBrain.learn_from_rating is fed only by terminal_client's rating file; no rating submission path found in echo_studio/ or routes_echo_studio.py; user_rating_cursor.json last updated ~78 days ago",
+   "label": "OBSERVED",
+   "basis": "source (absence)+runtime",
+   "evidence": [
+    "grep rating echo_studio app/routes_echo_studio.py",
+    "echo_model_orchestrator.py:312-389",
+    "ls memory user_rating_cursor.json"
+   ]
+  },
+  {
+   "id": "F-27",
+   "report_section": "3",
+   "claim": "Council peer ratings: 1-in-5 sampling (_SAMPLE_EVERY=5), trust set 2026-07-22, 30/70 blend into RiverBrain via learn_from_council_rating; recent rater gemma3:4b",
+   "label": "OBSERVED",
+   "basis": "source+runtime",
+   "evidence": [
+    "council_rater.py:50,650-652",
+    "memory/snapshot_baseline.json",
+    "memory/council_ratings.jsonl tail"
+   ]
+  },
+  {
+   "id": "F-28",
+   "report_section": "6,11",
+   "claim": "functional_quality.py is deliberately un-imported by the live pipeline (documented STATUS 2026-09-06); importers are scripts only",
+   "label": "OBSERVED",
+   "basis": "source",
+   "evidence": [
+    "functional_quality.py docstring",
+    "imports.json"
+   ]
+  },
+  {
+   "id": "F-29",
+   "report_section": "4,12",
+   "claim": "Wolf friction bridge: 0 friction of last 50 assessments; get_dry_run_tally and get_unprocessed_friction_events have zero callers",
+   "label": "OBSERVED",
+   "basis": "source+runtime",
+   "evidence": [
+    "memory/introspection_state.json claude_shard",
+    "grep callers"
+   ]
+  },
+  {
+   "id": "F-30",
+   "report_section": "4,6",
+   "claim": "touch/vision/hearing signatures (50,126 / 14,728 / 30,000 observations) have no behavioural consumer; only their own modules and liveness checks",
+   "label": "OBSERVED",
+   "basis": "static scan",
+   "evidence": [
+    "grep touch_sense|vision_sense|hearing_sense across app/run.py"
+   ]
+  },
+  {
+   "id": "F-31",
+   "report_section": "4",
+   "claim": "dual_learner outputs serve the phone only; learning_events.jsonl and dual_meta.json last updated ~60 days ago",
+   "label": "OBSERVED",
+   "basis": "static+runtime",
+   "evidence": [
+    "dual_learning.py:158-196",
+    "ls memory"
+   ]
+  },
+  {
+   "id": "F-32",
+   "report_section": "7,13",
+   "claim": "Task type: compute_intent_heatmap (keyword) primary unless <0.4, then detect_task_type (trust-gated NB classifier then keyword ladder); TASK_TYPE_MAP defined twice (guarded by liveness task_type_map_sync); personal -> DIRECT_ECHO_TASKS single-model",
+   "label": "OBSERVED",
+   "basis": "source",
+   "evidence": [
+    "echo_model_orchestrator.py:464-618,717",
+    "echo_quality_scorer.py:495",
+    "river_deliberation.py:295,1162"
+   ]
+  },
+  {
+   "id": "F-33",
+   "report_section": "7",
+   "claim": "Duplicate/dead scheduling: app/core/scheduler.py never imported; emergent_scheduler.schedule_task/run_pending are print stubs with 0 callers",
+   "label": "OBSERVED",
+   "basis": "static scan",
+   "evidence": [
+    "emergent_scheduler.py:1042-1047"
+   ]
+  },
+  {
+   "id": "F-34",
+   "report_section": "8",
+   "claim": "terminal_client.py builds its own VectorMemory on production paths (line 102) and save_memory() (line 478) calls vm.add -> _persist() of the whole in-memory state; VectorMemory has no reload/merge/lock; memory_bridge builds VectorMemory + SentenceTransformer at import (28 importers)",
+   "label": "SUPPORTED (conditional; see correction)",
+   "basis": "source (not exercised)",
+   "evidence": [
+    "terminal_client.py:102,210-247,478",
+    "app/lib/vector_memory.py:87-118,148-177",
+    "memory_bridge.py:60-67"
+   ],
+   "correction": "Superseded in part: terminal_client.save_memory() is gated by conversation_service.server_is_running() (PID file + os.kill(pid,0)); hazard is conditional and only fixture-reproduced. RIVER_BRAIN_PATH is cwd-relative. See audits/2026-09-20_feralecho_runtime_identity_and_state_preservation.md section 9."
+  },
+  {
+   "id": "F-35",
+   "report_section": "8",
+   "claim": "Hard-coded ~/Desktop/FeralEcho paths in claude_shard.py and reflection_shard.py; 87 relative 'memory/...' literals in 26 files vs 65 MEMORY_DIR uses in 14; .claude/worktrees holds a repo copy",
+   "label": "OBSERVED",
+   "basis": "static scan",
+   "evidence": [
+    "claude_shard.py:15-16",
+    "reflection_shard.py:19,208",
+    "statemap census"
+   ]
+  },
+  {
+   "id": "F-36",
+   "report_section": "8,9,15",
+   "claim": "RiverBrain._do_save writes the pickle non-atomically (open wb + dump); load failure -> 'starting fresh'; richer-guard swallows the same failure; writer thread rewrites every <=60s even when unchanged (total_obs 210691 logged consecutively); RiverBrain.shutdown() has zero callers",
+   "label": "OBSERVED",
+   "basis": "source+runtime",
+   "evidence": [
+    "echo_model_orchestrator.py:1031-1110",
+    "memory/echo_watchdog.log 'Brain persisted' lines"
+   ]
+  },
+  {
+   "id": "F-37",
+   "report_section": "9,15",
+   "claim": "VectorMemory: meta then index atomic replaces; mismatch = warning only; meta parse failure -> {} and next persist overwrites; index read failure -> empty index persisted immediately; add persists 100MB indent=2 JSON + 200MB FAISS per add; O(N) id_order scan. Runtime: FAISS 130837 == meta 130837; 0 mismatch/persist-failure log lines",
+   "label": "OBSERVED",
+   "basis": "source+runtime",
+   "evidence": [
+    "app/lib/vector_memory.py:45-118,148-177",
+    "memory/echo_watchdog.log counts"
+   ]
+  },
+  {
+   "id": "F-38",
+   "report_section": "9,15",
+   "claim": "shutdown_handler unlinks pid and calls a no-op kill_wolf_gracefully; no RiverBrain flush; start_echo.sh kill -9s the port-5000 holder",
+   "label": "OBSERVED",
+   "basis": "source",
+   "evidence": [
+    "run.py:137-139,1559-1566",
+    "start_echo.sh:14-19"
+   ]
+  },
+  {
+   "id": "F-40",
+   "report_section": "10",
+   "claim": "Shadow-model retirement (source comments dated 2026-09-13) vs process log '[SHADOW] Accuracy logged' through 2026-09-19 10:14 local; current source has no live callers; files stale",
+   "label": "SUPPORTED",
+   "basis": "source+runtime",
+   "evidence": [
+    "emergent_scheduler.py:727-734",
+    "night_cycle.py:173-178",
+    "memory/echo_watchdog.log",
+    "git diff shows shadow_model.py/night_cycle.py/emergent_scheduler.py uncommitted"
+   ]
+  },
+  {
+   "id": "F-41",
+   "report_section": "10",
+   "claim": "Documentation drift: README CLAUDE.md '89 and counting' (95 findings); README books/ used for scripture (runtime reads bible_sentiment.json); README RebelCode 'autonomous layer' (no live importers); structure.md (2026-06-27) terminal_client as primary",
+   "label": "OBSERVED",
+   "basis": "source",
+   "evidence": [
+    "README.md",
+    "app/core/bible_injection.py:1-20",
+    "imports.json",
+    "structure.md"
+   ]
+  },
+  {
+   "id": "F-42",
+   "report_section": "4,10",
+   "claim": "Name traps: memory/reflection_shard.jsonl is written by save_reflection, not by ReflectionShard (which writes reflection_journal.jsonl); dark_light_pipeline.run_pipeline imported in run.py:288 never called (placeholder API key)",
+   "label": "OBSERVED",
+   "basis": "source",
+   "evidence": [
+    "echo_model_orchestrator.py:87",
+    "reflection_shard.py:19",
+    "run.py:288-289"
+   ]
+  },
+  {
+   "id": "F-43",
+   "report_section": "13",
+   "claim": "Hidden authorities: keyword task routing; crash_awareness filter on list_mlx_models; live Modelfile re-read for echo identity; memory_write_validator (5,181/5,190 recent quarantines DUPLICATE_SIGNAL_EXACT); autonomy_coordinator gate; echo_quality_scorer; night_cycle janitor (dry_run=False, weekly)",
+   "label": "OBSERVED",
+   "basis": "source+runtime",
+   "evidence": [
+    "night_cycle.py:24,78,267",
+    "memory/quarantine_journal.jsonl tail",
+    "memory/mlx_crash_avoidance.json"
+   ]
+  },
+  {
+   "id": "F-44",
+   "report_section": "12",
+   "claim": "echo_projects: 61 project dirs; report parse (regex, incomplete): 39 F2 FAIL, 1 PASS, 21 unparsed; latest autonomous cycle status f2_failed",
+   "label": "SUPPORTED",
+   "basis": "runtime",
+   "evidence": [
+    "sandbox/echo_projects/*/_report.md",
+    "liveness echo_projects_autonomy_activity"
+   ]
+  },
+  {
+   "id": "F-45",
+   "report_section": "4",
+   "claim": "codebase_map.json is rewritten by the cartographer with no reader; SQLite CartographerDB is what echo_ground_truth consumes",
+   "label": "OBSERVED",
+   "basis": "static scan",
+   "evidence": [
+    "statemap",
+    "echo_ground_truth.py:1056-1072"
+   ]
+  },
+  {
+   "id": "F-46",
+   "report_section": "2",
+   "claim": "Shared should_run_cycle gate is used by ten named loops; AutonomousSandbox, ReflectionShard, ClaudeShard, guardian, introspection, self-model, council_rater do not call it",
+   "label": "OBSERVED",
+   "basis": "source (grep)",
+   "evidence": [
+    "grep should_run_cycle",
+    "run.py:1393-1400"
+   ]
+  }
+ ],
+ "state_file_reader_writer_map_HEURISTIC": {
+  "note": "AST-resolved; generic path-constant names cause over-attribution for some files (e.g. self_model.json). Use only where sets are small; verified cases are cited in findings.",
+  "files": {
+   "interaction_log.jsonl": {
+    "n_writers": 147,
+    "n_readers": 150,
+    "writers_first3": [
+     "RebelCode/howl_engine.py:HowlEngine.howl",
+     "WhisperingWires/nature_spark.py:spark",
+     "app/autonomous_awareness.py:_save_code_scan_hash_cache"
+    ],
+    "readers_first3": [
+     "app/autonomous_awareness.py:_load_code_scan_hash_cache",
+     "app/autonomous_awareness.py:_load_waking_memories",
+     "app/autonomous_awareness.py:awareness_loop"
+    ]
+   },
+   "prediction_log.jsonl": {
+    "n_writers": 3,
+    "n_readers": 4,
+    "writers_first3": [
+     "WhisperingWires/nature_spark.py:spark",
+     "app/core/introspection_channel.py:IntrospectionChannel._collect_predictive_loops",
+     "app/core/self_edit_manager.py:backfill_convergence_from_log"
+    ],
+    "readers_first3": [
+     "app/core/introspection_channel.py:IntrospectionChannel._collect_predictive_loops",
+     "app/core/introspection_channel.py:IntrospectionChannel._collect_sandbox",
+     "app/core/self_edit_manager.py:backfill_convergence_from_log"
+    ]
+   },
+   "code_scan_hash_cache.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/autonomous_awareness.py:_save_code_scan_hash_cache"
+    ],
+    "readers_first3": [
+     "app/autonomous_awareness.py:_load_code_scan_hash_cache"
+    ]
+   },
+   "dream_state.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/autonomous_awareness.py:_save_dream_state"
+    ],
+    "readers_first3": [
+     "app/autonomous_awareness.py:_load_dream_state"
+    ]
+   },
+   "echo_state.npy": {
+    "n_writers": 28,
+    "n_readers": 23,
+    "writers_first3": [
+     "app/autonomous_awareness.py:_save_dream_state",
+     "app/core/behavioral_state.py:_backup_current_state_before_mutation",
+     "app/core/behavioral_state.py:get_matching_directives"
+    ],
+    "readers_first3": [
+     "app/core/behavioral_state.py:_backup_current_state_before_mutation",
+     "app/core/behavioral_state.py:load_state",
+     "app/core/behavioral_state.py:rollback_to_backup"
+    ]
+   },
+   "salience_state.json": {
+    "n_writers": 22,
+    "n_readers": 16,
+    "writers_first3": [
+     "app/autonomous_awareness.py:_save_dream_state",
+     "app/core/behavioral_state.py:get_matching_directives",
+     "app/core/behavioral_state.py:propose_and_confirm_directive"
+    ],
+    "readers_first3": [
+     "app/core/crash_awareness.py:is_mlx_avoidance_active",
+     "app/core/dmn_guardian.py:start_guardian_loop",
+     "app/core/dmn_guardian.py:start_guardian_loop._check_ollama_alive"
+    ]
+   },
+   "memory_meta.json": {
+    "n_writers": 5,
+    "n_readers": 9,
+    "writers_first3": [
+     "app/core/self_heal.py:repair_vector_memory_index",
+     "app/learning/dual_learning.py:DualLearner._ensure_files",
+     "app/learning/dual_learning.py:DualLearner.log_event"
+    ],
+    "readers_first3": [
+     "app/autonomous_awareness.py:_load_waking_memories",
+     "app/core/memory_migration.py:merge_data_into_memory",
+     "app/core/snapshot_manager.py:_collect_health"
+    ]
+   },
+   "self_edit_cooldown.json": {
+    "n_writers": 15,
+    "n_readers": 7,
+    "writers_first3": [
+     "app/autonomous_awareness.py:_sample_diverse_set",
+     "app/core/liveness_ledger.py:_evaluate_echo_state_archiving",
+     "app/core/liveness_ledger.py:_evaluate_log_retention"
+    ],
+    "readers_first3": [
+     "app/core/seam_engine.py:_load_first_ever",
+     "app/core/self_edit_manager.py:_load_last_autonomous_edit",
+     "app/core/self_model_updater.py:SelfModelUpdater._compute_weekly_delta"
+    ]
+   },
+   "echo_principles.json": {
+    "n_writers": 19,
+    "n_readers": 10,
+    "writers_first3": [
+     "app/autonomous_awareness.py:_sample_diverse_set",
+     "app/core/liveness_ledger.py:_evaluate_echo_state_archiving",
+     "app/core/liveness_ledger.py:_evaluate_log_retention"
+    ],
+    "readers_first3": [
+     "app/core/seam_engine.py:_load_first_ever",
+     "app/core/self_edit_manager.py:propose_core_edit",
+     "app/core/self_model_updater.py:SelfModelUpdater._compute_weekly_delta"
+    ]
+   },
+   "autonomous_loop_momentum.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/autonomous_loop.py:_save_recent_cycles"
+    ],
+    "readers_first3": [
+     "app/autonomous_loop.py:_load_recent_cycles"
+    ]
+   },
+   "behavioral_directives_audit.jsonl": {
+    "n_writers": 1,
+    "n_readers": 0,
+    "writers_first3": [
+     "app/core/behavioral_state.py:_append_audit"
+    ],
+    "readers_first3": []
+   },
+   "behavioral_directives.json": {
+    "n_writers": 51,
+    "n_readers": 34,
+    "writers_first3": [
+     "app/core/behavioral_state.py:_backup_current_state_before_mutation",
+     "app/core/behavioral_state.py:propose_and_confirm_directive",
+     "app/core/council_rater.py:fill_spot_check"
+    ],
+    "readers_first3": [
+     "app/core/behavioral_state.py:_backup_current_state_before_mutation",
+     "app/core/behavioral_state.py:load_state",
+     "app/core/behavioral_state.py:rollback_to_backup"
+    ]
+   },
+   "mlx_crash_avoidance.json": {
+    "n_writers": 4,
+    "n_readers": 5,
+    "writers_first3": [
+     "app/core/behavioral_state.py:_backup_current_state_before_mutation",
+     "app/core/behavioral_state.py:propose_and_confirm_directive",
+     "app/core/crash_awareness.py:refresh_avoidance_state"
+    ],
+    "readers_first3": [
+     "app/core/behavioral_state.py:_backup_current_state_before_mutation",
+     "app/core/behavioral_state.py:load_state",
+     "app/core/behavioral_state.py:rollback_to_backup"
+    ]
+   },
+   "claude_shard.jsonl": {
+    "n_writers": 4,
+    "n_readers": 3,
+    "writers_first3": [
+     "app/core/claude_shard.py:ClaudeShard._load",
+     "app/core/claude_shard.py:ClaudeShard._persist",
+     "app/core/echo_ground_truth.py:_build_friction"
+    ],
+    "readers_first3": [
+     "app/core/claude_shard.py:ClaudeShard._load",
+     "app/core/echo_ground_truth.py:_lifetime_friction_stats",
+     "app/core/wolf_friction_bridge.py:get_unprocessed_friction_events"
+    ]
+   },
+   "claude_shard_friction.log": {
+    "n_writers": 1,
+    "n_readers": 0,
+    "writers_first3": [
+     "app/core/claude_shard.py:ClaudeShard._log_friction"
+    ],
+    "readers_first3": []
+   },
+   "self_model_claims.jsonl": {
+    "n_writers": 52,
+    "n_readers": 32,
+    "writers_first3": [
+     "app/core/council_rater.py:fill_spot_check",
+     "app/core/echo_ground_truth.py:_build_affect",
+     "app/core/echo_ground_truth.py:_build_behavioral"
+    ],
+    "readers_first3": [
+     "app/core/council_rater.py:_poll_and_rate",
+     "app/core/council_rater.py:fill_spot_check",
+     "app/core/echo_ground_truth.py:_read_jsonl_tail"
+    ]
+   },
+   "self_edit_generated.py": {
+    "n_writers": 71,
+    "n_readers": 43,
+    "writers_first3": [
+     "app/core/council_rater.py:fill_spot_check",
+     "app/core/echo_ground_truth.py:_build_affect",
+     "app/core/echo_ground_truth.py:_build_behavioral"
+    ],
+    "readers_first3": [
+     "app/core/council_rater.py:_poll_and_rate",
+     "app/core/council_rater.py:fill_spot_check",
+     "app/core/echo_ground_truth.py:_read_jsonl_tail"
+    ]
+   },
+   "reflection_shard.jsonl": {
+    "n_writers": 51,
+    "n_readers": 32,
+    "writers_first3": [
+     "app/core/council_rater.py:fill_spot_check",
+     "app/core/echo_ground_truth.py:_build_affect",
+     "app/core/echo_ground_truth.py:_build_behavioral"
+    ],
+    "readers_first3": [
+     "app/core/council_rater.py:_poll_and_rate",
+     "app/core/council_rater.py:fill_spot_check",
+     "app/core/echo_ground_truth.py:_read_jsonl_tail"
+    ]
+   },
+   "liveness_ledger.json": {
+    "n_writers": 48,
+    "n_readers": 29,
+    "writers_first3": [
+     "app/core/council_rater.py:fill_spot_check",
+     "app/core/echo_ground_truth.py:_build_affect",
+     "app/core/echo_ground_truth.py:_build_behavioral"
+    ],
+    "readers_first3": [
+     "app/core/council_rater.py:_poll_and_rate",
+     "app/core/council_rater.py:fill_spot_check",
+     "app/core/echo_ground_truth.py:_read_jsonl_tail"
+    ]
+   },
+   "self_model.json": {
+    "n_writers": 56,
+    "n_readers": 39,
+    "writers_first3": [
+     "app/core/council_rater.py:fill_spot_check",
+     "app/core/echo_core.py:_persist_salience_state",
+     "app/core/echo_ground_truth.py:_build_affect"
+    ],
+    "readers_first3": [
+     "app/core/council_rater.py:_poll_and_rate",
+     "app/core/council_rater.py:fill_spot_check",
+     "app/core/echo_ground_truth.py:_read_jsonl_tail"
+    ]
+   },
+   "question_garden.jsonl": {
+    "n_writers": 53,
+    "n_readers": 32,
+    "writers_first3": [
+     "app/core/council_rater.py:fill_spot_check",
+     "app/core/echo_core.py:_salience_curiosity_urgency",
+     "app/core/echo_ground_truth.py:_build_affect"
+    ],
+    "readers_first3": [
+     "app/core/council_rater.py:_poll_and_rate",
+     "app/core/council_rater.py:fill_spot_check",
+     "app/core/echo_core.py:_salience_curiosity_urgency"
+    ]
+   },
+   "self_edit_reflections.log": {
+    "n_writers": 7,
+    "n_readers": 10,
+    "writers_first3": [
+     "app/core/echo_optuna.py:EchoOptuna._score_result",
+     "app/core/memory_tools.py:log_memory_edit",
+     "app/core/self_edit_manager.py:_build_live_self_edit_inventory"
+    ],
+    "readers_first3": [
+     "app/core/echo_optuna.py:EchoOptuna._score_result",
+     "app/core/self_edit_manager.py:_load_self_edit_generated_for_use",
+     "app/core/self_edit_manager.py:_restore_latest_backup"
+    ]
+   },
+   "memory_journal.log": {
+    "n_writers": 1,
+    "n_readers": 2,
+    "writers_first3": [
+     "app/core/memory_tools.py:append_memory_entry"
+    ],
+    "readers_first3": [
+     "app/core/memory_tools.py:get_last_entries",
+     "app/core/self_report_verifier.py:_real_journal_line_count"
+    ]
+   },
+   "echo_server.pid": {
+    "n_writers": 1,
+    "n_readers": 2,
+    "writers_first3": [
+     "scripts/verify_provenance_check.py:_isolated_self_report_dir"
+    ],
+    "readers_first3": [
+     "app/core/conversation_service.py:server_is_running",
+     "app/core/provenance_check.py:_read_server_pid_file"
+    ]
+   },
+   "council_cursor.json": {
+    "n_writers": 1,
+    "n_readers": 3,
+    "writers_first3": [
+     "app/core/council_rater.py:_save_cursor"
+    ],
+    "readers_first3": [
+     "app/core/council_rater.py:_init_cursor_if_absent",
+     "app/core/council_rater.py:_load_cursor",
+     "app/core/liveness_ledger.py:_check_council_cursor_health"
+    ]
+   },
+   "council_ratings.jsonl": {
+    "n_writers": 8,
+    "n_readers": 9,
+    "writers_first3": [
+     "app/core/council_rater.py:_append_council_log",
+     "app/core/council_rater.py:fill_spot_check",
+     "app/core/council_rater.py:get_pending_spot_checks"
+    ],
+    "readers_first3": [
+     "app/core/council_rater.py:_count_actual_ratings",
+     "app/core/council_rater.py:fill_spot_check",
+     "app/core/council_rater.py:get_council_stats"
+    ]
+   },
+   "snapshot_baseline.json": {
+    "n_writers": 3,
+    "n_readers": 2,
+    "writers_first3": [
+     "app/core/council_rater.py:_write_baseline_meta",
+     "app/core/introspection_channel.py:IntrospectionChannel.reset_drift_detectors",
+     "app/core/snapshot_manager.py:patch_baseline_meta"
+    ],
+    "readers_first3": [
+     "app/core/council_rater.py:_read_baseline_meta",
+     "app/core/snapshot_manager.py:_read_baseline_meta"
+    ]
+   },
+   "workspace_log.jsonl": {
+    "n_writers": 12,
+    "n_readers": 7,
+    "writers_first3": [
+     "app/core/echo_core.py:EchoCore._log_workspace_event",
+     "app/core/echo_ground_truth.py:_build_affect",
+     "app/core/echo_ground_truth.py:_build_council"
+    ],
+    "readers_first3": [
+     "app/core/crash_awareness.py:_parse_ips_header_timestamp",
+     "app/core/echo_ground_truth.py:_build_council",
+     "app/core/echo_state.py:_recent_dry_run_quality_component"
+    ]
+   },
+   "codebase.db": {
+    "n_writers": 8,
+    "n_readers": 3,
+    "writers_first3": [
+     "app/core/echo_ground_truth.py:_build_affect",
+     "app/core/echo_ground_truth.py:_build_council",
+     "app/core/echo_ground_truth.py:_build_hearing"
+    ],
+    "readers_first3": [
+     "app/core/crash_awareness.py:_parse_ips_header_timestamp",
+     "app/core/echo_ground_truth.py:_build_council",
+     "app/core/self_edit_manager.py:propose_core_edit"
+    ]
+   },
+   "echo_watchdog.log": {
+    "n_writers": 3,
+    "n_readers": 4,
+    "writers_first3": [
+     "app/core/crash_awareness.py:_gather_watchdog_crash_timestamps",
+     "app/maintenance/night_cycle.py:NightCycle._maybe_rotate_large_logs",
+     "verify_riverbrain.py:scan_save_skipped"
+    ],
+    "readers_first3": [
+     "app/core/crash_awareness.py:_gather_watchdog_crash_timestamps",
+     "app/core/crash_awareness.py:_parse_ips_header_timestamp",
+     "app/maintenance/night_cycle.py:NightCycle._maybe_rotate_large_logs"
+    ]
+   },
+   "echo_sentinel.json": {
+    "n_writers": 4,
+    "n_readers": 5,
+    "writers_first3": [
+     "app/core/dmn_guardian.py:start_guardian_loop",
+     "app/core/dmn_guardian.py:start_guardian_loop.guardian_loop",
+     "run.py:_write_sentinel"
+    ],
+    "readers_first3": [
+     "app/core/dmn_guardian.py:start_guardian_loop",
+     "app/core/dmn_guardian.py:start_guardian_loop.guardian_loop",
+     "app/core/provenance_check.py:_read_sentinel_file"
+    ]
+   },
+   "introspection_state.json": {
+    "n_writers": 5,
+    "n_readers": 9,
+    "writers_first3": [
+     "app/core/dmn_guardian.py:start_guardian_loop",
+     "app/core/echo_ground_truth.py:get_structural_self_facts",
+     "app/core/self_report_verifier.py:verify_memory_health"
+    ],
+    "readers_first3": [
+     "app/core/dmn_guardian.py:start_guardian_loop",
+     "app/core/dmn_guardian.py:start_guardian_loop._check_ollama_alive",
+     "app/core/self_model_updater.py:SelfModelUpdater._compute_world_model"
+    ]
+   },
+   "optuna.db": {
+    "n_writers": 0,
+    "n_readers": 0,
+    "writers_first3": [],
+    "readers_first3": []
+   },
+   "claude_research_cursor.json": {
+    "n_writers": 10,
+    "n_readers": 4,
+    "writers_first3": [
+     "app/core/echo_optuna.py:EchoOptuna._score_result",
+     "app/core/echo_projects.py:_write_report",
+     "app/core/echo_state.py:_recent_dry_run_quality_component"
+    ],
+    "readers_first3": [
+     "app/core/echo_optuna.py:EchoOptuna._score_result",
+     "app/core/echo_state.py:_recent_dry_run_quality_component",
+     "app/internet_tools/claude_research.py:_last_call_time"
+    ]
+   },
+   "reflection_journal.jsonl": {
+    "n_writers": 11,
+    "n_readers": 5,
+    "writers_first3": [
+     "app/core/echo_optuna.py:EchoOptuna._score_result",
+     "app/core/echo_projects.py:_write_report",
+     "app/core/echo_state.py:_recent_dry_run_quality_component"
+    ],
+    "readers_first3": [
+     "app/core/echo_optuna.py:EchoOptuna._score_result",
+     "app/core/echo_state.py:_recent_dry_run_quality_component",
+     "app/core/memory_write_validator.py:audit_existing_journal"
+    ]
+   },
+   "scripture_warnings.log": {
+    "n_writers": 2,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/echo_model_orchestrator.py:_audit_scripture_citations",
+     "app/maintenance/night_cycle.py:NightCycle._maybe_rotate_large_logs"
+    ],
+    "readers_first3": [
+     "app/maintenance/night_cycle.py:NightCycle._maybe_rotate_large_logs"
+    ]
+   },
+   "principle_violations.log": {
+    "n_writers": 1,
+    "n_readers": 0,
+    "writers_first3": [
+     "app/core/echo_model_orchestrator.py:_audit_principle_signals"
+    ],
+    "readers_first3": []
+   },
+   "user_rating_cursor.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/echo_model_orchestrator.py:_apply_pending_user_ratings"
+    ],
+    "readers_first3": [
+     "app/core/echo_model_orchestrator.py:_apply_pending_user_ratings"
+    ]
+   },
+   "Modelfile": {
+    "n_writers": 9,
+    "n_readers": 7,
+    "writers_first3": [
+     "app/core/liveness_ledger.py:_evaluate_modelfile_identity",
+     "app/core/modelfile_proposer.py:ModelfileProposer._append_proposal",
+     "app/core/modelfile_proposer.py:ModelfileProposer._parse_modelfile"
+    ],
+    "readers_first3": [
+     "app/core/echo_model_orchestrator.py:ollama_query",
+     "app/core/modelfile_proposer.py:ModelfileProposer._parse_modelfile",
+     "app/core/modelfile_proposer.py:ModelfileProposer._read_self_model"
+    ]
+   },
+   "council_deliberations.jsonl": {
+    "n_writers": 6,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/echo_model_orchestrator.py:echo_query",
+     "app/core/river_deliberation.py:_log_council_deliberation",
+     "app/core/self_edit_outcome_tracker.py:record_pending_outcome"
+    ],
+    "readers_first3": [
+     "app/maintenance/night_cycle.py:NightCycle._maybe_rotate_large_logs"
+    ]
+   },
+   "river_brain.pkl": {
+    "n_writers": 8,
+    "n_readers": 8,
+    "writers_first3": [
+     "app/core/echo_model_orchestrator.py:RiverBrain._do_save",
+     "app/core/echo_model_orchestrator.py:RiverBrain.load",
+     "app/core/snapshot_manager.py:raise_drift_notice"
+    ],
+    "readers_first3": [
+     "app/core/echo_model_orchestrator.py:RiverBrain._do_save",
+     "app/core/echo_model_orchestrator.py:RiverBrain.load",
+     "app/core/snapshot_manager.py:_sha256_file"
+    ]
+   },
+   "echo_projects_autonomy_state.json": {
+    "n_writers": 1,
+    "n_readers": 0,
+    "writers_first3": [
+     "app/core/echo_projects.py:_write_autonomy_state"
+    ],
+    "readers_first3": []
+   },
+   "echo_state_history.npy": {
+    "n_writers": 2,
+    "n_readers": 2,
+    "writers_first3": [
+     "app/core/echo_state.py:_append_history",
+     "app/core/liveness_ledger.py:_evaluate_echo_state_archiving"
+    ],
+    "readers_first3": [
+     "app/core/echo_state.py:_append_history",
+     "app/core/echo_state.py:load_history"
+    ]
+   },
+   "thought_log.jsonl": {
+    "n_writers": 1,
+    "n_readers": 0,
+    "writers_first3": [
+     "app/core/echo_tool_dispatch.py:_tool_log_thought"
+    ],
+    "readers_first3": []
+   },
+   "tool_dispatch.log": {
+    "n_writers": 1,
+    "n_readers": 0,
+    "writers_first3": [
+     "app/core/echo_tool_dispatch.py:_log_call"
+    ],
+    "readers_first3": []
+   },
+   "hearing_signature.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/hearing_sense.py:_persist_signature_state"
+    ],
+    "readers_first3": [
+     "app/core/hearing_sense.py:_load_signature_state"
+    ]
+   },
+   "drift_detectors.pkl": {
+    "n_writers": 0,
+    "n_readers": 0,
+    "writers_first3": [],
+    "readers_first3": []
+   },
+   "apply_to_code_invocations.jsonl": {
+    "n_writers": 1,
+    "n_readers": 0,
+    "writers_first3": [
+     "app/core/self_edit_manager.py:_log_apply_to_code_invocation"
+    ],
+    "readers_first3": []
+   },
+   "dissent_log.jsonl": {
+    "n_writers": 2,
+    "n_readers": 0,
+    "writers_first3": [
+     "app/core/self_edit_manager.py:_log_dissent_entry",
+     "app/core/snapshot_manager.py:_log_restore_dissent_entry"
+    ],
+    "readers_first3": []
+   },
+   "restore_log.jsonl": {
+    "n_writers": 2,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/snapshot_manager.py:_log_restore",
+     "app/core/snapshot_manager.py:restore_snapshot"
+    ],
+    "readers_first3": [
+     "app/core/snapshot_manager.py:restore_snapshot"
+    ]
+   },
+   "claude_research_last_attempt.json": {
+    "n_writers": 1,
+    "n_readers": 0,
+    "writers_first3": [
+     "app/internet_tools/claude_research.py:_record_attempt"
+    ],
+    "readers_first3": []
+   },
+   "validator_audit.log": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/maintenance/night_cycle.py:NightCycle._maybe_rotate_large_logs"
+    ],
+    "readers_first3": [
+     "app/maintenance/night_cycle.py:NightCycle._maybe_rotate_large_logs"
+    ]
+   },
+   "dream_bridge.log": {
+    "n_writers": 2,
+    "n_readers": 2,
+    "writers_first3": [
+     "app/maintenance/night_cycle.py:NightCycle._maybe_rotate_large_logs",
+     "app/routes_echo_studio.py:activity_log"
+    ],
+    "readers_first3": [
+     "app/maintenance/night_cycle.py:NightCycle._maybe_rotate_large_logs",
+     "app/routes_echo_studio.py:activity_log"
+    ]
+   },
+   "quarantine_journal.jsonl": {
+    "n_writers": 2,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/memory_write_validator.py:_quarantine_entry",
+     "app/maintenance/night_cycle.py:NightCycle._maybe_rotate_large_logs"
+    ],
+    "readers_first3": [
+     "app/maintenance/night_cycle.py:NightCycle._maybe_rotate_large_logs"
+    ]
+   },
+   "SELF_EDIT_MASTERY_.log": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/maintenance/night_cycle.py:NightCycle._maybe_rotate_large_logs"
+    ],
+    "readers_first3": [
+     "app/maintenance/night_cycle.py:NightCycle._maybe_rotate_large_logs"
+    ]
+   },
+   "janitor_council_log.jsonl": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "echo_janitor.py:_log_janitor_council_entry"
+    ],
+    "readers_first3": [
+     "echo_janitor.py:_recently_reviewed"
+    ]
+   },
+   "memory_journal_active.log": {
+    "n_writers": 5,
+    "n_readers": 2,
+    "writers_first3": [
+     "app/core/memory_bridge.py:append_to_journal",
+     "app/core/memory_bridge.py:autonomous_prune_journal",
+     "app/core/memory_bridge.py:rebuild_vector_memory"
+    ],
+    "readers_first3": [
+     "app/core/memory_bridge.py:stream_memory_entries",
+     "app/core/memory_bridge.py:trim_memory_journal"
+    ]
+   },
+   "faiss.index": {
+    "n_writers": 2,
+    "n_readers": 3,
+    "writers_first3": [
+     "app/core/self_heal.py:repair_vector_memory_index",
+     "app/lib/vector_memory.py:VectorMemory._persist"
+    ],
+    "readers_first3": [
+     "app/core/snapshot_manager.py:_collect_health",
+     "app/lib/vector_memory.py:VectorMemory._load_or_rebuild_index",
+     "app/lib/vector_memory.py:VectorMemory._persist"
+    ]
+   },
+   "signal_hash_cache.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/memory_write_validator.py:_save_hash_cache"
+    ],
+    "readers_first3": [
+     "app/core/memory_write_validator.py:_load_hash_cache"
+    ]
+   },
+   "modelfile_proposals.jsonl": {
+    "n_writers": 0,
+    "n_readers": 0,
+    "writers_first3": [],
+    "readers_first3": []
+   },
+   "world_model_diagnostics.json": {
+    "n_writers": 0,
+    "n_readers": 1,
+    "writers_first3": [],
+    "readers_first3": [
+     "app/core/self_model_updater.py:SelfModelUpdater._compute_world_model"
+    ]
+   },
+   "synthesis_integrity_log.jsonl": {
+    "n_writers": 2,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/river_deliberation.py:_log_synthesis_integrity",
+     "scripts/verify_synthesis_refactor_live.py:main"
+    ],
+    "readers_first3": [
+     "scripts/verify_synthesis_refactor_live.py:main"
+    ]
+   },
+   "seam_state.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/seam_engine.py:_save_first_ever"
+    ],
+    "readers_first3": [
+     "app/core/seam_engine.py:_load_first_ever"
+    ]
+   },
+   "seam_log.jsonl": {
+    "n_writers": 1,
+    "n_readers": 0,
+    "writers_first3": [
+     "app/core/seam_engine.py:observe"
+    ],
+    "readers_first3": []
+   },
+   "self_edit_attempt_ledger.jsonl": {
+    "n_writers": 5,
+    "n_readers": 3,
+    "writers_first3": [
+     "app/core/self_edit_attempt_ledger.py:record_attempt",
+     "app/core/self_model_claims.py:get_recent_claims",
+     "app/core/self_model_claims.py:record_claim"
+    ],
+    "readers_first3": [
+     "app/core/self_edit_attempt_ledger.py:read_recent_f2_error",
+     "app/core/self_model_claims.py:get_recent_claims",
+     "scripts/verify_attempt_ledger_prompt_evidence.py:main"
+    ]
+   },
+   "SELF_EDIT.log": {
+    "n_writers": 2,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/self_edit_manager.py:_record_convergence",
+     "app/core/self_edit_manager.py:backfill_convergence_from_log"
+    ],
+    "readers_first3": [
+     "app/core/self_edit_manager.py:backfill_convergence_from_log"
+    ]
+   },
+   "self_edit_outcomes.jsonl": {
+    "n_writers": 2,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/self_edit_outcome_tracker.py:_evaluate_pending_outcomes_locked",
+     "app/core/self_edit_outcome_tracker.py:record_pending_outcome"
+    ],
+    "readers_first3": [
+     "app/core/self_edit_outcome_tracker.py:_evaluate_pending_outcomes_locked"
+    ]
+   },
+   "self_report_verification.log": {
+    "n_writers": 1,
+    "n_readers": 0,
+    "writers_first3": [
+     "app/core/self_report_verifier.py:verify_memory_health"
+    ],
+    "readers_first3": []
+   },
+   "shadow_self_model.json": {
+    "n_writers": 1,
+    "n_readers": 2,
+    "writers_first3": [
+     "app/core/shadow_model.py:propose"
+    ],
+    "readers_first3": [
+     "app/core/shadow_model.py:compare_to_actual",
+     "app/core/shadow_model.py:propose"
+    ]
+   },
+   "shadow_accuracy.jsonl": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/shadow_model.py:log_accuracy"
+    ],
+    "readers_first3": [
+     "app/core/shadow_model.py:compare_to_actual"
+    ]
+   },
+   "shadow_corrections.log": {
+    "n_writers": 1,
+    "n_readers": 0,
+    "writers_first3": [
+     "app/core/shadow_model.py:check_and_correct"
+    ],
+    "readers_first3": []
+   },
+   "restore_alerts.jsonl": {
+    "n_writers": 2,
+    "n_readers": 0,
+    "writers_first3": [
+     "app/core/snapshot_manager.py:raise_drift_notice",
+     "app/core/snapshot_manager.py:raise_restore_alert"
+    ],
+    "readers_first3": []
+   },
+   "genesis_hash.txt": {
+    "n_writers": 0,
+    "n_readers": 1,
+    "writers_first3": [],
+    "readers_first3": [
+     "run.py:start_background_threads"
+    ]
+   },
+   "council_hash.txt": {
+    "n_writers": 0,
+    "n_readers": 1,
+    "writers_first3": [],
+    "readers_first3": [
+     "run.py:start_background_threads"
+    ]
+   },
+   "task_type_classifier.pkl": {
+    "n_writers": 3,
+    "n_readers": 2,
+    "writers_first3": [
+     "app/core/task_type_classifier.py:TaskTypeClassifier._write_if_richer",
+     "app/core/task_type_classifier.py:TaskTypeClassifier.load",
+     "app/core/task_type_classifier.py:TaskTypeClassifier.save"
+    ],
+    "readers_first3": [
+     "app/core/task_type_classifier.py:TaskTypeClassifier._write_if_richer",
+     "app/core/task_type_classifier.py:TaskTypeClassifier.load"
+    ]
+   },
+   "symbiote_location.json": {
+    "n_writers": 6,
+    "n_readers": 1,
+    "writers_first3": [
+     "echo_json_server.py:learning_batch",
+     "echo_json_server.py:learning_event",
+     "run.py:learning_batch"
+    ],
+    "readers_first3": [
+     "app/core/temporal_environment.py:get_location_from_symbiote"
+    ]
+   },
+   "touch_signature.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/touch_sense.py:_persist_signature_state"
+    ],
+    "readers_first3": [
+     "app/core/touch_sense.py:_load_signature_state"
+    ]
+   },
+   "vision_signature.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/vision_sense.py:_persist_signature_state"
+    ],
+    "readers_first3": [
+     "app/core/vision_sense.py:_load_signature_state"
+    ]
+   },
+   "wolf_friction_cursor.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/wolf_friction_bridge.py:_save_cursor"
+    ],
+    "readers_first3": [
+     "app/core/wolf_friction_bridge.py:_load_cursor"
+    ]
+   },
+   "wolf_dryrun.jsonl": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/core/wolf_friction_bridge.py:_log_dry_run"
+    ],
+    "readers_first3": [
+     "app/core/wolf_friction_bridge.py:get_dry_run_tally"
+    ]
+   },
+   "prompt_history_state.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/emergent_scheduler.py:_save_prompt_history"
+    ],
+    "readers_first3": [
+     "app/emergent_scheduler.py:_load_prompt_history"
+    ]
+   },
+   "codebase_map.json": {
+    "n_writers": 1,
+    "n_readers": 0,
+    "writers_first3": [
+     "echo_cartographer.py:write_json"
+    ],
+    "readers_first3": []
+   },
+   "scheduler_selections.log": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/emergent_scheduler.py:emergent_loop"
+    ],
+    "readers_first3": [
+     "app/emergent_scheduler.py:emergent_loop"
+    ]
+   },
+   "learning_events.jsonl": {
+    "n_writers": 1,
+    "n_readers": 0,
+    "writers_first3": [
+     "thunderhead.py:send_event"
+    ],
+    "readers_first3": []
+   },
+   "dual_meta.json": {
+    "n_writers": 0,
+    "n_readers": 0,
+    "writers_first3": [],
+    "readers_first3": []
+   },
+   "consolidation_log.jsonl": {
+    "n_writers": 0,
+    "n_readers": 0,
+    "writers_first3": [],
+    "readers_first3": []
+   },
+   "log_retention_state.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/maintenance/night_cycle.py:NightCycle._maybe_rotate_large_logs"
+    ],
+    "readers_first3": [
+     "app/maintenance/night_cycle.py:NightCycle._maybe_rotate_large_logs"
+    ]
+   },
+   "janitor_state.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/maintenance/night_cycle.py:NightCycle._maybe_run_janitor"
+    ],
+    "readers_first3": [
+     "app/maintenance/night_cycle.py:NightCycle._maybe_run_janitor"
+    ]
+   },
+   "retrieval_provenance.jsonl": {
+    "n_writers": 1,
+    "n_readers": 0,
+    "writers_first3": [
+     "app/routes_echo_studio.py:_generate_chat_response_body"
+    ],
+    "readers_first3": []
+   },
+   "messaging_settings.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/sync/echo_messaging.py:_save_settings"
+    ],
+    "readers_first3": [
+     "app/sync/echo_messaging.py:_load_settings"
+    ]
+   },
+   "echo_messages.jsonl": {
+    "n_writers": 2,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/sync/echo_messaging.py:_log_message",
+     "app/sync/echo_messaging.py:get_recent_messages"
+    ],
+    "readers_first3": [
+     "app/sync/echo_messaging.py:get_recent_messages"
+    ]
+   },
+   "message_outbox.jsonl": {
+    "n_writers": 2,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/sync/echo_messaging.py:_load_outbox",
+     "app/sync/echo_messaging.py:_save_outbox"
+    ],
+    "readers_first3": [
+     "app/sync/echo_messaging.py:_load_outbox"
+    ]
+   },
+   "checkin_threads.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/sync/echo_messaging.py:_save_checkin_threads"
+    ],
+    "readers_first3": [
+     "app/sync/echo_messaging.py:_load_checkin_threads"
+    ]
+   },
+   "chat_thread_pacing.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/sync/echo_messaging.py:_save_chat_pacing"
+    ],
+    "readers_first3": [
+     "app/sync/echo_messaging.py:_load_chat_pacing"
+    ]
+   },
+   "sync_state.json": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/sync/sync_protocol.py:_save_state"
+    ],
+    "readers_first3": [
+     "app/sync/sync_protocol.py:_load_state"
+    ]
+   },
+   "sync_seen.jsonl": {
+    "n_writers": 1,
+    "n_readers": 1,
+    "writers_first3": [
+     "app/sync/sync_protocol.py:_save_seen"
+    ],
+    "readers_first3": [
+     "app/sync/sync_protocol.py:_load_seen"
+    ]
+   },
+   "symbiote_status.json": {
+    "n_writers": 1,
+    "n_readers": 0,
+    "writers_first3": [
+     "run.py:symbiote_status"
+    ],
+    "readers_first3": []
+   }
+  }
+ },
+ "singleton_scan": {
+  "modules_with_patterns": 44,
+  "items": {
+   "app/autonomous_awareness.py": [
+    [
+     "_AWARENESS_LOCK",
+     "lock/event:threading.Lock",
+     522
+    ],
+    [
+     "__global_stmt__",
+     "3 names in 3 funcs",
+     0
+    ]
+   ],
+   "app/autonomous_harmony_manager.py": [
+    [
+     "_shared_harmony_manager_lock",
+     "lock/event:threading.Lock",
+     270
+    ],
+    [
+     "__global_stmt__",
+     "1 names in 1 funcs",
+     0
+    ],
+    [
+     "get_harmony_manager",
+     "lazy-global-getter",
+     273
+    ]
+   ],
+   "app/autonomous_loop.py": [
+    [
+     "harmony_manager",
+     "eager-load:get_harmony_manager",
+     113
+    ],
+    [
+     "RECENT_CYCLES",
+     "eager-load:_load_recent_cycles",
+     146
+    ]
+   ],
+   "app/core/app/core/self_edit_generated.py": [
+    [
+     "parsed_code",
+     "mutable-literal",
+     4
+    ],
+    [
+     "analysis_dict",
+     "empty-dict",
+     7
+    ],
+    [
+     "character_counts",
+     "empty-dict",
+     14
+    ],
+    [
+     "keyword_freq",
+     "empty-dict",
+     18
+    ],
+    [
+     "patterns",
+     "empty-list/set",
+     27
+    ]
+   ],
+   "app/core/autonomous_loop_with_optuna.py": [
+    [
+     "optimizer",
+     "instance:EchoOptuna",
+     41
+    ],
+    [
+     "harmony_manager",
+     "eager-load:get_harmony_manager",
+     44
+    ],
+    [
+     "_cycle_state",
+     "mutable-literal",
+     47
+    ],
+    [
+     "_optuna_gate_lock",
+     "lock/event:threading.Lock",
+     60
+    ]
+   ],
+   "app/core/awareness_tools_integration.py": [
+    [
+     "tm",
+     "instance:ToolManager",
+     35
+    ]
+   ],
+   "app/core/bible_injection.py": [
+    [
+     "VERSE_INDEX",
+     "empty-dict",
+     15
+    ]
+   ],
+   "app/core/conversation_activity.py": [
+    [
+     "_lock",
+     "lock/event:threading.Lock",
+     27
+    ],
+    [
+     "__global_stmt__",
+     "2 names in 2 funcs",
+     0
+    ]
+   ],
+   "app/core/council_rater.py": [
+    [
+     "_council_log_lock",
+     "lock/event:threading.Lock",
+     44
+    ]
+   ],
+   "app/core/crash_awareness.py": [
+    [
+     "__global_stmt__",
+     "1 names in 1 funcs",
+     0
+    ]
+   ],
+   "app/core/curiosity_engine.py": [
+    [
+     "__global_stmt__",
+     "1 names in 1 funcs",
+     0
+    ]
+   ],
+   "app/core/echo_core.py": [
+    [
+     "_singleton_lock",
+     "lock/event:threading.Lock",
+     53
+    ],
+    [
+     "_salience_state_lock",
+     "lock/event:threading.Lock",
+     690
+    ],
+    [
+     "__global_stmt__",
+     "1 names in 1 funcs",
+     0
+    ]
+   ],
+   "app/core/echo_model_orchestrator.py": [
+    [
+     "_river_brain_init_lock",
+     "lock/event:threading.Lock",
+     1714
+    ],
+    [
+     "__global_stmt__",
+     "2 names in 2 funcs",
+     0
+    ],
+    [
+     "get_river_brain",
+     "lazy-global-getter",
+     1716
+    ]
+   ],
+   "app/core/echo_python_mastery/code_quality.py": [
+    [
+     "__global_stmt__",
+     "1 names in 1 funcs",
+     0
+    ]
+   ],
+   "app/core/hearing_sense.py": [
+    [
+     "_hearing_lock",
+     "lock/event:threading.Lock",
+     42
+    ]
+   ],
+   "app/core/memory_bridge.py": [
+    [
+     "embedding_model",
+     "eager-load:get_sentence_transformer",
+     60
+    ],
+    [
+     "vector_memory",
+     "instance:VectorMemory",
+     61
+    ],
+    [
+     "memory_lock",
+     "lock/event:Lock",
+     67
+    ],
+    [
+     "_workspace_bias",
+     "mutable-literal",
+     398
+    ]
+   ],
+   "app/core/memory_write_validator.py": [
+    [
+     "_hash_cache_lock",
+     "lock/event:threading.Lock",
+     23
+    ],
+    [
+     "log",
+     "eager-load:_get_validator_logger",
+     119
+    ]
+   ],
+   "app/core/predictive_loop.py": [
+    [
+     "_init_lock",
+     "lock/event:threading.Lock",
+     472
+    ],
+    [
+     "__global_stmt__",
+     "1 names in 1 funcs",
+     0
+    ]
+   ],
+   "app/core/river_deliberation.py": [
+    [
+     "_tiktoken_enc",
+     "lazy-None-slot",
+     51
+    ],
+    [
+     "_council_log_lock",
+     "lock/event:threading.Lock",
+     146
+    ],
+    [
+     "_synthesis_integrity_log_lock",
+     "lock/event:threading.Lock",
+     162
+    ],
+    [
+     "_last_world_surprise",
+     "mutable-literal",
+     175
+    ]
+   ],
+   "app/core/scheduler.py": [
+    [
+     "__global_stmt__",
+     "1 names in 1 funcs",
+     0
+    ],
+    [
+     "get_scheduler",
+     "lazy-global-getter",
+     104
+    ]
+   ],
+   "app/core/seam_engine.py": [
+    [
+     "_seam_state_lock",
+     "lock/event:threading.Lock",
+     70
+    ]
+   ],
+   "app/core/self_edit_attempt_ledger.py": [
+    [
+     "_ledger_lock",
+     "lock/event:threading.Lock",
+     44
+    ]
+   ],
+   "app/core/self_edit_manager.py": [
+    [
+     "_dissent_log_lock",
+     "lock/event:threading.Lock",
+     65
+    ],
+    [
+     "_self_edit_deploy_lock",
+     "lock/event:threading.Lock",
+     2673
+    ],
+    [
+     "__global_stmt__",
+     "1 names in 1 funcs",
+     0
+    ]
+   ],
+   "app/core/self_edit_outcome_tracker.py": [
+    [
+     "_outcomes_lock",
+     "lock/event:threading.Lock",
+     27
+    ]
+   ],
+   "app/core/self_model_claims.py": [
+    [
+     "_lock",
+     "lock/event:threading.Lock",
+     37
+    ]
+   ],
+   "app/core/sentence_transformer_singleton.py": [
+    [
+     "_lock",
+     "lock/event:Lock",
+     12
+    ],
+    [
+     "_model",
+     "lazy-None-slot",
+     13
+    ],
+    [
+     "__global_stmt__",
+     "1 names in 1 funcs",
+     0
+    ],
+    [
+     "get_sentence_transformer",
+     "lazy-global-getter",
+     18
+    ]
+   ],
+   "app/core/snapshot_manager.py": [
+    [
+     "_baseline_meta_lock",
+     "lock/event:threading.Lock",
+     62
+    ]
+   ],
+   "app/core/stillness_state.py": [
+    [
+     "_STILLNESS_EVENT",
+     "lock/event:threading.Event",
+     20
+    ],
+    [
+     "__global_stmt__",
+     "1 names in 1 funcs",
+     0
+    ]
+   ],
+   "app/core/system_guard.py": [
+    [
+     "__global_stmt__",
+     "3 names in 1 funcs",
+     0
+    ]
+   ],
+   "app/core/task_type_classifier.py": [
+    [
+     "_instance",
+     "lazy-None-slot",
+     346
+    ],
+    [
+     "__global_stmt__",
+     "1 names in 1 funcs",
+     0
+    ],
+    [
+     "get_task_type_classifier",
+     "lazy-global-getter",
+     349
+    ]
+   ],
+   "app/core/temp_self_edit.py": [
+    [
+     "self_edits_dict",
+     "mutable-literal",
+     1
+    ]
+   ],
+   "app/core/touch_sense.py": [
+    [
+     "_touch_lock",
+     "lock/event:threading.Lock",
+     66
+    ]
+   ],
+   "app/core/vision_sense.py": [
+    [
+     "_vision_lock",
+     "lock/event:threading.Lock",
+     57
+    ]
+   ],
+   "app/emergent_scheduler.py": [
+    [
+     "shutdown_flag",
+     "lock/event:threading.Event",
+     39
+    ],
+    [
+     "PROMPT_HISTORY",
+     "eager-load:_load_prompt_history",
+     340
+    ],
+    [
+     "__global_stmt__",
+     "5 names in 5 funcs",
+     0
+    ],
+    [
+     "_get_weak_task_focus",
+     "lazy-global-getter",
+     413
+    ]
+   ],
+   "app/internet_tools/autonomous_fetch.py": [
+    [
+     "_fetch_cycle_lock",
+     "lock/event:threading.Lock",
+     59
+    ],
+    [
+     "__global_stmt__",
+     "1 names in 1 funcs",
+     0
+    ]
+   ],
+   "app/learning/dual_learning.py": [
+    [
+     "_lock",
+     "lock/event:Lock",
+     78
+    ],
+    [
+     "_dual_learner_instance",
+     "lazy-None-slot",
+     276
+    ],
+    [
+     "__global_stmt__",
+     "4 names in 3 funcs",
+     0
+    ],
+    [
+     "get_dual_learner",
+     "lazy-global-getter",
+     277
+    ]
+   ],
+   "app/maintenance/night_cycle.py": [
+    [
+     "_log_retention_lock",
+     "lock/event:threading.Lock",
+     62
+    ],
+    [
+     "_janitor_lock",
+     "lock/event:threading.Lock",
+     79
+    ]
+   ],
+   "app/mlx_handler.py": [
+    [
+     "_generate_lock",
+     "lock/event:threading.Lock",
+     93
+    ],
+    [
+     "__global_stmt__",
+     "1 names in 1 funcs",
+     0
+    ]
+   ],
+   "app/ollama_handler.py": [
+    [
+     "_mlx_patch_lock",
+     "lock/event:threading.Lock",
+     27
+    ],
+    [
+     "_ollama_stop_event",
+     "lock/event:threading.Event",
+     60
+    ],
+    [
+     "__global_stmt__",
+     "5 names in 3 funcs",
+     0
+    ]
+   ],
+   "app/sync/echo_messaging.py": [
+    [
+     "_outbox_lock",
+     "lock/event:threading.Lock",
+     74
+    ],
+    [
+     "_checkin_lock",
+     "lock/event:threading.Lock",
+     75
+    ],
+    [
+     "_chat_pacing_lock",
+     "lock/event:threading.Lock",
+     76
+    ]
+   ],
+   "app/sync/sync_protocol.py": [
+    [
+     "_seen_hashes_lock",
+     "lock/event:threading.Lock",
+     16
+    ]
+   ],
+   "echo_studio/audio/speech_output.py": [
+    [
+     "__global_stmt__",
+     "1 names in 1 funcs",
+     0
+    ],
+    [
+     "get_speech_output",
+     "lazy-global-getter",
+     74
+    ]
+   ],
+   "run.py": [
+    [
+     "app",
+     "instance:Flask",
+     122
+    ],
+    [
+     "__global_stmt__",
+     "3 names in 2 funcs",
+     0
+    ]
+   ],
+   "terminal_client.py": [
+    [
+     "console",
+     "instance:Console",
+     46
+    ],
+    [
+     "_st_model",
+     "lazy-None-slot",
+     91
+    ],
+    [
+     "__global_stmt__",
+     "6 names in 3 funcs",
+     0
+    ]
+   ]
+  }
+ },
+ "never_imported_live_modules": [
+  "RebelCode.howl_engine",
+  "RebelCode.territory_steward",
+  "WhisperingWires.nature_spark",
+  "app.__init__",
+  "app.core.__init__",
+  "app.core.app.core.self_edit_generated",
+  "app.core.council_registry",
+  "app.core.echo_python_mastery.__init__",
+  "app.core.echo_python_mastery.advanced_python",
+  "app.core.echo_python_mastery.best_practices",
+  "app.core.echo_python_mastery.code_quality",
+  "app.core.echo_python_mastery.coding_basics",
+  "app.core.echo_python_mastery.debugging",
+  "app.core.echo_python_mastery.examples",
+  "app.core.echo_python_mastery.testing_and_validation",
+  "app.core.load_project_map",
+  "app.core.memory_migration",
+  "app.core.scheduler",
+  "app.core.self_edit_generated",
+  "app.core.self_heal",
+  "app.core.self_report_verifier",
+  "app.core.shadow_model",
+  "app.core.shard",
+  "app.core.temp_self_edit",
+  "app.internet_tools.__init__",
+  "app.internet_tools.query_reflect",
+  "app.lib.__init__",
+  "app.sync.__init__",
+  "echo_json_server",
+  "echo_studio.__init__",
+  "echo_studio.audio.__init__",
+  "echo_studio.main",
+  "echo_studio.state.__init__",
+  "echo_studio.views.__init__",
+  "echo_studio.widgets.__init__",
+  "river_creative_rehab",
+  "run",
+  "sandbox.__init__",
+  "sandbox.file_utils",
+  "sandbox.test_reflect",
+  "self_heal.app.core.self_edit_generated",
+  "self_heal.sandbox.scripts.temp_self_edit",
+  "spot_check",
+  "terminal_client",
+  "thunderhead",
+  "verify_riverbrain"
+ ],
+ "liveness_checks_runtime_count": 54
+}

@@ -69,6 +69,12 @@ from app.core.self_edit_manager import (
 from app.core.echo_model_orchestrator import rank_models, echo_query, get_river_brain
 from app.core.river_deliberation import deliberate_and_learn
 from app.ollama_handler import query_ollama
+from app.core.skill_ledger import echo_adapter as _vsl
+# The one production integration point for the Verified Skill Ledger (2026-09-28,
+# audits/2026-09-28_vsl_integration_readiness.md). Disabled by default
+# (VSL_ENABLED unset/false) -- _vsl.consult_file() is then a true pass-through, zero
+# behavior change from before this import existed. See generate_project() below for
+# the actual call sites.
 
 logger = logging.getLogger(__name__)
 
@@ -274,6 +280,19 @@ def generate_project(spec: str, files: dict,
     project_dir = _PROJECTS_DIR / f"{ts}_{slug}"
     project_dir.mkdir(parents=True, exist_ok=True)
 
+    # VSL consultation (2026-09-28) — a true pass-through when VSL_ENABLED is unset
+    # (the default): _vsl.consult_file() returns the code unchanged and records
+    # nothing. When enabled, this runs BEFORE F1 (not after) specifically so F1/F2
+    # remain the final, unmodified authority over whatever code actually gets staged
+    # — a VSL-patched file is re-verified by the exact same real gates as any other
+    # generated file, with no special-casing.
+    original_files = dict(files)
+    vsl_applications_by_file = {}
+    for filename, code in list(files.items()):
+        vsl_result = _vsl.consult_file(code, task_id=f"echo_projects:{ts}_{slug}:{filename}")
+        files[filename] = vsl_result["code"]
+        vsl_applications_by_file[filename] = vsl_result["applications"]
+
     # F1 — real, unmodified, per file. No _validate_imports()/
     # _ALLOWED_TOP_LEVEL call anywhere in this pipeline — that's the actual
     # mechanism of "full library access" (see module docstring).
@@ -288,6 +307,9 @@ def generate_project(spec: str, files: dict,
             f1_all_ok = False
 
     if not f1_all_ok:
+        for filename, applications in vsl_applications_by_file.items():
+            _vsl.record_final_verdict(f"echo_projects:{ts}_{slug}:{filename}", applications,
+                                       original_files[filename], files[filename], f1_passed=False, f2_result=None)
         report = _write_report(project_dir, spec, files, f1_results, None, ts, council_plan, council_review, origin)
         logger.warning(f"[ECHO-PROJECTS] F1 blocked one or more files in {project_dir.name}")
         return {
@@ -302,6 +324,9 @@ def generate_project(spec: str, files: dict,
         return {"status": "error", "detail": f"failed writing staged file(s): {e}"}
 
     f2_result = _run_f2_multi_file(project_dir)
+    for filename, applications in vsl_applications_by_file.items():
+        _vsl.record_final_verdict(f"echo_projects:{ts}_{slug}:{filename}", applications,
+                                   original_files[filename], files[filename], f1_passed=True, f2_result=f2_result)
     report = _write_report(project_dir, spec, files, f1_results, f2_result, ts, council_plan, council_review, origin)
     status = "ok" if f2_result.get("passed") else "f2_failed"
     logger.info(f"[ECHO-PROJECTS] {project_dir.name}: {status}")

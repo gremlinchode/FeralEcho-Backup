@@ -179,14 +179,29 @@ class Skill:
     def promote_to_verified(self, evidence: str, root=None) -> "Skill":
         """CANDIDATE -> VERIFIED: an independent oracle (F1-equivalent static check,
         or a real test-suite pass) confirmed the skill's source acquisition was
-        genuine, without yet demonstrating held-out generalization."""
+        genuine, without yet demonstrating held-out generalization.
+
+        State-guarded since 2026-09-28 (adversarial integration review finding): the
+        chain's own documented sequencing was previously enforced at exactly one step
+        (promote_to_active()) and nowhere else, so this and promote_to_qualified()
+        below were callable from any state at all, including RETIRED/QUARANTINED --
+        demonstrated live during that review (a RETIRED skill could be silently
+        re-qualified and re-activated with a trivial evidence string). Every forward
+        step now requires the skill to genuinely be in the state immediately prior."""
+        if self.effective_lifecycle() != "CANDIDATE":
+            raise ValueError(f"cannot promote to VERIFIED from {self.effective_lifecycle()} "
+                              f"-- a skill must be CANDIDATE first")
         return self._transition("VERIFIED", evidence, root)
 
     def promote_to_qualified(self, evidence: str, root=None) -> "Skill":
         """VERIFIED -> QUALIFIED: a real, outcome-blind, TRUE-vs-SUBSTITUTION
         held-out transfer test passed (matches is_eligible()'s own legacy PASS
         semantic) -- the skill has demonstrated a genuine causal advantage on
-        fresh, previously-unseen instances."""
+        fresh, previously-unseen instances. State-guarded, see promote_to_verified()'s
+        docstring for why."""
+        if self.effective_lifecycle() != "VERIFIED":
+            raise ValueError(f"cannot promote to QUALIFIED from {self.effective_lifecycle()} "
+                              f"-- a skill must be VERIFIED first")
         return self._transition("QUALIFIED", evidence, root)
 
     def promote_to_active(self, evidence: str, root=None) -> "Skill":
@@ -202,7 +217,13 @@ class Skill:
     def mark_degraded(self, evidence: str, root=None) -> "Skill":
         """ACTIVE -> DEGRADED: real production outcome stats crossed the degrade
         threshold (see record_outcome() in runtime.py, which is what actually
-        computes and calls this -- never a self-referential claim)."""
+        computes and calls this -- never a self-referential claim). State-guarded,
+        same reasoning as promote_to_verified()/promote_to_qualified() above --
+        degradation is only a meaningful signal relative to a skill that was actually
+        live and consumed; degrading a non-ACTIVE skill would be a category error."""
+        if self.effective_lifecycle() != "ACTIVE":
+            raise ValueError(f"cannot mark_degraded from {self.effective_lifecycle()} "
+                              f"-- a skill must be ACTIVE first")
         return self._transition("DEGRADED", evidence, root)
 
     def quarantine(self, evidence: str, root=None) -> "Skill":

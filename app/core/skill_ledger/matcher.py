@@ -302,12 +302,78 @@ def _wildcard_aware_equal(candidate_dump: str, pattern_dump: str, bindings: dict
     return True
 
 
+class _UnsafeDump(Exception):
+    """Raised internally when a dump string contains anything beyond a real ast.*
+    node construction, a keyword argument, a list literal, or a primitive constant --
+    never escapes _rehydrate()."""
+
+
+_ALLOWED_AST_CLASSES = frozenset(
+    name for name in dir(ast)
+    if isinstance(getattr(ast, name, None), type) and issubclass(getattr(ast, name), ast.AST)
+)
+
+
+def _validate_and_build(node):
+    """Recursively validates a PARSED (never executed) expression tree and, only if
+    every node in it is one of a small allowed shape, constructs the corresponding
+    real Python object by calling real ast.* constructors directly -- never via
+    eval()/exec() on the source text. Raises _UnsafeDump on the first disallowed
+    construct, which _rehydrate() treats as an honest 'cannot reconstruct' (returns
+    None), the same posture this module already takes for every other honest-failure
+    case."""
+    if isinstance(node, ast.Call):
+        if not isinstance(node.func, ast.Name) or node.func.id not in _ALLOWED_AST_CLASSES:
+            raise _UnsafeDump(f"disallowed call target: {getattr(node.func, 'id', type(node.func).__name__)}")
+        if node.args:
+            raise _UnsafeDump("positional arguments not expected in ast.dump() output")
+        kwargs = {}
+        for kw in node.keywords:
+            if kw.arg is None:
+                raise _UnsafeDump("disallowed **kwargs expansion")
+            kwargs[kw.arg] = _validate_and_build(kw.value)
+        return getattr(ast, node.func.id)(**kwargs)
+    if isinstance(node, ast.List):
+        return [_validate_and_build(elt) for elt in node.elts]
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub) and isinstance(node.operand, ast.Constant):
+        # ast.dump() renders a negative-number Constant as e.g. "Constant(value=-1)" --
+        # Python's own expression parser reads the "-1" token as UnaryOp(USub,
+        # Constant(1)), not a single negative Constant, so this case must be handled
+        # explicitly rather than falling through to "disallowed node type".
+        return -node.operand.value
+    if isinstance(node, ast.Constant):
+        return node.value
+    raise _UnsafeDump(f"disallowed node type: {type(node).__name__}")
+
+
 def _rehydrate(transformation_dump: str, bindings: dict) -> Optional[ast.AST]:
     """Substitutes captured wildcard bindings back into the transformation pattern's
-    dump string, then reconstructs a real AST node from it via eval() against ast's
-    own module namespace (safe here: this string was produced by ast.dump() on a
-    real, already-parsed subtree earlier in this same process -- it is not
-    externally-supplied or model-generated text)."""
+    dump string, then reconstructs a real AST node from it WITHOUT eval()/exec() on
+    the substituted text.
+
+    Fixed 2026-09-28, closing a real sandbox-escape found during this project's own
+    adversarial integration review: the prior implementation called
+    `eval(hydrated, {"__builtins__": {}}, vars(ast))` -- safe only for text this
+    module's own extract_transformation() actually produced, but this function is
+    also reached from `apply_skill()`, which loads `transformation` from any on-disk
+    skill file via Skill.load()/load_latest() with ZERO prior content validation. A
+    hand-edited or corrupted skill file's `transformation` field reached this eval()
+    call directly; `{"__builtins__": {}}` blocks bare builtin-name lookups but not
+    the standard attribute-chain escape
+    (`().__class__.__base__.__subclasses__()...`), which needs no builtins at all --
+    confirmed exploitable by direct reproduction before this fix (a marker file was
+    written to disk purely as a side effect of computing this function's return
+    value, regardless of what that value was).
+
+    The fix: `ast.parse(hydrated, mode="eval")` only ever produces an INERT parse
+    tree -- parsing text is not executing it, unlike eval(). `_validate_and_build()`
+    then walks that parse tree and only ever constructs real objects for a small
+    allowed shape (a call to a real ast.* class name, keyword arguments, list
+    literals, primitive constants) -- anything else (attribute access, subscripting,
+    comprehensions, arbitrary names, arbitrary calls) is rejected before a single
+    real object is built, so there is no code-execution path left: nothing here ever
+    evaluates arbitrary text, it only ever recognizes-and-reconstructs one specific,
+    narrow shape or refuses."""
     import re
 
     def _sub(m):
@@ -316,7 +382,13 @@ def _rehydrate(transformation_dump: str, bindings: dict) -> Optional[ast.AST]:
 
     hydrated = re.sub(r"'__VSL_WC(\d+)'", _sub, transformation_dump)
     try:
-        return eval(hydrated, {"__builtins__": {}}, vars(ast))
+        parsed = ast.parse(hydrated, mode="eval").body
+    except SyntaxError:
+        return None
+    try:
+        return _validate_and_build(parsed)
+    except _UnsafeDump:
+        return None
     except Exception:
         return None
 

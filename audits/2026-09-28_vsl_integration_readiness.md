@@ -190,3 +190,158 @@ the structural matcher to verify* — never replace the structural decision itse
 **Nothing was retired in this pass.** No component was deleted or deprecated based on
 this integration alone — a full retirement audit of any of the above is out of scope
 here.
+
+## Phase 21 — adversarial integration review
+
+A genuinely independent, fresh (non-fork) agent reviewed this integration end to end
+per `.claude/skills/feral-independent-review/references/reviewer-checklist.md`,
+including running its own experiments against the real code rather than trusting this
+document's own framing. **It found one real, safety-critical defect and two real,
+lower-severity gaps — all three confirmed independently by direct re-reproduction
+before being fixed, and all three are now closed, with dedicated regression coverage.**
+This section is the "Known Risks" disclosure the earlier draft of this document cited
+but never wrote — a real, embarrassing gap in its own right, flagged by the same review
+and closed here.
+
+### Finding 1 (SAFETY-CRITICAL, FIXED): `matcher._rehydrate()`'s `eval()` was a real
+sandbox escape
+
+`_rehydrate()` reconstructed a transformation's AST via
+`eval(hydrated, {"__builtins__": {}}, vars(ast))`. This was safe *only* for content
+`extract_transformation()` itself produced — but `apply_skill()` (the real production
+entry point) reads `transformation` from `Skill.load()`/`load_latest()`, which perform
+**zero content validation**. `{"__builtins__": {}}` blocks bare-name builtin lookups
+but not the standard attribute-chain escape
+(`().__class__.__base__.__subclasses__()...`), which needs no builtins at all.
+**Independently reproduced before fixing**: a hand-crafted `transformation` string
+wrote a real marker file to disk purely as a side effect of computing `_rehydrate()`'s
+return value — the exploit ran regardless of what the function returned, meaning F1/F2
+never got a chance to matter; they never see the exploit because it never appears in
+any returned code string.
+
+This bug predates this integration (it was in the original experimental
+`diff_extract.py`, where it was research-grade code with no autonomous trigger and no
+persistent, disk-loaded, attacker-reachable skill files). What this integration
+changed is the blast radius: it wired the identical code into a path reachable by an
+unattended autonomous loop and persistent on-disk skill files that are never
+re-validated on load. **This is exactly the class of gap this project's own culture
+treats as unacceptable to leave undisclosed** (contrast with F1/F2's own honestly-named
+"known residual gap" — third-party C extensions — which is disclosed *and* has no
+simple fix; this one had a real, single-file fix and was undisclosed).
+
+**Fixed**: `_rehydrate()` no longer calls `eval()`/`exec()` at all.
+`ast.parse(hydrated, mode="eval")` produces an inert parse tree (parsing text is not
+executing it), and a new `_validate_and_build()` walks that tree, constructing a real
+object only for a small allowed shape (a call to a genuine `ast.*` class name, keyword
+arguments, list literals, primitive constants) — anything else (attribute access,
+subscripting, comprehensions, arbitrary names/calls) is rejected *before* a single real
+object is built, closing the code-execution path entirely rather than trying to
+enumerate more forbidden patterns. Verified: the exact exploit string, replayed against
+both `_rehydrate()` directly and the real `apply_skill()` entry point, is now a clean,
+honest `None` with zero side effects; every legitimate case (including a
+negative-number literal, which needed explicit handling since Python's own parser
+reads `-5` as `UnaryOp(USub, Constant(5))`, not a single negative `Constant`) still
+reconstructs correctly, confirmed against the full historical 15/15 suite plus two new
+dedicated regression checks.
+
+**Practical exploitability before this fix, stated precisely, not overstated**: LOW —
+nothing in the currently-wired automated pipeline writes attacker-influenceable content
+into a skill's `transformation` field (`extract_transformation()`, the only writer,
+always derives it from real `ast.dump()` output on parsed nodes). The vector required a
+hand-edited or otherwise-corrupted skill JSON file. But it was real, demonstrated, and
+undisclosed — fixed regardless of low current exploitability, not left as an accepted
+risk.
+
+### Finding 2 (FIXED): the documented "fails closed on any exception" contract was
+false for skill-loading
+
+`echo_adapter.py`'s own docstring claimed matcher exceptions are the only failure mode
+guarded against; in fact `_list_active_feature_keys()` and the `Skill.load_latest()`
+call inside `consult()`'s loop had no exception handling at all — a missing key or
+malformed JSON raised straight out of `runtime.consult()`/`echo_adapter.consult_file()`.
+`echo_projects.generate_project()` has no try/except around its own `consult_file()`
+call site, so this would have propagated out of `generate_project()` entirely.
+**Mitigating factor, confirmed directly**: both real callers of `generate_project()`
+(`autonomous_generate_project()`, `terminal_client.request_project_generation()`) do
+wrap it broadly, so this would not have crashed the server process — it would have
+silently disabled the entire `echo_projects` generation feature (not just VSL) on every
+call, the instant one skill file became corrupted, rather than VSL degrading
+gracefully to "as if it weren't there."
+
+**Fixed**: both `_list_active_feature_keys()` and `consult()`'s per-candidate
+`Skill.load_latest()` call are now wrapped in try/except, degrading to "skip this
+key"/"no match" — matching the fail-closed contract already applied to matcher
+exceptions. Verified with a real corrupted skill file (valid JSON, missing required
+keys) against `consult()`'s actual default (no explicit `feature_keys`) code path —
+the one `echo_adapter.py` uses in production, and the one the original 24-check suite
+never actually exercised (see Finding 2b).
+
+### Finding 2b (FIXED): a test-isolation gap that let Finding 2 go uncaught
+
+`runtime.py` originally did `from .schemas import SKILLS_DIR` — a copied name binding.
+Monkeypatching `schemas.SKILLS_DIR` (the pattern this codebase's own historical
+serialization test already establishes, and the pattern the original integration test
+suite used) silently did **not** affect `runtime.SKILLS_DIR`, which
+`_list_active_feature_keys()` actually reads. The original 24-check suite never
+noticed, because every one of its "isolated scratch root" checks supplied an explicit
+`feature_keys=` list — bypassing `_list_active_feature_keys()` entirely, and with it,
+the one code path that actually uses the module-level `SKILLS_DIR` binding in
+production. **Fixed**: `runtime.py` now does `from . import schemas` and references
+`schemas.SKILLS_DIR` throughout, so a monkeypatch on the schemas module genuinely takes
+effect everywhere. A new dedicated check confirms `runtime.schemas.SKILLS_DIR is
+schemas.SKILLS_DIR` and that the corrupted-store scenario above is caught via
+`consult()`'s real default code path, not just the explicit-`feature_keys` shortcut.
+
+### Finding 3 (FIXED): lifecycle promotion order was enforced at exactly one step
+
+Only `promote_to_active()` checked the skill's current `effective_lifecycle()`;
+`promote_to_verified()`/`promote_to_qualified()`/`mark_degraded()` were callable from
+any state at all — demonstrated live: a fresh `CANDIDATE` skill could jump straight to
+`QUALIFIED` with a trivial evidence string, and a `RETIRED` skill could be silently
+re-qualified. **The real production Skill A's own migration (this same integration
+pass) exhibits a benign instance of exactly this gap**: v1 was already
+effectively `QUALIFIED` (via legacy `status`/`held_out_verdict` fields) before
+`promote_to_verified()` was called on it, moving it "backward" to `VERIFIED` in its own
+recorded provenance, then forward again — harmless in this specific case (every
+evidence string cited is genuine and real, and the final `ACTIVE` promotion was
+correctly gated on `QUALIFIED`), but it proves the documented sequencing was decorative
+outside the one enforced step. **Not retroactively corrected** — Skill A's real
+v1-v4 files are left exactly as they are, per this project's own write-once,
+never-rewrite-history discipline; this note is the disclosure instead.
+
+**Fixed**: `promote_to_verified()` now requires `CANDIDATE`, `promote_to_qualified()`
+now requires `VERIFIED`, `mark_degraded()` now requires `ACTIVE` — each raises
+`ValueError` otherwise, mirroring `promote_to_active()`'s own pre-existing pattern.
+`quarantine()`/`retire()`/`supersede()` remain deliberately unguarded (callable from
+any state), since a safety-relevant removal should never itself be blocked. Verified
+directly: a CANDIDATE→QUALIFIED skip is rejected, re-qualifying a QUARANTINED skill is
+rejected, and — a genuine, adjacent discovery made while writing this specific
+test — a **stale in-memory `Skill` object** (e.g., a `v4` reference held after the real
+skill was quarantined to `v5` by a different code path) attempting a further
+transition is independently caught by the write-once persistence layer itself
+(`FileExistsError` on the version collision), not by the new lifecycle guard (which
+only inspects the in-memory object's own fields, not a fresh disk read) — a real,
+accepted limitation, disclosed rather than silently relied upon: callers should always
+operate on a freshly-loaded `Skill` object, not a stale reference, though the
+write-once layer provides a real backstop against silent corruption either way.
+
+### What held up genuinely well under adversarial attack, per the reviewer's own
+report
+
+The additive, disable-by-default design; F1/F2 running after VSL for the *returned
+code string* specifically; the shadow/active mode separation (shadow's proposed patch
+cannot reach the staged file or report); the quarantine-exclusion mechanism (once
+fixed, confirmed immediate, no restart); the conflict policy (confirmed deterministic
+under a real two-matching-skills scenario); the hash-preservation of legacy skill
+files; the `_pattern_for()` field-naming consistency between `runtime.py` and
+`matcher.apply_skill()`; and the Phase 9/10 decision discipline (not integrating
+RiverBrain/FAISS) — all confirmed correct under direct, adversarial testing, not just
+reading.
+
+### Post-fix status
+
+All 3 findings fixed, each with dedicated regression coverage (not just re-confirmed
+manually) in `scripts/verify_skill_ledger_integration.py`, now 34/34 passing (up from
+24/24 pre-review). The historical 15/15 experimental suite is unaffected. The real
+production Skill A remains cleanly `ACTIVE` at v4 — untouched by any of this session's
+fixes or their tests.

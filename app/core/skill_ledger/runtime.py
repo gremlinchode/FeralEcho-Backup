@@ -21,8 +21,20 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from . import matcher
-from .schemas import Skill, SKILLS_DIR, _DEGRADE_MIN_APPLICATIONS, _DEGRADE_FAILURE_RATE
+from . import schemas
+from .schemas import Skill, _DEGRADE_MIN_APPLICATIONS, _DEGRADE_FAILURE_RATE
 from .store import PRODUCTION_ROOT, append_jsonl, sha256_text
+
+# Deliberately NOT `from .schemas import SKILLS_DIR` (a copied name binding): every
+# reference below reads `schemas.SKILLS_DIR` through the module itself, so a test (or
+# a future caller) that monkeypatches `schemas.SKILLS_DIR` -- the same pattern this
+# codebase's own historical serialization test already establishes -- actually takes
+# effect here too. Fixed 2026-09-28 after the adversarial integration review found
+# the prior `from .schemas import SKILLS_DIR` copied the reference at import time,
+# silently decoupling this module's own default (no-`feature_keys`) code path from
+# any such monkeypatch -- exactly the path echo_adapter.consult_file() actually uses
+# in production, and exactly the path the integration test suite's own scratch-root
+# checks never exercised as a result (they all supplied explicit `feature_keys=`).
 
 APPLICATIONS_LOG = PRODUCTION_ROOT / "applications.jsonl"
 
@@ -72,11 +84,30 @@ class ConsultResult:
 def _list_active_feature_keys() -> list:
     """Every feature_key with at least one skill version on disk whose
     effective_lifecycle() is ACTIVE, using each key's LATEST version only (an older,
-    superseded version of an ACTIVE key is never separately considered)."""
-    if not SKILLS_DIR.exists():
+    superseded version of an ACTIVE key is never separately considered).
+
+    Fails closed on any per-key error (a malformed/corrupted skill file, a missing
+    required field, anything json.load() or Skill.load() can raise) -- fixed
+    2026-09-28 after the adversarial integration review found this function's
+    original, unguarded dict-key access could raise straight out of consult()/
+    consult_file(), contradicting this module's own documented "fails closed on any
+    exception" contract. One bad file now degrades to "this one feature_key is
+    skipped", never "no skill in the whole store can be consulted"."""
+    try:
+        if not schemas.SKILLS_DIR.exists():
+            return []
+        keys = sorted({p.name.rsplit(".v", 1)[0] for p in schemas.SKILLS_DIR.glob("*.v*.json")})
+    except Exception:
         return []
-    keys = sorted({p.name.rsplit(".v", 1)[0] for p in SKILLS_DIR.glob("*.v*.json")})
-    return [k for k in keys if (Skill.load_latest(k) or Skill("", "", "", {})).effective_lifecycle() == "ACTIVE"]
+    active = []
+    for k in keys:
+        try:
+            skill = Skill.load_latest(k)
+            if skill is not None and skill.effective_lifecycle() == "ACTIVE":
+                active.append(k)
+        except Exception:
+            continue  # one corrupted file must not take down the whole listing
+    return active
 
 
 def consult(code: str, fn_name: str, feature_keys: "list | None" = None) -> ConsultResult:
@@ -121,7 +152,14 @@ def consult(code: str, fn_name: str, feature_keys: "list | None" = None) -> Cons
     checked = []
     for fk in candidates:
         checked.append(fk)
-        skill = Skill.load_latest(fk)
+        try:
+            skill = Skill.load_latest(fk)
+        except Exception:
+            # Fails closed (2026-09-28 fix, same reasoning as _list_active_feature_keys()):
+            # a corrupted/malformed skill file for one candidate must degrade to "no
+            # match for this candidate", never propagate out of consult() and take
+            # down the caller's whole generation attempt.
+            continue
         if skill is None or skill.effective_lifecycle() != "ACTIVE":
             continue  # a key that WAS active at listing time but changed since -- re-checked live, not cached
         pattern = _pattern_for(skill)

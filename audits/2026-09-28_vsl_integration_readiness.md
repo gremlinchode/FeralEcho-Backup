@@ -345,3 +345,46 @@ manually) in `scripts/verify_skill_ledger_integration.py`, now 34/34 passing (up
 24/24 pre-review). The historical 15/15 experimental suite is unaffected. The real
 production Skill A remains cleanly `ACTIVE` at v4 — untouched by any of this session's
 fixes or their tests.
+
+## Phase 22 — succession
+
+`memory/skill_ledger/NEXT_ACTION.md` (production side, new this pass) and
+`memory/experiments/skill_ledger/NEXT_ACTION.md` (experimental/scientific side,
+updated with a pointer to the production file) together form the complete handoff:
+branch/HEAD/commit chain, exact reproduction commands, the real production skill's
+identity and lifecycle state, feature-flag/shadow/active-mode commands, rollback
+instructions, known risks (including this document's own Phase 21 findings), and next
+actions — sufficient for a future agent or human to continue with zero Claude-specific
+context.
+
+## Phase 23 — merge decision
+
+# READY FOR MERGE REVIEW
+
+Every one of this phase's own stated criteria is met with direct evidence, not
+narration: integration path implemented (Integration Commits 1-6); tests green (34/34
+integration suite, 15/15 historical suite, both re-confirmed after the final fix pass);
+VSL-disabled baseline preserved (verified directly — byte-identical F1/F2 results,
+zero VSL writes); shadow mode works (verified directly — matches and computes without
+ever applying or leaking into staged output); bounded active path works (verified
+directly against the real, single production skill, with real F1/F2 re-verification of
+the corrected code); rollback works (verified directly — immediate exclusion, no
+restart, and the write-once layer independently backstops even a stale-object misuse
+case); provenance works (verified directly — feature_key/version always traceable);
+historical experiments preserved (byte-identical content hashes for both real skills,
+zero behavior change in the 15/15 suite); **no known fatal integration defect** — the
+one safety-critical defect a genuinely independent adversarial review found was fixed,
+independently re-verified closed by direct re-reproduction of the original exploit,
+and given dedicated regression coverage alongside two lower-severity gaps found in the
+same review.
+
+**This is not a self-graded "done."** The review that found the critical defect was a
+fresh, non-fork agent with no stake in this integration's own narrative, run
+specifically because this project's own culture (and its `feral-independent-review`
+skill) holds that the context which built something is structurally bad at grading its
+own work. Its findings were independently re-reproduced before being trusted, not
+taken on faith, and its "NOT READY" verdict is the reason this document exists in its
+current, corrected form rather than the version that shipped before the review ran.
+
+Gremlin + ChatGPT should review before merge into `main` — this document, and the two
+`NEXT_ACTION.md` succession files, are the complete record for that review.

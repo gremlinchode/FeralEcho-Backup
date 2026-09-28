@@ -1826,12 +1826,25 @@ def generate_code_from_plan(plan: str, temperature: float | None = None, trace_i
             f"Plan to implement:\n{plan}"
         )
 
-        # Resolve model name before querying so we can track it. Uses
-        # "self_edit_coding" (Finding 35 fix, 2026-07-17), not "coding" —
-        # a genuinely separate RiverBrain bucket from conversational coding
-        # help, since choose_model()'s entropy/ranking here was previously
-        # reading a stat self-edit itself never contributed to.
-        model_name, _ = choose_model(code_prompt, task_type="self_edit_coding")
+        # Attribution fix (2026-09-27, audits/2026-09-22_
+        # claude_codex_reconciliation_and_oct1_roadmap.md Part II/Part IX,
+        # re-verified directly against current source before fixing):
+        # this used to call choose_model(task_type="self_edit_coding") here
+        # and credit ITS return value as "model_name" — but echo_query() has
+        # no model= parameter and no way to be bound to that choice; for
+        # task_type="coding" (confirmed not in river_deliberation.py's
+        # DIRECT_ECHO_TASKS bypass set) it always runs full council
+        # deliberation + synthesis internally, so the returned code's real
+        # producer was never provably the model choose_model() picked. The
+        # disconnected choose_model() call served no other purpose at this
+        # call site (its return value was never used to select or bind
+        # anything) — removed rather than kept as dead weight. echo:latest
+        # is the one model provably always responsible for the delivered
+        # text on this path (it performs the synthesis step every time),
+        # the same fact Finding 44 already established and relied on for
+        # routes_echo_studio.py's own, separate attribution fix.
+        from app.core.river_deliberation import ECHO_SYNTHESIS_MODEL
+        model_name = ECHO_SYNTHESIS_MODEL
         code = echo_query(code_prompt, task_type="coding", temperature=temperature, trace_id=trace_id)
 
         if not code:

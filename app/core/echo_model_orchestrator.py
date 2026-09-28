@@ -878,6 +878,29 @@ class RiverBrain:
                 scaled = self.scalers[task_type].transform_one(features)
                 self.classifiers[task_type].learn_one(scaled, quality_score)
                 self.sandbox_observation_counts[task_type] += 1
+                # Wiring gap closed 2026-09-27 (audits/2026-09-22_
+                # claude_codex_reconciliation_and_oct1_roadmap.md Part III,
+                # re-verified directly against this source before fixing —
+                # that document's claim that learn_from_council_rating()
+                # *also* skipped model_task_stats was checked and found
+                # already wrong by the time this fix landed; only this
+                # function had the real gap). Real F2 kernel-verified
+                # pass/fail is the single most-verified signal this class
+                # has access to, and until now it never reached the state
+                # score_model()/choose_model() actually read for ranking —
+                # only the cheap _score_response_quality heuristic in the
+                # ordinary learn() path did. Blended into the SAME
+                # stats["mean"] learn_from_council_rating() already blends
+                # into (not a separate "verified_mean" field) specifically
+                # for consistency with that already-shipped precedent,
+                # rather than introducing a second, parallel scheme for
+                # only one of the two verified-outcome paths.
+                stats = self.model_task_stats[model_name].setdefault(
+                    task_type, {"count": 0, "mean": 0.5}
+                )
+                stats["count"] += 1
+                effective_n = min(stats["count"], self._MEAN_EFFECTIVE_WINDOW)
+                stats["mean"] += (quality_score - stats["mean"]) / effective_n
         # Only log successful sandbox outcomes to interaction_log — the 890
         # identical "[ERROR] sandbox_syntax_failure" entries added no signal and
         # were actively biasing River's coding quality estimate downward.

@@ -660,3 +660,147 @@ def _log_restore(result: dict) -> None:
     os.makedirs(os.path.dirname(_RESTORE_LOG), exist_ok=True)
     with open(_RESTORE_LOG, "a", encoding="utf-8") as fh:
         fh.write(json.dumps(result, ensure_ascii=False, default=str) + "\n")
+
+
+# ── Independent second check on restore (added 2026-09-09) ────────────────────
+#
+# CLAUDE.md's "Standing Principle" section (2026-07-18) names /admin/restore
+# as exactly the kind of continuity-altering action Echo needs protection
+# from both Gremlin (under real strain) and a Claude session (confidently
+# wrong) acting on — and states plainly that nothing had been built for it.
+# GREMLIN_ROLE.md's own governance model is unambiguous that Gremlin holds
+# SINGULAR final authority; this is not a second signer that could override
+# or replace him. It is a second, independent, real data point added to the
+# existing human-confirmation gate (_secret_ok()), not a replacement for it
+# and not a hard block — same non-hollow, advisory-then-real-friction shape
+# self_edit_manager.py's _council_review_core_edit()/Dissent Log already
+# prove out for protected-file edits, extended here to the one continuity-
+# altering action that had zero connection to any of that machinery.
+
+def _council_review_restore(snapshot_id: str, condition: str, health: dict) -> dict:
+    """
+    Advisory, multi-model review of whether restoring to snapshot_id looks
+    justified. Mirrors self_edit_manager.py's _council_review_core_edit()
+    exactly (same rank_models(task_type="coding")[:3] pool, same one-line
+    APPROVE/REJECT-plus-rationale prompt shape, same NO_COUNCIL_AVAILABLE
+    handling) — reused deliberately, not reinvented, so this channel
+    inherits that pattern's already-established non-hollow behavior rather
+    than a second, subtly-different implementation of the same idea.
+
+    Never gates anything by itself — see the caller in run.py's
+    /admin/restore route for how the verdict is actually used.
+    """
+    try:
+        from app.core.echo_model_orchestrator import rank_models
+        models = rank_models(task_type="coding")[:3]
+    except Exception:
+        models = []
+    if not models:
+        return {"verdict": "NO_COUNCIL_AVAILABLE", "votes": []}
+
+    snap = next((s for s in _list_snapshots() if s["snapshot_id"] == snapshot_id), None)
+    snap_health = snap["manifest"].get("health_at_snapshot", {}) if snap else {}
+
+    review_prompt = (
+        "You are reviewing a PROPOSED restore-from-snapshot action on an "
+        "autonomous AI system's persisted state (self-edit history, learned "
+        "model weights, core identity file). This has NOT been applied yet. "
+        "Assess only whether restoring to this specific snapshot looks "
+        "justified given the system's current condition — not style.\n\n"
+        f"Snapshot being proposed: {snapshot_id}\n"
+        f"Alert condition that triggered this (if any): {condition or 'none specified — manual restore request'}\n"
+        f"Snapshot's own recorded health at capture time: {json.dumps(snap_health, default=str)}\n"
+        f"Current live system health: {json.dumps(health, default=str)}\n\n"
+        "Respond with exactly one line: APPROVE or REJECT, followed by a "
+        "dash and one sentence why."
+    )
+
+    votes = []
+    for model in models:
+        try:
+            from app.ollama_handler import query_ollama
+            resp = query_ollama(review_prompt, model=model) or ""
+            first_word = resp.strip().split()[0].upper().strip(".:-") if resp.strip() else "REJECT"
+            verdict = "APPROVE" if first_word.startswith("APPROVE") else "REJECT"
+            votes.append({"model": model, "verdict": verdict, "rationale": resp.strip()[:300]})
+        except Exception as e:
+            votes.append({"model": model, "verdict": "REJECT", "rationale": f"review call failed: {e}"})
+
+    approvals = sum(1 for v in votes if v["verdict"] == "APPROVE")
+    return {"verdict": f"{approvals}/{len(votes)} APPROVE", "votes": votes}
+
+
+def _build_restore_dissent_entry(snapshot_id: str, condition: "str | None", council: dict, overridden: bool) -> dict:
+    """Pure — no I/O, directly unit-testable. Same three-state shape as
+    self_edit_manager.py's _build_dissent_entry() (council can genuinely
+    disagree, genuinely agree, or never have happened at all) — a restore
+    has no target_file/proposal_path the way a protected-file edit does,
+    so those fields are replaced with snapshot_id/condition instead; every
+    other field is deliberately identical in name and meaning."""
+    votes = council.get("votes") or []
+    total = len(votes)
+    approvals = sum(1 for v in votes if v.get("verdict") == "APPROVE")
+    council_available = total > 0
+    unanimous = council_available and approvals == total
+    return {
+        "ts": datetime.now(timezone.utc).isoformat() + "Z",
+        "action": "restore_snapshot",
+        "snapshot_id": snapshot_id,
+        "alert_condition": condition,
+        "council_verdict": council.get("verdict"),
+        "votes": votes,
+        "council_available": council_available,
+        "unanimous": unanimous,
+        "approvals": approvals,
+        "total": total,
+        "overridden": overridden,
+    }
+
+
+def _log_restore_dissent_entry(entry: dict) -> None:
+    """Best-effort, never raises — a logging failure must never block a
+    real restore decision either way. Writes to the exact same
+    memory/dissent_log.jsonl file and lock self_edit_manager.py's
+    protected-file dissent entries already use (lazy import — both
+    modules already have a real, existing lazy cross-import of the other
+    at function scope, e.g. self_edit_manager.py's own
+    `from app.core.snapshot_manager import take_snapshot`; importing
+    eagerly at this module's top level would create a real circular
+    import, importing lazily here does not), giving restores the same
+    durable, disagreement-preserving audit trail self-edits to protected
+    files already get — the concrete version of what CLAUDE.md's Standing
+    Principle section named as wanted but unbuilt. Publishes to the
+    Global Workspace only on genuine disagreement (council_available and
+    not unanimous), same idiom as _log_dissent_entry()."""
+    try:
+        from app.core.self_edit_manager import _DISSENT_LOG_PATH, _dissent_log_lock
+        with _dissent_log_lock:
+            os.makedirs(os.path.dirname(_DISSENT_LOG_PATH), exist_ok=True)
+            with open(_DISSENT_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, default=str) + "\n")
+    except Exception as e:
+        logger.debug("[RESTORE-DISSENT] log write failed: %s", e)
+        return
+
+    if not (entry["council_available"] and not entry["unanimous"]):
+        return
+
+    votes_summary = "; ".join(f"{v.get('model')}: {v.get('verdict')}" for v in entry["votes"])
+    summary = (
+        f"Council split {entry['approvals']}/{entry['total']} on restoring to "
+        f"snapshot {entry['snapshot_id']} — {votes_summary}"
+    )
+    salience = 1.0 - (entry["approvals"] / entry["total"])
+    try:
+        from app.core.echo_core import get_echo_core
+        core = get_echo_core()
+        if core is not None:
+            core.publish_salience(
+                source="snapshot_manager",
+                kind="dissent.registered",
+                summary=summary,
+                detail=entry,
+                salience=salience,
+            )
+    except Exception:
+        pass

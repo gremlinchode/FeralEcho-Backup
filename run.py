@@ -862,20 +862,77 @@ def admin_restore():
     Restore from a named snapshot.  Human must supply snapshot_id explicitly.
     No auto-restore path exists.  Returns the full step-by-step result dict.
 
+    Added 2026-09-09 (PENDING_DECISIONS.md, Part 2 of the plan closing the
+    Standing Principle's /admin/restore gap): before restoring, a real,
+    independent multi-model council review runs (same non-hollow pattern
+    self_edit_manager.py's propose_core_edit() already proves out) and is
+    logged to the Dissent Log either way. This is additive, not a
+    replacement for _secret_ok() below or for Gremlin's own singular final
+    authority (see GREMLIN_ROLE.md) — a clean majority REJECT does not
+    block the restore, it requires one more explicit confirmation
+    (override_council_concern: true) before proceeding, the same
+    "show it, then apply after explicit confirmation, even when it seems
+    obviously correct" shape GREMLIN_ROLE.md's own standing rules already
+    use elsewhere. If the council can't be reached, this behaves exactly
+    as before — never a new way for an emergency restore to be blocked.
+
     Example:
       curl -X POST http://localhost:5000/admin/restore \\
            -H 'Content-Type: application/json' \\
            -d '{"snapshot_id": "20260701T214512Z"}'
+
+      # after a REJECT verdict, to proceed anyway:
+      curl -X POST http://localhost:5000/admin/restore \\
+           -H 'Content-Type: application/json' \\
+           -d '{"snapshot_id": "20260701T214512Z", "override_council_concern": true}'
     """
     try:
         data = request.json or {}
         if not _secret_ok(data):
             return jsonify({"error": "unauthorized"}), 403
-        from app.core.snapshot_manager import restore_snapshot
+        from app.core.snapshot_manager import (
+            restore_snapshot, _collect_health, _council_review_restore,
+            _build_restore_dissent_entry, _log_restore_dissent_entry,
+        )
         snapshot_id = data.get("snapshot_id", "").strip()
         if not snapshot_id:
             return jsonify({"error": "snapshot_id required"}), 400
+
+        condition = data.get("alert_condition")
+        override = bool(data.get("override_council_concern", False))
+
+        try:
+            health = _collect_health()
+        except Exception:
+            health = {}
+        try:
+            council = _council_review_restore(snapshot_id, condition, health)
+        except Exception as ce:
+            logger.warning("[SNAPSHOT] council review failed, proceeding as if unavailable: %s", ce)
+            council = {"verdict": "NO_COUNCIL_AVAILABLE", "votes": []}
+
+        entry = _build_restore_dissent_entry(snapshot_id, condition, council, override)
+        _log_restore_dissent_entry(entry)
+
+        clean_reject = (
+            entry["council_available"] and not entry["unanimous"] and entry["approvals"] == 0
+        )
+        if clean_reject and not override:
+            logger.warning(
+                "[SNAPSHOT] /admin/restore: council review flagged snapshot=%s (%s) — "
+                "not restoring without override_council_concern=true",
+                snapshot_id, council.get("verdict"),
+            )
+            return jsonify({
+                "restored": False,
+                "reason": "council_review_flagged",
+                "council": council,
+                "note": "Restore was NOT performed. Re-submit with "
+                        "\"override_council_concern\": true to proceed anyway.",
+            }), 409
+
         result = restore_snapshot(snapshot_id)
+        result["council_review"] = council
         status_code = 200 if result.get("success") else 500
         return jsonify(result), status_code
     except Exception as e:

@@ -452,6 +452,48 @@ check("dissent_log_hook: real intact hook", r["pass"], True, r["evidence"])
 r = ll._evaluate_dissent_log_hook(None)
 check("dissent_log_hook: propose_core_edit() not found at all", r["pass"], False, r["evidence"])
 
+# ── 15b. restore_council_gate ─────────────────────────────────────────────
+# The gate closing the Standing Principle's /admin/restore gap (2026-09-09).
+# Same source-anchor + ground-truth-coverage shape as self_model_drift.
+fake_restore_block = (
+    "    result = restore_snapshot(snapshot_id)\n"
+    "    return jsonify(result), 200\n"
+)
+r = ll._evaluate_restore_council_gate(fake_restore_block, [], [])
+check("restore_council_gate: review+dissent chain removed", r["pass"], False, r["evidence"])
+
+real_restore_block = (
+    "    council = _council_review_restore(snapshot_id, condition, health)\n"
+    "    entry = _build_restore_dissent_entry(snapshot_id, condition, council, override)\n"
+    "    _log_restore_dissent_entry(entry)\n"
+    "    result = restore_snapshot(snapshot_id)\n"
+)
+r = ll._evaluate_restore_council_gate(real_restore_block, [], [])
+check("restore_council_gate: real intact chain, no real restores yet", r["pass"], True, r["evidence"])
+
+r = ll._evaluate_restore_council_gate(None, [], [])
+check("restore_council_gate: admin_restore() not found at all", r["pass"], False, r["evidence"])
+
+# Pre-deployment historical restores with no dissent counterpart must be
+# correctly EXCLUDED, not treated as a false failure — the exact real
+# situation found live in memory/restore_log.jsonl (4 real 2026-07-01
+# entries, two months before this gate existed).
+old_restore = [{"snapshot_id": "old_snap_001", "timestamp_utc": "2026-07-01T21:48:35+00:00"}]
+r = ll._evaluate_restore_council_gate(real_restore_block, old_restore, [])
+check("restore_council_gate: pre-deployment restore correctly excluded", r["pass"], True, r["evidence"])
+
+# A real post-deployment restore WITHOUT a matching dissent entry — the
+# chain exists in source but isn't actually producing a record.
+new_restore_no_dissent = [{"snapshot_id": "new_snap_001", "timestamp_utc": "2026-09-09T12:00:00+00:00"}]
+r = ll._evaluate_restore_council_gate(real_restore_block, new_restore_no_dissent, [])
+check("restore_council_gate: post-deployment restore missing dissent record", r["pass"], False, r["evidence"])
+
+# A real post-deployment restore WITH a matching dissent entry — genuine
+# ground-truth coverage confirmed.
+matching_dissent = [{"snapshot_id": "new_snap_001", "action": "restore_snapshot"}]
+r = ll._evaluate_restore_council_gate(real_restore_block, new_restore_no_dissent, matching_dissent)
+check("restore_council_gate: post-deployment restore WITH matching dissent record", r["pass"], True, r["evidence"])
+
 # ── 16. seam_engine ──────────────────────────────────────────────────────
 # Historical fakes this check exists to catch: check_pair() silently
 # degrading into flagging every reading as a seam (noise, not signal), or

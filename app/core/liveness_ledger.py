@@ -84,6 +84,7 @@ _WINDOWS_DAYS = {
     "valence_self_report": None,  # point-in-time consistency check, not time-windowed
     "reflection_shard_generation": 1,
     "dissent_log_hook": None,  # static source-invariant, same shape as wolf_friction_bridge
+    "restore_council_gate": None,  # static source-invariant + ground-truth coverage cross-check, not time-windowed
     "seam_engine": None,  # functional canary, not time-windowed — same shape as task_type_classifier
     "code_verification": None,  # functional canary, not time-windowed
     "self_knowledge_verification": None,  # functional canary, not time-windowed
@@ -450,6 +451,131 @@ def _check_dissent_log_hook() -> dict:
         # bridge's 800 chars would reach.
         block = source[idx:idx + 6000]
     return _evaluate_dissent_log_hook(block)
+
+
+# ── restore_council_gate — /admin/restore's second, independent check ────
+# Added 2026-09-09 (CLAUDE.md's Standing Principle section; PENDING_DECISIONS
+# Part 2 of the plan closing that gap). Two-part, same combined shape as
+# self_model_drift: a static source-anchor half (does the route still call
+# the review/logging hooks at all) plus a live ground-truth half (did any
+# real restore that actually happened get a corresponding Dissent Log
+# record, independent of the route's own self-report).
+
+_RESTORE_LOG_PATH = os.path.join(_MEMORY_DIR, "restore_log.jsonl")
+_RESTORE_DISSENT_LOG_PATH = os.path.join(_MEMORY_DIR, "dissent_log.jsonl")
+
+# Real, live-checked before this was added: memory/restore_log.jsonl already
+# contained 4 real entries from 2026-07-01 (development-era testing, two
+# months before this gate existed) with no dissent-log counterpart by
+# construction — cross-checking all of history would make this check
+# permanently, falsely FAIL on data that predates the mechanism it's
+# checking. Same pre-fix/post-fix transition handling this codebase already
+# uses elsewhere (e.g. CLAUDE.md Finding 48's dry-run-success-timestamp
+# skip-list) — only restores at/after this gate's own deployment are
+# cross-checked; older ones are neither expected nor required to have one.
+_RESTORE_COUNCIL_GATE_DEPLOYED_AT = "2026-09-09T00:00:00+00:00"
+
+
+def _read_jsonl_tail(path: str, n: int) -> list:
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            lines = f.readlines()[-n:]
+        out = []
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                out.append(json.loads(line))
+            except Exception:
+                continue
+        return out
+    except Exception:
+        return []
+
+
+def _evaluate_restore_council_gate(call_site_block: "str | None", real_restores: list, real_dissent_entries: list) -> dict:
+    """Pure — no I/O beyond what the caller already gathered. Two
+    independent failure modes checked together, same reasoning as
+    self_model_drift's own combined static+ground-truth shape: the source
+    anchor catches a future edit silently removing the review call; the
+    ground-truth half catches the review call still existing in source but
+    somehow not actually producing a record for a real restore (e.g. a
+    future refactor that calls the functions in the wrong order, or wraps
+    them in a try/except that swallows the real call)."""
+    if call_site_block is None:
+        return _result(
+            False,
+            "Could not locate admin_restore()'s source in run.py at all — "
+            "either it moved (update this check's anchor) or the route was "
+            "removed. Failing closed either way.",
+        )
+    calls_review = bool(re.search(r"_council_review_restore\s*\(", call_site_block))
+    calls_build = bool(re.search(r"_build_restore_dissent_entry\s*\(", call_site_block))
+    calls_log = bool(re.search(r"_log_restore_dissent_entry\s*\(", call_site_block))
+    if not (calls_review and calls_build and calls_log):
+        return _result(
+            False,
+            f"/admin/restore no longer calls the full review+dissent chain as "
+            f"expected (calls_review={calls_review}, calls_build={calls_build}, "
+            f"calls_log={calls_log}) — a future edit may have silently removed "
+            f"or reordered it.",
+        )
+
+    post_deploy_restores = [
+        r for r in real_restores
+        if (r.get("timestamp_utc") or "") >= _RESTORE_COUNCIL_GATE_DEPLOYED_AT
+    ]
+    if not post_deploy_restores:
+        return _result(
+            True,
+            "admin_restore() still calls the full review+dissent chain "
+            "(source-anchor check passed). No real restore has occurred "
+            "since this gate was deployed — nothing to ground-truth "
+            "cross-check against yet, honestly reported as such rather "
+            "than a false pass on activity that hasn't happened. "
+            f"({len(real_restores)} pre-deployment historical restore(s) in "
+            "restore_log.jsonl are correctly excluded, not silently ignored.)",
+            {"status": "no_real_restores_since_deployment"},
+        )
+
+    dissent_snapshot_ids = {
+        e.get("snapshot_id") for e in real_dissent_entries
+        if e.get("action") == "restore_snapshot"
+    }
+    missing = [
+        r.get("snapshot_id") for r in post_deploy_restores
+        if r.get("snapshot_id") not in dissent_snapshot_ids
+    ]
+    if missing:
+        return _result(
+            False,
+            f"Source-anchor check passed, but {len(missing)} real restore(s) "
+            f"since deployment have NO corresponding entry in dissent_log.jsonl "
+            f"(missing snapshot_ids: {missing[:5]}) — the review/logging chain "
+            f"exists in source but isn't actually producing a record for real "
+            f"restores.",
+        )
+    return _result(
+        True,
+        f"admin_restore() still calls the full review+dissent chain, and all "
+        f"{len(post_deploy_restores)} real restore(s) since deployment have a "
+        f"corresponding Dissent Log record — the gate is genuinely producing "
+        f"evidence, not just present in source.",
+    )
+
+
+def _check_restore_council_gate() -> dict:
+    source = _read_text(_RUN_PY_PATH)
+    block = None
+    idx = source.find('@app.route("/admin/restore"')
+    if idx != -1:
+        block = source[idx:idx + 4000]
+    real_restores = _read_jsonl_tail(_RESTORE_LOG_PATH, 50)
+    real_dissent_entries = _read_jsonl_tail(_RESTORE_DISSENT_LOG_PATH, 200)
+    return _evaluate_restore_council_gate(block, real_restores, real_dissent_entries)
 
 
 # ── reflection_meta_synthesis_hook — reflection_shard.py's ────────────────
@@ -3686,6 +3812,7 @@ _CHECKS = (
     "valence_self_report",
     "reflection_shard_generation",
     "dissent_log_hook",
+    "restore_council_gate",
     "seam_engine",
     "code_verification",
     "self_knowledge_verification",
@@ -3765,6 +3892,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "valence_self_report": _check_valence_self_report,
         "reflection_shard_generation": _check_reflection_shard_generation,
         "dissent_log_hook": _check_dissent_log_hook,
+        "restore_council_gate": _check_restore_council_gate,
         "seam_engine": _check_seam_engine,
         "code_verification": _check_code_verification,
         "self_knowledge_verification": _check_self_knowledge_verification,

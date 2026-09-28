@@ -1,0 +1,286 @@
+{
+  "pid": 37465,
+  "producer_pid": 37452,
+  "restored": {
+    "candidate_A": {
+      "score": 1.0,
+      "n": 8
+    },
+    "candidate_B": {
+      "score": 0.0,
+      "n": 8
+    }
+  },
+  "same_stats": true,
+  "heldout": {
+    "selected": "candidate_A",
+    "correct": 24,
+    "n": 24,
+    "rows": [
+      {
+        "input": [
+          100,
+          3,
+          0
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          101,
+          3,
+          -1
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          102,
+          3,
+          -2
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          103,
+          3,
+          -3
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          104,
+          3,
+          -4
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          105,
+          3,
+          -5
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          106,
+          3,
+          -6
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          107,
+          3,
+          -7
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          108,
+          3,
+          -8
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          109,
+          3,
+          -9
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          110,
+          3,
+          -10
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          111,
+          3,
+          -11
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          112,
+          3,
+          -12
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          113,
+          3,
+          -13
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          114,
+          3,
+          -14
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          115,
+          3,
+          -15
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          116,
+          3,
+          -16
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          117,
+          3,
+          -17
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          118,
+          3,
+          -18
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          119,
+          3,
+          -19
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          120,
+          3,
+          -20
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          121,
+          3,
+          -21
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          122,
+          3,
+          -22
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      },
+      {
+        "input": [
+          123,
+          3,
+          -23
+        ],
+        "selected": "candidate_A",
+        "actual": 103,
+        "expected": 103,
+        "correct": true
+      }
+    ]
+  }
+}

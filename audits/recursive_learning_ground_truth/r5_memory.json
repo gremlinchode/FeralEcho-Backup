@@ -1,0 +1,96 @@
+{
+  "unique": {
+    "ntotal": 2,
+    "ids": [
+      "alpha",
+      "beta"
+    ],
+    "before": {
+      "old_alpha": [
+        [
+          "old alpha",
+          1.0,
+          {}
+        ]
+      ],
+      "revised_alpha": [
+        [
+          "old alpha",
+          0.0,
+          {}
+        ]
+      ],
+      "beta": [
+        [
+          "beta",
+          1.0,
+          {}
+        ]
+      ]
+    },
+    "after_reload": {
+      "old_alpha": [
+        [
+          "old alpha",
+          1.0,
+          {}
+        ]
+      ],
+      "revised_alpha": [
+        [
+          "old alpha",
+          0.0,
+          {}
+        ]
+      ],
+      "beta": [
+        [
+          "beta",
+          1.0,
+          {}
+        ]
+      ]
+    }
+  },
+  "duplicate": {
+    "ntotal": 3,
+    "ids": [
+      "alpha",
+      "beta"
+    ],
+    "before": {
+      "old_alpha": [
+        [
+          "revised alpha",
+          1.0,
+          {}
+        ]
+      ],
+      "revised_alpha": [
+        [
+          "beta",
+          1.0,
+          {}
+        ]
+      ],
+      "beta": []
+    },
+    "after_reload": {
+      "old_alpha": [
+        [
+          "revised alpha",
+          1.0,
+          {}
+        ]
+      ],
+      "revised_alpha": [
+        [
+          "beta",
+          1.0,
+          {}
+        ]
+      ],
+      "beta": []
+    }
+  }
+}

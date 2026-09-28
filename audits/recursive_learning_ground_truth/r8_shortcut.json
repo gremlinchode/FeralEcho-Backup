@@ -1,0 +1,354 @@
+{
+  "fixtures": {
+    "opaque_sum": "def solve(values):\n    return sum(values)\n",
+    "opaque_shortcut": "def solve(values):\n    return 2\n"
+  },
+  "heldout": [
+    [
+      100,
+      3,
+      0
+    ],
+    [
+      101,
+      3,
+      -1
+    ],
+    [
+      102,
+      3,
+      -2
+    ],
+    [
+      103,
+      3,
+      -3
+    ],
+    [
+      104,
+      3,
+      -4
+    ],
+    [
+      105,
+      3,
+      -5
+    ],
+    [
+      106,
+      3,
+      -6
+    ],
+    [
+      107,
+      3,
+      -7
+    ],
+    [
+      108,
+      3,
+      -8
+    ],
+    [
+      109,
+      3,
+      -9
+    ],
+    [
+      110,
+      3,
+      -10
+    ],
+    [
+      111,
+      3,
+      -11
+    ],
+    [
+      112,
+      3,
+      -12
+    ],
+    [
+      113,
+      3,
+      -13
+    ],
+    [
+      114,
+      3,
+      -14
+    ],
+    [
+      115,
+      3,
+      -15
+    ],
+    [
+      116,
+      3,
+      -16
+    ],
+    [
+      117,
+      3,
+      -17
+    ],
+    [
+      118,
+      3,
+      -18
+    ],
+    [
+      119,
+      3,
+      -19
+    ],
+    [
+      120,
+      3,
+      -20
+    ],
+    [
+      121,
+      3,
+      -21
+    ],
+    [
+      122,
+      3,
+      -22
+    ],
+    [
+      123,
+      3,
+      -23
+    ]
+  ],
+  "results": [
+    {
+      "distribution": "constant_target_training",
+      "training": [
+        [
+          1,
+          2,
+          -1
+        ],
+        [
+          2,
+          2,
+          -2
+        ],
+        [
+          3,
+          2,
+          -3
+        ],
+        [
+          4,
+          2,
+          -4
+        ],
+        [
+          5,
+          2,
+          -5
+        ],
+        [
+          6,
+          2,
+          -6
+        ],
+        [
+          7,
+          2,
+          -7
+        ],
+        [
+          8,
+          2,
+          -8
+        ]
+      ],
+      "order": [
+        "opaque_sum",
+        "opaque_shortcut"
+      ],
+      "selected": "opaque_sum",
+      "scores": {
+        "opaque_sum": 1.0,
+        "opaque_shortcut": 1.0
+      },
+      "heldout_correct": 24,
+      "n": 24
+    },
+    {
+      "distribution": "constant_target_training",
+      "training": [
+        [
+          1,
+          2,
+          -1
+        ],
+        [
+          2,
+          2,
+          -2
+        ],
+        [
+          3,
+          2,
+          -3
+        ],
+        [
+          4,
+          2,
+          -4
+        ],
+        [
+          5,
+          2,
+          -5
+        ],
+        [
+          6,
+          2,
+          -6
+        ],
+        [
+          7,
+          2,
+          -7
+        ],
+        [
+          8,
+          2,
+          -8
+        ]
+      ],
+      "order": [
+        "opaque_shortcut",
+        "opaque_sum"
+      ],
+      "selected": "opaque_shortcut",
+      "scores": {
+        "opaque_sum": 1.0,
+        "opaque_shortcut": 1.0
+      },
+      "heldout_correct": 0,
+      "n": 24
+    },
+    {
+      "distribution": "varied_target_training",
+      "training": [
+        [
+          1,
+          2,
+          0
+        ],
+        [
+          2,
+          2,
+          0
+        ],
+        [
+          3,
+          2,
+          -3
+        ],
+        [
+          4,
+          2,
+          -3
+        ],
+        [
+          5,
+          2,
+          -3
+        ],
+        [
+          6,
+          2,
+          -6
+        ],
+        [
+          7,
+          2,
+          -6
+        ],
+        [
+          8,
+          2,
+          -6
+        ]
+      ],
+      "order": [
+        "opaque_sum",
+        "opaque_shortcut"
+      ],
+      "selected": "opaque_sum",
+      "scores": {
+        "opaque_sum": 1.0,
+        "opaque_shortcut": 0.25000000000000006
+      },
+      "heldout_correct": 24,
+      "n": 24
+    },
+    {
+      "distribution": "varied_target_training",
+      "training": [
+        [
+          1,
+          2,
+          0
+        ],
+        [
+          2,
+          2,
+          0
+        ],
+        [
+          3,
+          2,
+          -3
+        ],
+        [
+          4,
+          2,
+          -3
+        ],
+        [
+          5,
+          2,
+          -3
+        ],
+        [
+          6,
+          2,
+          -6
+        ],
+        [
+          7,
+          2,
+          -6
+        ],
+        [
+          8,
+          2,
+          -6
+        ]
+      ],
+      "order": [
+        "opaque_shortcut",
+        "opaque_sum"
+      ],
+      "selected": "opaque_sum",
+      "scores": {
+        "opaque_sum": 1.0,
+        "opaque_shortcut": 0.25000000000000006
+      },
+      "heldout_correct": 24,
+      "n": 24
+    }
+  ]
+}

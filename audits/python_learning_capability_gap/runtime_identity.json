@@ -1,0 +1,51 @@
+{
+  "pid": 7644,
+  "method": "lsof -a -p 7644 -d txt -Fn (read-only)",
+  "mapped_interpreter": [
+    "/Users/richietate/miniforge3/envs/feral_echo/bin/python3.12"
+  ],
+  "native_packages": [
+    "81d243bd2c585b0f4821__mypyc.cpython-312-darwin.so",
+    "Cython",
+    "PIL",
+    "brian2",
+    "charset_normalizer",
+    "faiss",
+    "jiter",
+    "kiwisolver",
+    "llvmlite",
+    "lxml",
+    "markupsafe",
+    "matplotlib",
+    "mlx",
+    "numba",
+    "numpy",
+    "pandas",
+    "psutil",
+    "pydantic_core",
+    "regex",
+    "river",
+    "safetensors",
+    "scipy",
+    "sentencepiece",
+    "sklearn",
+    "sqlalchemy",
+    "tiktoken",
+    "tokenizers",
+    "torch",
+    "xxhash",
+    "yaml",
+    "zstandard"
+  ],
+  "selected_local_libraries": [
+    "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/torch/lib/libtorch_global_deps.dylib",
+    "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/torch/lib/libtorch.dylib",
+    "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/faiss/.dylibs/libomp.dylib",
+    "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/torch/lib/libomp.dylib",
+    "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/torch/lib/libtorch_python.dylib",
+    "/Users/richietate/miniforge3/envs/feral_echo/lib/libsqlite3.3.53.2.dylib",
+    "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/sklearn/.dylibs/libomp.dylib",
+    "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/torch/lib/libtorch_cpu.dylib",
+    "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/mlx/lib/libmlx.dylib"
+  ]
+}

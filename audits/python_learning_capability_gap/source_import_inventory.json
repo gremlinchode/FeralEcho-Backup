@@ -1,0 +1,286 @@
+{
+  "traces": [
+    {
+      "path": "app/autonomous_loop.py",
+      "line": 29,
+      "module": "torch",
+      "area": "app",
+      "source_sha256": "aec8ca99f9f9b3ce72ea96a8f1e53aab02852f76c9db27635743ce225a9d5869"
+    },
+    {
+      "path": "app/autonomous_loop.py",
+      "line": 35,
+      "module": "faiss",
+      "area": "app",
+      "source_sha256": "aec8ca99f9f9b3ce72ea96a8f1e53aab02852f76c9db27635743ce225a9d5869"
+    },
+    {
+      "path": "app/core/echo_core.py",
+      "line": 200,
+      "module": "optuna",
+      "area": "app",
+      "source_sha256": "c9b7f15cb7adb4dba59535dc28ddc92af9890aa475a2e129081e9d94c6aea09b"
+    },
+    {
+      "path": "app/core/echo_model_orchestrator.py",
+      "line": 65,
+      "module": "river",
+      "area": "app",
+      "source_sha256": "1e32038b532da211890f5a42ded1ed63fa85ed3872fd209fd101226f8a8da2e8"
+    },
+    {
+      "path": "app/core/echo_model_orchestrator.py",
+      "line": 110,
+      "module": "numpy",
+      "area": "app",
+      "source_sha256": "1e32038b532da211890f5a42ded1ed63fa85ed3872fd209fd101226f8a8da2e8"
+    },
+    {
+      "path": "app/core/echo_optuna.py",
+      "line": 1,
+      "module": "optuna",
+      "area": "app",
+      "source_sha256": "dfd455c7318ab44d1f37cbe2993ef9c9d79ca472f1d958ae826c4b0ef390d35a"
+    },
+    {
+      "path": "app/core/echo_optuna.py",
+      "line": 93,
+      "module": "radon.complexity",
+      "area": "app",
+      "source_sha256": "dfd455c7318ab44d1f37cbe2993ef9c9d79ca472f1d958ae826c4b0ef390d35a"
+    },
+    {
+      "path": "app/core/echo_optuna.py",
+      "line": 94,
+      "module": "radon.metrics",
+      "area": "app",
+      "source_sha256": "dfd455c7318ab44d1f37cbe2993ef9c9d79ca472f1d958ae826c4b0ef390d35a"
+    },
+    {
+      "path": "app/core/echo_state.py",
+      "line": 69,
+      "module": "numpy",
+      "area": "app",
+      "source_sha256": "544842ac45c51c0a3a9cbba9dd22ff40fbb09df405398d72d216cf02b5891cec"
+    },
+    {
+      "path": "app/core/introspection_channel.py",
+      "line": 88,
+      "module": "river.drift",
+      "area": "app",
+      "source_sha256": "c98000a61cf4c1ac9bae75e7cc4738d103a5fb15623bbfe1e8ebf7034c3dc6ca"
+    },
+    {
+      "path": "app/core/introspection_channel.py",
+      "line": 612,
+      "module": "optuna",
+      "area": "app",
+      "source_sha256": "c98000a61cf4c1ac9bae75e7cc4738d103a5fb15623bbfe1e8ebf7034c3dc6ca"
+    },
+    {
+      "path": "app/core/memory_bridge.py",
+      "line": 19,
+      "module": "numpy",
+      "area": "app",
+      "source_sha256": "5173962947b61aeca6cf6612ef12fa9e16ca869b9c67a57cd3a30d2fd98074ae"
+    },
+    {
+      "path": "app/core/memory_bridge.py",
+      "line": 520,
+      "module": "apricot",
+      "area": "app",
+      "source_sha256": "5173962947b61aeca6cf6612ef12fa9e16ca869b9c67a57cd3a30d2fd98074ae"
+    },
+    {
+      "path": "app/core/predictive_loop.py",
+      "line": 36,
+      "module": "numpy",
+      "area": "app",
+      "source_sha256": "7d473deef37b09aec36ce60285bae5f4420eba88782388658c52ae3f347d21ae"
+    },
+    {
+      "path": "app/core/predictive_loop.py",
+      "line": 37,
+      "module": "scipy.special",
+      "area": "app",
+      "source_sha256": "7d473deef37b09aec36ce60285bae5f4420eba88782388658c52ae3f347d21ae"
+    },
+    {
+      "path": "app/core/predictive_loop.py",
+      "line": 279,
+      "module": "pymc",
+      "area": "app",
+      "source_sha256": "7d473deef37b09aec36ce60285bae5f4420eba88782388658c52ae3f347d21ae"
+    },
+    {
+      "path": "app/core/predictive_loop.py",
+      "line": 280,
+      "module": "arviz",
+      "area": "app",
+      "source_sha256": "7d473deef37b09aec36ce60285bae5f4420eba88782388658c52ae3f347d21ae"
+    },
+    {
+      "path": "app/core/sentence_transformer_singleton.py",
+      "line": 24,
+      "module": "sentence_transformers",
+      "area": "app",
+      "source_sha256": "b1b80423013e6917beaa6942f4ab0734a6d53c69e7d21df1a23db1ec8afe8288"
+    },
+    {
+      "path": "app/core/system_guard.py",
+      "line": 14,
+      "module": "numpy",
+      "area": "app",
+      "source_sha256": "3924a3a256cbd02761fb9c139cea9ad119a071602a2c6e7d782590a034826785"
+    },
+    {
+      "path": "app/core/task_type_classifier.py",
+      "line": 50,
+      "module": "river",
+      "area": "app",
+      "source_sha256": "eee7b2ed433fa656d58d2d7c386f928f54b5c7a468fead20fdc2db1cb9f5e49a"
+    },
+    {
+      "path": "app/experiments/e5_mini/tests/test_e5_mini_g0.py",
+      "line": 17,
+      "module": "unittest",
+      "area": "experiment",
+      "source_sha256": "ae9e38a36442f6ae3e8ab6266b31486f38341b129159af8fde9fde241704bd82"
+    },
+    {
+      "path": "app/experiments/e5_mini/tests/test_manifests.py",
+      "line": 12,
+      "module": "unittest",
+      "area": "experiment",
+      "source_sha256": "51cfdd1e3fafd782b57165e6ec08a251cb9dc5c4ab46a73f913685d2225c4154"
+    },
+    {
+      "path": "app/learning/dual_learning.py",
+      "line": 9,
+      "module": "numpy",
+      "area": "app",
+      "source_sha256": "ff10f4d410a5682e8e228112f8c9b7c4545098d1556a102d05f8cd2c8817aaea"
+    },
+    {
+      "path": "app/learning/dual_learning.py",
+      "line": 47,
+      "module": "torch",
+      "area": "app",
+      "source_sha256": "ff10f4d410a5682e8e228112f8c9b7c4545098d1556a102d05f8cd2c8817aaea"
+    },
+    {
+      "path": "app/learning/dual_learning.py",
+      "line": 48,
+      "module": "torch.nn",
+      "area": "app",
+      "source_sha256": "ff10f4d410a5682e8e228112f8c9b7c4545098d1556a102d05f8cd2c8817aaea"
+    },
+    {
+      "path": "app/learning/dual_learning.py",
+      "line": 49,
+      "module": "torch.utils.data",
+      "area": "app",
+      "source_sha256": "ff10f4d410a5682e8e228112f8c9b7c4545098d1556a102d05f8cd2c8817aaea"
+    },
+    {
+      "path": "app/learning/dual_learning.py",
+      "line": 23,
+      "module": "sklearn.feature_extraction.text",
+      "area": "app",
+      "source_sha256": "ff10f4d410a5682e8e228112f8c9b7c4545098d1556a102d05f8cd2c8817aaea"
+    },
+    {
+      "path": "app/learning/dual_learning.py",
+      "line": 233,
+      "module": "torch",
+      "area": "app",
+      "source_sha256": "ff10f4d410a5682e8e228112f8c9b7c4545098d1556a102d05f8cd2c8817aaea"
+    },
+    {
+      "path": "app/lib/vector_memory.py",
+      "line": 9,
+      "module": "faiss",
+      "area": "app",
+      "source_sha256": "7262d0ebf415f345a5349a15f40d114cce5121ae0fd5fbf7a7b27db5f7a2d2ba"
+    },
+    {
+      "path": "app/lib/vector_memory.py",
+      "line": 10,
+      "module": "numpy",
+      "area": "app",
+      "source_sha256": "7262d0ebf415f345a5349a15f40d114cce5121ae0fd5fbf7a7b27db5f7a2d2ba"
+    },
+    {
+      "path": "app/mlx_handler.py",
+      "line": 21,
+      "module": "mlx_lm",
+      "area": "app",
+      "source_sha256": "3814b196a034ddf466b7682c4e1700b49be04aa6b5dc0a5914b3db1f32847118"
+    },
+    {
+      "path": "app/mlx_handler.py",
+      "line": 22,
+      "module": "mlx_lm.sample_utils",
+      "area": "app",
+      "source_sha256": "3814b196a034ddf466b7682c4e1700b49be04aa6b5dc0a5914b3db1f32847118"
+    },
+    {
+      "path": "app/mlx_handler.py",
+      "line": 23,
+      "module": "mlx.core",
+      "area": "app",
+      "source_sha256": "3814b196a034ddf466b7682c4e1700b49be04aa6b5dc0a5914b3db1f32847118"
+    },
+    {
+      "path": "app/stillness.py",
+      "line": 183,
+      "module": "numpy",
+      "area": "app",
+      "source_sha256": "fc7b3c0ac81979af262e2e849775d8a900b7cccadd3a27c0cf7125b00f04266a"
+    },
+    {
+      "path": "app/stillness.py",
+      "line": 217,
+      "module": "numpy",
+      "area": "app",
+      "source_sha256": "fc7b3c0ac81979af262e2e849775d8a900b7cccadd3a27c0cf7125b00f04266a"
+    },
+    {
+      "path": "app/subsystems/reflection_shard.py",
+      "line": 16,
+      "module": "numpy",
+      "area": "app",
+      "source_sha256": "7c6a796d37360217eedf267f0f380dc30d2cadbb1adbdfb1d879d009fa289ebc"
+    },
+    {
+      "path": "scripts/memory_ablation_experiment.py",
+      "line": 53,
+      "module": "unittest.mock",
+      "area": "script",
+      "source_sha256": "e67f1c93ce88c137d464f7214fb352e9223a6a1853c4a8148e4f7d63cc88b327"
+    },
+    {
+      "path": "scripts/memory_ablation_experiment.py",
+      "line": 184,
+      "module": "numpy",
+      "area": "script",
+      "source_sha256": "e67f1c93ce88c137d464f7214fb352e9223a6a1853c4a8148e4f7d63cc88b327"
+    },
+    {
+      "path": "scripts/task_type_behavioral_experiment_analyze.py",
+      "line": 16,
+      "module": "scipy",
+      "area": "script",
+      "source_sha256": "7d56d679abaea72e3611993d06d09aa8fcd651213eea7cbf71d42bf99644107c"
+    },
+    {
+      "path": "scripts/verify_provenance_check.py",
+      "line": 67,
+      "module": "unittest",
+      "area": "script",
+      "source_sha256": "23862b8aa64b65b1ceca1c3e467ec678b629b5a78904312c36ece27dd175d895"
+    }
+  ],
+  "syntax_errors": [],
+  "scope": "app/ and scripts/; excludes backups/plans/nested duplicate app; AST imports include function-local/dead branches; not reachability proof"
+}

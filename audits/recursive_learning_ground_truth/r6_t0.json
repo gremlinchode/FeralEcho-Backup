@@ -1,0 +1,4412 @@
+{
+  "stage": 0,
+  "pid": 37487,
+  "pids": [
+    37487
+  ],
+  "scratch": "/private/tmp/feralecho-recursive-uko_pu35",
+  "script_sha256": "830c044a3905aae3ad79e011591cf6258eb0d7ff3ee25edad89af034f56dab2e",
+  "production_source_sha256": "1e32038b532da211890f5a42ded1ed63fa85ed3872fd209fd101226f8a8da2e8",
+  "training": [],
+  "evaluations": {
+    "frozen": {
+      "correct": 30,
+      "n": 90,
+      "rows": [
+        {
+          "family": "context_0",
+          "input": [
+            1000,
+            3,
+            -500
+          ],
+          "selected": "worker_red",
+          "actual": 503,
+          "expected": -500,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1001,
+            3,
+            -501
+          ],
+          "selected": "worker_red",
+          "actual": 503,
+          "expected": -501,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1002,
+            3,
+            -501
+          ],
+          "selected": "worker_red",
+          "actual": 504,
+          "expected": -501,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1003,
+            3,
+            -502
+          ],
+          "selected": "worker_red",
+          "actual": 504,
+          "expected": -502,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1004,
+            3,
+            -502
+          ],
+          "selected": "worker_red",
+          "actual": 505,
+          "expected": -502,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1005,
+            3,
+            -503
+          ],
+          "selected": "worker_red",
+          "actual": 505,
+          "expected": -503,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1006,
+            3,
+            -503
+          ],
+          "selected": "worker_red",
+          "actual": 506,
+          "expected": -503,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1007,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 506,
+          "expected": -504,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1008,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": -504,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1009,
+            3,
+            -505
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": -505,
+          "correct": false
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1007,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 506,
+          "expected": 506,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1008,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": 507,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1009,
+            3,
+            -505
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": 507,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1010,
+            3,
+            -505
+          ],
+          "selected": "worker_red",
+          "actual": 508,
+          "expected": 508,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1011,
+            3,
+            -506
+          ],
+          "selected": "worker_red",
+          "actual": 508,
+          "expected": 508,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1012,
+            3,
+            -506
+          ],
+          "selected": "worker_red",
+          "actual": 509,
+          "expected": 509,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1013,
+            3,
+            -507
+          ],
+          "selected": "worker_red",
+          "actual": 509,
+          "expected": 509,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1014,
+            3,
+            -507
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 510,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1015,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 510,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1016,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 511,
+          "expected": 511,
+          "correct": true
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1014,
+            3,
+            -507
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 1014,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1015,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 1015,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1016,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 511,
+          "expected": 1016,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1017,
+            3,
+            -509
+          ],
+          "selected": "worker_red",
+          "actual": 511,
+          "expected": 1017,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1018,
+            3,
+            -509
+          ],
+          "selected": "worker_red",
+          "actual": 512,
+          "expected": 1018,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1019,
+            3,
+            -510
+          ],
+          "selected": "worker_red",
+          "actual": 512,
+          "expected": 1019,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1020,
+            3,
+            -510
+          ],
+          "selected": "worker_red",
+          "actual": 513,
+          "expected": 1020,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1021,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 513,
+          "expected": 1021,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1022,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1022,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1023,
+            3,
+            -512
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1023,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1021,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 513,
+          "expected": 1021,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1022,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1022,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1023,
+            3,
+            -512
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1023,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1024,
+            3,
+            -512
+          ],
+          "selected": "worker_red",
+          "actual": 515,
+          "expected": 1024,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1025,
+            3,
+            -513
+          ],
+          "selected": "worker_red",
+          "actual": 515,
+          "expected": 1025,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1026,
+            3,
+            -513
+          ],
+          "selected": "worker_red",
+          "actual": 516,
+          "expected": 1026,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1027,
+            3,
+            -514
+          ],
+          "selected": "worker_red",
+          "actual": 516,
+          "expected": 1027,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1028,
+            3,
+            -514
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": 1028,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1029,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": 1029,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1030,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 518,
+          "expected": 1030,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1028,
+            3,
+            -514
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": -514,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1029,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": -515,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1030,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 518,
+          "expected": -515,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1031,
+            3,
+            -516
+          ],
+          "selected": "worker_red",
+          "actual": 518,
+          "expected": -516,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1032,
+            3,
+            -516
+          ],
+          "selected": "worker_red",
+          "actual": 519,
+          "expected": -516,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1033,
+            3,
+            -517
+          ],
+          "selected": "worker_red",
+          "actual": 519,
+          "expected": -517,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1034,
+            3,
+            -517
+          ],
+          "selected": "worker_red",
+          "actual": 520,
+          "expected": -517,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1035,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 520,
+          "expected": -518,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1036,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": -518,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1037,
+            3,
+            -519
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": -519,
+          "correct": false
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1035,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 520,
+          "expected": 520,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1036,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": 521,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1037,
+            3,
+            -519
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": 521,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1038,
+            3,
+            -519
+          ],
+          "selected": "worker_red",
+          "actual": 522,
+          "expected": 522,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1039,
+            3,
+            -520
+          ],
+          "selected": "worker_red",
+          "actual": 522,
+          "expected": 522,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1040,
+            3,
+            -520
+          ],
+          "selected": "worker_red",
+          "actual": 523,
+          "expected": 523,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1041,
+            3,
+            -521
+          ],
+          "selected": "worker_red",
+          "actual": 523,
+          "expected": 523,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1042,
+            3,
+            -521
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1043,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1044,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 525,
+          "expected": 525,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1042,
+            3,
+            -521
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1043,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1044,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 525,
+          "expected": 525,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1045,
+            3,
+            -523
+          ],
+          "selected": "worker_red",
+          "actual": 525,
+          "expected": 525,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1046,
+            3,
+            -523
+          ],
+          "selected": "worker_red",
+          "actual": 526,
+          "expected": 526,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1047,
+            3,
+            -524
+          ],
+          "selected": "worker_red",
+          "actual": 526,
+          "expected": 526,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1048,
+            3,
+            -524
+          ],
+          "selected": "worker_red",
+          "actual": 527,
+          "expected": 527,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1049,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 527,
+          "expected": 527,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1050,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 528,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1051,
+            3,
+            -526
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 528,
+          "correct": true
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1049,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 527,
+          "expected": 1049,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1050,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 1050,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1051,
+            3,
+            -526
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 1051,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1052,
+            3,
+            -526
+          ],
+          "selected": "worker_red",
+          "actual": 529,
+          "expected": 1052,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1053,
+            3,
+            -527
+          ],
+          "selected": "worker_red",
+          "actual": 529,
+          "expected": 1053,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1054,
+            3,
+            -527
+          ],
+          "selected": "worker_red",
+          "actual": 530,
+          "expected": 1054,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1055,
+            3,
+            -528
+          ],
+          "selected": "worker_red",
+          "actual": 530,
+          "expected": 1055,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1056,
+            3,
+            -528
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": 1056,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1057,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": 1057,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1058,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 532,
+          "expected": 1058,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1056,
+            3,
+            -528
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": -528,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1057,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": -529,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1058,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 532,
+          "expected": -529,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1059,
+            3,
+            -530
+          ],
+          "selected": "worker_red",
+          "actual": 532,
+          "expected": -530,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1060,
+            3,
+            -530
+          ],
+          "selected": "worker_red",
+          "actual": 533,
+          "expected": -530,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1061,
+            3,
+            -531
+          ],
+          "selected": "worker_red",
+          "actual": 533,
+          "expected": -531,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1062,
+            3,
+            -531
+          ],
+          "selected": "worker_red",
+          "actual": 534,
+          "expected": -531,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1063,
+            3,
+            -532
+          ],
+          "selected": "worker_red",
+          "actual": 534,
+          "expected": -532,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1064,
+            3,
+            -532
+          ],
+          "selected": "worker_red",
+          "actual": 535,
+          "expected": -532,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1065,
+            3,
+            -533
+          ],
+          "selected": "worker_red",
+          "actual": 535,
+          "expected": -533,
+          "correct": false
+        }
+      ],
+      "per_family": {
+        "context_0": 0,
+        "context_1": 10,
+        "context_2": 0,
+        "context_3": 0,
+        "context_4": 0,
+        "context_5": 10,
+        "context_6": 10,
+        "context_7": 0,
+        "context_8": 0
+      }
+    },
+    "global": {
+      "correct": 30,
+      "n": 90,
+      "rows": [
+        {
+          "family": "context_0",
+          "input": [
+            1000,
+            3,
+            -500
+          ],
+          "selected": "worker_red",
+          "actual": 503,
+          "expected": -500,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1001,
+            3,
+            -501
+          ],
+          "selected": "worker_red",
+          "actual": 503,
+          "expected": -501,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1002,
+            3,
+            -501
+          ],
+          "selected": "worker_red",
+          "actual": 504,
+          "expected": -501,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1003,
+            3,
+            -502
+          ],
+          "selected": "worker_red",
+          "actual": 504,
+          "expected": -502,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1004,
+            3,
+            -502
+          ],
+          "selected": "worker_red",
+          "actual": 505,
+          "expected": -502,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1005,
+            3,
+            -503
+          ],
+          "selected": "worker_red",
+          "actual": 505,
+          "expected": -503,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1006,
+            3,
+            -503
+          ],
+          "selected": "worker_red",
+          "actual": 506,
+          "expected": -503,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1007,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 506,
+          "expected": -504,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1008,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": -504,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1009,
+            3,
+            -505
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": -505,
+          "correct": false
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1007,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 506,
+          "expected": 506,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1008,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": 507,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1009,
+            3,
+            -505
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": 507,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1010,
+            3,
+            -505
+          ],
+          "selected": "worker_red",
+          "actual": 508,
+          "expected": 508,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1011,
+            3,
+            -506
+          ],
+          "selected": "worker_red",
+          "actual": 508,
+          "expected": 508,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1012,
+            3,
+            -506
+          ],
+          "selected": "worker_red",
+          "actual": 509,
+          "expected": 509,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1013,
+            3,
+            -507
+          ],
+          "selected": "worker_red",
+          "actual": 509,
+          "expected": 509,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1014,
+            3,
+            -507
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 510,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1015,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 510,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1016,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 511,
+          "expected": 511,
+          "correct": true
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1014,
+            3,
+            -507
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 1014,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1015,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 1015,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1016,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 511,
+          "expected": 1016,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1017,
+            3,
+            -509
+          ],
+          "selected": "worker_red",
+          "actual": 511,
+          "expected": 1017,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1018,
+            3,
+            -509
+          ],
+          "selected": "worker_red",
+          "actual": 512,
+          "expected": 1018,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1019,
+            3,
+            -510
+          ],
+          "selected": "worker_red",
+          "actual": 512,
+          "expected": 1019,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1020,
+            3,
+            -510
+          ],
+          "selected": "worker_red",
+          "actual": 513,
+          "expected": 1020,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1021,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 513,
+          "expected": 1021,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1022,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1022,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1023,
+            3,
+            -512
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1023,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1021,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 513,
+          "expected": 1021,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1022,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1022,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1023,
+            3,
+            -512
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1023,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1024,
+            3,
+            -512
+          ],
+          "selected": "worker_red",
+          "actual": 515,
+          "expected": 1024,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1025,
+            3,
+            -513
+          ],
+          "selected": "worker_red",
+          "actual": 515,
+          "expected": 1025,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1026,
+            3,
+            -513
+          ],
+          "selected": "worker_red",
+          "actual": 516,
+          "expected": 1026,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1027,
+            3,
+            -514
+          ],
+          "selected": "worker_red",
+          "actual": 516,
+          "expected": 1027,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1028,
+            3,
+            -514
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": 1028,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1029,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": 1029,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1030,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 518,
+          "expected": 1030,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1028,
+            3,
+            -514
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": -514,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1029,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": -515,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1030,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 518,
+          "expected": -515,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1031,
+            3,
+            -516
+          ],
+          "selected": "worker_red",
+          "actual": 518,
+          "expected": -516,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1032,
+            3,
+            -516
+          ],
+          "selected": "worker_red",
+          "actual": 519,
+          "expected": -516,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1033,
+            3,
+            -517
+          ],
+          "selected": "worker_red",
+          "actual": 519,
+          "expected": -517,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1034,
+            3,
+            -517
+          ],
+          "selected": "worker_red",
+          "actual": 520,
+          "expected": -517,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1035,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 520,
+          "expected": -518,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1036,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": -518,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1037,
+            3,
+            -519
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": -519,
+          "correct": false
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1035,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 520,
+          "expected": 520,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1036,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": 521,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1037,
+            3,
+            -519
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": 521,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1038,
+            3,
+            -519
+          ],
+          "selected": "worker_red",
+          "actual": 522,
+          "expected": 522,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1039,
+            3,
+            -520
+          ],
+          "selected": "worker_red",
+          "actual": 522,
+          "expected": 522,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1040,
+            3,
+            -520
+          ],
+          "selected": "worker_red",
+          "actual": 523,
+          "expected": 523,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1041,
+            3,
+            -521
+          ],
+          "selected": "worker_red",
+          "actual": 523,
+          "expected": 523,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1042,
+            3,
+            -521
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1043,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1044,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 525,
+          "expected": 525,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1042,
+            3,
+            -521
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1043,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1044,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 525,
+          "expected": 525,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1045,
+            3,
+            -523
+          ],
+          "selected": "worker_red",
+          "actual": 525,
+          "expected": 525,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1046,
+            3,
+            -523
+          ],
+          "selected": "worker_red",
+          "actual": 526,
+          "expected": 526,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1047,
+            3,
+            -524
+          ],
+          "selected": "worker_red",
+          "actual": 526,
+          "expected": 526,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1048,
+            3,
+            -524
+          ],
+          "selected": "worker_red",
+          "actual": 527,
+          "expected": 527,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1049,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 527,
+          "expected": 527,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1050,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 528,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1051,
+            3,
+            -526
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 528,
+          "correct": true
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1049,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 527,
+          "expected": 1049,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1050,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 1050,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1051,
+            3,
+            -526
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 1051,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1052,
+            3,
+            -526
+          ],
+          "selected": "worker_red",
+          "actual": 529,
+          "expected": 1052,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1053,
+            3,
+            -527
+          ],
+          "selected": "worker_red",
+          "actual": 529,
+          "expected": 1053,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1054,
+            3,
+            -527
+          ],
+          "selected": "worker_red",
+          "actual": 530,
+          "expected": 1054,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1055,
+            3,
+            -528
+          ],
+          "selected": "worker_red",
+          "actual": 530,
+          "expected": 1055,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1056,
+            3,
+            -528
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": 1056,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1057,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": 1057,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1058,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 532,
+          "expected": 1058,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1056,
+            3,
+            -528
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": -528,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1057,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": -529,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1058,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 532,
+          "expected": -529,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1059,
+            3,
+            -530
+          ],
+          "selected": "worker_red",
+          "actual": 532,
+          "expected": -530,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1060,
+            3,
+            -530
+          ],
+          "selected": "worker_red",
+          "actual": 533,
+          "expected": -530,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1061,
+            3,
+            -531
+          ],
+          "selected": "worker_red",
+          "actual": 533,
+          "expected": -531,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1062,
+            3,
+            -531
+          ],
+          "selected": "worker_red",
+          "actual": 534,
+          "expected": -531,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1063,
+            3,
+            -532
+          ],
+          "selected": "worker_red",
+          "actual": 534,
+          "expected": -532,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1064,
+            3,
+            -532
+          ],
+          "selected": "worker_red",
+          "actual": 535,
+          "expected": -532,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1065,
+            3,
+            -533
+          ],
+          "selected": "worker_red",
+          "actual": 535,
+          "expected": -533,
+          "correct": false
+        }
+      ],
+      "per_family": {
+        "context_0": 0,
+        "context_1": 10,
+        "context_2": 0,
+        "context_3": 0,
+        "context_4": 0,
+        "context_5": 10,
+        "context_6": 10,
+        "context_7": 0,
+        "context_8": 0
+      }
+    },
+    "context": {
+      "correct": 30,
+      "n": 90,
+      "rows": [
+        {
+          "family": "context_0",
+          "input": [
+            1000,
+            3,
+            -500
+          ],
+          "selected": "worker_red",
+          "actual": 503,
+          "expected": -500,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1001,
+            3,
+            -501
+          ],
+          "selected": "worker_red",
+          "actual": 503,
+          "expected": -501,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1002,
+            3,
+            -501
+          ],
+          "selected": "worker_red",
+          "actual": 504,
+          "expected": -501,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1003,
+            3,
+            -502
+          ],
+          "selected": "worker_red",
+          "actual": 504,
+          "expected": -502,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1004,
+            3,
+            -502
+          ],
+          "selected": "worker_red",
+          "actual": 505,
+          "expected": -502,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1005,
+            3,
+            -503
+          ],
+          "selected": "worker_red",
+          "actual": 505,
+          "expected": -503,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1006,
+            3,
+            -503
+          ],
+          "selected": "worker_red",
+          "actual": 506,
+          "expected": -503,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1007,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 506,
+          "expected": -504,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1008,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": -504,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1009,
+            3,
+            -505
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": -505,
+          "correct": false
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1007,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 506,
+          "expected": 506,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1008,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": 507,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1009,
+            3,
+            -505
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": 507,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1010,
+            3,
+            -505
+          ],
+          "selected": "worker_red",
+          "actual": 508,
+          "expected": 508,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1011,
+            3,
+            -506
+          ],
+          "selected": "worker_red",
+          "actual": 508,
+          "expected": 508,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1012,
+            3,
+            -506
+          ],
+          "selected": "worker_red",
+          "actual": 509,
+          "expected": 509,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1013,
+            3,
+            -507
+          ],
+          "selected": "worker_red",
+          "actual": 509,
+          "expected": 509,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1014,
+            3,
+            -507
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 510,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1015,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 510,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1016,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 511,
+          "expected": 511,
+          "correct": true
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1014,
+            3,
+            -507
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 1014,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1015,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 1015,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1016,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 511,
+          "expected": 1016,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1017,
+            3,
+            -509
+          ],
+          "selected": "worker_red",
+          "actual": 511,
+          "expected": 1017,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1018,
+            3,
+            -509
+          ],
+          "selected": "worker_red",
+          "actual": 512,
+          "expected": 1018,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1019,
+            3,
+            -510
+          ],
+          "selected": "worker_red",
+          "actual": 512,
+          "expected": 1019,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1020,
+            3,
+            -510
+          ],
+          "selected": "worker_red",
+          "actual": 513,
+          "expected": 1020,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1021,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 513,
+          "expected": 1021,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1022,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1022,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1023,
+            3,
+            -512
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1023,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1021,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 513,
+          "expected": 1021,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1022,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1022,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1023,
+            3,
+            -512
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1023,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1024,
+            3,
+            -512
+          ],
+          "selected": "worker_red",
+          "actual": 515,
+          "expected": 1024,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1025,
+            3,
+            -513
+          ],
+          "selected": "worker_red",
+          "actual": 515,
+          "expected": 1025,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1026,
+            3,
+            -513
+          ],
+          "selected": "worker_red",
+          "actual": 516,
+          "expected": 1026,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1027,
+            3,
+            -514
+          ],
+          "selected": "worker_red",
+          "actual": 516,
+          "expected": 1027,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1028,
+            3,
+            -514
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": 1028,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1029,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": 1029,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1030,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 518,
+          "expected": 1030,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1028,
+            3,
+            -514
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": -514,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1029,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": -515,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1030,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 518,
+          "expected": -515,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1031,
+            3,
+            -516
+          ],
+          "selected": "worker_red",
+          "actual": 518,
+          "expected": -516,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1032,
+            3,
+            -516
+          ],
+          "selected": "worker_red",
+          "actual": 519,
+          "expected": -516,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1033,
+            3,
+            -517
+          ],
+          "selected": "worker_red",
+          "actual": 519,
+          "expected": -517,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1034,
+            3,
+            -517
+          ],
+          "selected": "worker_red",
+          "actual": 520,
+          "expected": -517,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1035,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 520,
+          "expected": -518,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1036,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": -518,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1037,
+            3,
+            -519
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": -519,
+          "correct": false
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1035,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 520,
+          "expected": 520,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1036,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": 521,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1037,
+            3,
+            -519
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": 521,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1038,
+            3,
+            -519
+          ],
+          "selected": "worker_red",
+          "actual": 522,
+          "expected": 522,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1039,
+            3,
+            -520
+          ],
+          "selected": "worker_red",
+          "actual": 522,
+          "expected": 522,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1040,
+            3,
+            -520
+          ],
+          "selected": "worker_red",
+          "actual": 523,
+          "expected": 523,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1041,
+            3,
+            -521
+          ],
+          "selected": "worker_red",
+          "actual": 523,
+          "expected": 523,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1042,
+            3,
+            -521
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1043,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1044,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 525,
+          "expected": 525,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1042,
+            3,
+            -521
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1043,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1044,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 525,
+          "expected": 525,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1045,
+            3,
+            -523
+          ],
+          "selected": "worker_red",
+          "actual": 525,
+          "expected": 525,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1046,
+            3,
+            -523
+          ],
+          "selected": "worker_red",
+          "actual": 526,
+          "expected": 526,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1047,
+            3,
+            -524
+          ],
+          "selected": "worker_red",
+          "actual": 526,
+          "expected": 526,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1048,
+            3,
+            -524
+          ],
+          "selected": "worker_red",
+          "actual": 527,
+          "expected": 527,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1049,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 527,
+          "expected": 527,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1050,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 528,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1051,
+            3,
+            -526
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 528,
+          "correct": true
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1049,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 527,
+          "expected": 1049,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1050,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 1050,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1051,
+            3,
+            -526
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 1051,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1052,
+            3,
+            -526
+          ],
+          "selected": "worker_red",
+          "actual": 529,
+          "expected": 1052,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1053,
+            3,
+            -527
+          ],
+          "selected": "worker_red",
+          "actual": 529,
+          "expected": 1053,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1054,
+            3,
+            -527
+          ],
+          "selected": "worker_red",
+          "actual": 530,
+          "expected": 1054,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1055,
+            3,
+            -528
+          ],
+          "selected": "worker_red",
+          "actual": 530,
+          "expected": 1055,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1056,
+            3,
+            -528
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": 1056,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1057,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": 1057,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1058,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 532,
+          "expected": 1058,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1056,
+            3,
+            -528
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": -528,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1057,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": -529,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1058,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 532,
+          "expected": -529,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1059,
+            3,
+            -530
+          ],
+          "selected": "worker_red",
+          "actual": 532,
+          "expected": -530,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1060,
+            3,
+            -530
+          ],
+          "selected": "worker_red",
+          "actual": 533,
+          "expected": -530,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1061,
+            3,
+            -531
+          ],
+          "selected": "worker_red",
+          "actual": 533,
+          "expected": -531,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1062,
+            3,
+            -531
+          ],
+          "selected": "worker_red",
+          "actual": 534,
+          "expected": -531,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1063,
+            3,
+            -532
+          ],
+          "selected": "worker_red",
+          "actual": 534,
+          "expected": -532,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1064,
+            3,
+            -532
+          ],
+          "selected": "worker_red",
+          "actual": 535,
+          "expected": -532,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1065,
+            3,
+            -533
+          ],
+          "selected": "worker_red",
+          "actual": 535,
+          "expected": -533,
+          "correct": false
+        }
+      ],
+      "per_family": {
+        "context_0": 0,
+        "context_1": 10,
+        "context_2": 0,
+        "context_3": 0,
+        "context_4": 0,
+        "context_5": 10,
+        "context_6": 10,
+        "context_7": 0,
+        "context_8": 0
+      }
+    },
+    "reversed": {
+      "correct": 30,
+      "n": 90,
+      "rows": [
+        {
+          "family": "context_0",
+          "input": [
+            1000,
+            3,
+            -500
+          ],
+          "selected": "worker_red",
+          "actual": 503,
+          "expected": -500,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1001,
+            3,
+            -501
+          ],
+          "selected": "worker_red",
+          "actual": 503,
+          "expected": -501,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1002,
+            3,
+            -501
+          ],
+          "selected": "worker_red",
+          "actual": 504,
+          "expected": -501,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1003,
+            3,
+            -502
+          ],
+          "selected": "worker_red",
+          "actual": 504,
+          "expected": -502,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1004,
+            3,
+            -502
+          ],
+          "selected": "worker_red",
+          "actual": 505,
+          "expected": -502,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1005,
+            3,
+            -503
+          ],
+          "selected": "worker_red",
+          "actual": 505,
+          "expected": -503,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1006,
+            3,
+            -503
+          ],
+          "selected": "worker_red",
+          "actual": 506,
+          "expected": -503,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1007,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 506,
+          "expected": -504,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1008,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": -504,
+          "correct": false
+        },
+        {
+          "family": "context_0",
+          "input": [
+            1009,
+            3,
+            -505
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": -505,
+          "correct": false
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1007,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 506,
+          "expected": 506,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1008,
+            3,
+            -504
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": 507,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1009,
+            3,
+            -505
+          ],
+          "selected": "worker_red",
+          "actual": 507,
+          "expected": 507,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1010,
+            3,
+            -505
+          ],
+          "selected": "worker_red",
+          "actual": 508,
+          "expected": 508,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1011,
+            3,
+            -506
+          ],
+          "selected": "worker_red",
+          "actual": 508,
+          "expected": 508,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1012,
+            3,
+            -506
+          ],
+          "selected": "worker_red",
+          "actual": 509,
+          "expected": 509,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1013,
+            3,
+            -507
+          ],
+          "selected": "worker_red",
+          "actual": 509,
+          "expected": 509,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1014,
+            3,
+            -507
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 510,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1015,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 510,
+          "correct": true
+        },
+        {
+          "family": "context_1",
+          "input": [
+            1016,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 511,
+          "expected": 511,
+          "correct": true
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1014,
+            3,
+            -507
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 1014,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1015,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 510,
+          "expected": 1015,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1016,
+            3,
+            -508
+          ],
+          "selected": "worker_red",
+          "actual": 511,
+          "expected": 1016,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1017,
+            3,
+            -509
+          ],
+          "selected": "worker_red",
+          "actual": 511,
+          "expected": 1017,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1018,
+            3,
+            -509
+          ],
+          "selected": "worker_red",
+          "actual": 512,
+          "expected": 1018,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1019,
+            3,
+            -510
+          ],
+          "selected": "worker_red",
+          "actual": 512,
+          "expected": 1019,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1020,
+            3,
+            -510
+          ],
+          "selected": "worker_red",
+          "actual": 513,
+          "expected": 1020,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1021,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 513,
+          "expected": 1021,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1022,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1022,
+          "correct": false
+        },
+        {
+          "family": "context_2",
+          "input": [
+            1023,
+            3,
+            -512
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1023,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1021,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 513,
+          "expected": 1021,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1022,
+            3,
+            -511
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1022,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1023,
+            3,
+            -512
+          ],
+          "selected": "worker_red",
+          "actual": 514,
+          "expected": 1023,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1024,
+            3,
+            -512
+          ],
+          "selected": "worker_red",
+          "actual": 515,
+          "expected": 1024,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1025,
+            3,
+            -513
+          ],
+          "selected": "worker_red",
+          "actual": 515,
+          "expected": 1025,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1026,
+            3,
+            -513
+          ],
+          "selected": "worker_red",
+          "actual": 516,
+          "expected": 1026,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1027,
+            3,
+            -514
+          ],
+          "selected": "worker_red",
+          "actual": 516,
+          "expected": 1027,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1028,
+            3,
+            -514
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": 1028,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1029,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": 1029,
+          "correct": false
+        },
+        {
+          "family": "context_3",
+          "input": [
+            1030,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 518,
+          "expected": 1030,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1028,
+            3,
+            -514
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": -514,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1029,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 517,
+          "expected": -515,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1030,
+            3,
+            -515
+          ],
+          "selected": "worker_red",
+          "actual": 518,
+          "expected": -515,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1031,
+            3,
+            -516
+          ],
+          "selected": "worker_red",
+          "actual": 518,
+          "expected": -516,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1032,
+            3,
+            -516
+          ],
+          "selected": "worker_red",
+          "actual": 519,
+          "expected": -516,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1033,
+            3,
+            -517
+          ],
+          "selected": "worker_red",
+          "actual": 519,
+          "expected": -517,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1034,
+            3,
+            -517
+          ],
+          "selected": "worker_red",
+          "actual": 520,
+          "expected": -517,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1035,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 520,
+          "expected": -518,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1036,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": -518,
+          "correct": false
+        },
+        {
+          "family": "context_4",
+          "input": [
+            1037,
+            3,
+            -519
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": -519,
+          "correct": false
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1035,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 520,
+          "expected": 520,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1036,
+            3,
+            -518
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": 521,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1037,
+            3,
+            -519
+          ],
+          "selected": "worker_red",
+          "actual": 521,
+          "expected": 521,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1038,
+            3,
+            -519
+          ],
+          "selected": "worker_red",
+          "actual": 522,
+          "expected": 522,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1039,
+            3,
+            -520
+          ],
+          "selected": "worker_red",
+          "actual": 522,
+          "expected": 522,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1040,
+            3,
+            -520
+          ],
+          "selected": "worker_red",
+          "actual": 523,
+          "expected": 523,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1041,
+            3,
+            -521
+          ],
+          "selected": "worker_red",
+          "actual": 523,
+          "expected": 523,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1042,
+            3,
+            -521
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1043,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_5",
+          "input": [
+            1044,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 525,
+          "expected": 525,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1042,
+            3,
+            -521
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1043,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 524,
+          "expected": 524,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1044,
+            3,
+            -522
+          ],
+          "selected": "worker_red",
+          "actual": 525,
+          "expected": 525,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1045,
+            3,
+            -523
+          ],
+          "selected": "worker_red",
+          "actual": 525,
+          "expected": 525,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1046,
+            3,
+            -523
+          ],
+          "selected": "worker_red",
+          "actual": 526,
+          "expected": 526,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1047,
+            3,
+            -524
+          ],
+          "selected": "worker_red",
+          "actual": 526,
+          "expected": 526,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1048,
+            3,
+            -524
+          ],
+          "selected": "worker_red",
+          "actual": 527,
+          "expected": 527,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1049,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 527,
+          "expected": 527,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1050,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 528,
+          "correct": true
+        },
+        {
+          "family": "context_6",
+          "input": [
+            1051,
+            3,
+            -526
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 528,
+          "correct": true
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1049,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 527,
+          "expected": 1049,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1050,
+            3,
+            -525
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 1050,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1051,
+            3,
+            -526
+          ],
+          "selected": "worker_red",
+          "actual": 528,
+          "expected": 1051,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1052,
+            3,
+            -526
+          ],
+          "selected": "worker_red",
+          "actual": 529,
+          "expected": 1052,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1053,
+            3,
+            -527
+          ],
+          "selected": "worker_red",
+          "actual": 529,
+          "expected": 1053,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1054,
+            3,
+            -527
+          ],
+          "selected": "worker_red",
+          "actual": 530,
+          "expected": 1054,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1055,
+            3,
+            -528
+          ],
+          "selected": "worker_red",
+          "actual": 530,
+          "expected": 1055,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1056,
+            3,
+            -528
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": 1056,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1057,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": 1057,
+          "correct": false
+        },
+        {
+          "family": "context_7",
+          "input": [
+            1058,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 532,
+          "expected": 1058,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1056,
+            3,
+            -528
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": -528,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1057,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 531,
+          "expected": -529,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1058,
+            3,
+            -529
+          ],
+          "selected": "worker_red",
+          "actual": 532,
+          "expected": -529,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1059,
+            3,
+            -530
+          ],
+          "selected": "worker_red",
+          "actual": 532,
+          "expected": -530,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1060,
+            3,
+            -530
+          ],
+          "selected": "worker_red",
+          "actual": 533,
+          "expected": -530,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1061,
+            3,
+            -531
+          ],
+          "selected": "worker_red",
+          "actual": 533,
+          "expected": -531,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1062,
+            3,
+            -531
+          ],
+          "selected": "worker_red",
+          "actual": 534,
+          "expected": -531,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1063,
+            3,
+            -532
+          ],
+          "selected": "worker_red",
+          "actual": 534,
+          "expected": -532,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1064,
+            3,
+            -532
+          ],
+          "selected": "worker_red",
+          "actual": 535,
+          "expected": -532,
+          "correct": false
+        },
+        {
+          "family": "context_8",
+          "input": [
+            1065,
+            3,
+            -533
+          ],
+          "selected": "worker_red",
+          "actual": 535,
+          "expected": -533,
+          "correct": false
+        }
+      ],
+      "per_family": {
+        "context_0": 0,
+        "context_1": 10,
+        "context_2": 0,
+        "context_3": 0,
+        "context_4": 0,
+        "context_5": 10,
+        "context_6": 10,
+        "context_7": 0,
+        "context_8": 0
+      }
+    }
+  },
+  "context_entries": 0,
+  "mean_scores": {
+    "worker_red": 0.5,
+    "worker_green": 0.5,
+    "worker_blue": 0.5
+  },
+  "drift_correct": 3,
+  "drift_n": 9,
+  "unknown_choice": "worker_red",
+  "evaluation_state_unchanged": true,
+  "policy_sha256": "a8667ee5d8fe87c2ede962bfaad396116d4e937a5c1cd1d7c54d94db8dbcfbdb"
+}

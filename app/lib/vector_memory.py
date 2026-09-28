@@ -105,17 +105,50 @@ class VectorMemory:
                 f"Embedding dimension {embeddings.shape[1]} does not match VectorMemory dimension {self.dim}"
             )
 
-        emb = embeddings.astype(np.float32)
-        faiss.normalize_L2(emb)
-        self.index.add(emb)
+        # Duplicate-ID guard (real bug found 2026-09-27, already reproduced
+        # in audits/recursive_learning_ground_truth/r5_memory.json before
+        # this fix): FAISS's IndexFlatIP is purely positional/append-only —
+        # it has no concept of an "id" at all. The old code called
+        # self.index.add(emb) for every item unconditionally, but only
+        # appended to id_order when the id was genuinely new (meta[item.id]
+        # = ... always overwrites; id_order only grew on a new id). A
+        # duplicate id therefore added a real vector to the index while
+        # id_order silently fell one entry short of ntotal — a permanent
+        # misalignment where search()'s idx -> id_order[idx] mapping goes
+        # wrong for every position from that point on, silently returning
+        # some OTHER memory's text for a real query. Real production
+        # callers (memory_bridge.py) always mint a fresh uuid.uuid4() per
+        # item, so this has not been observed firing in practice — fixed
+        # anyway rather than trusting that convention holds forever. Only
+        # genuinely new ids get a vector appended; an id that already
+        # exists has its meta text/tags updated in place (unchanged
+        # behavior) but is never added to the index a second time, with a
+        # loud warning logged since real UUID-based ids should never
+        # collide.
+        new_items, new_rows = [], []
+        for i, item in enumerate(items):
+            if item.id in self.meta:
+                logging.warning(
+                    "[VectorMemory] duplicate id on add(), skipping index "
+                    "insert (meta updated, vector NOT re-added — real ids "
+                    "should never collide): %s", item.id,
+                )
+                self.meta[item.id] = {"text": item.text, "meta": item.meta or {}}
+                continue
+            new_items.append(item)
+            new_rows.append(i)
 
-        for item in items:
+        if new_rows:
+            emb = embeddings[new_rows].astype(np.float32)
+            faiss.normalize_L2(emb)
+            self.index.add(emb)
+
+        for item in new_items:
             self.meta[item.id] = {"text": item.text, "meta": item.meta or {}}
-            if item.id not in self.id_order:
-                self.id_order.append(item.id)
+            self.id_order.append(item.id)
 
         self._persist()
-        logging.info(f"Added {len(items)} items to VectorMemory and persisted data.")
+        logging.info(f"Added {len(new_items)} items to VectorMemory and persisted data.")
 
     def search(self, query_embedding: np.ndarray, k: int = 5) -> List[Tuple[str, float, Dict]]:
         """Return top-k results for a query embedding."""

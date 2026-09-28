@@ -1,0 +1,246 @@
+{
+  "scope": "fresh isolated subprocess per import; network/process calls blocked in children; no production imports or model construction",
+  "scratch_removed": true,
+  "results": [
+    {
+      "module": "river",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/river/__init__.py",
+      "seconds": 0.0012
+    },
+    {
+      "module": "numpy",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/numpy/__init__.py",
+      "seconds": 0.04
+    },
+    {
+      "module": "scipy",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/scipy/__init__.py",
+      "seconds": 0.041
+    },
+    {
+      "module": "sklearn",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/sklearn/__init__.py",
+      "seconds": 0.8574
+    },
+    {
+      "module": "faiss",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/faiss/__init__.py",
+      "seconds": 0.0421
+    },
+    {
+      "module": "torch",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/torch/__init__.py",
+      "seconds": 0.7158
+    },
+    {
+      "module": "sentence_transformers",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/sentence_transformers/__init__.py",
+      "seconds": 3.4386
+    },
+    {
+      "module": "transformers",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/transformers/__init__.py",
+      "seconds": 0.8063
+    },
+    {
+      "module": "optuna",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/optuna/__init__.py",
+      "seconds": 0.0776
+    },
+    {
+      "module": "apricot",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/apricot/__init__.py",
+      "seconds": 1.8769
+    },
+    {
+      "module": "networkx",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/networkx/__init__.py",
+      "seconds": 0.1202
+    },
+    {
+      "module": "statsmodels.api",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/statsmodels/api.py",
+      "seconds": 4.1072
+    },
+    {
+      "module": "pymc",
+      "status": "BOUNDARY_LIMITED",
+      "error": "RuntimeError: AUDIT_BOUNDARY:write:/dev/null",
+      "seconds": 0.0696
+    },
+    {
+      "module": "arviz",
+      "status": "BOUNDARY_LIMITED",
+      "error": "RuntimeError: AUDIT_BOUNDARY:subprocess.Popen",
+      "seconds": 0.859
+    },
+    {
+      "module": "sympy",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/sympy/__init__.py",
+      "seconds": 0.1626
+    },
+    {
+      "module": "pydantic",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/pydantic/__init__.py",
+      "seconds": 0.031
+    },
+    {
+      "module": "jsonschema",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/jsonschema/__init__.py",
+      "seconds": 0.0483
+    },
+    {
+      "module": "sqlalchemy",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/sqlalchemy/__init__.py",
+      "seconds": 0.0722
+    },
+    {
+      "module": "pandas",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/pandas/__init__.py",
+      "seconds": 0.1586
+    },
+    {
+      "module": "pytest",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/pytest/__init__.py",
+      "seconds": 0.0491
+    },
+    {
+      "module": "dspy",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/dspy/__init__.py",
+      "seconds": 2.4322
+    },
+    {
+      "module": "langgraph.graph",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/langgraph/graph/__init__.py",
+      "seconds": 0.8039
+    },
+    {
+      "module": "chromadb",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/chromadb/__init__.py",
+      "seconds": 1.3591
+    },
+    {
+      "module": "pgmpy",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/pgmpy/__init__.py",
+      "seconds": 0.0576
+    },
+    {
+      "module": "pomegranate",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/pomegranate/__init__.py",
+      "seconds": 0.0005
+    },
+    {
+      "module": "ollama",
+      "status": "IMPORTABLE",
+      "path": "/Users/richietate/miniforge3/envs/feral_echo/lib/python3.12/site-packages/ollama/__init__.py",
+      "seconds": 0.1216
+    },
+    {
+      "river_contextual": {
+        "class": "LinUCBDisjoint",
+        "selected": [
+          0,
+          1
+        ],
+        "pickle_roundtrip": [
+          0,
+          1
+        ],
+        "scope": "full-information synthetic update smoke, not bandit regret or real learning experiment"
+      },
+      "drift": {
+        "class": "ADWIN",
+        "alarms": [
+          415
+        ],
+        "scope": "one deterministic step-change, not false-alarm calibration"
+      },
+      "sqlite": {
+        "version": "3.53.2",
+        "duplicate_rejected": true,
+        "rollback_rows": 1,
+        "fts5_hits": 1
+      },
+      "statistics": {
+        "binomtest_3_of_5": 1.0,
+        "beta_interval": [
+          0.48224414763982737,
+          0.9397822658270933
+        ]
+      },
+      "sparse_retrieval": {
+        "shape": [
+          3,
+          16
+        ],
+        "selected_doc": 0,
+        "scores": [
+          0.7504439483406599,
+          0.0,
+          0.16834333794226317
+        ]
+      },
+      "river_source": {
+        "learn": {
+          "line": 808,
+          "model_task_stats_referenced": true,
+          "classifier_prediction_referenced": true
+        },
+        "learn_from_rating": {
+          "line": 898,
+          "model_task_stats_referenced": false,
+          "classifier_prediction_referenced": false
+        },
+        "learn_from_sandbox_outcome": {
+          "line": 870,
+          "model_task_stats_referenced": false,
+          "classifier_prediction_referenced": false
+        },
+        "score_model": {
+          "line": 995,
+          "model_task_stats_referenced": true,
+          "classifier_prediction_referenced": false
+        }
+      },
+      "oracle_counterexample": [
+        {
+          "condition": "treatment",
+          "input": 1152921504606846978,
+          "actual": true,
+          "expected": false,
+          "original_passed": true
+        },
+        {
+          "condition": "control",
+          "input": 1152921504606846978,
+          "actual": true,
+          "expected": false,
+          "original_passed": true
+        }
+      ]
+    }
+  ]
+}

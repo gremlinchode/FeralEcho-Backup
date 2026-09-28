@@ -1,0 +1,2102 @@
+{
+  "R1": {
+    "after": {
+      "candidate_A": {
+        "n": 8,
+        "score": 0.5
+      },
+      "candidate_B": {
+        "n": 8,
+        "score": 1.0
+      }
+    },
+    "before": {
+      "candidate_A": {
+        "n": 8,
+        "score": 0.5
+      },
+      "candidate_B": {
+        "n": 8,
+        "score": 1.0
+      }
+    },
+    "classifiers_changed": true,
+    "observations": {
+      "coding": 256
+    },
+    "sandbox_observations": {
+      "coding": 80
+    },
+    "scores_unchanged": true,
+    "selected": "candidate_B"
+  },
+  "R2_R3": {
+    "auto_quality": {
+      "after_load": {
+        "candidate_A": {
+          "n": 8,
+          "score": 0.5
+        },
+        "candidate_B": {
+          "n": 8,
+          "score": 1.0
+        }
+      },
+      "before_save": {
+        "candidate_A": {
+          "n": 8,
+          "score": 0.5
+        },
+        "candidate_B": {
+          "n": 8,
+          "score": 1.0
+        }
+      },
+      "heldout": {
+        "correct": 0,
+        "n": 24,
+        "rows": [
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              100,
+              3,
+              0
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              101,
+              3,
+              -1
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              102,
+              3,
+              -2
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              103,
+              3,
+              -3
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              104,
+              3,
+              -4
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              105,
+              3,
+              -5
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              106,
+              3,
+              -6
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              107,
+              3,
+              -7
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              108,
+              3,
+              -8
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              109,
+              3,
+              -9
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              110,
+              3,
+              -10
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              111,
+              3,
+              -11
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              112,
+              3,
+              -12
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              113,
+              3,
+              -13
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              114,
+              3,
+              -14
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              115,
+              3,
+              -15
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              116,
+              3,
+              -16
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              117,
+              3,
+              -17
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              118,
+              3,
+              -18
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              119,
+              3,
+              -19
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              120,
+              3,
+              -20
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              121,
+              3,
+              -21
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              122,
+              3,
+              -22
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              123,
+              3,
+              -23
+            ],
+            "selected": "candidate_B"
+          }
+        ],
+        "selected": "candidate_B"
+      },
+      "same_after_load": true,
+      "train_rows": [
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            1,
+            2,
+            -1
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            1,
+            2,
+            -1
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            2,
+            2,
+            -2
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            2,
+            2,
+            -2
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            3,
+            2,
+            -3
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            3,
+            2,
+            -3
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            4,
+            2,
+            -4
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            4,
+            2,
+            -4
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            5,
+            2,
+            -5
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            5,
+            2,
+            -5
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            6,
+            2,
+            -6
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            6,
+            2,
+            -6
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            7,
+            2,
+            -7
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            7,
+            2,
+            -7
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            8,
+            2,
+            -8
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            8,
+            2,
+            -8
+          ],
+          "model": "candidate_B",
+          "reward": false
+        }
+      ]
+    },
+    "reversed_outcome": {
+      "after_load": {
+        "candidate_A": {
+          "n": 8,
+          "score": 0.0
+        },
+        "candidate_B": {
+          "n": 8,
+          "score": 1.0
+        }
+      },
+      "before_save": {
+        "candidate_A": {
+          "n": 8,
+          "score": 0.0
+        },
+        "candidate_B": {
+          "n": 8,
+          "score": 1.0
+        }
+      },
+      "heldout": {
+        "correct": 0,
+        "n": 24,
+        "rows": [
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              100,
+              3,
+              0
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              101,
+              3,
+              -1
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              102,
+              3,
+              -2
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              103,
+              3,
+              -3
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              104,
+              3,
+              -4
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              105,
+              3,
+              -5
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              106,
+              3,
+              -6
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              107,
+              3,
+              -7
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              108,
+              3,
+              -8
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              109,
+              3,
+              -9
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              110,
+              3,
+              -10
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              111,
+              3,
+              -11
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              112,
+              3,
+              -12
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              113,
+              3,
+              -13
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              114,
+              3,
+              -14
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              115,
+              3,
+              -15
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              116,
+              3,
+              -16
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              117,
+              3,
+              -17
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              118,
+              3,
+              -18
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              119,
+              3,
+              -19
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              120,
+              3,
+              -20
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              121,
+              3,
+              -21
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              122,
+              3,
+              -22
+            ],
+            "selected": "candidate_B"
+          },
+          {
+            "actual": -999999,
+            "correct": false,
+            "expected": 103,
+            "input": [
+              123,
+              3,
+              -23
+            ],
+            "selected": "candidate_B"
+          }
+        ],
+        "selected": "candidate_B"
+      },
+      "same_after_load": true,
+      "train_rows": [
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            1,
+            2,
+            -1
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            1,
+            2,
+            -1
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            2,
+            2,
+            -2
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            2,
+            2,
+            -2
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            3,
+            2,
+            -3
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            3,
+            2,
+            -3
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            4,
+            2,
+            -4
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            4,
+            2,
+            -4
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            5,
+            2,
+            -5
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            5,
+            2,
+            -5
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            6,
+            2,
+            -6
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            6,
+            2,
+            -6
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            7,
+            2,
+            -7
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            7,
+            2,
+            -7
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            8,
+            2,
+            -8
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            8,
+            2,
+            -8
+          ],
+          "model": "candidate_B",
+          "reward": false
+        }
+      ]
+    },
+    "sandbox_only": {
+      "after_load": {
+        "candidate_A": {
+          "n": 0,
+          "score": 0.5
+        },
+        "candidate_B": {
+          "n": 0,
+          "score": 0.5
+        }
+      },
+      "before_save": {
+        "candidate_A": {
+          "n": 0,
+          "score": 0.5
+        },
+        "candidate_B": {
+          "n": 0,
+          "score": 0.5
+        }
+      },
+      "heldout": {
+        "correct": 24,
+        "n": 24,
+        "rows": [
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              100,
+              3,
+              0
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              101,
+              3,
+              -1
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              102,
+              3,
+              -2
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              103,
+              3,
+              -3
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              104,
+              3,
+              -4
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              105,
+              3,
+              -5
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              106,
+              3,
+              -6
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              107,
+              3,
+              -7
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              108,
+              3,
+              -8
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              109,
+              3,
+              -9
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              110,
+              3,
+              -10
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              111,
+              3,
+              -11
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              112,
+              3,
+              -12
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              113,
+              3,
+              -13
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              114,
+              3,
+              -14
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              115,
+              3,
+              -15
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              116,
+              3,
+              -16
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              117,
+              3,
+              -17
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              118,
+              3,
+              -18
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              119,
+              3,
+              -19
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              120,
+              3,
+              -20
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              121,
+              3,
+              -21
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              122,
+              3,
+              -22
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              123,
+              3,
+              -23
+            ],
+            "selected": "candidate_A"
+          }
+        ],
+        "selected": "candidate_A"
+      },
+      "same_after_load": true,
+      "train_rows": [
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            1,
+            2,
+            -1
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            1,
+            2,
+            -1
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            2,
+            2,
+            -2
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            2,
+            2,
+            -2
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            3,
+            2,
+            -3
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            3,
+            2,
+            -3
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            4,
+            2,
+            -4
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            4,
+            2,
+            -4
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            5,
+            2,
+            -5
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            5,
+            2,
+            -5
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            6,
+            2,
+            -6
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            6,
+            2,
+            -6
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            7,
+            2,
+            -7
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            7,
+            2,
+            -7
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            8,
+            2,
+            -8
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            8,
+            2,
+            -8
+          ],
+          "model": "candidate_B",
+          "reward": false
+        }
+      ]
+    },
+    "verified_outcome": {
+      "after_load": {
+        "candidate_A": {
+          "n": 8,
+          "score": 1.0
+        },
+        "candidate_B": {
+          "n": 8,
+          "score": 0.0
+        }
+      },
+      "before_save": {
+        "candidate_A": {
+          "n": 8,
+          "score": 1.0
+        },
+        "candidate_B": {
+          "n": 8,
+          "score": 0.0
+        }
+      },
+      "heldout": {
+        "correct": 24,
+        "n": 24,
+        "rows": [
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              100,
+              3,
+              0
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              101,
+              3,
+              -1
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              102,
+              3,
+              -2
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              103,
+              3,
+              -3
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              104,
+              3,
+              -4
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              105,
+              3,
+              -5
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              106,
+              3,
+              -6
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              107,
+              3,
+              -7
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              108,
+              3,
+              -8
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              109,
+              3,
+              -9
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              110,
+              3,
+              -10
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              111,
+              3,
+              -11
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              112,
+              3,
+              -12
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              113,
+              3,
+              -13
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              114,
+              3,
+              -14
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              115,
+              3,
+              -15
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              116,
+              3,
+              -16
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              117,
+              3,
+              -17
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              118,
+              3,
+              -18
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              119,
+              3,
+              -19
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              120,
+              3,
+              -20
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              121,
+              3,
+              -21
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              122,
+              3,
+              -22
+            ],
+            "selected": "candidate_A"
+          },
+          {
+            "actual": 103,
+            "correct": true,
+            "expected": 103,
+            "input": [
+              123,
+              3,
+              -23
+            ],
+            "selected": "candidate_A"
+          }
+        ],
+        "selected": "candidate_A"
+      },
+      "same_after_load": true,
+      "train_rows": [
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            1,
+            2,
+            -1
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            1,
+            2,
+            -1
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            2,
+            2,
+            -2
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            2,
+            2,
+            -2
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            3,
+            2,
+            -3
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            3,
+            2,
+            -3
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            4,
+            2,
+            -4
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            4,
+            2,
+            -4
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            5,
+            2,
+            -5
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            5,
+            2,
+            -5
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            6,
+            2,
+            -6
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            6,
+            2,
+            -6
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            7,
+            2,
+            -7
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            7,
+            2,
+            -7
+          ],
+          "model": "candidate_B",
+          "reward": false
+        },
+        {
+          "actual": 2,
+          "expected": 2,
+          "input": [
+            8,
+            2,
+            -8
+          ],
+          "model": "candidate_A",
+          "reward": true
+        },
+        {
+          "actual": -999999,
+          "expected": 2,
+          "input": [
+            8,
+            2,
+            -8
+          ],
+          "model": "candidate_B",
+          "reward": false
+        }
+      ]
+    }
+  },
+  "fixtures": {
+    "bad": "def solve(values):\n    if len(values) > 0:\n        unused = 0\n    if len(values) > 1:\n        unused = 1\n    if len(values) > 2:\n        unused = 2\n    if len(values) > 3:\n        unused = 3\n    if len(values) > 4:\n        unused = 4\n    if len(values) > 5:\n        unused = 5\n    return -999999\n",
+    "good": "def solve(values):\n    return sum(values)\n",
+    "heldout": [
+      [
+        100,
+        3,
+        0
+      ],
+      [
+        101,
+        3,
+        -1
+      ],
+      [
+        102,
+        3,
+        -2
+      ],
+      [
+        103,
+        3,
+        -3
+      ],
+      [
+        104,
+        3,
+        -4
+      ],
+      [
+        105,
+        3,
+        -5
+      ],
+      [
+        106,
+        3,
+        -6
+      ],
+      [
+        107,
+        3,
+        -7
+      ],
+      [
+        108,
+        3,
+        -8
+      ],
+      [
+        109,
+        3,
+        -9
+      ],
+      [
+        110,
+        3,
+        -10
+      ],
+      [
+        111,
+        3,
+        -11
+      ],
+      [
+        112,
+        3,
+        -12
+      ],
+      [
+        113,
+        3,
+        -13
+      ],
+      [
+        114,
+        3,
+        -14
+      ],
+      [
+        115,
+        3,
+        -15
+      ],
+      [
+        116,
+        3,
+        -16
+      ],
+      [
+        117,
+        3,
+        -17
+      ],
+      [
+        118,
+        3,
+        -18
+      ],
+      [
+        119,
+        3,
+        -19
+      ],
+      [
+        120,
+        3,
+        -20
+      ],
+      [
+        121,
+        3,
+        -21
+      ],
+      [
+        122,
+        3,
+        -22
+      ],
+      [
+        123,
+        3,
+        -23
+      ]
+    ],
+    "train": [
+      [
+        1,
+        2,
+        -1
+      ],
+      [
+        2,
+        2,
+        -2
+      ],
+      [
+        3,
+        2,
+        -3
+      ],
+      [
+        4,
+        2,
+        -4
+      ],
+      [
+        5,
+        2,
+        -5
+      ],
+      [
+        6,
+        2,
+        -6
+      ],
+      [
+        7,
+        2,
+        -7
+      ],
+      [
+        8,
+        2,
+        -8
+      ]
+    ]
+  },
+  "production_modules": [],
+  "quality": {
+    "bad": 4,
+    "good": 2
+  },
+  "scope": "exact-method isolated component, authored fixed workers; not Echo inference",
+  "scorer_sha256": "7f3eb61d4fd42a7ef5dfeac93a1a18b398cd185488d8a6d00b06c879bccde163",
+  "scratch": "/private/tmp/feralecho-recursive-k8hiu0cm",
+  "selector_sha256": "5d1aa77911509ebbc90d01cd084e5ac3b4c8bd7b9790bc2780b5ce226c253585",
+  "source_sha256": "1e32038b532da211890f5a42ded1ed63fa85ed3872fd209fd101226f8a8da2e8",
+  "writer_threads": []
+}

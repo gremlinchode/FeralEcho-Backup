@@ -925,3 +925,375 @@ def runtime_process_identity_and_self_report(pid) -> dict:
             "runtime_self_report": None,
             "correlation": None,
         }
+
+
+# ============================================================
+# PROVENANCE — RECONCILIATION: reconcile_process_and_selfreport()
+# ============================================================
+# Implements the primitive specified in full by
+# audits/2026-09-13_reconciliation_implementation_design.md, itself built
+# on audits/2026-09-13_reconciliation_primitive_architecture.md's already-
+# attacked design (cross-layer boundary report, observation-time contract/
+# placement/enforcement reports). That specification is the authoritative
+# semantic contract for this section -- this implementation follows it
+# exactly, with one interpretive detail the specification left implicit,
+# resolved here and disclosed plainly rather than silently decided:
+#
+#   DEVIATION/CLARIFICATION (not a contradiction of the spec): for the two
+#   PID relationships involving `os_process_observation` (the independent
+#   witness), that witness's PID value is treated as the queried `pid`
+#   ONLY when `external_process["exists"] is True` -- i.e. only when a
+#   real OS process was actually confirmed to exist. If `exists` is False,
+#   os_process_observation has made no positive PID observation at all
+#   (only confirmed absence), so its side of the comparison is `None`,
+#   producing ONE_SIDED/NEITHER rather than a fabricated AGREE against
+#   whatever the self-report happens to claim. This is DELIBERATELY
+#   STRICTER than Layer 2's own existing `correlation.pid_match_sentinel`/
+#   `pid_match_server_file` fields (which compare self-report against the
+#   bare queried integer unconditionally, regardless of `exists` -- already
+#   shipped, already red-teamed, and UNCHANGED by this addition). This
+#   reconciliation layer is explicitly allowed, by its own stated purpose,
+#   to apply more careful epistemic discipline than a raw Layer 2 field --
+#   never treating an unconfirmed value as an observation is exactly the
+#   kind of interpretation this layer exists to add. It does not change
+#   Layer 2's own fields or their tested behavior in any way.
+#
+# This section performs ZERO I/O of any kind: no filesystem access, no
+# subprocess, no psutil, no network, no `datetime.now()`/`time.time()`
+# call anywhere. It reads only the `layer2_result` dict it is given,
+# mutates neither that dict nor any global state, and is fully
+# deterministic -- the same input always produces byte-identical output.
+# Reconciliation interprets evidence; it does not gather evidence.
+# ============================================================
+
+RELATIONSHIP_AGREE = "AGREE"
+RELATIONSHIP_DISAGREE = "DISAGREE"
+RELATIONSHIP_ONE_SIDED = "ONE_SIDED"
+RELATIONSHIP_NEITHER = "NEITHER"
+
+EPISTEMIC_EVIDENCE_AGREES = "EVIDENCE_AGREES"
+EPISTEMIC_EVIDENCE_CONFLICTS = "EVIDENCE_CONFLICTS"
+EPISTEMIC_INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
+
+# Witness identity -- fixed architectural metadata, known a priori from
+# Layer 2's own real producer structure (see the module-level header above
+# Layer 2's section), NEVER derived from or supplied by the caller. This is
+# the one thing standing between "two files agreed" and "two independent
+# witnesses agreed" -- see _WITNESS_MEMBERS' own use in
+# _independent_corroboration_count() below.
+_WITNESS_INDEPENDENT = "os_process_observation"
+_WITNESS_DEPENDENT_GROUP = "process_self_report"
+_WITNESS_MEMBERS = {
+    _WITNESS_DEPENDENT_GROUP: ("server_pid_file", "sentinel_file"),
+}
+
+_SCOPE_STATEMENT = (
+    "This reconciliation establishes relationships among Layer 2 process/"
+    "self-report evidence only. It does not establish module loading, code "
+    "execution, or Layer 1 <-> Layer 2 file/process identity."
+)
+
+# Real fields each Layer 2 sub-block actually returns (confirmed by direct
+# source read of _external_process_observation()/_read_server_pid_file()/
+# _read_sentinel_file() above -- not inferred from prose), used only to
+# compute `unrecognized_input_fields`: which real evidence fields exist in
+# the input but are not read by any of the five relationships below. A
+# field consumed only indirectly (e.g. create_time_utc/start_utc, whose
+# comparison is reused pre-computed from Layer 2's own `correlation` block
+# rather than re-read directly -- see relationship 4) still counts as
+# recognized, since it genuinely backs a relationship; it is not silently
+# dropped merely because this function reads the derived field instead of
+# the raw one.
+_RECOGNIZED_TOP_LEVEL_FIELDS = {
+    "pid", "in_scope", "error", "external_process", "runtime_self_report", "correlation",
+}
+_RECOGNIZED_EXTERNAL_PROCESS_FIELDS = {"exists", "create_time_utc"}
+_RECOGNIZED_SERVER_PID_FILE_FIELDS = {"pid"}
+_RECOGNIZED_SENTINEL_FILE_FIELDS = {"pid", "start_utc"}
+
+
+def _compare_values(a, b, tolerance: Optional[float] = None) -> str:
+    """Pure, zero-I/O relationship classifier -- the ONLY place any of the
+    four RELATIONSHIP_* states is decided. `a`/`b` are already-extracted
+    evidence values (never re-read from anywhere). Equal-or-within-
+    tolerance is AGREE; unequal-beyond-tolerance is DISAGREE; exactly one
+    side present is ONE_SIDED; both absent is NEITHER. Never raises for
+    the value shapes this module ever passes in (int/float/str/None)."""
+    if a is None and b is None:
+        return RELATIONSHIP_NEITHER
+    if a is None or b is None:
+        return RELATIONSHIP_ONE_SIDED
+    if tolerance is not None:
+        try:
+            return RELATIONSHIP_AGREE if abs(a - b) <= tolerance else RELATIONSHIP_DISAGREE
+        except TypeError:
+            # Mismatched, non-numeric types under a numeric tolerance --
+            # a real, if unlikely, malformed-input shape. Never crash;
+            # this is genuinely neither a clean agreement nor a clean
+            # numeric disagreement, so ONE_SIDED-shaped uncertainty is
+            # more honest than guessing DISAGREE for two incomparable values.
+            return RELATIONSHIP_ONE_SIDED
+    return RELATIONSHIP_AGREE if a == b else RELATIONSHIP_DISAGREE
+
+
+def _independent_corroboration_count(relationships: list) -> int:
+    """1 if the independent witness (os_process_observation) AGREEs with
+    AT LEAST ONE member of the dependent self-report group; else 0.
+    Deliberately capped at 1 regardless of how many dependent-group
+    members individually agree -- two manifestations of one underlying
+    self-belief (server_pid_file, sentinel_file) agreeing with the
+    independent witness is still only ONE corroborating source beyond the
+    independent witness itself, never two or three. If the independent
+    witness itself is absent, this is 0 -- a lone witness, however
+    independent, corroborates nothing by itself."""
+    for r in relationships:
+        if (
+            r["subject"] == "pid"
+            and _WITNESS_INDEPENDENT in r["compared"]
+            and any(m in r["compared"] for m in _WITNESS_MEMBERS[_WITNESS_DEPENDENT_GROUP])
+            and r["state"] == RELATIONSHIP_AGREE
+        ):
+            return 1
+    return 0
+
+
+def reconcile_process_and_selfreport(layer2_result) -> dict:
+    """
+    Pure, zero-I/O interpretation of an already-gathered
+    runtime_process_identity_and_self_report() result: which specific,
+    named facts agree, disagree, or lack sufficient evidence to compare --
+    never a verdict, never a "verified" claim, never anything about
+    module loading or code execution. Never modifies its argument; never
+    raises.
+
+    Args:
+        layer2_result: the COMPLETE, unmodified return value of
+            runtime_process_identity_and_self_report(). Never a caller-
+            selected subset of fields -- this is a structural requirement,
+            not a convenience: it is the one mechanism this design relies
+            on to prevent a caller from cherry-picking only favorable
+            evidence into the comparison (see
+            audits/2026-09-13_reconciliation_implementation_design.md
+            Section 13). Any type other than a dict is reported via
+            `input_error`, never raised.
+
+    Returns a dict with exactly these top-level keys, always present:
+        input_error (str or None)   -- set only when `layer2_result`
+                                        itself was not a dict at all;
+                                        otherwise None.
+        witnesses (dict)            -- FIXED architectural metadata,
+                                        identical on every call, naming
+                                        which evidence sources are
+                                        independent versus one shared
+                                        dependent group. Never computed
+                                        from the input.
+        relationships (list[dict])  -- exactly 5 records, always present
+                                        regardless of input completeness,
+                                        each {"subject", "compared",
+                                        "state" (one of AGREE/DISAGREE/
+                                        ONE_SIDED/NEITHER), "values"}.
+                                        Missing evidence degrades a
+                                        relationship's state; it never
+                                        removes the relationship from the
+                                        list.
+        aggregate (dict)             -- {"raw_agreeing_relationship_count",
+                                          "independent_corroboration_count",
+                                          "epistemic_summary"}. The summary
+                                        is one of EVIDENCE_AGREES /
+                                        EVIDENCE_CONFLICTS /
+                                        INSUFFICIENT_EVIDENCE -- a single
+                                        DISAGREE anywhere always forces
+                                        EVIDENCE_CONFLICTS, regardless of
+                                        how many other relationships AGREE.
+        unrecognized_input_fields (list[str])
+                                     -- real fields present in the input
+                                        that no relationship above reads,
+                                        by dotted path. Discloses evidence
+                                        that exists but was not part of
+                                        any comparison; never silently
+                                        dropped without a trace.
+        scope_statement (str)       -- a fixed, constant string (see
+                                        _SCOPE_STATEMENT above), restating
+                                        this function's exact boundary in
+                                        the output itself, not only in
+                                        this docstring.
+
+    What this function CAN establish: whether specific, named Layer 2
+    facts (a PID integer, a start-time consistency already computed by
+    Layer 2 itself) agree, disagree, or lack sufficient evidence to
+    compare -- and, separately, how many of those agreements constitute
+    genuine independent corroboration versus mere self-consistency within
+    one dependent self-report group.
+
+    What this function explicitly CANNOT and does NOT establish, and its
+    output contains no field capable of expressing: that any source file
+    is loaded, that any module has been imported, that any code is
+    executing, or any relationship whatsoever between Layer 1 (file/Git)
+    evidence and this Layer 2 (process/self-report) evidence -- Layer 1 is
+    structurally outside this function's input domain; no Layer 1 field
+    name appears anywhere in this function's logic. `EVIDENCE_AGREES`
+    means only that every computable relationship in the available
+    evidence happened to agree -- never "verified," never "confirmed,"
+    never anything about which of two disagreeing sources, if any, is
+    correct. See audits/2026-09-13_reconciliation_implementation_design.md
+    for the full specification this implementation follows, and
+    app/core/self_heal.py (tracked, clean, unmodified vs. HEAD, confirmed
+    zero real importers) for why even perfect Layer 2 agreement must never
+    be read as evidence of code execution.
+    """
+    try:
+        if not isinstance(layer2_result, dict):
+            layer2_result = {}
+            input_error = "malformed_layer2_result"
+        else:
+            input_error = None
+
+        queried_pid = layer2_result.get("pid")
+        external = layer2_result.get("external_process") or {}
+        self_report = layer2_result.get("runtime_self_report") or {}
+        server_file = self_report.get("server_pid_file") or {}
+        sentinel_file = self_report.get("sentinel_file") or {}
+        correlation = layer2_result.get("correlation") or {}
+
+        # os_process_observation's PID value: only a positive observation
+        # (exists is True) counts as having actually observed a PID at
+        # all -- see the module-level DEVIATION/CLARIFICATION note above.
+        external_pid = queried_pid if external.get("exists") is True else None
+
+        server_pid = server_file.get("pid")
+        sentinel_pid = sentinel_file.get("pid")
+
+        relationships = [
+            {
+                "subject": "pid",
+                "compared": [_WITNESS_INDEPENDENT, "server_pid_file"],
+                "state": _compare_values(external_pid, server_pid),
+                "values": {_WITNESS_INDEPENDENT: external_pid, "server_pid_file": server_pid},
+            },
+            {
+                "subject": "pid",
+                "compared": [_WITNESS_INDEPENDENT, "sentinel_file"],
+                "state": _compare_values(external_pid, sentinel_pid),
+                "values": {_WITNESS_INDEPENDENT: external_pid, "sentinel_file": sentinel_pid},
+            },
+            {
+                "subject": "pid",
+                "compared": ["server_pid_file", "sentinel_file"],
+                "state": _compare_values(server_pid, sentinel_pid),
+                "values": {"server_pid_file": server_pid, "sentinel_file": sentinel_pid},
+            },
+            {
+                # Reused, not recomputed: Layer 2's own already-computed
+                # correlation.start_time_match_sentinel/_delta_seconds,
+                # per this section's spec (Section 9) -- never an
+                # independent re-parse of create_time_utc/start_utc here.
+                #
+                # DISCLOSED LIMITATION, found during implementation: Layer
+                # 2's own _compose_correlation() only attempts this
+                # comparison `if external_create_time_utc and
+                # sentinel_start_utc:` (both truthy) -- when exactly ONE
+                # side is present, it never distinguishes that from BOTH
+                # sides absent; start_time_match_sentinel is None in both
+                # cases. Reusing the pre-computed field exactly as specified
+                # therefore means this relationship cannot distinguish
+                # ONE_SIDED from NEITHER -- both collapse to NEITHER here.
+                # Recovering that distinction would require independently
+                # re-reading and re-parsing the raw create_time_utc/
+                # start_utc fields, which the specification explicitly
+                # forbids (reuse, do not recompute). Accepted as a real,
+                # disclosed constraint of the reuse decision, not silently
+                # smoothed over.
+                "subject": "start_time",
+                "compared": [_WITNESS_INDEPENDENT, "sentinel_file"],
+                "state": {
+                    True: RELATIONSHIP_AGREE,
+                    False: RELATIONSHIP_DISAGREE,
+                }.get(correlation.get("start_time_match_sentinel"), RELATIONSHIP_NEITHER),
+                "values": {
+                    "delta_seconds": correlation.get("start_time_delta_seconds"),
+                    "tolerance_seconds": _START_TIME_MATCH_TOLERANCE_SECONDS,
+                },
+            },
+            {
+                # Always NEITHER today -- no observed_at field exists
+                # anywhere in the current live Layer 2 schema (confirmed
+                # directly this session). A forward-compatible placeholder,
+                # never a fabricated timestamp comparison. See Section 9
+                # of the implementation design for the exact future
+                # extension point this reserves.
+                "subject": "observation_time",
+                "compared": [_WITNESS_INDEPENDENT, "sentinel_file"],
+                "state": RELATIONSHIP_NEITHER,
+                "values": {},
+                "note": "no observed_at field exists in current Layer 2 schema",
+            },
+        ]
+
+        raw_agreeing = sum(1 for r in relationships if r["state"] == RELATIONSHIP_AGREE)
+        independent_corroboration = _independent_corroboration_count(relationships)
+
+        if any(r["state"] == RELATIONSHIP_DISAGREE for r in relationships):
+            epistemic_summary = EPISTEMIC_EVIDENCE_CONFLICTS
+        elif any(r["state"] == RELATIONSHIP_AGREE for r in relationships):
+            epistemic_summary = EPISTEMIC_EVIDENCE_AGREES
+        else:
+            epistemic_summary = EPISTEMIC_INSUFFICIENT_EVIDENCE
+
+        unrecognized = []
+        for key in layer2_result:
+            if key not in _RECOGNIZED_TOP_LEVEL_FIELDS:
+                unrecognized.append(key)
+        for key in external:
+            if key not in _RECOGNIZED_EXTERNAL_PROCESS_FIELDS:
+                unrecognized.append(f"external_process.{key}")
+        for key in server_file:
+            if key not in _RECOGNIZED_SERVER_PID_FILE_FIELDS:
+                unrecognized.append(f"runtime_self_report.server_pid_file.{key}")
+        for key in sentinel_file:
+            if key not in _RECOGNIZED_SENTINEL_FILE_FIELDS:
+                unrecognized.append(f"runtime_self_report.sentinel_file.{key}")
+
+        return {
+            "input_error": input_error,
+            "witnesses": {
+                "independent": [_WITNESS_INDEPENDENT],
+                "dependent_groups": {
+                    _WITNESS_DEPENDENT_GROUP: list(_WITNESS_MEMBERS[_WITNESS_DEPENDENT_GROUP])
+                },
+            },
+            "relationships": relationships,
+            "aggregate": {
+                "raw_agreeing_relationship_count": raw_agreeing,
+                "independent_corroboration_count": independent_corroboration,
+                "epistemic_summary": epistemic_summary,
+            },
+            "unrecognized_input_fields": unrecognized,
+            "scope_statement": _SCOPE_STATEMENT,
+        }
+    except Exception:  # last-resort safety net -- this function must never raise
+        return {
+            "input_error": "internal_error",
+            "witnesses": {
+                "independent": [_WITNESS_INDEPENDENT],
+                "dependent_groups": {
+                    _WITNESS_DEPENDENT_GROUP: list(_WITNESS_MEMBERS[_WITNESS_DEPENDENT_GROUP])
+                },
+            },
+            "relationships": [
+                {"subject": s, "compared": c, "state": RELATIONSHIP_NEITHER, "values": {}}
+                for s, c in (
+                    ("pid", [_WITNESS_INDEPENDENT, "server_pid_file"]),
+                    ("pid", [_WITNESS_INDEPENDENT, "sentinel_file"]),
+                    ("pid", ["server_pid_file", "sentinel_file"]),
+                    ("start_time", [_WITNESS_INDEPENDENT, "sentinel_file"]),
+                    ("observation_time", [_WITNESS_INDEPENDENT, "sentinel_file"]),
+                )
+            ],
+            "aggregate": {
+                "raw_agreeing_relationship_count": 0,
+                "independent_corroboration_count": 0,
+                "epistemic_summary": EPISTEMIC_INSUFFICIENT_EVIDENCE,
+            },
+            "unrecognized_input_fields": [],
+            "scope_statement": _SCOPE_STATEMENT,
+        }

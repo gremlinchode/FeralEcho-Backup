@@ -6,15 +6,16 @@ scripts/verify_seam_engine.py / scripts/verify_liveness_ledger.py: prove
 each primitive's epistemic boundary, not merely that it runs without
 raising.
 
-Scope: two primitives now implemented.
-  - working_tree_file_identity()               (Layer 1, Cases 1-16)
-  - runtime_process_identity_and_self_report()  (Layer 2, Cases 17+,
-    added 2026-09-13 per audits/2026-09-12_provenance_layer2_boundary_
-    review.md's own contract)
+Scope: three primitives now implemented.
+  - working_tree_file_identity()               (Layer 1)
+  - runtime_process_identity_and_self_report()  (Layer 2)
+  - reconcile_process_and_selfreport()           (Reconciliation, added
+    2026-09-13 per audits/2026-09-13_reconciliation_implementation_
+    design.md's own contract)
 There is still no runtime_self_reported_module_origin() (sys.modules
-inspection) or reconcile() to test -- both remain out of scope, per that
-review's own explicit finding that the former requires new in-process
-code this mission is not authorized to add.
+inspection) to test -- remains out of scope, per the leaf-primitives
+validation's own explicit finding that it requires new in-process code
+this thread is not authorized to add.
 
 STRICTLY READ-ONLY. This script never writes, stages, commits, resets, or
 otherwise mutates anything in the repository or the running system. It
@@ -50,8 +51,20 @@ from app.core.provenance_check import (  # noqa: E402
     runtime_process_identity_and_self_report,
     _compose_correlation,
     _external_process_observation,
+    reconcile_process_and_selfreport,
+    _compare_values,
+    RELATIONSHIP_AGREE,
+    RELATIONSHIP_DISAGREE,
+    RELATIONSHIP_ONE_SIDED,
+    RELATIONSHIP_NEITHER,
+    EPISTEMIC_EVIDENCE_AGREES,
+    EPISTEMIC_EVIDENCE_CONFLICTS,
+    EPISTEMIC_INSUFFICIENT_EVIDENCE,
 )
 import psutil  # noqa: E402 -- already a project dependency (see provenance_check.py)
+import copy  # noqa: E402
+import inspect  # noqa: E402
+from unittest import mock  # noqa: E402
 
 TRACKED_CLEAN = "CLAUDE.md"
 TRACKED_MODIFIED = "app/core/echo_ground_truth.py"
@@ -940,6 +953,333 @@ def case_l2_epi_6_never_raises_and_read_only():
     return ok and head_before == head_after and status_before == status_after
 
 
+# ---------------------------------------------------------------------------
+# Reconciliation: reconcile_process_and_selfreport()  (added 2026-09-13, per
+# audits/2026-09-13_reconciliation_implementation_design.md's own test
+# specification, Section 19 -- 14 categories plus an explicit
+# caller-cherry-picking test and the self_heal.py false-positive case.)
+# ---------------------------------------------------------------------------
+
+def _synthetic_layer2(
+    pid=100,
+    exists=True,
+    create_time_utc=None,
+    server_pid=100,
+    sentinel_pid=100,
+    sentinel_start_utc=None,
+    start_time_match=None,
+    start_time_delta=None,
+):
+    """Builds a Layer-2-result-shaped dict matching
+    runtime_process_identity_and_self_report()'s real, live schema exactly
+    (re-verified against current source this session -- see
+    _compose_correlation()'s own return shape). start_time_match/
+    start_time_delta are passed straight into `correlation` untouched,
+    deliberately independent of create_time_utc/sentinel_start_utc, so a
+    caller of this helper can construct a case where the two would
+    disagree if reconcile() ever recomputed them -- Case recon-6 depends
+    on that independence to prove reuse, not recomputation."""
+    return {
+        "pid": pid,
+        "in_scope": True,
+        "error": None,
+        "external_process": {"exists": exists, "create_time_utc": create_time_utc},
+        "runtime_self_report": {
+            "server_pid_file": {"pid": server_pid},
+            "sentinel_file": {"pid": sentinel_pid, "start_utc": sentinel_start_utc},
+        },
+        "correlation": {
+            "pid_match_server_file": (server_pid == pid) if server_pid is not None else None,
+            "pid_match_sentinel": (sentinel_pid == pid) if sentinel_pid is not None else None,
+            "start_time_match_sentinel": start_time_match,
+            "start_time_delta_seconds": start_time_delta,
+        },
+    }
+
+
+def case_recon_1_happy_path():
+    layer2 = _synthetic_layer2(pid=100, exists=True, server_pid=100, sentinel_pid=100,
+                                 start_time_match=True, start_time_delta=1.0)
+    r = reconcile_process_and_selfreport(layer2)
+    non_obs = [rel for rel in r["relationships"] if rel["subject"] != "observation_time"]
+    obs = next(rel for rel in r["relationships"] if rel["subject"] == "observation_time")
+    return (
+        r["input_error"] is None
+        and len(r["relationships"]) == 5
+        and all(rel["state"] == RELATIONSHIP_AGREE for rel in non_obs)
+        and obs["state"] == RELATIONSHIP_NEITHER  # never fabricated -- no observed_at field exists
+        and r["aggregate"]["raw_agreeing_relationship_count"] == 4
+        and r["aggregate"]["independent_corroboration_count"] == 1
+        and r["aggregate"]["epistemic_summary"] == EPISTEMIC_EVIDENCE_AGREES
+        and r["unrecognized_input_fields"] == []
+        and r["scope_statement"] == pc._SCOPE_STATEMENT
+    )
+
+
+def case_recon_2_pid_and_start_time_disagreement():
+    layer2 = _synthetic_layer2(pid=100, exists=True, server_pid=200, sentinel_pid=300,
+                                 start_time_match=False, start_time_delta=99999.0)
+    r = reconcile_process_and_selfreport(layer2)
+    return (
+        r["input_error"] is None
+        and any(rel["state"] == RELATIONSHIP_DISAGREE for rel in r["relationships"])
+        and r["aggregate"]["epistemic_summary"] == EPISTEMIC_EVIDENCE_CONFLICTS
+    )
+
+
+def case_recon_3_missing_self_report_entirely():
+    """Missing/malformed self-report degrades to ONE_SIDED/NEITHER --
+    never fabricates AGREE from absence."""
+    layer2 = {
+        "pid": 100, "in_scope": True, "error": None,
+        "external_process": {"exists": True, "create_time_utc": None},
+        "runtime_self_report": {},
+        "correlation": {},
+    }
+    r = reconcile_process_and_selfreport(layer2)
+    pid_rels = [rel for rel in r["relationships"] if rel["subject"] == "pid"]
+    return (
+        r["input_error"] is None
+        and all(rel["state"] in (RELATIONSHIP_ONE_SIDED, RELATIONSHIP_NEITHER) for rel in pid_rels)
+        and not any(rel["state"] == RELATIONSHIP_AGREE for rel in r["relationships"])
+        and r["aggregate"]["independent_corroboration_count"] == 0
+    )
+
+
+def case_recon_3b_malformed_self_report_field_types():
+    """Wrong-typed self-report values (e.g. a string where an int PID is
+    expected) never raise -- worst case is an honest DISAGREE/NEITHER,
+    not a crash."""
+    layer2 = _synthetic_layer2(pid=100, exists=True, server_pid="not-an-int", sentinel_pid=None)
+    r = reconcile_process_and_selfreport(layer2)
+    return r["input_error"] is None and len(r["relationships"]) == 5
+
+
+def case_recon_4a_dependence_no_independent_witness():
+    layer2 = _synthetic_layer2(pid=100, exists=False, server_pid=100, sentinel_pid=100)
+    r = reconcile_process_and_selfreport(layer2)
+    rels = {tuple(rel["compared"]): rel for rel in r["relationships"] if rel["subject"] == "pid"}
+    return (
+        rels[(pc._WITNESS_INDEPENDENT, "server_pid_file")]["state"] == RELATIONSHIP_ONE_SIDED
+        and rels[(pc._WITNESS_INDEPENDENT, "sentinel_file")]["state"] == RELATIONSHIP_ONE_SIDED
+        and rels[("server_pid_file", "sentinel_file")]["state"] == RELATIONSHIP_AGREE
+        and r["aggregate"]["independent_corroboration_count"] == 0
+    )
+
+
+def case_recon_4b_dependence_capped_at_one():
+    """Independent witness AND both dependent-group members all agree --
+    independent_corroboration_count must still be exactly 1, never 2 or 3,
+    per Section 14 of the design."""
+    layer2 = _synthetic_layer2(pid=100, exists=True, server_pid=100, sentinel_pid=100)
+    r = reconcile_process_and_selfreport(layer2)
+    pid_agree_count = sum(1 for rel in r["relationships"]
+                            if rel["subject"] == "pid" and rel["state"] == RELATIONSHIP_AGREE)
+    return pid_agree_count == 3 and r["aggregate"]["independent_corroboration_count"] == 1
+
+
+def case_recon_5_pid_reuse_disagree_wins():
+    """PID-reuse scenario: every PID relationship agrees (a coincidental
+    or reused PID), but start_time disagrees -- epistemic_summary must
+    become EVIDENCE_CONFLICTS despite 3 of 5 relationships agreeing.
+    'DISAGREE always wins,' explicitly re-verified for this exact case
+    per the mission's own instruction."""
+    layer2 = _synthetic_layer2(pid=100, exists=True, server_pid=100, sentinel_pid=100,
+                                 start_time_match=False, start_time_delta=999999.0)
+    r = reconcile_process_and_selfreport(layer2)
+    pid_agree_count = sum(1 for rel in r["relationships"]
+                            if rel["subject"] == "pid" and rel["state"] == RELATIONSHIP_AGREE)
+    return (
+        pid_agree_count == 3
+        and r["aggregate"]["independent_corroboration_count"] == 1
+        and r["aggregate"]["epistemic_summary"] == EPISTEMIC_EVIDENCE_CONFLICTS
+    )
+
+
+def case_recon_6_timestamp_reuse_not_recomputed():
+    """Deliberately internally-inconsistent raw timestamps (5 hours apart)
+    paired with a correlation field that explicitly claims a match --
+    proves reconcile() trusts Layer 2's pre-computed
+    start_time_match_sentinel verbatim rather than independently
+    re-parsing create_time_utc/sentinel_start_utc itself (Section 9:
+    reuse, never recompute). observation_time must stay NEITHER
+    regardless -- no observed_at field exists in the live schema."""
+    layer2 = _synthetic_layer2(
+        pid=100, exists=True,
+        create_time_utc="2026-01-01T00:00:00+00:00",
+        sentinel_start_utc="2026-01-01T05:00:00.000000Z",
+        start_time_match=True, start_time_delta=1.0,
+    )
+    r = reconcile_process_and_selfreport(layer2)
+    start_rel = next(rel for rel in r["relationships"] if rel["subject"] == "start_time")
+    obs_rel = next(rel for rel in r["relationships"] if rel["subject"] == "observation_time")
+    return (
+        start_rel["state"] == RELATIONSHIP_AGREE
+        and start_rel["values"]["delta_seconds"] == 1.0
+        and obs_rel["state"] == RELATIONSHIP_NEITHER
+    )
+
+
+def case_recon_7_purity():
+    layer2 = _synthetic_layer2(pid=100, exists=True, server_pid=100, sentinel_pid=100,
+                                 start_time_match=True, start_time_delta=1.0)
+    before = copy.deepcopy(layer2)
+    r1 = reconcile_process_and_selfreport(layer2)
+    r2 = reconcile_process_and_selfreport(layer2)
+    return layer2 == before and r1 == r2
+
+
+def case_recon_8_zero_io_via_mocking():
+    layer2 = _synthetic_layer2(pid=100, exists=True, server_pid=100, sentinel_pid=100,
+                                 start_time_match=True, start_time_delta=1.0)
+
+    def _boom(*a, **k):
+        raise AssertionError("reconcile_process_and_selfreport performed real I/O")
+
+    with mock.patch("psutil.Process", side_effect=_boom), \
+         mock.patch("builtins.open", side_effect=_boom), \
+         mock.patch("subprocess.run", side_effect=_boom):
+        try:
+            r = reconcile_process_and_selfreport(layer2)
+        except AssertionError:
+            return False
+    return r["input_error"] is None
+
+
+def case_recon_9_layer1_exclusion():
+    """An extraneous, Layer-1-shaped top-level field must be disclosed via
+    unrecognized_input_fields, never silently read, never affect the
+    result -- Layer 1 is structurally outside this function's domain."""
+    layer2 = _synthetic_layer2(pid=100, exists=True, server_pid=100, sentinel_pid=100,
+                                 start_time_match=True, start_time_delta=1.0)
+    rigged = copy.deepcopy(layer2)
+    rigged["sha256"] = "deadbeef" * 8
+    rigged["head_blob_sha256_or_none"] = None
+    r_clean = reconcile_process_and_selfreport(layer2)
+    r_rigged = reconcile_process_and_selfreport(rigged)
+    return (
+        "sha256" in r_rigged["unrecognized_input_fields"]
+        and "head_blob_sha256_or_none" in r_rigged["unrecognized_input_fields"]
+        and r_rigged["aggregate"] == r_clean["aggregate"]
+        and r_rigged["relationships"] == r_clean["relationships"]
+    )
+
+
+def case_recon_10_self_heal_false_positive():
+    """The mission's specific adversarial test: real Layer 1 data for
+    app/core/self_heal.py (tracked, clean, confirmed zero real importers
+    -- see CLAUDE.md's Health Monitoring section) combined with real
+    Layer 2 data for the live Echo process (PID 7644, read-only psutil
+    inspection only -- never signaled/restarted/touched otherwise) must
+    never produce any reconciliation field claiming the file is loaded,
+    imported, or executing. Separately proves the primitive has zero
+    access to Layer 1 at all: no Layer 1 field name appears anywhere in
+    the reconciliation output's own schema."""
+    l1 = working_tree_file_identity("app/core/self_heal.py")
+    l2 = runtime_process_identity_and_self_report(7644)
+    r = reconcile_process_and_selfreport(l2)
+    keys = [k.lower() for k in _flatten_keys(r)]
+    banned = ("loaded", "import", "module", "executing", "execution",
+              "self_heal", "in_use", "running_code")
+    no_forbidden_claim = not any(any(b in k for b in banned) for k in keys)
+    l1_field_names = {"sha256", "head_blob_sha256_or_none", "tracked", "modified_vs_head"}
+    no_l1_leakage = not any(k.split(".")[-1] in l1_field_names for k in _flatten_keys(r))
+    return (
+        l1["exists"] is True and l1["tracked"] is True  # fixture sanity
+        and no_forbidden_claim
+        and no_l1_leakage
+    )
+
+
+def case_recon_11_complete_input_requirement():
+    """Exactly one required positional argument -- no field-selection
+    kwargs a caller could use to pass only a favorable subset."""
+    sig = inspect.signature(reconcile_process_and_selfreport)
+    params = list(sig.parameters.values())
+    return (
+        len(params) == 1
+        and params[0].kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+        and params[0].default is inspect.Parameter.empty
+    )
+
+
+def case_recon_12_output_completeness():
+    inputs = [{}, None, "garbage", 42, _synthetic_layer2(), {"pid": 1}]
+    required_top = {"input_error", "witnesses", "relationships", "aggregate",
+                      "unrecognized_input_fields", "scope_statement"}
+    for inp in inputs:
+        r = reconcile_process_and_selfreport(inp)
+        if set(r.keys()) != required_top:
+            return False
+        if len(r["relationships"]) != 5:
+            return False
+        for rel in r["relationships"]:
+            if not {"subject", "compared", "state", "values"} <= set(rel.keys()):
+                return False
+    return True
+
+
+def case_recon_13_exact_enum_field_contract():
+    allowed_states = {RELATIONSHIP_AGREE, RELATIONSHIP_DISAGREE, RELATIONSHIP_ONE_SIDED, RELATIONSHIP_NEITHER}
+    allowed_summaries = {EPISTEMIC_EVIDENCE_AGREES, EPISTEMIC_EVIDENCE_CONFLICTS, EPISTEMIC_INSUFFICIENT_EVIDENCE}
+    samples = [
+        _synthetic_layer2(),
+        _synthetic_layer2(exists=False, server_pid=None, sentinel_pid=None),
+        _synthetic_layer2(server_pid=999, sentinel_pid=888),
+        {}, None,
+    ]
+    for inp in samples:
+        r = reconcile_process_and_selfreport(inp)
+        if any(rel["state"] not in allowed_states for rel in r["relationships"]):
+            return False
+        if r["aggregate"]["epistemic_summary"] not in allowed_summaries:
+            return False
+        keys = {k.split(".")[-1].lower() for k in _flatten_keys(r)}
+        if "verified" in keys:
+            return False
+    return True
+
+
+def case_recon_14_malformed_top_level_input():
+    bad_inputs = [None, "a string", 42, 3.14, [], (), set(), True, False]
+    for inp in bad_inputs:
+        try:
+            r = reconcile_process_and_selfreport(inp)
+        except Exception:
+            return False
+        if r["input_error"] != "malformed_layer2_result":
+            return False
+        if any(rel["state"] == RELATIONSHIP_AGREE for rel in r["relationships"]):
+            return False
+        if r["aggregate"]["epistemic_summary"] == EPISTEMIC_EVIDENCE_AGREES:
+            return False
+    return True
+
+
+def case_recon_15_caller_cherry_picking():
+    """A caller cannot manufacture extra corroboration by injecting
+    fabricated, corroboration-shaped field names the schema doesn't
+    recognize -- independent_corroboration_count and every relationship
+    are computed only from the 3 hardcoded witness names against the
+    schema's known fields, never from arbitrary caller-supplied field
+    names, however favorable-looking."""
+    layer2 = _synthetic_layer2(pid=100, exists=True, server_pid=100, sentinel_pid=100,
+                                 start_time_match=True, start_time_delta=1.0)
+    baseline = reconcile_process_and_selfreport(layer2)
+
+    rigged = copy.deepcopy(layer2)
+    rigged["additional_independent_witness_agrees"] = True
+    rigged["extra_corroboration_hint"] = 99
+    rigged_result = reconcile_process_and_selfreport(rigged)
+
+    return (
+        baseline["aggregate"] == rigged_result["aggregate"]
+        and baseline["relationships"] == rigged_result["relationships"]
+        and "additional_independent_witness_agrees" in rigged_result["unrecognized_input_fields"]
+        and "extra_corroboration_hint" in rigged_result["unrecognized_input_fields"]
+    )
+
+
 CASES = [
     ("tracked file, clean working tree", case_1_tracked_clean),
     ("tracked file, modified vs HEAD", case_2_tracked_modified),
@@ -980,6 +1320,23 @@ CASES = [
     ("[L2 epistemic] external evidence stays identifiable as external", case_l2_epi_4_external_stays_identifiable),
     ("[L2 epistemic] no verified/active/live/connected/trusted label anywhere", case_l2_epi_5_no_verified_active_live_boolean_label),
     ("[L2 epistemic] never raises + read-only across weird inputs", case_l2_epi_6_never_raises_and_read_only),
+    ("[recon 1] happy path: full agreement", case_recon_1_happy_path),
+    ("[recon 2] PID and start-time disagreement -> EVIDENCE_CONFLICTS", case_recon_2_pid_and_start_time_disagreement),
+    ("[recon 3] self-report missing entirely -> ONE_SIDED/NEITHER, never fabricated AGREE", case_recon_3_missing_self_report_entirely),
+    ("[recon 3b] malformed self-report field types -> never raises", case_recon_3b_malformed_self_report_field_types),
+    ("[recon 4a] dependence: no independent witness, dependent group still self-consistent", case_recon_4a_dependence_no_independent_witness),
+    ("[recon 4b] dependence: independent + full dependent-group agreement capped at 1", case_recon_4b_dependence_capped_at_one),
+    ("[recon 5] PID reuse: 3/5 relationships agree, DISAGREE still wins", case_recon_5_pid_reuse_disagree_wins),
+    ("[recon 6] start-time reused not recomputed; observation_time always NEITHER", case_recon_6_timestamp_reuse_not_recomputed),
+    ("[recon 7] purity: deterministic, zero input mutation", case_recon_7_purity),
+    ("[recon 8] zero-I/O: psutil/open/subprocess.run never touched", case_recon_8_zero_io_via_mocking),
+    ("[recon 9] Layer 1 exclusion: extraneous field disclosed, never read", case_recon_9_layer1_exclusion),
+    ("[recon 10] self_heal.py real-data false-positive: no loaded/execution claim, zero Layer 1 access", case_recon_10_self_heal_false_positive),
+    ("[recon 11] complete-input requirement: exactly one required positional arg", case_recon_11_complete_input_requirement),
+    ("[recon 12] output completeness: always exactly 5 relationships + full top-level schema", case_recon_12_output_completeness),
+    ("[recon 13] exact enum/field contract: no unapproved state, no 'verified' field", case_recon_13_exact_enum_field_contract),
+    ("[recon 14] malformed top-level input: never raises, degrades honestly", case_recon_14_malformed_top_level_input),
+    ("[recon 15] caller cherry-picking: fabricated fields can't manufacture corroboration", case_recon_15_caller_cherry_picking),
 ]
 
 if __name__ == "__main__":

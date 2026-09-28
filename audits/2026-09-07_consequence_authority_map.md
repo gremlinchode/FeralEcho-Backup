@@ -1,0 +1,63 @@
+# Consequence Authority Map
+
+**Question posed (relayed from an external ChatGPT consultation):** Where does an observed consequence acquire the authority to change what happens next?
+
+## Executive Answer
+
+It doesn't acquire authority on its own. In every real case found in this codebase, a consequence becomes authoritative only because a human or a prior session, at some identifiable point, wrote a line of code that calls the function holding that value from inside a function that makes a decision — and it stays non-authoritative in every other case not because the consequence is weaker or less true, but because that line was never written (or, in Shadow's case, was explicitly withheld). Authority is a wiring decision, not a property the consequence earns.
+
+## Safety Verification
+
+- `run.py`/watchdog: not running, port 5000 unbound (confirmed via `ps aux`).
+- Git HEAD: `c5bf2e5f8913e35a1ded9af8afe68e247651e26d` before and after — unchanged, no commit made.
+- `river_brain.pkl` sha256: `eee193444a735d6ae510e8f8fa0faae1da4b2b1467a2a5da6f15c93467c9d815` before and after — unchanged.
+- No production source modified. No RiverBrain learning calls made. No self-edit deployment attempted. Only this report file was created.
+
+## Authority Map
+
+| Mechanism | COMPUTED | PERSISTED | READ | AUTHORITATIVE | Evidence |
+|---|---|---|---|---|---|
+| RiverBrain `model_task_stats` (via `choose_model()`/`rank_models()`) | YES | YES | YES | **YES** | `learn()` writes `stats["mean"]`/`stats["count"]` (`echo_model_orchestrator.py:828-844`). `rank_models()` (line 1153) calls `get_river_brain().score_model(model, task_type)` for every pool model, blends it into `combined[model]`, sorts by that value descending (lines 1220-1224+), and returns the ranked order — a different `mean` produces a different sort position, directly. `choose_model()` calls `rank_models()` (line 1224). |
+| RiverBrain `model_task_stats` (via `_select_council()`) | YES | YES | YES | **YES** | `river_deliberation.py:532-558`'s own docstring: "ask River for a ranked list (via `score_model`) for this task... Apply ECHO_SCORE_BOOST... Apply TAG_SCORE_BOOST... Take the top `council_size` models." A second, independent live call path into the same authoritative value, feeding actual council membership. |
+| Council rating → `model_task_stats` (`_blend_council_and_quality()` / `learn_from_council_rating()`) | YES | YES | YES | **YES** | `council_rater.py`'s `rate_one_entry()` (line 222) gates on `is_council_trusted()` (line 297) — confirmed a real, previously-tripped gate (Finding 65/67) — then calls `get_river_brain().learn_from_council_rating(...)` (line 300), which writes into the identical `model_task_stats` structure the two rows above read. Not a separate authority mechanism — a second real producer feeding the same one. |
+| Self-edit fitness gate (`candidate_quality < current_quality`) | YES | N/A (transient comparison) | YES | **YES, but see note below** | `self_edit_manager.py:2179` — the literal branch that gates real production deployment. Confirmed live and fired for real twice tonight (trace_ids `e05cb935...` and `525ed7ea...`), both correctly rejected. |
+| Attempt ledger (`self_edit_attempt_ledger.py`) | YES | YES | **NO** | **NO** | Deliberately built tonight as a pure observation sink. `grep -rn "self_edit_attempt_ledger\|record_attempt(" app/ run.py` outside its own two files: zero real readers (confirmed both tonight and just now). |
+| Shadow `corrected_task` (`check_and_correct()`) | YES | YES (`shadow_corrections.log`) | **NO** | **NO** | `night_cycle.py:182-186` — `corrected = check_and_correct(delta)`; `if corrected:` guards exactly one `logging.warning(...)` call and nothing else. Confirmed by the immediately-preceding mission (S-T0) via full caller-chain trace, re-cited here rather than re-derived. |
+| `seam_engine` attribution | YES | YES (`seam_log.jsonl`) | **PARTIAL** (write attempted, then filtered) | **NO** | 754 real detections, 78 flagged `first_ever` (meant to seed a garden question). `harvest_question()`'s near-duplicate filter (`garden_manager.py`) collapsed all but 2 into "duplicates" of similarly-worded pairs before they could reach the garden's own selection weighting. The call site to persist *was* written — the loss happens one layer downstream, inside a shared filter that doesn't distinguish seam-sourced content from any other source. |
+| `retrieve_relevant_memories()` (9 real call sites system-wide) | YES | YES | YES (in several places) | **PARTIAL — authority without reliability** | Genuinely `READ` in `echo_ground_truth.py`, `emergent_scheduler.py`, `curiosity_engine.py`, and others. But per tonight's Retrieval Capacity Proof (R2) and the Minimal Relevance Gate mission, the *value* returned doesn't reliably distinguish causally-relevant content from lexically-similar noise (a wrong distractor at 0.4613 beat a real causal record at 0.427), and self-edit's own failures never even enter the corpus it searches (Orphaned Memory Retrieval audit). The read is real and does influence output; the influence just isn't tethered to whether the retrieved content is actually good evidence. |
+| Garden `resolution_score` (`update_question_quality()` → `select_from_garden()`) | YES | YES | YES | **YES, narrowly** | `garden_manager.py`: `weight += max(0, 5 - resolution)` directly lowers a question's selection weight as `resolution_score` rises, then `random.choices(entries, weights=weights, k=1)` uses that weight to pick the next question. A real, verified case of a persisted consequence directly changing a subsequent probabilistic decision. But `resolution_score` is monotonic-only (`min(5.0, current + quality*0.5)`, confirmed tonight) — it can only ever push a question toward being asked *less*, never demote it back up if a later signal contradicts an earlier one. Its authority is real but one-directional: it can silence, never re-elevate. |
+
+**Headline count: 4 of 8 surveyed mechanisms are genuinely AUTHORITATIVE** (RiverBrain via two independent read paths plus one shared write path, the fitness gate, and the garden's resolution weighting). **2 are fully non-authoritative** (Shadow, the attempt ledger — both `COMPUTED`+`PERSISTED`, neither `READ`). **2 are partial** — real reads that happen, but whose downstream reliability or survival rate is compromised (retrieval's relevance quality; seam_engine's near-total loss at the garden's duplicate filter).
+
+## The fitness gate is a comparison holding authority, not either score alone
+
+Worth stating precisely, since the ChatGPT question asks about a single "observed consequence" acquiring authority: `candidate_quality` by itself has no power to deploy or reject anything. Neither does `current_quality`. The authority lives in the `<` operator between them — the branch (`self_edit_manager.py:2179`) is what a human decided to write, and it's the *relationship* between two consequences, not either scalar in isolation, that determines the outcome. This sharpens the general answer above: authority sometimes attaches not to a value but to a comparison a human chose to construct between two values.
+
+## Testing the "authority is conferred by an explicit call-site decision" hypothesis
+
+Holds cleanly for every AUTHORITATIVE and every fully-NO case:
+
+- **RiverBrain**: real, dated Findings exist for every wiring decision — Finding 10 (2026-07-08) originally fixed `score_model()` from a synthetic probe to a real historical signal and connected it to `_select_council()`'s ranking; Finding 39 (2026-07-16) added `TAG_SCORE_BOOST`/`_MEAN_EFFECTIVE_WINDOW` as further deliberate tuning of the same already-wired path; Finding 67 (2026-07-22) explicitly wired `learn_from_council_rating()` into `rate_one_entry()`, gated on a trust threshold that had just been met. Every step is a session or human choosing to write a call.
+- **Fitness gate**: Finding 19 (2026-07-10) is the explicit commit adding this comparison — CLAUDE.md records it directly: self-edit previously deployed any F1/F2/F3-safe candidate with zero quality comparison; Finding 19 is the deliberate decision to add one.
+- **Garden weighting**: `select_from_garden()`'s weighting formula (including the `resolution_score` term) is original, deliberate scoring logic, not an accident of some other subsystem.
+- **Shadow**: the disconfirming case that actually *confirms* the hypothesis in its negative form — `check_and_correct()`'s own source comment states outright that `propose()` (the call that would have made `corrected_task` authoritative) is "intentionally absent (2026-07-03)... Reconnect... once `shadow_corrections.log` shows consistent correlation." A human explicitly chose *not* to write the call, and documented why. This is the cleanest evidence in the whole codebase that authority is a decision, not an emergent property — the mechanism that computes the exact same shape of consequence as everything else in this table stays inert purely because one line was deliberately never added.
+- **Attempt ledger**: built tonight with the identical deliberate non-decision — its own module docstring states it is "read by nothing in the pipeline... by design," an explicit choice made in the same spirit as Shadow's, for the same reason (a consequence shouldn't get behavioral authority before it's earned it).
+
+**Where the hypothesis needs a footnote, not a rejection**: `seam_engine` is not a case of "no one decided to call the downstream function" — the call to `harvest_question()` genuinely exists and fires. The loss happens because a *different*, earlier deliberate decision (the near-duplicate filter, built to stop repetitive garden spam) has a side effect on this particular producer that nobody specifically evaluated for seam-sourced content. So the sharper version of the hypothesis is: authority requires not just *a* call-site decision, but a call-site decision made with *that specific producer's* shape of output in mind. A shared downstream gate built for a different purpose can silently revoke authority a `harvest_question()` call otherwise appears to grant.
+
+## Implication for wiring in Shadow, the attempt ledger, or seam_engine
+
+Not a recommendation to build anything — just what the evidence above says the actual requirement would be, in each case:
+
+- **Shadow**: wiring `corrected_task` in requires writing exactly one new call site (`propose(...)` inside `check_and_correct()`, exactly where the comment says it was removed from) — but per tonight's Shadow Treatment Harness mission (S-T0), there is currently no operational definition of what that call would *do* downstream even if written, since nothing consumes a shadow-proposed focus except the unrelated `next_self_edit_focus` fallback path. The call-site decision alone would not be sufficient; the consuming decision point would need to be built first, and would need its own validation before being trusted the way `model_task_stats` currently is.
+- **Attempt ledger**: this is a live, real, durable record already. Making it authoritative would mean writing a consumer — e.g., feeding `initial_f2_error`/failure signatures into the retry-prompt or initial-generation-prompt construction paths the Initial-Generation Influence audit found empty. That's a real, comparatively narrow next call-site decision, not a redesign.
+- **seam_engine**: making its output reliably authoritative would mean either exempting seam-sourced garden entries from the near-duplicate filter, or giving them a separate persistence path the way `question_garden.jsonl`'s `category="seam"` entries already partially do (2 of 78 survived) — a smaller, more targeted fix than either of the above, since the call site already exists and only the downstream filter needs adjusting.
+
+## Spot-checkable specifics for independent verification
+
+- `echo_model_orchestrator.py:1153-1195` (`rank_models()`) — the sort key `combined[model]` is built directly from `get_river_brain().score_model(model, task_type)`.
+- `river_deliberation.py:532-558` (`_select_council()` docstring) — states its own ranking strategy consumes `score_model()` directly.
+- `council_rater.py:297,300` — `if is_council_trusted(): ... get_river_brain().learn_from_council_rating(...)`.
+- `self_edit_manager.py:2179` — `if candidate_quality < current_quality:` — the literal fitness-gate branch.
+- `garden_manager.py` — `weight += max(0, 5 - resolution)` immediately followed by `random.choices(entries, weights=weights, k=1)[0]`.
+- `night_cycle.py:182-186` — `corrected = check_and_correct(delta); if corrected: logging.warning(...)` — the entire consumption of Shadow's proposed correction.

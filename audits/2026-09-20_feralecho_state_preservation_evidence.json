@@ -1,0 +1,664 @@
+{
+ "evidence_file": "state preservation evidence",
+ "date": "2026-09-20",
+ "claim_labels": {
+  "SOURCE-VERIFIED": "read in source",
+  "FIXTURE-REPRODUCED": "reproduced with real production code in an isolated temp fixture inside a kernel write-jail (sandbox-exec: writes denied outside fixture dir)",
+  "PRODUCTION-OBSERVED": "observed in production runtime state/logs",
+  "INFERRED": "modelled from measured inputs with stated assumptions"
+ },
+ "fixture_isolation": {
+  "method": "sandbox-exec profile (deny default; allow file-read*; file-write* only under the fixture dir; network denied); jail validated by an escape probe outside the fixture dir that raised PermissionError; fixture-only paths passed explicitly to the real classes",
+  "jail_variant_with_signal_permitted_used_only_for_the_pid_gate_fixture": true,
+  "real_code_used": {
+   "RiverBrain": "class source extracted verbatim from app/core/echo_model_orchestrator.py by AST (sha256 588f83d95a121de5)",
+   "VectorMemory": "app/lib/vector_memory.py imported from file (sha256 7262d0ebf415f345)",
+   "garden_manager": "app/core/garden_manager.py imported from file with GARDEN_PATH patched (sha256 77b992387ecbce91)",
+   "server_is_running": "function extracted verbatim from app/core/conversation_service.py"
+  },
+  "production_paths_touched": "none possible (kernel-denied); fixtures deleted after evidence capture"
+ },
+ "riverbrain": {
+  "class_source_sha256": "588f83d95a121de5d353ff18a498a70b5814601913464e62427450760bea8113",
+  "class_source_lines": [
+   758,
+   1148
+  ],
+  "scenarios": {
+   "S1_roundtrip_valid": {
+    "file_sha": "2af69d6a3e83baac",
+    "size": 392,
+    "obs_written": 13500,
+    "obs_loaded": 13500,
+    "ok": true
+   },
+   "S2_guard_valid_file_refuses_lower_obs_overwrite": {
+    "sha_before": "2af69d6a3e83baac",
+    "sha_after": "2af69d6a3e83baac",
+    "unchanged": true
+   },
+   "S3_torn_write_then_load_then_save": {
+    "child_exit_code": 134,
+    "original_size": 392,
+    "size_after_torn_write": 196,
+    "torn_file_loadable": false,
+    "pickle_error": "UnpicklingError: pickle data was truncated",
+    "obs_original": 13500,
+    "obs_after_load_of_torn_file": 0,
+    "obs_on_disk_after_next_save": 1,
+    "previous_valid_state_destroyed_by_the_open_wb_truncation": true,
+    "original_recoverable_only_from_external_copy": true,
+    "note": "child died inside pickle.dump; real _do_save had already truncated the file via open(...,'wb')"
+   },
+   "S4_corruption_variants": {
+    "variants": {
+     "zero_length": {
+      "raw_pickle_loads": false,
+      "mean_seen": null,
+      "raw_error": "EOFError",
+      "obs_after_RiverBrain.load": 0,
+      "mean_after_load": null,
+      "file_overwritten_by_later_save": true
+     },
+     "truncated_90pct": {
+      "raw_pickle_loads": false,
+      "mean_seen": null,
+      "raw_error": "UnpicklingError",
+      "obs_after_RiverBrain.load": 0,
+      "mean_after_load": null,
+      "file_overwritten_by_later_save": true
+     },
+     "garbage_bytes": {
+      "raw_pickle_loads": false,
+      "mean_seen": null,
+      "raw_error": "UnpicklingError",
+      "obs_after_RiverBrain.load": 0,
+      "mean_after_load": null,
+      "file_overwritten_by_later_save": true
+     },
+     "single_bitflip_in_float_mantissa": {
+      "raw_pickle_loads": true,
+      "mean_seen": 0.6099999999999999,
+      "raw_error": null,
+      "obs_after_RiverBrain.load": 13500,
+      "mean_after_load": 0.6099999999999999,
+      "file_overwritten_by_later_save": false
+     }
+    },
+    "bitflip_offset_found": true
+   },
+   "S5_pickle_missing_accuracy_trackers_key": {
+    "obs_after_load": 777,
+    "classifiers_loaded": [
+     "coding"
+    ],
+    "note": "exception occurs after classifiers/scalers/observation_counts were already merged; log says 'starting fresh' yet state is partially loaded; model_task_stats NOT loaded",
+    "model_task_stats_loaded": {}
+   },
+   "S6_two_instances_lost_update": {
+    "obs_on_disk_after_A": 155,
+    "obs_on_disk_after_B_lower_write_refused": 155,
+    "obs_on_disk_after_B_higher_write": 163,
+    "A_model_task_stats_count_survives": 100,
+    "note": "guard compares only total observation_counts; a higher-count stale writer replaces the other writer's model_task_stats increments"
+   },
+   "S7_write_window": {
+    "pickle_bytes": 3781626,
+    "save_seconds": [
+     0.0032,
+     0.0085,
+     0.008,
+     0.0076,
+     0.0075
+    ],
+    "median_s": 0.0076,
+    "fraction_of_60s_cycle": 0.00013,
+    "note": "production pickle ~4.4MB (HoeffdingTrees; serialization cost may differ); save also re-reads and unpickles the existing file for the guard"
+   }
+  }
+ },
+ "vector_memory": {
+  "real_module_sha256": "7262d0ebf415f345a5349a15f40d114cce5121ae0fd5fbf7a7b27db5f7a2d2ba",
+  "scenarios": {
+   "V1_stale_writer_branch_restart_after_terminal_persist": {
+    "timeline": [
+     {
+      "stage": "T0 A persisted S1..S3",
+      "meta_entries": 3,
+      "index_ntotal": 3,
+      "meta_sha": "d42005430a36",
+      "index_sha": "ed48abe0e50b",
+      "meta_keys": [
+       "S1",
+       "S2",
+       "S3"
+      ]
+     },
+     {
+      "stage": "T0 B loaded identical state (no write)",
+      "meta_entries": 3,
+      "index_ntotal": 3,
+      "meta_sha": "d42005430a36",
+      "index_sha": "ed48abe0e50b",
+      "meta_keys": [
+       "S1",
+       "S2",
+       "S3"
+      ]
+     },
+     {
+      "stage": "T1 A(server) adds+persists X",
+      "meta_entries": 4,
+      "index_ntotal": 4,
+      "meta_sha": "81e59b1f329c",
+      "index_sha": "16b03fedb8a2",
+      "meta_keys": [
+       "S1",
+       "S2",
+       "S3",
+       "X"
+      ]
+     },
+     {
+      "stage": "T2 B stale in memory",
+      "B_meta_entries_in_memory": 3,
+      "B_index_ntotal_in_memory": 3
+     },
+     {
+      "stage": "T3 B(terminal) adds Y and persists its stale full copy",
+      "meta_entries": 4,
+      "index_ntotal": 4,
+      "meta_sha": "296f2757cd6d",
+      "index_sha": "fd819b73bb67",
+      "meta_keys": [
+       "S1",
+       "S2",
+       "S3",
+       "Y"
+      ]
+     },
+     {
+      "stage": "T4a fresh process (restart after T3) loads disk",
+      "meta_entries": 4,
+      "X_present": false,
+      "Y_present": true,
+      "search_X_top1": "text-of-S1"
+     }
+    ]
+   },
+   "V1b_stale_writer_branch_server_persists_again": {
+    "timeline": [
+     {
+      "stage": "T0 A persisted S1..S3",
+      "meta_entries": 3,
+      "index_ntotal": 3,
+      "meta_sha": "d42005430a36",
+      "index_sha": "ed48abe0e50b",
+      "meta_keys": [
+       "S1",
+       "S2",
+       "S3"
+      ]
+     },
+     {
+      "stage": "T0 B loaded identical state (no write)",
+      "meta_entries": 3,
+      "index_ntotal": 3,
+      "meta_sha": "d42005430a36",
+      "index_sha": "ed48abe0e50b",
+      "meta_keys": [
+       "S1",
+       "S2",
+       "S3"
+      ]
+     },
+     {
+      "stage": "T1 A(server) adds+persists X",
+      "meta_entries": 4,
+      "index_ntotal": 4,
+      "meta_sha": "81e59b1f329c",
+      "index_sha": "16b03fedb8a2",
+      "meta_keys": [
+       "S1",
+       "S2",
+       "S3",
+       "X"
+      ]
+     },
+     {
+      "stage": "T2 B stale in memory",
+      "B_meta_entries_in_memory": 3,
+      "B_index_ntotal_in_memory": 3
+     },
+     {
+      "stage": "T3 B(terminal) adds Y and persists its stale full copy",
+      "meta_entries": 4,
+      "index_ntotal": 4,
+      "meta_sha": "296f2757cd6d",
+      "index_sha": "fd819b73bb67",
+      "meta_keys": [
+       "S1",
+       "S2",
+       "S3",
+       "Y"
+      ]
+     },
+     {
+      "stage": "T4a fresh process (restart after T3) loads disk",
+      "meta_entries": 4,
+      "X_present": false,
+      "Y_present": true,
+      "search_X_top1": "text-of-S1"
+     },
+     {
+      "stage": "T4b server (still alive) adds Z and persists ITS full copy",
+      "meta_entries": 5,
+      "index_ntotal": 5,
+      "meta_sha": "60f4b904fe52",
+      "index_sha": "4519b325f557",
+      "meta_keys": [
+       "S1",
+       "S2",
+       "S3",
+       "X",
+       "Z"
+      ]
+     },
+     {
+      "stage": "T4c fresh load after server persisted again",
+      "X_present": true,
+      "Y_present": false,
+      "Z_present": true
+     }
+    ]
+   },
+   "V2_truncated_meta_then_add": {
+    "valid": {
+     "stage": "valid",
+     "meta_entries": 3,
+     "index_ntotal": 3,
+     "meta_sha": "d42005430a36",
+     "index_sha": "ed48abe0e50b",
+     "meta_keys": [
+      "S1",
+      "S2",
+      "S3"
+     ]
+    },
+    "constructor_log": [
+     "WARNING Failed to load memory metadata, starting fresh: Unterminated string starting at: line 11 column 7 (char 132)",
+     "WARNING [VectorMemory] ntotal mismatch on load: FAISS=3 vectors, meta=0 entries. A previous persist was interrupted between the two atomic writes. Met"
+    ],
+    "after_load_state": {
+     "stage": "after constructor with truncated meta (files unchanged?)",
+     "meta_entries": "UNREADABLE:JSONDecodeError",
+     "index_ntotal": 3,
+     "meta_sha": "0a0c445bfda1",
+     "index_sha": "ed48abe0e50b",
+     "meta_keys": null
+    },
+    "constructor_wrote_files": false,
+    "after_add": {
+     "stage": "after ONE later add",
+     "meta_entries": 1,
+     "index_ntotal": 4,
+     "meta_sha": "b328af2c5545",
+     "index_sha": "b25f022ec69b",
+     "meta_keys": [
+      "Q"
+     ]
+    },
+    "original_texts_on_disk_after": [],
+    "search_S1_embedding_returns": "text-of-Q",
+    "search_Q_embedding_returns": null
+   },
+   "V3_unreadable_index_then_construct_only": {
+    "valid": {
+     "stage": "valid",
+     "meta_entries": 3,
+     "index_ntotal": 3,
+     "meta_sha": "d42005430a36",
+     "index_sha": "ed48abe0e50b",
+     "meta_keys": [
+      "S1",
+      "S2",
+      "S3"
+     ]
+    },
+    "corrupt_index_sha": "7cdafa35d3e9",
+    "constructor_log": [
+     "WARNING Failed to load FAISS index, rebuilding: Error in void faiss::read_xb_vector(VectorT &, IOReader *) [VectorT = faiss::MaybeOwnedVector<unsigned"
+    ],
+    "after_constructor_only": {
+     "stage": "after CONSTRUCTOR ONLY (no add)",
+     "meta_entries": 3,
+     "index_ntotal": 0,
+     "meta_sha": "d42005430a36",
+     "index_sha": "abcbae08a804",
+     "meta_keys": [
+      "S1",
+      "S2",
+      "S3"
+     ]
+    },
+    "constructor_alone_rewrote_index": true,
+    "after_add": {
+     "stage": "after ONE later add",
+     "meta_entries": 4,
+     "index_ntotal": 1,
+     "meta_sha": "32738e2ea0dc",
+     "index_sha": "6cc9a1947f9b",
+     "meta_keys": [
+      "S1",
+      "S2",
+      "S3",
+      "Q"
+     ]
+    },
+    "search_Q_embedding_returns": "text-of-S1",
+    "search_S1_embedding_returns": "text-of-S1",
+    "note": "meta intact (texts preserved) => index rebuildable by re-embedding; but new vectors misalign with id_order"
+   },
+   "V4_missing_meta_then_add": {
+    "constructor_log": [
+     "WARNING [VectorMemory] ntotal mismatch on load: FAISS=3 vectors, meta=0 entries. A previous persist was interrupted between the two atomic writes. Met"
+    ],
+    "after_add": {
+     "stage": "after ONE later add",
+     "meta_entries": 1,
+     "index_ntotal": 4,
+     "meta_sha": "b328af2c5545",
+     "index_sha": "b25f022ec69b",
+     "meta_keys": [
+      "Q"
+     ]
+    },
+    "search_S1_returns": "text-of-Q",
+    "search_Q_returns": null
+   },
+   "V5a_crash_after_meta_replace_before_index_write": {
+    "child_exit": 134,
+    "pre": {
+     "stage": "valid before crash",
+     "meta_entries": 3,
+     "index_ntotal": 3,
+     "meta_sha": "d42005430a36",
+     "index_sha": "ed48abe0e50b",
+     "meta_keys": [
+      "S1",
+      "S2",
+      "S3"
+     ]
+    },
+    "post_crash": {
+     "stage": "after child died inside _persist",
+     "meta_entries": 4,
+     "index_ntotal": 3,
+     "meta_sha": "75178f4f9431",
+     "index_sha": "ed48abe0e50b",
+     "meta_keys": [
+      "S1",
+      "S2",
+      "S3",
+      "Y"
+     ]
+    },
+    "leftover_tmp_files": [],
+    "load_log": [
+     "WARNING [VectorMemory] ntotal mismatch on load: FAISS=3 vectors, meta=4 entries. A previous persist was interrupted between the two atomic writes. Met"
+    ],
+    "search_for_Y_embedding_returns": "text-of-S2",
+    "after_next_add": {
+     "stage": "after later add of Z",
+     "meta_entries": 5,
+     "index_ntotal": 4,
+     "meta_sha": "50736dc31000",
+     "index_sha": "3e3e747ffb39",
+     "meta_keys": [
+      "S1",
+      "S2",
+      "S3",
+      "Y",
+      "Z"
+     ]
+    },
+    "search_Z_embedding_returns": "text-of-Y",
+    "expected_Z_text": "text-of-Z"
+   },
+   "V5b_crash_after_index_tmp_written_before_rename": {
+    "child_exit": 134,
+    "pre": {
+     "stage": "valid before crash",
+     "meta_entries": 3,
+     "index_ntotal": 3,
+     "meta_sha": "d42005430a36",
+     "index_sha": "ed48abe0e50b",
+     "meta_keys": [
+      "S1",
+      "S2",
+      "S3"
+     ]
+    },
+    "post_crash": {
+     "stage": "after child died inside _persist",
+     "meta_entries": 4,
+     "index_ntotal": 3,
+     "meta_sha": "75178f4f9431",
+     "index_sha": "ed48abe0e50b",
+     "meta_keys": [
+      "S1",
+      "S2",
+      "S3",
+      "Y"
+     ]
+    },
+    "leftover_tmp_files": [
+     "faiss.index.tmp"
+    ],
+    "load_log": [
+     "WARNING [VectorMemory] ntotal mismatch on load: FAISS=3 vectors, meta=4 entries. A previous persist was interrupted between the two atomic writes. Met"
+    ],
+    "search_for_Y_embedding_returns": "text-of-S2",
+    "after_next_add": {
+     "stage": "after later add of Z",
+     "meta_entries": 5,
+     "index_ntotal": 4,
+     "meta_sha": "50736dc31000",
+     "index_sha": "3e3e747ffb39",
+     "meta_keys": [
+      "S1",
+      "S2",
+      "S3",
+      "Y",
+      "Z"
+     ]
+    },
+    "search_Z_embedding_returns": "text-of-Y",
+    "expected_Z_text": "text-of-Z"
+   }
+  }
+ },
+ "vector_memory_timing_at_production_scale": {
+  "N": 130838,
+  "dim": 384,
+  "meta_bytes": 114110526,
+  "index_bytes": 200968749,
+  "persist_runs": [
+   {
+    "total_s": 0.626,
+    "meta_write_s": 0.607,
+    "index_write_and_rename_s(mismatch_window_after_meta_replace)": 0.019,
+    "faiss_write_index_s": 0.018
+   },
+   {
+    "total_s": 0.629,
+    "meta_write_s": 0.611,
+    "index_write_and_rename_s(mismatch_window_after_meta_replace)": 0.016,
+    "faiss_write_index_s": 0.015
+   },
+   {
+    "total_s": 0.631,
+    "meta_write_s": 0.612,
+    "index_write_and_rename_s(mismatch_window_after_meta_replace)": 0.018,
+    "faiss_write_index_s": 0.017
+   }
+  ],
+  "single_add_total_s": 0.65,
+  "cold_load_s": 0.189,
+  "loaded_counts": [
+   130839,
+   130839
+  ],
+  "median_total_s": 0.629,
+  "median_mismatch_window_s": 0.018
+ },
+ "question_garden": {
+  "real_module_sha256": "77b992387ecbce91fc21ca6abf4d294f97cc279a996a929fa9711ddc7eb7ed05",
+  "G1_concurrent_append_vs_rewrite": {
+   "entries_before": 100,
+   "appended_one": true,
+   "entries_after": 100,
+   "appended_entry_survived": false,
+   "note": "garden_manager has no lock; every writer thread (emergent_loop, seam_engine, dream, curiosity, echo_projects, echo_messaging) shares this path"
+  },
+  "G2_torn_full_rewrite": {
+   "child_exit": 134,
+   "entries_before": 16228,
+   "bytes_before": 10639576,
+   "entries_on_disk_after_crash_during_rewrite": 5000,
+   "parsable_entries": 5000,
+   "entries_lost": 11228,
+   "sha_before": "5538c4cc1c75",
+   "sha_after": "f7a9cfe2b5db",
+   "note": "crash injected after 5,000 writes of a full-file rewrite via the real _save_garden (open(...,'w')); truncates the old file before rewriting"
+  },
+  "G3_rewrite_window": {
+   "bytes": 10639576,
+   "seconds": [
+    0.0343,
+    0.0341,
+    0.0342,
+    0.0345,
+    0.0345
+   ],
+   "median_s": 0.0343
+  }
+ },
+ "terminal_gate_semantics": {
+  "pid_file_points_to_live_process": true,
+  "pid_file_points_to_dead_process(stale after kill -9)": false,
+  "pid_file_missing": false,
+  "pid_file_garbage": false,
+  "pid_file_points_to_unrelated_live_pid(1=launchd; PID reuse case)": false,
+  "default_relative_path_with_cwd=fixture(pid file present)": true,
+  "default_relative_path_with_cwd=OTHER_DIR(no memory/echo_server.pid) -> gate reports server NOT running": false
+ },
+ "production_observed": {
+  "hard_aborts_current_watchdog_window": [
+   {
+    "time_utc": "2026-09-19T19:31:01Z",
+    "cause": "libc++abi uncaught std::runtime_error [METAL] Command buffer execution failed: Caused GPU Timeout Error; SIGABRT on com.Metal.CompletionQueueDispatch"
+   },
+   {
+    "time_utc": "2026-09-20T14:30:00Z",
+    "cause": "[METAL] Insufficient Memory; SIGABRT on com.Metal.CompletionQueueDispatch"
+   }
+  ],
+  "riverbrain_saves_per_hour": [
+   75,
+   81,
+   86,
+   81,
+   82,
+   80,
+   85
+  ],
+  "vectormemory_persists_per_hour": [
+   20,
+   27,
+   30,
+   17,
+   25,
+   38
+  ],
+  "faiss_meta_counts_now": [
+   130837,
+   130837
+  ],
+  "errors_in_current_log": {
+   "ntotal mismatch": 0,
+   "Failed to persist VectorMemory": 0,
+   "Brain save/load failed": 0,
+   "FAISS/meta divergence": 0
+  },
+  "snapshots_present": "5 river_brain.pkl copies, sha256 verified, all within ~20h (2026-09-19T18:01Z .. 2026-09-20T14:31Z)",
+  "time_machine": "tmutil: No destinations configured",
+  "icloud_desktop_sync": "FXICloudDriveDesktop=0",
+  "external_volumes": "none",
+  "git": "memory/ and data/ are git-ignored (0 tracked state files); origin/main d6cd738 (2026-09-05), local main ahead 17"
+ },
+ "exposure_model_INFERRED": {
+  "assumptions": [
+   "hard aborts (abort()/SIGKILL) interrupt a write uniformly at random in time",
+   "SIGTERM restarts behave the same way because the SIGTERM handler calls sys.exit(0) and daemon writer threads are killed at interpreter exit",
+   "fixture windows measured on synthetic data at production scale; the RiverBrain fixture pickles floats, real HoeffdingTree pickles may serialize slower (pessimistic column)",
+   "garden rewrite frequency is not measured (36/h assumed midpoint of 12-60)"
+  ],
+  "rows": [
+   {
+    "artifact": "river_brain.pkl (non-atomic wb; ~80 saves/h observed)",
+    "window_basis": "fixture-measured",
+    "window_s": 0.0076,
+    "P_torn_given_one_hard_abort": 0.000169,
+    "expected_torn_events_per_year_at_0.5_aborts_per_day": 0.031,
+    "at_2_per_day_(observed_current_rate)": 0.123,
+    "at_5_per_day": 0.308
+   },
+   {
+    "artifact": "river_brain.pkl (non-atomic wb; ~80 saves/h observed)",
+    "window_basis": "pessimistic",
+    "window_s": 0.05,
+    "P_torn_given_one_hard_abort": 0.001111,
+    "expected_torn_events_per_year_at_0.5_aborts_per_day": 0.203,
+    "at_2_per_day_(observed_current_rate)": 0.811,
+    "at_5_per_day": 2.028
+   },
+   {
+    "artifact": "faiss/meta index-write-after-meta-replace window (26 persists/h observed)",
+    "window_basis": "fixture-measured",
+    "window_s": 0.018,
+    "P_torn_given_one_hard_abort": 0.00013,
+    "expected_torn_events_per_year_at_0.5_aborts_per_day": 0.024,
+    "at_2_per_day_(observed_current_rate)": 0.095,
+    "at_5_per_day": 0.237
+   },
+   {
+    "artifact": "faiss/meta index-write-after-meta-replace window (26 persists/h observed)",
+    "window_basis": "pessimistic",
+    "window_s": 0.2,
+    "P_torn_given_one_hard_abort": 0.001444,
+    "expected_torn_events_per_year_at_0.5_aborts_per_day": 0.264,
+    "at_2_per_day_(observed_current_rate)": 1.054,
+    "at_5_per_day": 2.636
+   },
+   {
+    "artifact": "question_garden.jsonl full rewrite (frequency UNKNOWN; assumed 12-60/h)",
+    "window_basis": "fixture-measured",
+    "window_s": 0.0343,
+    "P_torn_given_one_hard_abort": 0.000343,
+    "expected_torn_events_per_year_at_0.5_aborts_per_day": 0.063,
+    "at_2_per_day_(observed_current_rate)": 0.25,
+    "at_5_per_day": 0.626
+   },
+   {
+    "artifact": "question_garden.jsonl full rewrite (frequency UNKNOWN; assumed 12-60/h)",
+    "window_basis": "pessimistic",
+    "window_s": 0.1,
+    "P_torn_given_one_hard_abort": 0.001,
+    "expected_torn_events_per_year_at_0.5_aborts_per_day": 0.182,
+    "at_2_per_day_(observed_current_rate)": 0.73,
+    "at_5_per_day": 1.825
+   }
+  ]
+ }
+}

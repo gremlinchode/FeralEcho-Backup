@@ -277,6 +277,35 @@ def _is_introspective(prompt: str) -> bool:
     return any(sig in low for sig in _ALL_INTROSPECTIVE) or _architecture_slice_matches(low)
 
 
+# 2026-09-08, sensory-gate follow-up mission: `vision`/`hearing`'s literal
+# phrase lists are each matched independently (see the loop in
+# _relevant_slices() below) -- there was never any suppression between the
+# two gates. The real gap: a natural combined question like "what do you
+# see and hear" doesn't contain either full phrase "do you see" + "do you
+# hear" as one contiguous substring (the "and" breaks it), so only the
+# vision half matched. Confirmed live (2026-09-08T07:50Z, trace_id
+# 73c3ce33-2832-4b58-8f2b-335739009d46): the model received real vision
+# ground truth and no hearing ground truth for exactly this phrasing, and
+# produced entirely unsourced persona narrative for the hearing half.
+#
+# Fix is additive and narrowly scoped to the specific reported pattern
+# (a genuine "see"/"hear" conjunction), same "additive, can't regress an
+# existing positive match" discipline as _architecture_slice_matches()'s
+# own wiring below. Deliberately NOT a bare word-boundary match on "see"/
+# "hear" alone -- those words appear constantly in idioms unrelated to
+# actual sensory perception ("I hear you" as empathy, "let's see", "I see
+# what you mean", "we'll see") and a bare-word match would inject
+# irrelevant ground truth into ordinary conversation. Restricted to the
+# two words appearing within one clause (bounded by sentence punctuation)
+# joined by "and"/"or" -- verified directly against 9 real conjunction
+# phrasings (all match) and 8 real idiom/unrelated phrasings (none match,
+# including "I hear you, that makes sense" and "let's see what happens").
+_SEE_HEAR_CONJUNCTION_RE = re.compile(
+    r"\bsee\b[^.?!]{0,20}\b(?:and|or)\b[^.?!]{0,12}\bhear(?:ing)?\b"
+    r"|\bhear\b[^.?!]{0,20}\b(?:and|or)\b[^.?!]{0,12}\bsee(?:ing)?\b",
+)
+
+
 def _relevant_slices(prompt: str) -> set[str]:
     """Return the set of data slices needed to answer this prompt."""
     low = prompt.lower()
@@ -292,6 +321,13 @@ def _relevant_slices(prompt: str) -> set[str]:
     # the literal list doesn't, so no existing positive case can regress.
     if _architecture_slice_matches(low):
         slices.add("architecture")
+    # Same additive discipline, narrowly scoped to the vision/hearing
+    # conjunction gap described above -- never removes a slice, only adds
+    # both when a genuine "see...and/or...hear" (or reverse-order) pattern
+    # is present, regardless of which (if either) already matched above.
+    if _SEE_HEAR_CONJUNCTION_RE.search(low):
+        slices.add("vision")
+        slices.add("hearing")
     return slices
 
 

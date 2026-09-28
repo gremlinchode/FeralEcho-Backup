@@ -1,0 +1,4182 @@
+{
+ "manifest_version": "1",
+ "generated_utc": "2026-09-20T19:11:14.626656Z",
+ "purpose": "identify candidate runtime source state WITHOUT converting 'present in working tree' into 'executed by process'",
+ "repository": {
+  "HEAD": "2fba42644c82b9f7096276f4dd338d615cf1bcce",
+  "HEAD_commit_time": "2026-09-13T22:27:43-07:00",
+  "tracked_files_modified_vs_HEAD": 27,
+  "untracked_non_ignored_files": 219,
+  "dirty": true
+ },
+ "process": {
+  "pid": 29288,
+  "pid_file": "memory/echo_server.pid",
+  "start_local": "Sun Sep 20 07:30:10 2026",
+  "start_epoch": 1789914610.0,
+  "cmdline": "python -u run.py",
+  "cwd": "/Users/richietate/Desktop/FeralEcho",
+  "interpreter": "/Users/richietate/miniforge3/envs/feral_echo/bin/python",
+  "interpreter_version": "Python 3.12.13",
+  "parent": "/bin/zsh /Users/richietate/Desktop/FeralEcho/start_echo.sh",
+  "sys_path_note": "INFERRED: `python -u run.py` puts the script directory (repo root) first on sys.path; no PYTHONPATH in process env (OBSERVED via ps eww names)"
+ },
+ "environment": {
+  "process_env_var_names": [
+   "COLORTERM",
+   "CONDA_DEFAULT_ENV",
+   "CONDA_EXE",
+   "CONDA_PREFIX",
+   "CONDA_PREFIX_1",
+   "CONDA_PROMPT_MODIFIER",
+   "CONDA_PYTHON_EXE",
+   "CONDA_SHLVL",
+   "ECHO_DONT_KILL_ME_DADDY",
+   "FLASK_ENV",
+   "FPATH",
+   "HOME",
+   "HOMEBREW_CELLAR",
+   "HOMEBREW_PREFIX",
+   "HOMEBREW_REPOSITORY",
+   "INFOPATH",
+   "LANG",
+   "LOGNAME",
+   "MAMBA_EXE",
+   "MAMBA_ROOT_PREFIX",
+   "OLDPWD",
+   "OLLAMA_KEEP_ALIVE",
+   "OLLAMA_NUM_PARALLEL",
+   "OSLogRateLimit",
+   "PATH",
+   "PWD",
+   "SHELL",
+   "SHLVL",
+   "SSH_AUTH_SOCK",
+   "TERM",
+   "TERM_PROGRAM",
+   "TERM_PROGRAM_VERSION",
+   "TERM_SESSION_ID",
+   "TMPDIR",
+   "TOKENIZERS_PARALLELISM",
+   "USER",
+   "XML_CATALOG_FILES",
+   "XPC_FLAGS",
+   "XPC_SERVICE_NAME",
+   "_",
+   "_CE_CONDA",
+   "_CE_M",
+   "_CONDA_EXE",
+   "_CONDA_ROOT",
+   "__CFBundleIdentifier"
+  ],
+  "dotenv_sha256": "37b9f33c3555222d3b60f3a9da0049f9a59a445db35c536721168fdb1fabe53e",
+  "dotenv_names": [
+   "ANTHROPIC_API_KEY",
+   "ECHO_PARTNER_SECRET",
+   "GREMLIN_SECRET",
+   "NEWSAPI_KEY",
+   "OLLAMA_MODEL",
+   "OLLAMA_URL",
+   "OPENWEATHER_API_KEY"
+  ],
+  "dotenv_names_sha256": "996f799c6410635dcdc030faf1f1dde362daac0a2f014245dd59061b5ddaa5b5"
+ },
+ "interpreter_packages_sha256": "6e4f1c8e4c9a7c9c0f022ac8a56e255e1ec3c6e0868af8eb9113990fcf905dad",
+ "interpreter_package_count": 404,
+ "ollama_model_digests_prefix16": {
+  "echo:latest": "8cbcbe23800bfe9c",
+  "gemma3:4b": "a2af6cc3eb7fa8be",
+  "qwen2.5-coder:7b": "dae161e27b0e90dd",
+  "deepseek-r1:7b": "755ced02ce7befdb",
+  "qwen2.5:3b": "357c53fb659c5076",
+  "llama3.2:3b": "a80c4f17acd55265",
+  "llama3.1:8b": "46e0c10c039e0191",
+  "llama3:instruct": "365c0bd3c000a25d",
+  "mistral:latest": "6577803aa9a03636"
+ },
+ "fingerprints": {
+  "runtime_candidate_source_sha256": "0330734c876035aa1cf1b9f6a3d2449254ea3ca7bede36bea7e0350e70a4ea1f",
+  "authored_source_sha256_excluding_self_mutating_files": "8e6808dc64fbebe52523a4b71369768af191675df2c17f88ae6cb6ff76b5f844",
+  "self_mutating_files_sha256_prefix16": {
+   "app/core/self_edit_convergence.json": "c5694bc8ff7ae389",
+   "app/core/self_edit_generated.py": "bc9ffbce58cd3ad0",
+   "sandbox/scripts/temp_self_edit.py": "c3ab5b35671751a3",
+   "staging/self_edit_candidate.py": "173382a2b1e0841c"
+  },
+  "runtime_candidate_file_count": 513,
+  "live_scope_py_sha256": "6ecee9f04a5a766044ff28ea7f2e5c4aedeec4c78e1057132e8927066956f39a",
+  "live_scope_py_count": 187,
+  "tracked_diff_vs_HEAD_sha256": "32a09b13aec83e293bb9522a3b7eee4a6b827759d7ef041bbf3461fabef9f798",
+  "HEAD_tree": "af580de53d3193f8f41f6604a3295f4fd9608d4d",
+  "definition": "sha256 over sorted '<path>\\0<sha256(bytes)>\\n' lines; deterministic given the same file set (verified by recomputation in-script)",
+  "excluded_prefixes": [
+   "audits/",
+   "hub/",
+   "research/",
+   ".claude/",
+   "claude_relay/",
+   "codex_relay/",
+   "logs/",
+   "memory/",
+   "data/",
+   "sandbox generated dirs",
+   "staging/",
+   "self_edit_backups/plans"
+  ]
+ },
+ "production_observed_proofs": [
+  {
+   "claim": "running process loaded working-tree bytes of app/core/liveness_ledger.py",
+   "evidence": "runtime liveness output includes checks absent from HEAD",
+   "label": "PRODUCTION-OBSERVED"
+  },
+  {
+   "claim": "a PREVIOUS server process ran stale bytes for >=6 days after source edits",
+   "evidence": "night_cycle.py/emergent_scheduler.py/shadow_model.py mtimes are 2026-09-13 08:49 local and remove the shadow-accuracy code, yet the log shows '[NightCycle] Shadow accuracy'/'[SHADOW] Accuracy logged' lines through 2026-09-19 10:14 local; the watchdog's current window starts 2026-09-19T18:00:21Z",
+   "label": "PRODUCTION-OBSERVED"
+  }
+ ],
+ "git_staging_area": {
+  "cached_diff_empty": true
+ },
+ "evidence_class_counts": {
+  "NOT_EVIDENCED": 137,
+  "SUPPORTED_LOADED": 49,
+  "POSSIBLE": 38,
+  "POSSIBLE_CURRENT_BYTES_IF_IMPORTED": 3,
+  "PRODUCTION_OBSERVED_LOADED_AT_CURRENT_BYTES": 1,
+  "SUPPORTED_LOADED_AT_CURRENT_BYTES": 6
+ },
+ "files": [
+  {
+   "path": "CLAUDE.md",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "2cfa5adbd10260f14bfac5fd3ba750c9679a25ab",
+   "git_blob_working": "498df2a763cbeb0d72b46ee264304ccfc7477624",
+   "sha256": "4c3f78706c7c40f41ab025eb63470813944b575c9ae02b8afe00c422729a8556",
+   "size": 558122,
+   "mtime_utc": "2026-09-13T17:40:41.681707Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "diffstat_added_deleted": [
+    1,
+    1
+   ],
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "COUNCIL.md",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "098796206b73e6b75af32ef474ba5d992bb55f01",
+   "git_blob_working": "098796206b73e6b75af32ef474ba5d992bb55f01",
+   "sha256": "ed903d10f8e6c064724e01752d55ded3811a34d7a6d93ad7cb56829da2fc0882",
+   "size": 35889,
+   "mtime_utc": "2026-07-24T02:53:26.043770Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "Modelfile",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "5828d5d5eb3150ca4c47ceb3541b72764b13f1ac",
+   "git_blob_working": "5828d5d5eb3150ca4c47ceb3541b72764b13f1ac",
+   "sha256": "a4f3212661e338196fa84f55b582a49f6b7399d464917538622fa4ea85c4971b",
+   "size": 1624,
+   "mtime_utc": "2026-07-01T07:58:05.382366Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "PENDING_DECISIONS.md",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "a77e3c134691758cfdfe0b9321147597ff53a80f",
+   "git_blob_working": "c36bd044aa65fc837aa8a0b9e79fee13741baaa6",
+   "sha256": "c18b31b48ed21de3a9144391f80c54a8383b7f89c0ab93751ba528528167b8c6",
+   "size": 17210,
+   "mtime_utc": "2026-09-10T03:28:13.427594Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "diffstat_added_deleted": [
+    9,
+    6
+   ],
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "RebelCode/howl_engine.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "4dc79b037759a252bd25c76088eaa208a166d2cd",
+   "git_blob_working": "4dc79b037759a252bd25c76088eaa208a166d2cd",
+   "sha256": "4b633b9ce898ef775cd6b0f04268ec003efd37e6bd4ff66c418e366efe1e9038",
+   "size": 1659,
+   "mtime_utc": "2026-06-08T22:45:11.965355Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "RebelCode/territory_steward.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "d84a03b0068f3b6cf4a0f98d565a5cb8abc4d35d",
+   "git_blob_working": "d84a03b0068f3b6cf4a0f98d565a5cb8abc4d35d",
+   "sha256": "85ec6a46779e41718e70e6c97cf0e889cc3b569fd90deb6bb577c9396a2fb7f8",
+   "size": 1989,
+   "mtime_utc": "2026-07-05T02:41:07.041367Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-05T02:41:20.875518Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "WhisperingWires/nature_spark.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "c443455bd85cfca4dfcac6434276f0e62ebfbc2d",
+   "git_blob_working": "c443455bd85cfca4dfcac6434276f0e62ebfbc2d",
+   "sha256": "8b5b800ee59d32379aec111e05f1d5a5c77d2297515febe587d349b581ae81c8",
+   "size": 1647,
+   "mtime_utc": "2025-11-11T07:49:36.116166Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/__init__.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "git_blob_working": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "size": 0,
+   "mtime_utc": "2025-09-07T18:44:22.827285Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-25T23:37:43.431989Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/autonomous_awareness.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e958c8982f1432d56ee480c0eedd9b670d5c82c2",
+   "git_blob_working": "e958c8982f1432d56ee480c0eedd9b670d5c82c2",
+   "sha256": "236ebe3b2e21269f98902be64dc122a0abab8ff792a600d9bc28930ac6938f38",
+   "size": 24769,
+   "mtime_utc": "2026-09-02T04:58:07.297966Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-02T04:58:23.678881Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/autonomous_harmony_manager.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e9b18e6db290f8af71db6c111ea1dfe23bc57f74",
+   "git_blob_working": "e9b18e6db290f8af71db6c111ea1dfe23bc57f74",
+   "sha256": "f6ddef5d8c783dad145ee2ba47e42e483e14ab323bfaa9a40b6f17a19285eab5",
+   "size": 11801,
+   "mtime_utc": "2026-07-21T08:27:14.681638Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-21T08:29:10.189302Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/autonomous_loop.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "f747bb8fafd86ed090162cd1dc0643fd3df802a7",
+   "git_blob_working": "f747bb8fafd86ed090162cd1dc0643fd3df802a7",
+   "sha256": "aec8ca99f9f9b3ce72ea96a8f1e53aab02852f76c9db27635743ce225a9d5869",
+   "size": 16751,
+   "mtime_utc": "2026-07-21T23:02:57.159164Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-21T23:32:40.285481Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/__init__.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "git_blob_working": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "size": 0,
+   "mtime_utc": "2026-06-28T06:36:20.457175Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-28T06:44:23.805339Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/app/core/self_edit_generated.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "d69e8c717ef7181e2138578de301fc8111761665",
+   "git_blob_working": "d69e8c717ef7181e2138578de301fc8111761665",
+   "sha256": "fda4520dcbc81dab91c706ca4d381108fb280be08ef1dc3f857f65be30a63a54",
+   "size": 1679,
+   "mtime_utc": "2025-11-16T07:21:15.014304Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/core/autonomous_loop_with_optuna.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "718a6184395d41556ca9f5ce3c04b2d7acdd3e56",
+   "git_blob_working": "718a6184395d41556ca9f5ce3c04b2d7acdd3e56",
+   "sha256": "a1ffecfc562cc1522dc908160b21e2655ace907fb294b351d711038cba9215c7",
+   "size": 7715,
+   "mtime_utc": "2026-07-21T23:03:12.580659Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-21T23:29:55.008643Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/autonomy_coordinator.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "7ee8647be447996a3c1538850280f18f1078434b",
+   "git_blob_working": "7ee8647be447996a3c1538850280f18f1078434b",
+   "sha256": "ea9f017e58e4d5f2b4acb27028eac8b489cd3749af8e4d428a10005b4aa11a91",
+   "size": 5334,
+   "mtime_utc": "2026-07-22T00:52:18.485171Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-22T00:52:53.298283Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/awareness_tools_integration.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "32d832e082034237c925885c85c9e542708f4909",
+   "git_blob_working": "32d832e082034237c925885c85c9e542708f4909",
+   "sha256": "158966c57b4f0a14ce0303a692d2c34afa0ee7b68006a1416bf949c0c417bfd6",
+   "size": 13974,
+   "mtime_utc": "2026-07-12T00:57:51.226499Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-12T01:08:08.443867Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/behavioral_state.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "f003fb33aefcfb315a4388f52a6dc3f9c52689bc",
+   "git_blob_working": "f003fb33aefcfb315a4388f52a6dc3f9c52689bc",
+   "sha256": "6c50f6b7ee9cfd4ca8fb9261be72c6706a05a08f78b0793a161598290871b130",
+   "size": 13687,
+   "mtime_utc": "2026-09-03T21:33:14.634346Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-03T21:33:33.261776Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/bible_injection.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "aeea2121787789ffade915b2c32723b7aa8075ce",
+   "git_blob_working": "aeea2121787789ffade915b2c32723b7aa8075ce",
+   "sha256": "10054fae0c606f389f90712601704a0156b696aad67fda27ee601ac35ef788d0",
+   "size": 6492,
+   "mtime_utc": "2026-07-08T22:41:05.102239Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-08T22:44:05.671000Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/claude_shard.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "796cfa83cd7d0c950fd13f137cbaa09068115b4d",
+   "git_blob_working": "796cfa83cd7d0c950fd13f137cbaa09068115b4d",
+   "sha256": "8d79e8f3484766af04960b4b53c83ed9ba00299401f2d6ea819b4efc821c8e3e",
+   "size": 9265,
+   "mtime_utc": "2026-07-12T00:58:07.610592Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-12T01:08:08.553212Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/code_verification.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "462160a97ba5a64a874004d83d32f31782a46912",
+   "git_blob_working": "462160a97ba5a64a874004d83d32f31782a46912",
+   "sha256": "733d59e54f16dd505f2d1d4276256d6046bd9795054862e7824721e51623533a",
+   "size": 9666,
+   "mtime_utc": "2026-09-05T06:27:54.390551Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-05T06:28:16.894765Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/config.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "8d4ef847af3b4ef7bce0461bc3f8f551e7230461",
+   "git_blob_working": "8d4ef847af3b4ef7bce0461bc3f8f551e7230461",
+   "sha256": "14e91499082cdf8ac9cdb698ca1265b9be7c4644c49710bd4a452608ccfecd3a",
+   "size": 1030,
+   "mtime_utc": "2026-07-15T19:16:42.294022Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-15T19:23:51.761411Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/conversation_activity.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "77824190357cf45efb9fac5a07815213a9e13095",
+   "git_blob_working": "77824190357cf45efb9fac5a07815213a9e13095",
+   "sha256": "76054360d0f384590e69b3822d7e1e32800c8dbe1df1aff2de87596778e05373",
+   "size": 1816,
+   "mtime_utc": "2026-07-19T05:47:48.002544Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-19T05:49:37.133114Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/conversation_service.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "a76a53b2b176f41c8532263459cc5d6b4aee4ee8",
+   "git_blob_working": "a76a53b2b176f41c8532263459cc5d6b4aee4ee8",
+   "sha256": "e57b2ef6883e3d5c8cc978d2b7613f643fb271e6be965cc9a5de8e16904e8c1a",
+   "size": 11846,
+   "mtime_utc": "2026-09-02T23:49:00.046810Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-02T23:53:57.269450Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/council_rater.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "b88fd13ee85413bc60f01296a6edb5f8ed85573e",
+   "git_blob_working": "b88fd13ee85413bc60f01296a6edb5f8ed85573e",
+   "sha256": "068c47dc1dca250cb2b6aa13b5b6e6ccf864319c0beda12b4157da56a0f17f95",
+   "size": 28685,
+   "mtime_utc": "2026-09-05T23:03:03.354499Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-05T23:04:12.256145Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/council_registry.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "c06c98cc83cedabe1fa317d69f02eaf3d43e503d",
+   "git_blob_working": "c06c98cc83cedabe1fa317d69f02eaf3d43e503d",
+   "sha256": "ecfde7928a6829882795212a27de8da5bb660b21262ac7e6e802344b01e3a5fb",
+   "size": 656,
+   "mtime_utc": "2026-06-28T06:36:20.454299Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/core/crash_awareness.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "2063e9bada8f3fddd576ce5a9381143048a31c95",
+   "git_blob_working": "2063e9bada8f3fddd576ce5a9381143048a31c95",
+   "sha256": "70679ec2c2a7036ccbbadd9e4b191e2e20103203a497cc79a2493fdbc54c883f",
+   "size": 14346,
+   "mtime_utc": "2026-07-23T00:03:31.342467Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-23T00:03:53.662250Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/curiosity_engine.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e17f69f6d65054f682df1efd2036b3e6fd203695",
+   "git_blob_working": "e17f69f6d65054f682df1efd2036b3e6fd203695",
+   "sha256": "ddda8c575bfc6d26579e3c3999d5cd67cc987d0cb74d98b657af0726758b6c90",
+   "size": 7439,
+   "mtime_utc": "2026-07-16T02:11:32.161891Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-16T02:25:40.261472Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/dark_light_pipeline.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "5881b50a637bc903308476c9423906f18489b989",
+   "git_blob_working": "5881b50a637bc903308476c9423906f18489b989",
+   "sha256": "683baa73bf3769c5038d10f01ce38ba743b23cb2142045f03df881da94d9f02e",
+   "size": 2528,
+   "mtime_utc": "2026-06-28T06:36:20.459856Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-28T06:43:03.965043Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/dmn_guardian.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "98d832937287455ad9d6c1776b7be4ece33b0700",
+   "git_blob_working": "98d832937287455ad9d6c1776b7be4ece33b0700",
+   "sha256": "8cb05a0d70beb3fa66fc52f06bbedd27174120e592377211e302ace7cd4bd7a5",
+   "size": 8333,
+   "mtime_utc": "2026-07-13T22:21:01.357108Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-13T22:38:01.675228Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/echo_core.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "9ca8603fac439bbceb614280f81569d7d6f2c8f5",
+   "git_blob_working": "9ca8603fac439bbceb614280f81569d7d6f2c8f5",
+   "sha256": "c9b7f15cb7adb4dba59535dc28ddc92af9890aa475a2e129081e9d94c6aea09b",
+   "size": 36827,
+   "mtime_utc": "2026-09-06T00:56:23.025094Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-06T01:46:27.231287Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/echo_ground_truth.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "b284719f3d3afb3feb4a3fc9c76f3349b36ec4ad",
+   "git_blob_working": "07b95a2f7d57f61b570946015ce826f0aa3f11cf",
+   "sha256": "9b78bd9ed91c61da72dddcba543979bc5ba717ddd2b04ef75d57e5a648979005",
+   "size": 58572,
+   "mtime_utc": "2026-09-08T07:52:34.021268Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "diffstat_added_deleted": [
+    36,
+    0
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-08T07:52:49.771382Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "diff_log_string_probes": {
+    "probed": 0,
+    "found_in_current_process_log": 0
+   },
+   "runtime_load_evidence": "POSSIBLE_CURRENT_BYTES_IF_IMPORTED (lazy/function-level import path only; mtime precedes start)"
+  },
+  {
+   "path": "app/core/echo_model_guided_orchestrator.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "c3541be4abb454ee2df2bd9265ccf5405055a7eb",
+   "git_blob_working": "c3541be4abb454ee2df2bd9265ccf5405055a7eb",
+   "sha256": "63b1da448271697ca8da20f6d4e90961417c50e05fdd25f52ffb361b9300bb2b",
+   "size": 7246,
+   "mtime_utc": "2026-07-15T19:14:01.011497Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-15T19:14:23.671514Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/echo_model_orchestrator.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "0268aa5824d57e4565bb16df835b08870febfe22",
+   "git_blob_working": "0268aa5824d57e4565bb16df835b08870febfe22",
+   "sha256": "1e32038b532da211890f5a42ded1ed63fa85ed3872fd209fd101226f8a8da2e8",
+   "size": 81057,
+   "mtime_utc": "2026-09-02T23:51:05.256460Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-02T23:51:56.430255Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/echo_optuna.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "5423e8d58d7db5914fcf38c757f44f90aa382341",
+   "git_blob_working": "5423e8d58d7db5914fcf38c757f44f90aa382341",
+   "sha256": "dfd455c7318ab44d1f37cbe2993ef9c9d79ca472f1d958ae826c4b0ef390d35a",
+   "size": 21778,
+   "mtime_utc": "2026-07-23T16:02:00.963809Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-23T16:02:18.320942Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/echo_projects.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "fa3108b57b6b05e6bcb80f0e712393e6e3c16a6e",
+   "git_blob_working": "fa3108b57b6b05e6bcb80f0e712393e6e3c16a6e",
+   "sha256": "c5cae21c108b9dae85e1e427483aa6ca00c085661a6c31debd94a54d9c9c7cd4",
+   "size": 32909,
+   "mtime_utc": "2026-09-09T18:57:52.982531Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-09T18:59:51.361943Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/echo_python_mastery/__init__.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "7b3b935aa0d2923964e0eaedd2a0e6dcbe8f4e91",
+   "git_blob_working": "7b3b935aa0d2923964e0eaedd2a0e6dcbe8f4e91",
+   "sha256": "be04507eaa1b4b361a3ab2fd1151cca377429a8178f17a7c439bd0fd2ca2d5e3",
+   "size": 571,
+   "mtime_utc": "2026-06-28T06:36:20.466462Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-28T06:43:04.602377Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/echo_python_mastery/advanced_python.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e64437b7384c9761fffe71b64b32a847024d4a7a",
+   "git_blob_working": "e64437b7384c9761fffe71b64b32a847024d4a7a",
+   "sha256": "35933138f0f3fd93dfbf7c82daff6a90e8f0197ec22d777d19f4a3e4e343157a",
+   "size": 1597,
+   "mtime_utc": "2026-06-28T12:45:29.915542Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-28T12:48:15.088525Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/echo_python_mastery/best_practices.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "1edc8d063af42cff3da7a8d8898a5ea5282e2af8",
+   "git_blob_working": "1edc8d063af42cff3da7a8d8898a5ea5282e2af8",
+   "sha256": "bb9dafd9382f6f68d611b26ddae8ec5ba1e52ae7f85a5b9db9ac9b95d9f70997",
+   "size": 1343,
+   "mtime_utc": "2026-06-28T12:45:21.711144Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-28T12:48:15.089253Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/echo_python_mastery/code_quality.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "41bbd31eb6104f646a627b3d40b2102a92018b25",
+   "git_blob_working": "41bbd31eb6104f646a627b3d40b2102a92018b25",
+   "sha256": "a1183d183185334cb6af48c313b6f7ae4fefa310b06c344f3efadc6af973b587",
+   "size": 3451,
+   "mtime_utc": "2026-07-11T23:43:18.416472Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-11T23:44:04.605907Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/echo_python_mastery/coding_basics.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "8e86f710065a42462f57b984f82376ac5fe4881b",
+   "git_blob_working": "8e86f710065a42462f57b984f82376ac5fe4881b",
+   "sha256": "d76607413399169fe4a647401380abf0a3dbb24c81f87b0ffdcfa5fa075e0a45",
+   "size": 1112,
+   "mtime_utc": "2026-06-28T12:45:29.919199Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-28T12:48:15.128388Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/echo_python_mastery/debugging.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "48943fbd70b38ea5e119f53c9a8af6d4a2f79732",
+   "git_blob_working": "48943fbd70b38ea5e119f53c9a8af6d4a2f79732",
+   "sha256": "0f47d44c869b1ac4414b12320070a009db10fef78a6750bee16d43a98ca784f0",
+   "size": 1599,
+   "mtime_utc": "2026-06-28T12:45:29.928249Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-28T12:48:15.128817Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/echo_python_mastery/examples.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "638684bc49f191e1bf61628533df16c574584554",
+   "git_blob_working": "638684bc49f191e1bf61628533df16c574584554",
+   "sha256": "30c14ed0774e03674038e62d54d8f028257a53ec65689ae82d6d4b11a52c992e",
+   "size": 2436,
+   "mtime_utc": "2026-06-28T12:45:29.925752Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-28T12:48:15.129144Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/echo_python_mastery/testing_and_validation.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "76b1ac76c607ca15b168680d8b3c12c6396ac21e",
+   "git_blob_working": "76b1ac76c607ca15b168680d8b3c12c6396ac21e",
+   "sha256": "155b78065f9a34c56db7fd001f1fab15ee4bdd35d763124a09ae745d511cf6f5",
+   "size": 2186,
+   "mtime_utc": "2026-06-28T12:45:29.931170Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-28T12:48:15.129501Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/echo_review_mastery.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "0db957aa2b027c25fe1f8bb90cfd422c2dc26c85",
+   "git_blob_working": "0db957aa2b027c25fe1f8bb90cfd422c2dc26c85",
+   "sha256": "88e8e4039daf1cae9e4e2cd1c4511fe8a0476095d6adf31984e66e264aa668d3",
+   "size": 3212,
+   "mtime_utc": "2026-07-11T23:43:47.804013Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-11T23:44:04.599442Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/echo_state.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "22d9e04e4b956493fb19b2af2afef7617d1d2479",
+   "git_blob_working": "22d9e04e4b956493fb19b2af2afef7617d1d2479",
+   "sha256": "544842ac45c51c0a3a9cbba9dd22ff40fbb09df405398d72d216cf02b5891cec",
+   "size": 13496,
+   "mtime_utc": "2026-07-21T20:44:37.712000Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-21T20:44:53.949014Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/echo_tool_context.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "cefee1c6ef04ed2686514de522d7cebc2f558235",
+   "git_blob_working": "cefee1c6ef04ed2686514de522d7cebc2f558235",
+   "sha256": "ab6b78ec8d4e81f4ec070fabfd63d72d13c302d0fac5eb47ab4e74a3d377bb20",
+   "size": 8977,
+   "mtime_utc": "2026-07-12T01:29:52.901147Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-12T01:49:57.373850Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/echo_tool_dispatch.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e5acdcbfa53d2ddf03726ca97ba3bc4b56362e53",
+   "git_blob_working": "e5acdcbfa53d2ddf03726ca97ba3bc4b56362e53",
+   "sha256": "d38686e03d96d0b7c210fa6079e33bcc8bd3f5c48c9092b29bcb69ae2f2c9051",
+   "size": 19298,
+   "mtime_utc": "2026-07-01T01:29:55.574844Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-01T01:30:42.886001Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/functional_quality.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "4ed1bb291a90da63e4da6cee768677d8355f8f0b",
+   "git_blob_working": "4ed1bb291a90da63e4da6cee768677d8355f8f0b",
+   "sha256": "d73151dc487c790ce1fd2d9dbb9dc2f3e3c2e8d53a0d8de6b68620af1522863b",
+   "size": 7843,
+   "mtime_utc": "2026-09-06T11:33:45.327343Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-06T11:33:54.333555Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/core/garden_manager.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "6d8793dc78e9d7a4729a406fc0ce75701259ebdb",
+   "git_blob_working": "6d8793dc78e9d7a4729a406fc0ce75701259ebdb",
+   "sha256": "77b992387ecbce91fc21ca6abf4d294f97cc279a996a929fa9711ddc7eb7ed05",
+   "size": 12593,
+   "mtime_utc": "2026-07-16T02:21:15.835753Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-16T02:21:38.633579Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/hearing_sense.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "3b743da70210e0d10da49a293a39389a06c2966a",
+   "git_blob_working": "3b743da70210e0d10da49a293a39389a06c2966a",
+   "sha256": "31807dc8a8b82fbb12205596b1eb574f2e287340891b67873e4372b95069dec8",
+   "size": 5937,
+   "mtime_utc": "2026-07-24T13:40:24.157418Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-24T13:40:41.535953Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/introspection_channel.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "daa111e1dcfe4839fa85eea4bb9a9fd587e22e0f",
+   "git_blob_working": "daa111e1dcfe4839fa85eea4bb9a9fd587e22e0f",
+   "sha256": "c98000a61cf4c1ac9bae75e7cc4738d103a5fb15623bbfe1e8ebf7034c3dc6ca",
+   "size": 37432,
+   "mtime_utc": "2026-07-22T12:57:10.862355Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-22T13:01:26.495639Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/liveness_ledger.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "28bcabc9dee8654385d28fbc6cbde3b526ac5949",
+   "git_blob_working": "8cac646ca763763264a25945e9a2d57a340a5922",
+   "sha256": "e714ec96a3dcfe8782df51a5d06891657aed0988976e2fc89a02deb9111f2db8",
+   "size": 195641,
+   "mtime_utc": "2026-09-17T19:07:28.447519Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "diffstat_added_deleted": [
+    268,
+    7
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-17T19:07:33.068533Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "diff_log_string_probes": {
+    "probed": 0,
+    "found_in_current_process_log": 0
+   },
+   "runtime_load_evidence": "PRODUCTION_OBSERVED_LOADED_AT_CURRENT_BYTES (GET /admin/liveness-status returns checks restore_council_gate and task_type_map_sync, which exist in the working tree but NOT in HEAD's _CHECKS)"
+  },
+  {
+   "path": "app/core/load_project_map.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "6da32f838d9c8e8afde074e5d389067dd47d3c91",
+   "git_blob_working": "6da32f838d9c8e8afde074e5d389067dd47d3c91",
+   "sha256": "981424756a2215a5ff1c5f1285c9abc9a904d36bd54f3c93b00dd0d01f9a5c99",
+   "size": 843,
+   "mtime_utc": "2026-06-29T05:34:13.115509Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-29T05:39:36.562161Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/core/log_retention.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "26fe67f7462bc940391b6ea32e10e70fa9bf810e",
+   "git_blob_working": "26fe67f7462bc940391b6ea32e10e70fa9bf810e",
+   "sha256": "da352e358deff6d5d9831c650a73bab656cb51121fa838c706583fb16478b034",
+   "size": 5775,
+   "mtime_utc": "2026-07-23T15:20:51.368648Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-23T15:22:57.840608Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/memory_bridge.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "0340f1d6c5be461fab061b736b833286d3bbacfe",
+   "git_blob_working": "0340f1d6c5be461fab061b736b833286d3bbacfe",
+   "sha256": "5173962947b61aeca6cf6612ef12fa9e16ca869b9c67a57cd3a30d2fd98074ae",
+   "size": 25050,
+   "mtime_utc": "2026-09-02T04:57:53.107294Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-02T04:58:23.704532Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/memory_migration.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "d65fa121637d2bf8ba8e34773097cd8f77e2e165",
+   "git_blob_working": "d65fa121637d2bf8ba8e34773097cd8f77e2e165",
+   "sha256": "8127e4944611d2442bc448b021f3cb67d9923cc3d03a5f86e6ab55aee896a12d",
+   "size": 4570,
+   "mtime_utc": "2026-07-13T22:02:56.692403Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-13T22:05:50.265308Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/core/memory_tools.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "af962b8fa090c46611bf14494207c6b1e2bc5db3",
+   "git_blob_working": "af962b8fa090c46611bf14494207c6b1e2bc5db3",
+   "sha256": "3e0350321f5bdb27d91ab04957e285a32b19a5ca4ae86ab2c90b847d7d820160",
+   "size": 4719,
+   "mtime_utc": "2026-06-28T06:36:20.456384Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-28T06:42:29.135730Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/memory_write_validator.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "8f09afed3f79b1b52f31508c2ac825b884882582",
+   "git_blob_working": "8f09afed3f79b1b52f31508c2ac825b884882582",
+   "sha256": "bedf2c2b7c6cc040d286a95bcbcd3b99452c9784c6a4258d5c905fc5697c60a0",
+   "size": 23662,
+   "mtime_utc": "2026-07-15T19:14:37.160502Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-15T19:14:43.527809Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/modelfile_proposer.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "123cf9d17321f938d951917177f10dd97ff8f324",
+   "git_blob_working": "123cf9d17321f938d951917177f10dd97ff8f324",
+   "sha256": "487ef062ee6ab21bf37caad64263709c9cf09b72d462931cbaa344c9301652e5",
+   "size": 17928,
+   "mtime_utc": "2026-07-13T03:22:54.370525Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-13T03:23:52.219875Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/predictive_loop.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "43bc0741e657e59153f7b46ed886cbc05441ebca",
+   "git_blob_working": "43bc0741e657e59153f7b46ed886cbc05441ebca",
+   "sha256": "7d473deef37b09aec36ce60285bae5f4420eba88782388658c52ae3f347d21ae",
+   "size": 19490,
+   "mtime_utc": "2026-07-15T21:03:03.456007Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-15T21:11:12.571795Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/project_learner.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "5569080ef65e3bdef8c21ee4a68465f51e2c3e05",
+   "git_blob_working": "5569080ef65e3bdef8c21ee4a68465f51e2c3e05",
+   "sha256": "741f7a2ebefbe006f2d4270873bbf6e0c2a2499b8a949be89fc52a529aa3c61e",
+   "size": 12747,
+   "mtime_utc": "2026-07-12T01:38:09.464470Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-12T01:49:57.280737Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/prompt_workspace.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "0f3e23679d0fbf4034eb6f55da95c953b1ac1e05",
+   "git_blob_working": "0f3e23679d0fbf4034eb6f55da95c953b1ac1e05",
+   "sha256": "0f973bdec52d07616e10364897fedfe8de45fc0a2a2cae3c7dcc58c8626a2571",
+   "size": 2912,
+   "mtime_utc": "2026-07-13T03:32:55.081595Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-13T03:34:43.204851Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/provenance_check.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "d4cb1efa5d78670d857ec202e5a951a828fbfa1f",
+   "git_blob_working": "3b4ea3fe359b41c900895b47df1d9813359bf1eb",
+   "sha256": "c863288235dcff3e5f4b56bc956ccb81447ac52c74fa3d2a456d097784715acb",
+   "size": 65983,
+   "mtime_utc": "2026-09-13T14:25:40.821623Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "diffstat_added_deleted": [
+    372,
+    0
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-13T14:25:46.138067Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/core/river_deliberation.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "d1fc1480b8c17b4a350364d05588e91681fcbba8",
+   "git_blob_working": "02d8ffb1319437a8443bfde60a287b1dd8227cf6",
+   "sha256": "5d1aa77911509ebbc90d01cd084e5ac3b4c8bd7b9790bc2780b5ce226c253585",
+   "size": 79741,
+   "mtime_utc": "2026-09-09T22:49:24.381666Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "diffstat_added_deleted": [
+    88,
+    14
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-09T22:49:28.967293Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "diff_log_string_probes": {
+    "probed": 0,
+    "found_in_current_process_log": 0
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED_AT_CURRENT_BYTES (INFERRED from eager static import path + mtime precedes process start; import-failure fallbacks in try/except not excluded; no direct execution proof)"
+  },
+  {
+   "path": "app/core/sandbox_interface.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "863d6323bbd48f8b63fff5737530bafd3cf3c67a",
+   "git_blob_working": "863d6323bbd48f8b63fff5737530bafd3cf3c67a",
+   "sha256": "c3bd6232ca1ee3a0f76096a8b79e5868de058d18c0fd8e59cb0c02845cb2ba93",
+   "size": 1253,
+   "mtime_utc": "2026-07-12T23:49:28.875139Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-12T23:49:45.169507Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/scheduler.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "3cc9987c63fb5c931d69e73150151d0593e8b8a0",
+   "git_blob_working": "3cc9987c63fb5c931d69e73150151d0593e8b8a0",
+   "sha256": "f6780e57fd6faa31d7b475e4559a9fdb568b04d39ba43c1ed6ac7282d8570f4d",
+   "size": 4028,
+   "mtime_utc": "2026-07-05T03:03:59.261416Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-05T03:04:08.103012Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/core/seam_engine.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "4107e3780b9b97e029a59ec75e7f259fa62222a6",
+   "git_blob_working": "4107e3780b9b97e029a59ec75e7f259fa62222a6",
+   "sha256": "c3fa5b84dc39aeb9e27e6d507c65e4b493b704c0aa6270252415fa4ed3a0f98a",
+   "size": 19515,
+   "mtime_utc": "2026-07-23T15:49:40.372399Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-23T15:49:51.144870Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/self_edit_attempt_ledger.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "518476121122fcb623ca368c1c5a7146b9a183db",
+   "git_blob_working": "518476121122fcb623ca368c1c5a7146b9a183db",
+   "sha256": "bb2117b92aa53ad274c659d9d9e1e484a5cd509bdef36fa7a89f1c3882bfec30",
+   "size": 6671,
+   "mtime_utc": "2026-09-07T14:23:38.373603Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-07T14:24:34.372947Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/self_edit_convergence.json",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "c67116298080f263d430adb8b0bda3a347b366ce",
+   "git_blob_working": "0096f9e87988f8fe5c4e4c1c8ba3a42bba6512c8",
+   "sha256": "c5694bc8ff7ae3895fb2a42f33de2fa6ae57f8825e36bff0c85121880a8fb227",
+   "size": 4670,
+   "mtime_utc": "2026-09-20T19:01:30.724245Z",
+   "mtime_after_process_start": true,
+   "static_import_reachability": "not-a-python-module",
+   "diffstat_added_deleted": [
+    15,
+    13
+   ],
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/core/self_edit_generated.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "4988ab4df583d9c9ea45848fb11ec82bfe7368a1",
+   "git_blob_working": "cfc3f1d171c00fa6e3d6c7a3d91df40eccfe11c1",
+   "sha256": "bc9ffbce58cd3ad0040a0ee040ea50ac194ea325ae3439e515d9d2337d73d6e6",
+   "size": 1886,
+   "mtime_utc": "2026-09-20T11:09:55.850173Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "diffstat_added_deleted": [
+    35,
+    31
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-20T11:09:55.852347Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/core/self_edit_manager.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "d5037b67298b3a99ccfbec710a43fac1c4d4954e",
+   "git_blob_working": "6da88bce977edac19274db2ebcb0549650b7adda",
+   "sha256": "2e747acc5bf353335596ddc75c94025dc51e7866cef6127aa1042fa9a1a0b36a",
+   "size": 141706,
+   "mtime_utc": "2026-09-13T15:49:32.268397Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "diffstat_added_deleted": [
+    14,
+    20
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-13T15:51:15.931376Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "diff_log_string_probes": {
+    "probed": 0,
+    "found_in_current_process_log": 0
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED_AT_CURRENT_BYTES (INFERRED from eager static import path + mtime precedes process start; import-failure fallbacks in try/except not excluded; no direct execution proof)"
+  },
+  {
+   "path": "app/core/self_edit_outcome_tracker.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "86640d96da4b5f5d7cf7941e48f9a93e4bc06d77",
+   "git_blob_working": "86640d96da4b5f5d7cf7941e48f9a93e4bc06d77",
+   "sha256": "0ac07cc9527d98e14ea387ce8d7d32d6fe7a0a64c22a479237a9fe436367af39",
+   "size": 11882,
+   "mtime_utc": "2026-09-06T00:27:28.812054Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-06T01:47:27.002335Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/self_heal.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "4f08af8294c4f17e83189d5c436b755d491d02a9",
+   "git_blob_working": "4f08af8294c4f17e83189d5c436b755d491d02a9",
+   "sha256": "93eda4055a5bc01cb8be776cceda43fb1dfa0ca9ca4eb15f347c4d36c7387568",
+   "size": 6475,
+   "mtime_utc": "2026-07-01T21:11:50.733193Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-01T21:53:29.571721Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/core/self_knowledge_verification.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "a497f5d07155dfe45feadebe48c40e8503e2d7e6",
+   "git_blob_working": "a497f5d07155dfe45feadebe48c40e8503e2d7e6",
+   "sha256": "1ceaddd1d90915e280a7af76b34990ac7d5d3a0efd9306f9cbe23201e8875d4d",
+   "size": 21404,
+   "mtime_utc": "2026-09-08T04:02:33.195564Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-08T04:02:43.946176Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/self_model_claims.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "49055f2be9d3e3fa10a8aa5b945dade34495ae57",
+   "git_blob_working": "49055f2be9d3e3fa10a8aa5b945dade34495ae57",
+   "sha256": "40036a4170270bc4d9b05bdbc3432cc1587cd626e9d80498aeb719c8b31e3da5",
+   "size": 6863,
+   "mtime_utc": "2026-09-08T03:40:55.658197Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-08T03:41:21.896215Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/self_model_updater.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "df712a20bef8f15515af09255ba8dd55cfd09df0",
+   "git_blob_working": "df712a20bef8f15515af09255ba8dd55cfd09df0",
+   "sha256": "7e64774b5cc7693dafe383918f720024bbbc8e145373d0b8d6685def1f925dc0",
+   "size": 29063,
+   "mtime_utc": "2026-07-19T05:50:58.858354Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-19T05:53:53.153312Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/self_report_verifier.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "47b34a4a4a98529af2935d7d1e062f0bcfaf8e39",
+   "git_blob_working": "47b34a4a4a98529af2935d7d1e062f0bcfaf8e39",
+   "sha256": "9e8158bfc352b6c23c5513d72ba403f65bbe49289a479139891c7be900588a81",
+   "size": 5045,
+   "mtime_utc": "2026-07-08T18:24:03.486137Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-08T18:24:12.284169Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/core/sentence_transformer_singleton.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "d29ef5e5418a65cb574258ff255ab8bdf69d1239",
+   "git_blob_working": "d29ef5e5418a65cb574258ff255ab8bdf69d1239",
+   "sha256": "b1b80423013e6917beaa6942f4ab0734a6d53c69e7d21df1a23db1ec8afe8288",
+   "size": 1127,
+   "mtime_utc": "2026-06-29T07:45:29.123258Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-29T07:49:12.836260Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/shadow_model.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "c99090b37eda4a2e9c9a4bcc05169b60fea36979",
+   "git_blob_working": "680a349f204e338e6f380bc71ec93989fa0b883e",
+   "sha256": "ca5940c89e9db59bad700a7a18107737dcf2c4e04ab553934a184fb91bb5e949",
+   "size": 9159,
+   "mtime_utc": "2026-09-13T15:49:48.141973Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "diffstat_added_deleted": [
+    31,
+    4
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-13T15:50:29.190653Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/core/shard.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "6b28f7ef5d6f8a25c5671bc6e5d23ae7281ff241",
+   "git_blob_working": "6b28f7ef5d6f8a25c5671bc6e5d23ae7281ff241",
+   "sha256": "51fd9b9d972d21c2ebbfbf1c4d5be2cd614427d1839ebe6204bcf5235d39bbbd",
+   "size": 966,
+   "mtime_utc": "2026-06-28T06:36:20.458842Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/core/snapshot_manager.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "bc6dd0e3f4ca06f026632a72feafacbc79fcebb0",
+   "git_blob_working": "eba786b6ea6bd2f7cad26b53b34ad99ff15a6e73",
+   "sha256": "95f5a0cf1b62a4a21fe608cb26f7febceb08793e1640adab591ff85b8a95e1a1",
+   "size": 38052,
+   "mtime_utc": "2026-09-09T22:55:39.442453Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "diffstat_added_deleted": [
+    144,
+    0
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-09T23:06:11.121869Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "diff_log_string_probes": {
+    "probed": 1,
+    "found_in_current_process_log": 0
+   },
+   "runtime_load_evidence": "POSSIBLE_CURRENT_BYTES_IF_IMPORTED (lazy/function-level import path only; mtime precedes start)"
+  },
+  {
+   "path": "app/core/stillness_state.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "97bc4b60cc10cca6e7b1c38b78d4075bfe4aecc4",
+   "git_blob_working": "97bc4b60cc10cca6e7b1c38b78d4075bfe4aecc4",
+   "sha256": "6c3fc982ec5f99edef634deecf4ed7649c8d67a40768ac5246043531c66fc3d5",
+   "size": 2239,
+   "mtime_utc": "2026-06-30T06:24:47.120685Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-30T06:38:04.390641Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/system_guard.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "c85e152150b4ac4e4aae94f1f2c74170e045c74a",
+   "git_blob_working": "c85e152150b4ac4e4aae94f1f2c74170e045c74a",
+   "sha256": "3924a3a256cbd02761fb9c139cea9ad119a071602a2c6e7d782590a034826785",
+   "size": 5863,
+   "mtime_utc": "2026-07-21T22:26:59.360902Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-21T22:27:44.467338Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/task_type_classifier.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "dc910efd6b53bbb6d5ec7721e07e09da72b5e2d6",
+   "git_blob_working": "dc910efd6b53bbb6d5ec7721e07e09da72b5e2d6",
+   "sha256": "eee7b2ed433fa656d58d2d7c386f928f54b5c7a468fead20fdc2db1cb9f5e49a",
+   "size": 16877,
+   "mtime_utc": "2026-07-13T04:44:57.385365Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-13T04:47:01.170489Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/temp_self_edit.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "cb8902216dc85a2ee4380858601b165278259e09",
+   "git_blob_working": "cb8902216dc85a2ee4380858601b165278259e09",
+   "sha256": "da0eb51120d67301f186d88b3e340fe2facc3866fdb515923eae71c1977cce66",
+   "size": 479,
+   "mtime_utc": "2026-06-28T06:36:20.458299Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/core/temporal_environment.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "b35bc8c291f7bf4be289ee05cae27108da8665eb",
+   "git_blob_working": "e0a43732a7733b3695d3722134feba030df86370",
+   "sha256": "4dcad97f2d2f526b75033d89fcb91813b0a50b3f92a0c222e89d63d87c0b9ccd",
+   "size": 9954,
+   "mtime_utc": "2026-09-09T22:53:40.534239Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "diffstat_added_deleted": [
+    78,
+    22
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-09T22:53:46.680566Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "diff_log_string_probes": {
+    "probed": 0,
+    "found_in_current_process_log": 0
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED_AT_CURRENT_BYTES (INFERRED from eager static import path + mtime precedes process start; import-failure fallbacks in try/except not excluded; no direct execution proof)"
+  },
+  {
+   "path": "app/core/tool_manager.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "c4866043f66ae971bc31683b0a57d022e8acab8a",
+   "git_blob_working": "c4866043f66ae971bc31683b0a57d022e8acab8a",
+   "sha256": "56d9340e5e53ef5637181a62a61e26cc149d7a04ea8db5be44ce1140558add24",
+   "size": 689,
+   "mtime_utc": "2026-06-28T06:36:20.455365Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-28T06:44:23.816607Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/core/touch_sense.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "d0ffe23e1f3e76ad8fa6dc410fe513b3977ebe6b",
+   "git_blob_working": "d0ffe23e1f3e76ad8fa6dc410fe513b3977ebe6b",
+   "sha256": "781918f2cdb1365af5b23e29b8067d3182ab3eb5feb03ac23438bf76d74dc44d",
+   "size": 9552,
+   "mtime_utc": "2026-07-24T04:10:25.629543Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-24T04:17:13.024803Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/vision_sense.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "8dbeedc69ba00da8dccec0ae926de6a43bd7efde",
+   "git_blob_working": "8dbeedc69ba00da8dccec0ae926de6a43bd7efde",
+   "sha256": "aeacae5610745c8b0150c99d52cd5f9273aeefddd63d54ed49b16a0ed1684b61",
+   "size": 7568,
+   "mtime_utc": "2026-07-24T13:40:00.402675Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-24T13:40:41.526388Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/core/wolf_friction_bridge.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "7fd4061ed820cfe37bc975df39d075fcb6e40e62",
+   "git_blob_working": "7fd4061ed820cfe37bc975df39d075fcb6e40e62",
+   "sha256": "4cd10f0cf6cd00d95084972070ff5009397a209ea4fb59955778ec2f7db987e3",
+   "size": 12806,
+   "mtime_utc": "2026-07-01T20:46:53.258386Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-01T20:47:16.330308Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/emergent_scheduler.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "002b70c8932be5ae1830fcb8abe06a7a5a516724",
+   "git_blob_working": "baa73bb0caeaaf7de20f8e2d3bafb36abd6560cc",
+   "sha256": "1ea77319bb8647c17fea40ac9025d44111ed700b89ae8cffc69a1ee4c3b2fe0d",
+   "size": 49450,
+   "mtime_utc": "2026-09-13T15:49:40.215593Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "diffstat_added_deleted": [
+    8,
+    6
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-19T18:00:30.639083Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "diff_log_string_probes": {
+    "probed": 0,
+    "found_in_current_process_log": 0
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED_AT_CURRENT_BYTES (INFERRED from eager static import path + mtime precedes process start; import-failure fallbacks in try/except not excluded; no direct execution proof)"
+  },
+  {
+   "path": "app/experiments/e5_mini/__init__.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "e8a66cf3766b42bdb80beb56701ec9f5d7b39a26",
+   "sha256": "d226e399f8e16bacda1b7cae0e403152ea8788658ee5e6e5492290baa3d0d098",
+   "size": 753,
+   "mtime_utc": "2026-09-16T18:22:01.751173Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T18:29:56.307223Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/accounting.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "950906e1dfc62929b20339490763da2b939df474",
+   "sha256": "4c84d683d056a2e36e5232eb69e4a5022395d47388f6298b64fd28e70d207dbf",
+   "size": 3983,
+   "mtime_utc": "2026-09-16T22:29:52.014160Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T22:31:57.758962Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/applicability.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "5172bae5b9264b1f0ccb997fcaa34a9a9709265e",
+   "sha256": "35ac580bd12bd292859781fb09e2ea86d472d3d1d27b8c32a022d2df97bde91f",
+   "size": 2041,
+   "mtime_utc": "2026-09-16T18:26:43.811874Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T18:29:56.337753Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/builder.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "889a6285f4a5b6d7e60d9a4f62abe11b54a50343",
+   "sha256": "6b6d99852862b3cc3045bb646dd428d17a5ab4bcb938c348456e6e1ac5af6da0",
+   "size": 9114,
+   "mtime_utc": "2026-09-16T22:29:38.083616Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T22:31:57.766251Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/checker.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "31ee85b67ed6c8daf84452945d93b5b2fc918521",
+   "sha256": "96b0b3d86f5eee1ef77ceb9a872613cb914e22f08c32f7cd3656d241097d59f7",
+   "size": 24174,
+   "mtime_utc": "2026-09-16T22:42:35.923630Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T22:43:07.303062Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/ledger.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "8dff1e6971aaf9be66c0c616b689f5558c8078f8",
+   "sha256": "3a5f208135e71f6eb6b26dc069c60775fd00428d8e45530848eb18ae4409d326",
+   "size": 3617,
+   "mtime_utc": "2026-09-16T18:22:34.520272Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T18:29:56.317507Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/manifests/__init__.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "b7f6086fd75e2d8eec19efa9cbc15b32f8c26ef9",
+   "sha256": "1d57dcc41dcd910d6d0bc52108beebe035325295cf3981ad0410423819292d5a",
+   "size": 503,
+   "mtime_utc": "2026-09-16T18:43:56.396191Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T21:51:09.204097Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/manifests/example_synthetic.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "f1f61cbeda4865fe96651c1b69b20d1c37c67a43",
+   "sha256": "5bc9ef4bcce57927020901224ea6e0a0ea095beb679856e35e260ce6af01553e",
+   "size": 4340,
+   "mtime_utc": "2026-09-16T21:54:07.208406Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T21:54:10.226906Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/manifests/resource_budget_manifest.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "88a9a49a5b9c6d05ff21d3b7fef934b04a608681",
+   "sha256": "0f54146e779e082d14d942624ee055a8b4e9c9a8db3caa2827b0e23bc9f46091",
+   "size": 9117,
+   "mtime_utc": "2026-09-16T22:31:41.178992Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T22:32:02.480453Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/manifests/role_access_manifest.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "3322d10e9c924dd1a78010854ef8d03753199ee8",
+   "sha256": "9f345b9e460ab0fe47eaaac8013d4a80489f1f5b9aaa80e1f0e510dfb02de788",
+   "size": 15226,
+   "mtime_utc": "2026-09-16T22:43:03.530668Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T22:43:07.305725Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/manifests/task_manifest.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "0c7f791f06dcc3d1e6ca0f811d1e0f0083d8b128",
+   "sha256": "1dd954ceb71441d44404a6aba604b7dbc93c3114aaa4516c58136a14cfbf22b2",
+   "size": 10936,
+   "mtime_utc": "2026-09-16T22:31:28.114244Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T22:32:02.478288Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/mock.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "7dfe2a9e99a3627153101db6d0303ab1d0017b5f",
+   "sha256": "175a86f80440683911dd6df4d7ea3ea12be3fb3760d7cc3b51666957efb53849",
+   "size": 12272,
+   "mtime_utc": "2026-09-16T22:41:54.659883Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T22:41:58.908265Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/oracle.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "ca9612439264187cb655f7b3d7193bce81581a19",
+   "sha256": "aff5a996781f79e25be4191167b51e3a9566cf948bc53d1b13604e3303f7f98c",
+   "size": 2288,
+   "mtime_utc": "2026-09-16T18:23:55.322857Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T18:29:56.342420Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/orchestrator.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "6d4c35b2bf7a654c19175e23c8eebea5ae720d1e",
+   "sha256": "097de5700fb12009ab96b40f007b033fcc05bd17b9fbc3f04ea1c449bd2403a2",
+   "size": 7463,
+   "mtime_utc": "2026-09-16T18:25:28.580206Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T18:29:56.343149Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/sandbox.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "a917a2eac6d4ee765a87258ddebd80fb5fea9e59",
+   "sha256": "b6f0c5c891fbc9207afa20563ac715d5c8cf706b18d52c6be815ce808af68bde",
+   "size": 2796,
+   "mtime_utc": "2026-09-16T18:27:09.019550Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T18:30:06.104648Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/schema.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "6d49dc8ea8d801bd0bff91f6f7677fd8b7cc1e5e",
+   "sha256": "fad8e4299800a5f4295f5e78d8549e5f5708d42c84ff14bb2fb893bc24490f9e",
+   "size": 6416,
+   "mtime_utc": "2026-09-16T18:22:22.398378Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T18:29:56.321946Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/tests/__init__.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "size": 0,
+   "mtime_utc": "2026-09-16T18:27:37.654865Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T18:29:56.307620Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/tests/test_e5_mini_g0.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "5a551ffb3476d247151ccbbbf95bc31acd790b07",
+   "sha256": "ae9e38a36442f6ae3e8ab6266b31486f38341b129159af8fde9fde241704bd82",
+   "size": 48949,
+   "mtime_utc": "2026-09-16T22:38:05.079954Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T22:38:08.049474Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/e5_mini/tests/test_manifests.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "cb3900144138f51d54df212e33cd0b878165ae3a",
+   "sha256": "51cfdd1e3fafd782b57165e6ec08a251cb9dc5c4ab46a73f913685d2225c4154",
+   "size": 5958,
+   "mtime_utc": "2026-09-16T21:56:03.700758Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T21:56:08.234788Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/task_type_ground_truth/__init__.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "size": 0,
+   "mtime_utc": "2026-09-09T21:39:55.558732Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-09T21:42:24.536939Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/task_type_ground_truth/blind_label.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "89e29f065d7af61094fe01e7c7369a351de91565",
+   "sha256": "4c203d61ca6f47c18d6b9e9af5d4170445aa4ac9b78885c12e3cdd53581bb565",
+   "size": 2418,
+   "mtime_utc": "2026-09-09T21:41:41.487584Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-09T21:54:22.880487Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/task_type_ground_truth/dataset.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "73e5ba999e8b4e82f021901c80a387f7760928f1",
+   "sha256": "92a9ccbb321dd28ab6608f113526e0c784a37d433f06531bf8e4c887064dc25b",
+   "size": 9098,
+   "mtime_utc": "2026-09-09T21:41:04.347250Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-09T21:42:24.537536Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/task_type_ground_truth/evaluate.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "3867859c721beba5913c06953153afa2dc4b41d5",
+   "sha256": "b12c3534a897bcb65f08f889d5049cde3821a9ce4503212c9bce9a53517e0b89",
+   "size": 8453,
+   "mtime_utc": "2026-09-09T21:42:17.653316Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-09T21:54:27.728125Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/experiments/task_type_ground_truth/schema.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "78765848c8213baeedc47f69de7c4992e61425b1",
+   "sha256": "5a77c81b7c8c4d38de16c08b523d54f9c2b0a19973d6259929de8bb57520f2e7",
+   "size": 2856,
+   "mtime_utc": "2026-09-09T21:40:07.251096Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-09T21:42:24.537804Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/internet_tools/__init__.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "92cbf5476f91cc41a4ddcb202cb6ae5170dae717",
+   "git_blob_working": "92cbf5476f91cc41a4ddcb202cb6ae5170dae717",
+   "sha256": "dbe856fa3e9099445d02ff0df89760555e39547d6c34fdd8ab069a1b9c4d6786",
+   "size": 47,
+   "mtime_utc": "2025-09-13T08:03:18.682803Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-25T23:37:43.549196Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/internet_tools/autonomous_fetch.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "31a15d9f9ef917e6c0b7783c6b9de51714c68f79",
+   "git_blob_working": "31a15d9f9ef917e6c0b7783c6b9de51714c68f79",
+   "sha256": "e716742bf44aff4ffc607a4841fd450a22db775bf8d13c70ec3986516c999d95",
+   "size": 20116,
+   "mtime_utc": "2026-07-22T14:43:39.676831Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-22T14:43:49.884624Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/internet_tools/claude_research.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "010f6be4f6c90fe076917b984e4709470957b182",
+   "git_blob_working": "010f6be4f6c90fe076917b984e4709470957b182",
+   "sha256": "cd7f81657254fc6d124d4fba3e4e9134de6ebc0892a7d726f6562b1cea914138",
+   "size": 7001,
+   "mtime_utc": "2026-07-12T01:07:00.435866Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-12T01:08:08.442178Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/internet_tools/query_reflect.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "069cc5a5b53f040879374248438391654f9c56f8",
+   "git_blob_working": "069cc5a5b53f040879374248438391654f9c56f8",
+   "sha256": "6025b1735a809bb53fae85c9500f995b0b9002fa5b5eacccc4039ce2401b898f",
+   "size": 747,
+   "mtime_utc": "2025-09-13T08:02:39.609998Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-25T23:37:43.549564Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/learning/dual_learning.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "9418e669c253c2333bc80bcc56dcb616e4c84e62",
+   "git_blob_working": "9418e669c253c2333bc80bcc56dcb616e4c84e62",
+   "sha256": "ff10f4d410a5682e8e228112f8c9b7c4545098d1556a102d05f8cd2c8817aaea",
+   "size": 11864,
+   "mtime_utc": "2026-07-22T14:16:30.006765Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-22T14:16:56.292596Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/lib/__init__.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "git_blob_working": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "size": 0,
+   "mtime_utc": "2025-09-07T18:44:22.838797Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-25T23:37:45.881151Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/lib/vector_memory.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e06cd150b848ff2b657ac3e32273aa0a98e05b03",
+   "git_blob_working": "e06cd150b848ff2b657ac3e32273aa0a98e05b03",
+   "sha256": "7262d0ebf415f345a5349a15f40d114cce5121ae0fd5fbf7a7b27db5f7a2d2ba",
+   "size": 7123,
+   "mtime_utc": "2026-07-03T01:37:36.822896Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-03T01:39:30.312466Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/maintenance/consolidation.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "d354791b875a9c9d9a21581d44913c9e77a749a1",
+   "git_blob_working": "d354791b875a9c9d9a21581d44913c9e77a749a1",
+   "sha256": "2e6924e15b963a7520e8c41dbb1790acab2b1552590268794cb81f80c2b2fdcf",
+   "size": 8656,
+   "mtime_utc": "2026-07-12T16:01:52.733768Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-12T16:03:23.643873Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/maintenance/night_cycle.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "1fdc6f43a92991364b1cf6262c44761b6b8018b1",
+   "git_blob_working": "871da86261a55677852636b3f190b513313e1dcb",
+   "sha256": "eea65c8a6a82be1f9a8c51bb9c44cbbb63e7c75ccf23b1ec6381aa2190d09cce",
+   "size": 14825,
+   "mtime_utc": "2026-09-13T15:49:36.867365Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "diffstat_added_deleted": [
+    8,
+    16
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-17T19:08:06.006128Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "diff_log_string_probes": {
+    "probed": 0,
+    "found_in_current_process_log": 0
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED_AT_CURRENT_BYTES (INFERRED from eager static import path + mtime precedes process start; import-failure fallbacks in try/except not excluded; no direct execution proof)"
+  },
+  {
+   "path": "app/mlx_handler.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "718dccaa49fa8495510346a76df0a53827b20b6f",
+   "git_blob_working": "718dccaa49fa8495510346a76df0a53827b20b6f",
+   "sha256": "3814b196a034ddf466b7682c4e1700b49be04aa6b5dc0a5914b3db1f32847118",
+   "size": 13558,
+   "mtime_utc": "2026-07-23T00:43:55.707886Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-23T00:44:15.148037Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/ollama_handler.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "abe7f2ebf82786e50b0217db35d01437916e118d",
+   "git_blob_working": "abe7f2ebf82786e50b0217db35d01437916e118d",
+   "sha256": "7b926934abcde70b388e7366ad31e5e3916a833376372f86c37946c99901cadd",
+   "size": 23867,
+   "mtime_utc": "2026-07-21T09:12:06.926697Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-21T09:16:11.050920Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/persona.json",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "da241eb0afe543c154ab01460ebe82f19703837a",
+   "git_blob_working": "da241eb0afe543c154ab01460ebe82f19703837a",
+   "sha256": "bd2315e56807d9cd6ec6ea1f144a1c296e1bd60681d342d5ccb0dbb1dcd9e585",
+   "size": 781,
+   "mtime_utc": "2025-09-07T18:44:22.776870Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "app/routes_echo_studio.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "22786ac1ee5bb4ab45b887cebfa7dcc7fec254d7",
+   "git_blob_working": "22786ac1ee5bb4ab45b887cebfa7dcc7fec254d7",
+   "sha256": "53eeadbf0eef1d5f986fbf91939fc2379ffd76967479ba5f95c035a1a3ff9a5c",
+   "size": 38229,
+   "mtime_utc": "2026-09-08T03:15:47.148514Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-08T03:26:07.322789Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/routes_messaging.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "9f8a9ea5bd80712559fc659e9028df2c1058ba5b",
+   "git_blob_working": "9f8a9ea5bd80712559fc659e9028df2c1058ba5b",
+   "sha256": "6de09a34ba8f7d758c4b32b9facdcbe7f40ad152034a5140cdad9c716eed30d7",
+   "size": 5168,
+   "mtime_utc": "2026-07-15T19:05:55.834084Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-15T19:34:07.079744Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/stillness.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "d53a3839b7ce7f03b0c16e6ac2cbeb17788f0168",
+   "git_blob_working": "d53a3839b7ce7f03b0c16e6ac2cbeb17788f0168",
+   "sha256": "fc7b3c0ac81979af262e2e849775d8a900b7cccadd3a27c0cf7125b00f04266a",
+   "size": 7453,
+   "mtime_utc": "2026-06-30T06:29:18.106682Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-30T06:38:04.395333Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "app/subsystems/reflection_shard.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "29443d944339b2566a36a5104511a8eefe6367af",
+   "git_blob_working": "29443d944339b2566a36a5104511a8eefe6367af",
+   "sha256": "7c6a796d37360217eedf267f0f380dc30d2cadbb1adbdfb1d879d009fa289ebc",
+   "size": 16563,
+   "mtime_utc": "2026-07-23T15:37:16.156323Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-23T15:41:54.683585Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/sync/__init__.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "git_blob_working": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "size": 0,
+   "mtime_utc": "2026-06-27T20:32:19.527631Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-27T20:33:11.542962Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/sync/echo_messaging.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "b3780b6f3f10573369c97d58c0ff9d933e1fc5c2",
+   "git_blob_working": "b3780b6f3f10573369c97d58c0ff9d933e1fc5c2",
+   "sha256": "53606971ea68d3fbe0440c13a46aa52a038cc18e5e7ee4878634a912d39b044b",
+   "size": 34313,
+   "mtime_utc": "2026-09-02T20:28:54.176239Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-02T20:28:59.012343Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "app/sync/sync_protocol.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e85cc40b05652a82c177a7f9beb2836ba9e9e9bd",
+   "git_blob_working": "e85cc40b05652a82c177a7f9beb2836ba9e9e9bd",
+   "sha256": "294215c57fe9dbf62e684fe3618668ef9458269a79b9cbb04a4a13ce6e2ae5c2",
+   "size": 9634,
+   "mtime_utc": "2026-07-13T03:16:18.849159Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-13T03:18:03.673712Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "audits/2026-09-14_tier5_followup_experiment_design.md",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "b3e1a6b0250af03c88d67e22f7df4da09254d4a7",
+   "git_blob_working": "80d91d51a66fe5df62e1519c559ac42392209f10",
+   "sha256": "9c3d97b2d07a7b1a3e6946a2e904fed64e3088feebe2cbdd9bc58f4ef6b6af70",
+   "size": 23099,
+   "mtime_utc": "2026-09-14T05:51:22.471308Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "diffstat_added_deleted": [
+    23,
+    0
+   ],
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "bible_sentiment.json",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "95f4b8cf38491a43dd76c670777ca836efab28bf",
+   "git_blob_working": "95f4b8cf38491a43dd76c670777ca836efab28bf",
+   "sha256": "b6a0840839ca5ef3584601dfcf6daf4e8d951277bad1f794424f4d1bd63139fb",
+   "size": 7767882,
+   "mtime_utc": "2025-09-15T09:07:50.821544Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "claude_relay/.last_seen_from_air.json",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "edce4d8e9ed97d0fd7551ce9297e2e4487a58d04",
+   "git_blob_working": "5d51523304c0a1b69d65ac3e08355e40d7cfdf1e",
+   "sha256": "0f76f8281a18e536fe32d83f05c1acd220d32944ca59c17501686508bf5e2c55",
+   "size": 74,
+   "mtime_utc": "2026-09-16T10:09:56.033892Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "diffstat_added_deleted": [
+    2,
+    2
+   ],
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "claude_relay/.last_seen_from_air_hub.json",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "e9bae3ebb5093cffc9b13a711be7865f80cd4524",
+   "sha256": "6516e52598787359352b0b50778ada7c70222f3b124869ad7a37d12844c209e6",
+   "size": 74,
+   "mtime_utc": "2026-09-16T10:09:46.248345Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "claude_relay/README.md",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "b7d1e5b36c04a3bc0f2cc07fb34d38e2fa2bc561",
+   "git_blob_working": "c74297b1e38eb7446b4cf44a803dd34e6b66f9be",
+   "sha256": "9a5a3210815550709486ce69d49487a9606d5d7f65769d224ebc0fbb59c96452",
+   "size": 7716,
+   "mtime_utc": "2026-09-09T22:17:26.930033Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "diffstat_added_deleted": [
+    28,
+    1
+   ],
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "claude_relay/from_m5.md",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "94d25ca86ca2cfcdcb14c7fcfde4f17e99472e27",
+   "git_blob_working": "0fffb7209fff9203b85737e6862aa2e79659943c",
+   "sha256": "43c0d1f1d27f0115954c997d4995454c27d83962956d4d5adba006eac22d6c31",
+   "size": 192154,
+   "mtime_utc": "2026-09-16T10:10:57.357566Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "diffstat_added_deleted": [
+    1084,
+    0
+   ],
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "claude_relay/relay.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "3256a14243cf211ab0c215022d7e16f949f17823",
+   "git_blob_working": "b56af082adc26d480169c2c6b0710978e802aefc",
+   "sha256": "17d1a9809c85e41f72c07cc14af63a430460df85408d61fa0ab99cd6cedaf437",
+   "size": 18594,
+   "mtime_utc": "2026-09-16T10:09:29.200070Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "diffstat_added_deleted": [
+    235,
+    31
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-16T10:10:57.274077Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "codex_relay/relay.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "52e6c6c65ad225cd4aafe01db2a82b8fb39bcb1f",
+   "sha256": "fd3832ba8c84bbacb3ff6bc1926f22a91684c74100e22bb0fe885b75ccc8b2c7",
+   "size": 14390,
+   "mtime_utc": "2026-09-10T19:44:40.375600Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-15T18:52:13.813237Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "codex_relay/test_relay.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "f9462c71e4f292f522b04f8eff95f45946c974c8",
+   "sha256": "087a1739702d99f81a87879c50b076e52e8adbcdfcb468e8c3b1b920168322a8",
+   "size": 3519,
+   "mtime_utc": "2026-09-15T20:50:33.915553Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-15T20:50:37.200606Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_cartographer.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "6f1342097b43a98ac068ab5e91c6119661f12939",
+   "git_blob_working": "6f1342097b43a98ac068ab5e91c6119661f12939",
+   "sha256": "6efca1946483def275ef7539cc4c3f9a77126d3381bf5710e32b5e174f63f909",
+   "size": 23663,
+   "mtime_utc": "2026-07-12T01:34:00.963917Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-12T01:54:23.697642Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "echo_janitor.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "7f116e85014baee5718048b24912f61c7f53ae8f",
+   "git_blob_working": "7f116e85014baee5718048b24912f61c7f53ae8f",
+   "sha256": "3ae56c14095b56709c9bb168ff75042ff9a968a9d60ff02f7d8f46a107f322c2",
+   "size": 39722,
+   "mtime_utc": "2026-07-21T23:10:37.102136Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-21T23:10:53.671103Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "echo_json_server.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "7ac13001a45245450e4991542c571aa1f06eadb6",
+   "git_blob_working": "7ac13001a45245450e4991542c571aa1f06eadb6",
+   "sha256": "e3e4bb74eb08025850c40c872c232379595ba6e74dd5dce5c61e3bc07c96e45b",
+   "size": 5475,
+   "mtime_utc": "2026-07-24T03:35:24.609920Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-24T03:35:37.148595Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_principles.json",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "d0f3a0ebb2a4f63536308db50391bc4138427c3c",
+   "git_blob_working": "d0f3a0ebb2a4f63536308db50391bc4138427c3c",
+   "sha256": "0b50108aa298fe687074cc46ffe841376dd51dbdfba9ddf1cc84c128114ca593",
+   "size": 429,
+   "mtime_utc": "2026-07-01T19:53:08.093713Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_quality_scorer.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "3caff88a090510e13054f70cacbf5ce39ae5781a",
+   "git_blob_working": "3caff88a090510e13054f70cacbf5ce39ae5781a",
+   "sha256": "7f3eb61d4fd42a7ef5dfeac93a1a18b398cd185488d8a6d00b06c879bccde163",
+   "size": 24189,
+   "mtime_utc": "2026-09-05T23:09:59.847977Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-05T23:10:10.983153Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "echo_studio/__init__.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "git_blob_working": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "size": 0,
+   "mtime_utc": "2026-07-05T14:38:06.737888Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-05T14:41:55.921303Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/api_client.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "b65e00e79b1ec19ca0fd4e58c611f8a631657660",
+   "git_blob_working": "b65e00e79b1ec19ca0fd4e58c611f8a631657660",
+   "sha256": "6279cfbf9abbe75209cc1c9a7e4606544d29e9c1cbe1c2f2da9580838b65d1cc",
+   "size": 9935,
+   "mtime_utc": "2026-07-24T14:00:18.344263Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-25T00:38:14.997457Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/audio/__init__.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "git_blob_working": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "size": 0,
+   "mtime_utc": "2026-07-05T21:03:33.118563Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-05T21:05:06.627111Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/audio/speech_output.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "eeaabe8e0abfbb9eb76a890c8378dbfb922bd003",
+   "git_blob_working": "eeaabe8e0abfbb9eb76a890c8378dbfb922bd003",
+   "sha256": "ded21bc91cba7e15b5d3059b8a6703972d2d35947a77744db2d6401036a8b1b8",
+   "size": 2585,
+   "mtime_utc": "2026-07-05T21:03:42.653567Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-05T21:05:06.627858Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/main.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "5d5d134e4d4cc998366ed90e3bd0135215b48290",
+   "git_blob_working": "5d5d134e4d4cc998366ed90e3bd0135215b48290",
+   "sha256": "cb6e5402cce42d991fa353c05464ed22a66714f6cc349660491dd763ea2f7fef",
+   "size": 5288,
+   "mtime_utc": "2026-07-05T15:01:07.044776Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-05T15:01:39.398257Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/state/__init__.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "git_blob_working": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "size": 0,
+   "mtime_utc": "2026-07-05T14:38:08.411527Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-05T15:01:39.529779Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/state/local_store.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "bbf9c0683f52fa595ea401a2cd52d77f6c4dead3",
+   "git_blob_working": "bbf9c0683f52fa595ea401a2cd52d77f6c4dead3",
+   "sha256": "e06f40bbe6e71461cd0ab80ff38c4f1590dc04b38ee6b6746640c490fabe255e",
+   "size": 9532,
+   "mtime_utc": "2026-07-12T01:25:16.206790Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-12T04:46:21.771268Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/views/__init__.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "git_blob_working": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "size": 0,
+   "mtime_utc": "2026-07-05T14:38:07.589392Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-05T14:42:01.135822Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/views/activity_view.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "03fc56dc61ce61fe67302c609fe00dab2fc5e009",
+   "git_blob_working": "03fc56dc61ce61fe67302c609fe00dab2fc5e009",
+   "sha256": "b53f2eb6bd06a967aea60dd6a5781e663d258f968ad7e1320932676995b406e3",
+   "size": 6446,
+   "mtime_utc": "2026-07-15T23:40:58.646161Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-16T07:08:30.726129Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/views/conversation_view.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "f7578952ea3fc8c1877dfb0bbd498eea93942094",
+   "git_blob_working": "f7578952ea3fc8c1877dfb0bbd498eea93942094",
+   "sha256": "197087d36899ad3cab9f24cf2ad1b7f569a9c3d222bb731eee77238b10957a65",
+   "size": 19686,
+   "mtime_utc": "2026-07-24T14:00:58.389776Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-25T00:38:15.217627Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/views/health_dashboard_view.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "1ef47c338a9e2b8e91a46a34ef1154ff3593634c",
+   "git_blob_working": "1ef47c338a9e2b8e91a46a34ef1154ff3593634c",
+   "sha256": "ae5aeace59d770d4cad1302f700bc90c1ede231152e86d5bfd8820813f8f41ee",
+   "size": 12455,
+   "mtime_utc": "2026-07-19T21:02:49.085097Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-20T18:05:24.393607Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/views/memory_browser_view.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "01a425b7bd011d6d804258ae64d0f0a2fd7ee0b7",
+   "git_blob_working": "01a425b7bd011d6d804258ae64d0f0a2fd7ee0b7",
+   "sha256": "7e807a0f6affaf236dacae547a2fb7a195fdb22eed5a850f5add38d939b10edd",
+   "size": 5959,
+   "mtime_utc": "2026-07-05T15:05:13.023355Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-05T15:05:35.933053Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/views/project_explorer_view.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e6618f5d306fcd2daa488144efb4d195dea83a63",
+   "git_blob_working": "e6618f5d306fcd2daa488144efb4d195dea83a63",
+   "sha256": "503942cd29e736994555adeae74d2846d17292f208b3302a2c77cf5ac6372750",
+   "size": 8804,
+   "mtime_utc": "2026-07-05T15:04:27.041689Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-05T15:05:35.934432Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/views/settings_view.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "813470495fb8b4665d71e6e434652a435911c89b",
+   "git_blob_working": "813470495fb8b4665d71e6e434652a435911c89b",
+   "sha256": "ee136b84cd26cf9f44968a8f36fb78c8c056d27a7af103b84838193e930a7892",
+   "size": 3817,
+   "mtime_utc": "2026-07-05T14:59:09.900061Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-05T15:01:39.575106Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/views/sidebar.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e68e4b62316577d3ae043d20e3b728518d49937d",
+   "git_blob_working": "e68e4b62316577d3ae043d20e3b728518d49937d",
+   "sha256": "68ab1894d8074ee7baaadad8bafdc9248c3a68105ee4eace3bc007682abd65bb",
+   "size": 6993,
+   "mtime_utc": "2026-07-05T14:55:39.978359Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-05T15:01:39.570104Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/widgets/__init__.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "git_blob_working": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "size": 0,
+   "mtime_utc": "2026-07-05T14:38:07.896243Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-05T14:42:01.145869Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/widgets/ambient_capture.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "42d3d1fc843c3853382e2561dd459a001c61b3c2",
+   "git_blob_working": "42d3d1fc843c3853382e2561dd459a001c61b3c2",
+   "sha256": "5d9f974787b4d96fffe39310c55448ff282430a0e8bcec9b444bac7c7787f13c",
+   "size": 8044,
+   "mtime_utc": "2026-07-24T13:59:57.232119Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-24T14:00:08.555231Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/widgets/composer_input.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "9d0f572f9cd76115d8d44e64c85f6ceff8e5c83a",
+   "git_blob_working": "9d0f572f9cd76115d8d44e64c85f6ceff8e5c83a",
+   "sha256": "2d34bb4da4bae3239e16e6726555733ae372c01017686c4add420e06b4a2fe6c",
+   "size": 6111,
+   "mtime_utc": "2026-07-24T04:11:24.178742Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-24T04:18:17.705666Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "echo_studio/widgets/markdown_view.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "fbcd4a23e2722faa38338ed08a41be3c50b70aa1",
+   "git_blob_working": "fbcd4a23e2722faa38338ed08a41be3c50b70aa1",
+   "sha256": "d54e613215a13c4f4f7d0bf563f74f5a8da15357b07680dab6cb9fb73fa30d48",
+   "size": 3573,
+   "mtime_utc": "2026-07-12T01:26:47.337550Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-12T04:46:21.819057Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "logs/janitor_report.json",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "3ac055d93b4f37427939b8717d6ecbb8bb5a3c54",
+   "git_blob_working": "d1a2aac1f6ea495f79594da8e4ea0a51da71b6ea",
+   "sha256": "09db229c008e96985e2572c394f6365f2492c801b07611f37f110e98ca4feb3e",
+   "size": 13277,
+   "mtime_utc": "2026-09-15T14:09:18.569789Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "diffstat_added_deleted": [
+    21,
+    21
+   ],
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "research/OPEN_QUESTIONS.md",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "baa3d70a856a9ac69aa56df572cd55e0334a0876",
+   "git_blob_working": "7161aa448d7cd8ac4a4c54b6ecc29398f3ce9b03",
+   "sha256": "d83812a009ea016f435b8185a8138a0b9a421b79e7760c438ee67afdf9837024",
+   "size": 28220,
+   "mtime_utc": "2026-09-14T05:50:35.957776Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "diffstat_added_deleted": [
+    0,
+    2
+   ],
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "river_creative_rehab.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "8070a966464962cafb95bf9bf0c91999cf36cbf2",
+   "git_blob_working": "8070a966464962cafb95bf9bf0c91999cf36cbf2",
+   "sha256": "c2bb77fc2ab0fd3aec0cd6d10e541b594c4275de4ff84f5a2fa90ac40568e4ea",
+   "size": 15717,
+   "mtime_utc": "2026-06-26T00:57:31.919321Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "run.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "7fc8bbc69b93b27bd8aa3aaeb69441f01a48e2e2",
+   "git_blob_working": "9070c7e5f1985cb7406b9471f870458a9eeb21a8",
+   "sha256": "78d1ba29f88b6d9e6d1802899a029db372c82f9a6e6e7ea384686857cbac4ea1",
+   "size": 68780,
+   "mtime_utc": "2026-09-09T22:55:55.260856Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "diffstat_added_deleted": [
+    58,
+    1
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-02T22:10:18.197823Z",
+    "pyc_source_mtime_matches_current_file": false,
+    "pyc_written_after_process_start": false
+   },
+   "diff_log_string_probes": {
+    "probed": 1,
+    "found_in_current_process_log": 0
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED_AT_CURRENT_BYTES (INFERRED from eager static import path + mtime precedes process start; import-failure fallbacks in try/except not excluded; no direct execution proof)"
+  },
+  {
+   "path": "safe_restart.sh",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e64af4008d5aab5f06c1373fc154ac4d8fb7a6fe",
+   "git_blob_working": "e64af4008d5aab5f06c1373fc154ac4d8fb7a6fe",
+   "sha256": "541bfd2e5ce6e29cbbfcf2aaa2ffd8ee415b88a95b93cbf832cc68501f9a74e5",
+   "size": 2659,
+   "mtime_utc": "2026-07-21T19:44:27.816682Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "sandbox/__init__.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "2e9b475896e5f98a5f7f1aff606329892da1f9b4",
+   "git_blob_working": "2e9b475896e5f98a5f7f1aff606329892da1f9b4",
+   "sha256": "a9ca84e080bf1d9672dbba2c4623b76ff0ea65fb0c25de1422c1cc7036fc8d39",
+   "size": 154,
+   "mtime_utc": "2025-10-18T06:51:03.059774Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-06-22T04:16:40.331044Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "sandbox/echo_sandbox.sb",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "f4e156003ea2b147c55446639f070eb0fb24d7d4",
+   "git_blob_working": "f4e156003ea2b147c55446639f070eb0fb24d7d4",
+   "sha256": "49eb3eab677af662e05cbae72fc27bde53d2650ba4f3eee05c98f6a31df4419e",
+   "size": 2004,
+   "mtime_utc": "2026-07-01T20:35:20.681505Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "sandbox/experiment_runner.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "b67dca4f79638d4d731e0c446cf5a45b8d0a3398",
+   "git_blob_working": "b67dca4f79638d4d731e0c446cf5a45b8d0a3398",
+   "sha256": "ad43c3af3769e2b34ec5a3cee26f87ae5f3f0f406c112581e2bb27880b71999f",
+   "size": 7940,
+   "mtime_utc": "2026-07-15T19:15:18.837565Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-16T17:49:03.038621Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "POSSIBLE (identical to HEAD; lazy import path only or mtime after start)"
+  },
+  {
+   "path": "sandbox/file_utils.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "0ae4e52252eefcbff91b18fd6e328cf997254e74",
+   "git_blob_working": "0ae4e52252eefcbff91b18fd6e328cf997254e74",
+   "sha256": "67856b9814a2ec263cc55e907652824a41f7b905123e6ca91e00cd222dbbb6eb",
+   "size": 865,
+   "mtime_utc": "2025-09-18T00:11:14.606963Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "sandbox/logging_setup.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "a6b177f2296e7f76e3da3f4f4fef9797415ee9dd",
+   "git_blob_working": "a6b177f2296e7f76e3da3f4f4fef9797415ee9dd",
+   "sha256": "273213be646f4948632351c5b5fdf8dbbb572dcfcb0da2e321171b20bfdc128d",
+   "size": 2365,
+   "mtime_utc": "2026-07-12T01:35:46.502049Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-12T01:53:31.958191Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "sandbox/run_script.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "5b2b0468a85e79b19660edb7c96943ac0d713185",
+   "git_blob_working": "5b2b0468a85e79b19660edb7c96943ac0d713185",
+   "sha256": "2492f2455790ffc0140be05842f977ec0e0a362ed218c2492a7e9a087bf1b52f",
+   "size": 10697,
+   "mtime_utc": "2026-07-12T23:45:37.842379Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "eager-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-12T23:46:07.320896Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "SUPPORTED_LOADED (identical to HEAD; eager static import path)"
+  },
+  {
+   "path": "sandbox/safe_exec_wrapper.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "63464ad18563b9a22b14ddbc8b9f0f61e500dcca",
+   "git_blob_working": "06cce945ff4f415573909e2ea3bfe70589b24b97",
+   "sha256": "7605102d2eb0b9a25c6e5e2704a1efff849a06743334160c4e92a84b170f8cc7",
+   "size": 33060,
+   "mtime_utc": "2026-09-09T19:24:04.744269Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "lazy-only-from-run.py",
+   "diffstat_added_deleted": [
+    42,
+    0
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-09T19:30:18.532114Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "diff_log_string_probes": {
+    "probed": 0,
+    "found_in_current_process_log": 0
+   },
+   "runtime_load_evidence": "POSSIBLE_CURRENT_BYTES_IF_IMPORTED (lazy/function-level import path only; mtime precedes start)"
+  },
+  {
+   "path": "sandbox/scripts/temp_self_edit.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "77c46e65f865a6193da1ded49aa27e30770a34f1",
+   "git_blob_working": "52e58e54815fc502eaeb1aad45d4f583260f30a4",
+   "sha256": "c3ab5b35671751a3d27507341259ea54253de08722856d9a1b3e523dc533dbb6",
+   "size": 827,
+   "mtime_utc": "2026-09-20T18:57:14.852719Z",
+   "mtime_after_process_start": true,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "diffstat_added_deleted": [
+    11,
+    33
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-01T20:22:02.678235Z",
+    "pyc_source_mtime_matches_current_file": false,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "sandbox/test_reflect.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "7c5b21c030e4fbc8c9dfa73e2054e13441eb6e45",
+   "git_blob_working": "7c5b21c030e4fbc8c9dfa73e2054e13441eb6e45",
+   "sha256": "563d14973fcbe7c6161af6226b2b070c08e961ce0ee1be1c7d169fc2d7f87eca",
+   "size": 2505,
+   "mtime_utc": "2025-10-18T07:03:58.134896Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/adversarial_functional_verifier_test.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "52479da6226243c4e733c55ea64083859e598e96",
+   "git_blob_working": "52479da6226243c4e733c55ea64083859e598e96",
+   "sha256": "3e872637095488ae1b88bf964df5fe9c8d189220ae5fa550367a6dde315ec187",
+   "size": 10663,
+   "mtime_utc": "2026-09-06T11:46:50.066988Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/calibrate_preference_provenance_harness.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "aebccf66c08bd3cd95875c3f6cbadcfbdc74aaab",
+   "git_blob_working": "aebccf66c08bd3cd95875c3f6cbadcfbdc74aaab",
+   "sha256": "d075385955df456658e2902f191d47bfcc27cfbc3d26e6001cd1abef000fc476",
+   "size": 12825,
+   "mtime_utc": "2026-09-03T10:52:34.311144Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/memory_ablation_experiment.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "8fcc61303424b693f925ab6c1c468c8029d9e3ab",
+   "git_blob_working": "8fcc61303424b693f925ab6c1c468c8029d9e3ab",
+   "sha256": "e67f1c93ce88c137d464f7214fb352e9223a6a1853c4a8148e4f7d63cc88b327",
+   "size": 12762,
+   "mtime_utc": "2026-07-23T02:01:50.968730Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-03T08:44:46.314509Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/memory_ablation_experiment_nonpersonal_2026-09-03.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "1583f5df5472efc1ae15861e716f8bbb0fbe11e8",
+   "git_blob_working": "1583f5df5472efc1ae15861e716f8bbb0fbe11e8",
+   "sha256": "f5c5e5798f3ebaf0caaa600f08dd0998601ba94e86b458c0cd4743c6a9e2509c",
+   "size": 9548,
+   "mtime_utc": "2026-09-03T08:44:26.379823Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/preference_experiment_cli.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "faed3acf611aa438d8dfdb33f8accf512b10e5b4",
+   "git_blob_working": "faed3acf611aa438d8dfdb33f8accf512b10e5b4",
+   "sha256": "5769aa7e76acf88c2235ac627d7bc87714e589ceaf460717c72109864479e97e",
+   "size": 6199,
+   "mtime_utc": "2026-09-03T10:29:29.579424Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/run_capability_pilot.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "17d0348fe1dd93fe6480b9cd8cf93f197fd18645",
+   "git_blob_working": "17d0348fe1dd93fe6480b9cd8cf93f197fd18645",
+   "sha256": "3c650144dd2fce505caf0747cf7f8d4de6c531c7e4fdd0921bcd778c430bf8b1",
+   "size": 20982,
+   "mtime_utc": "2026-09-05T21:24:07.644551Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-05T21:24:50.731992Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/run_learning_investigation_pilot.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "6e6c278697c474e6b5fb87b2bf61f57cb02c2963",
+   "git_blob_working": "6e6c278697c474e6b5fb87b2bf61f57cb02c2963",
+   "sha256": "d6c846f110bc8bd45339168046c2215a89e937f788c20eae4ce259d409cfa513",
+   "size": 13476,
+   "mtime_utc": "2026-09-03T19:36:09.709615Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/run_level4_arbitration_experiment.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "97b93a1f672bbe05d051f63de3beb1bf22ba6332",
+   "git_blob_working": "97b93a1f672bbe05d051f63de3beb1bf22ba6332",
+   "sha256": "04bae4508f3f6736c6b9569205d37614cb9c9cd640d818a6091e6c9a17159354",
+   "size": 5815,
+   "mtime_utc": "2026-09-03T23:10:32.777242Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/run_preference_formation_retention_p1_2.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "d9b66ebf94b251e235e4ead282ae8a5a84bc5066",
+   "git_blob_working": "d9b66ebf94b251e235e4ead282ae8a5a84bc5066",
+   "sha256": "83a8f0aeebb0a1e90f9b92e71873d68bf083b4b8e267f94ee051952ed47d6a36",
+   "size": 23061,
+   "mtime_utc": "2026-09-03T18:35:09.572917Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-03T18:35:22.342967Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/run_preference_formation_retention_pilot.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "ac50284ae7043aeb3935b31d07e225624ca8a156",
+   "git_blob_working": "ac50284ae7043aeb3935b31d07e225624ca8a156",
+   "sha256": "5066c63833dafd6df2ee0d73e053d8ed97633346cdd26bb5533b640a33ab5340",
+   "size": 14432,
+   "mtime_utc": "2026-09-03T17:43:38.504246Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-03T17:43:53.916761Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/run_tier3_apparatus.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "b9b8da22826578a57408b235750659ace22209ac",
+   "git_blob_working": "b9b8da22826578a57408b235750659ace22209ac",
+   "sha256": "96f13b893e86737d432813f18d7b907ce2e7324da0106804e186e090d19771e9",
+   "size": 45903,
+   "mtime_utc": "2026-09-04T09:02:27.424070Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-04T09:02:46.851114Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/run_tier3_reisolated_rerun.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "2b14ceff80317d975f7657a0cf7b8a822759ee3c",
+   "sha256": "c0fdd53fc589eea3dd79c4ff693c9783be76d82262df75b451a727b1362b81f1",
+   "size": 1731,
+   "mtime_utc": "2026-09-09T22:52:06.508275Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/run_tier4_confirmatory.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "df2e3e6f3b21eef9c8c93018a4a7267ae5598398",
+   "git_blob_working": "df2e3e6f3b21eef9c8c93018a4a7267ae5598398",
+   "sha256": "0c1bc5434982a70374d160df8cc56ec02da942bc74df420f8154585642bb62d2",
+   "size": 14275,
+   "mtime_utc": "2026-09-04T21:16:20.506873Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/run_tier5_retest.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "22b05dce20d7484b1dcb57463e8b26119dfd256a",
+   "sha256": "facded0de44993a71bdf360db5e09e1f255e2cde237fa246e85ef63b2c3c5b5e",
+   "size": 5074,
+   "mtime_utc": "2026-09-13T18:10:42.346244Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/task_type_behavioral_experiment.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "77b663ae2c2b74e0d768d3f14a30337fdf154a13",
+   "sha256": "af871d4c82688c8542880bb60cdc341fc37872267caa22c1ecc76fbf1c20b377",
+   "size": 20252,
+   "mtime_utc": "2026-09-14T22:13:33.138382Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/task_type_behavioral_experiment_analyze.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "9c93db67d08e50d2ee43efe9c9c1006407627e38",
+   "sha256": "7d56d679abaea72e3611993d06d09aa8fcd651213eea7cbf71d42bf99644107c",
+   "size": 7637,
+   "mtime_utc": "2026-09-14T22:14:46.545222Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/task_type_behavioral_experiment_judge.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "8b5ea8613f1fcadff31d3079bacb272103ccc4d9",
+   "sha256": "ea2b3ac0b90264952d0286bde6ac042e8da086c5b8f93781a30aafe969f61263",
+   "size": 5282,
+   "mtime_utc": "2026-09-14T22:14:08.242296Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/tier4_analyze.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "5cde91cdfce6ed23a0cd9172b728a1260f7b2261",
+   "git_blob_working": "5cde91cdfce6ed23a0cd9172b728a1260f7b2261",
+   "sha256": "3d527a36d18645d2455168fd36d459a35e5216cd0a8cc4ebd460ea0b0cbc07eb",
+   "size": 7195,
+   "mtime_utc": "2026-09-04T21:21:43.045943Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-04T21:21:48.696793Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/tier4_freeze_suites.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "421b73024336d3eab0207e37b633a378c2250c35",
+   "git_blob_working": "421b73024336d3eab0207e37b633a378c2250c35",
+   "sha256": "5a7dc7207d6bd236c4a344899b760294bcd2212228acc7e977356ca910f8a0a8",
+   "size": 2595,
+   "mtime_utc": "2026-09-04T21:14:36.431737Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/tier4_task_pool.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "26651728681bef1bca3ed9181eb96f93fc1a47bb",
+   "git_blob_working": "26651728681bef1bca3ed9181eb96f93fc1a47bb",
+   "sha256": "7d655f1acf8bff06ff5779e115d55c1e270b60327f953224bd80eac1eed87413",
+   "size": 93034,
+   "mtime_utc": "2026-09-04T21:13:28.147694Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-04T21:13:32.083292Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/tier4_verify_task_pool.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "13dba396cdf1bdf93fcdd1845bc410193ee3cf60",
+   "git_blob_working": "13dba396cdf1bdf93fcdd1845bc410193ee3cf60",
+   "sha256": "59fe09a17fd4fda5b8c6ed0cf200e2829fd974cb85d6f3ed4d4ca443a71461c8",
+   "size": 1379,
+   "mtime_utc": "2026-09-04T21:13:07.165640Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/tier5_counterfactual_replay.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "d854ffc8f9d8f19bb0764efe59d4224f1d73933f",
+   "git_blob_working": "d854ffc8f9d8f19bb0764efe59d4224f1d73933f",
+   "sha256": "5c9c2267886acea87b667d2b50ad3f25088beefec875f9dfdfdb908d0f9f96b6",
+   "size": 10574,
+   "mtime_utc": "2026-09-05T19:48:42.406917Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/tier5_retest_task_pool.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "db6782b9db9348cac5b7d250d6bfd7003c411e5e",
+   "sha256": "595bb18abf1b8c6ca6c34e23687b909551c6dd610eb860961b3714b82bc7b8ac",
+   "size": 20499,
+   "mtime_utc": "2026-09-13T18:09:12.542888Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-13T18:09:22.580040Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/tier6_disagreement_analysis.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "019f1494074dc5df254e4de052264b30785d5882",
+   "git_blob_working": "019f1494074dc5df254e4de052264b30785d5882",
+   "sha256": "254328a931b5217d293010ce270b8fb6b66058fd0366367e4d48c3c8ae67c608",
+   "size": 12315,
+   "mtime_utc": "2026-09-05T20:10:23.904553Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/validate_behavioral_state_live.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "331a256783d6c3be734b083947ecd68893d0f21b",
+   "git_blob_working": "331a256783d6c3be734b083947ecd68893d0f21b",
+   "sha256": "dcb20b505f5ffb2998d045dadb78d93d39c52fd8acf1541ef0f7b8654e694945",
+   "size": 10630,
+   "mtime_utc": "2026-09-03T21:46:14.675556Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/validate_replacement_task_name_family.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e2fad15144741392de55526bdf58b0fc3319d232",
+   "git_blob_working": "e2fad15144741392de55526bdf58b0fc3319d232",
+   "sha256": "879fce949f4ce2716cf9491d20ab0026397e5f74bae3a3a2a8fd369fcff30553",
+   "size": 7474,
+   "mtime_utc": "2026-09-03T18:18:53.730159Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_arch_pipeline_isolation.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "e4ea73dc67a5528bd4573bcdb69656e6a8c71de8",
+   "git_blob_working": "e4ea73dc67a5528bd4573bcdb69656e6a8c71de8",
+   "sha256": "3837d26f79926a52fedfd2084d212cecdba85ac5fec406bae8504174adc93eb2",
+   "size": 14206,
+   "mtime_utc": "2026-09-04T05:37:05.559398Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_attempt_ledger_prompt_evidence.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "6a4bd0b834e8203fd67046f219486d3b3284d44e",
+   "git_blob_working": "6a4bd0b834e8203fd67046f219486d3b3284d44e",
+   "sha256": "e221fa534760e84bf84615ede1647edf71f220b5cf20d248e3636a35a7714592",
+   "size": 10455,
+   "mtime_utc": "2026-09-07T14:26:31.791195Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_behavioral_state.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "7afca2f16c372c676c080b9f6ae4c58a393c40c1",
+   "git_blob_working": "7afca2f16c372c676c080b9f6ae4c58a393c40c1",
+   "sha256": "d7973eccf7c11f886f4bc921af40e35743aea593ccdb476267831c3bcdfcc822",
+   "size": 17704,
+   "mtime_utc": "2026-09-03T21:36:28.609880Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_chat_stream_shape.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "4b37e808ce32faee5a69f334fc98d23cf6277fad",
+   "git_blob_working": "4b37e808ce32faee5a69f334fc98d23cf6277fad",
+   "sha256": "0073956d0d453c9d1247a0a9405586934d29ad0495d1270a7f4cddfc12d80f4b",
+   "size": 3420,
+   "mtime_utc": "2026-07-08T22:38:07.991054Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_choice_parser_benchmark.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "855873da5d63ae0eafb9325de184ddf0cfe72046",
+   "git_blob_working": "855873da5d63ae0eafb9325de184ddf0cfe72046",
+   "sha256": "6ac1a88151752d727130cd05487617a3ef2ed682774ea097a301480c66e09890",
+   "size": 15345,
+   "mtime_utc": "2026-09-03T18:16:58.200099Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_functional_quality_signal.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "47fbb8e76eeaa9ba2bcaba9fdd7cb0c806ea5dfd",
+   "git_blob_working": "47fbb8e76eeaa9ba2bcaba9fdd7cb0c806ea5dfd",
+   "sha256": "ceb83c24ee106736e74851e0a5ea8f7d98449cf39e1120644b331193e4441781",
+   "size": 6826,
+   "mtime_utc": "2026-09-06T11:35:56.796476Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_learning_investigation_harness.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "0e354935c90b57458634a3d928b6366ebde03f60",
+   "git_blob_working": "0e354935c90b57458634a3d928b6366ebde03f60",
+   "sha256": "a981431843ace91940a6ff433cc37ebdd9451982afc171f2bf80564e9ecd2d05",
+   "size": 21419,
+   "mtime_utc": "2026-09-03T19:34:09.671231Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_liveness_ledger.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "ed3d174d86c03f68372bd9a4e97ae6a2ed3f0668",
+   "git_blob_working": "c8a294222f5fb24c661aa4d4b01962aae84b2666",
+   "sha256": "c93ce499ef7ff655a002b22c5735ebe22a0194457e27e1229b52af93222019a9",
+   "size": 96819,
+   "mtime_utc": "2026-09-17T19:07:55.288261Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "diffstat_added_deleted": [
+    125,
+    0
+   ],
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_p3_causal_learning_apparatus.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "98123bf3d6d37a1a8cccad437961043759e42547",
+   "git_blob_working": "98123bf3d6d37a1a8cccad437961043759e42547",
+   "sha256": "3d892c7ae9970fced8d8389cb0f144e64c304cfb40fdb114fb39ceea74a728fe",
+   "size": 8716,
+   "mtime_utc": "2026-09-03T21:08:10.769632Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_preference_provenance_experiment.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "623107cf3d02c2e59ae79e45c6d81ccd5011d576",
+   "git_blob_working": "623107cf3d02c2e59ae79e45c6d81ccd5011d576",
+   "sha256": "4067b41bf580859d9e7a7a078203894cfc6c6d3acda0af1702d7b42893a3b6b8",
+   "size": 51702,
+   "mtime_utc": "2026-09-03T21:36:23.815535Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_protocol_seal.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "1796edb1e9aeecc1fd9496426eb9f92725bee229",
+   "git_blob_working": "1796edb1e9aeecc1fd9496426eb9f92725bee229",
+   "sha256": "951c616513910227ed0e363098cdfb6932f726f60ea5ce0390be0791d4f01b18",
+   "size": 1948,
+   "mtime_utc": "2026-09-03T10:59:42.137942Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_provenance_check.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "87d82c6818cf48ec1cfe5d1ddc992f8491ae0ec5",
+   "git_blob_working": "1c0f1acbc94083f0ae3f96d72c5b4d6533358b0a",
+   "sha256": "23862b8aa64b65b1ceca1c3e467ec678b629b5a78904312c36ece27dd175d895",
+   "size": 60552,
+   "mtime_utc": "2026-09-13T14:33:53.237061Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "diffstat_added_deleted": [
+    365,
+    8
+   ],
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_seam_engine.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "189f1e5928baf30cf397a84c6de55cbc5c1518f9",
+   "git_blob_working": "189f1e5928baf30cf397a84c6de55cbc5c1518f9",
+   "sha256": "02134e9f465be0ea35ef75baab8feb95154d9874e2949620272bde0340b774e9",
+   "size": 4405,
+   "mtime_utc": "2026-07-23T15:51:19.843535Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-16T21:57:21.061291Z",
+    "pyc_source_mtime_matches_current_file": false,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_select_best_fallback_candidate.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "743bc81781115202fcbe101dcedd95b315251bf2",
+   "sha256": "1b8cec19769227fb45310e861a68c57a93adac0d5fb232c365f7d01c8239d290",
+   "size": 4764,
+   "mtime_utc": "2026-09-09T22:48:30.783803Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_synthesis_refactor.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "a7a4090dca23df317dfa63af74639d3c37206ac1",
+   "git_blob_working": "a7a4090dca23df317dfa63af74639d3c37206ac1",
+   "sha256": "14f14cd4d3e570136874403f579b75e9384b4655d104eb674cda534770408e34",
+   "size": 12410,
+   "mtime_utc": "2026-09-05T06:28:09.861052Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_synthesis_refactor_control.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "6fcfee099cf5a2653be0b60273fd5fd04a881371",
+   "git_blob_working": "6fcfee099cf5a2653be0b60273fd5fd04a881371",
+   "sha256": "c6b6ae975c8a9f9b20a97ba19900e83442f452baf191f4e4cb369d122b571607",
+   "size": 2638,
+   "mtime_utc": "2026-09-05T06:11:16.401229Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_synthesis_refactor_live.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "eea443e3deaf8a925e652ed0c0ce2de577ed4e27",
+   "git_blob_working": "eea443e3deaf8a925e652ed0c0ce2de577ed4e27",
+   "sha256": "168f80425eeaac5e103ab4f54ec8abec54ec7aa29fd177b03106f44d8e24ca11",
+   "size": 6398,
+   "mtime_utc": "2026-09-05T06:07:19.011699Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-09-05T06:07:30.028476Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_tier3_apparatus_readiness_audit.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "9437f74418b5a8fcb4acdf3a90d7a2687562d118",
+   "git_blob_working": "9437f74418b5a8fcb4acdf3a90d7a2687562d118",
+   "sha256": "b7cfc08cd08cc6c0857202b0b5e1054272549c44ca39cc9e2c0b06f10f5c5107",
+   "size": 28978,
+   "mtime_utc": "2026-09-04T08:56:01.794326Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "scripts/verify_tier3_truncation_repair.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "332db1efdd8579cfd153e58d785cae23ea14dcaf",
+   "git_blob_working": "332db1efdd8579cfd153e58d785cae23ea14dcaf",
+   "sha256": "f10b5ca9bd8a093b61653dabccef37ff804406c52c89458c0ba9df92e532928a",
+   "size": 16118,
+   "mtime_utc": "2026-09-04T08:55:31.958424Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "self_heal/app/core/self_edit_generated.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "a891469dba87fb2b0b4102853900806b8b2fcf17",
+   "sha256": "df3e7bb629eeeb30897e4b9c3ae60650d039f87789024ea2bc0af3fd530c9173",
+   "size": 2714,
+   "mtime_utc": "2026-04-10T20:53:55.004138Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "self_heal/sandbox/scripts/temp_self_edit.py",
+   "tracked": false,
+   "differs_from_HEAD": null,
+   "git_blob_HEAD": null,
+   "git_blob_working": "a891469dba87fb2b0b4102853900806b8b2fcf17",
+   "sha256": "df3e7bb629eeeb30897e4b9c3ae60650d039f87789024ea2bc0af3fd530c9173",
+   "size": 2714,
+   "mtime_utc": "2026-04-10T20:43:54.829159Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "spot_check.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "6e0a3cd8f61bee9eb9e180711c30d062e009fb1b",
+   "git_blob_working": "6e0a3cd8f61bee9eb9e180711c30d062e009fb1b",
+   "sha256": "08a9f1e4f16ec852f627edc3c96c5d8aaabc65fec873121a48b061b0ac7902a4",
+   "size": 14441,
+   "mtime_utc": "2026-07-12T21:53:58.462610Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-12T21:54:15.211159Z",
+    "pyc_source_mtime_matches_current_file": true,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "staging/self_edit_candidate.py",
+   "tracked": true,
+   "differs_from_HEAD": true,
+   "git_blob_HEAD": "9b125fe5c456bc70d95252e949b06d924695c1d5",
+   "git_blob_working": "578fbd8e25071432b6b98f0050eac84cefd89b5b",
+   "sha256": "173382a2b1e0841c2d12a55d5a0ad958e126c76c491739641307dd62c50277d4",
+   "size": 178,
+   "mtime_utc": "2026-09-20T02:36:35.782909Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "diffstat_added_deleted": [
+    4,
+    12
+   ],
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-01T20:22:02.707718Z",
+    "pyc_source_mtime_matches_current_file": false,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "start_echo.sh",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "9140d8325519742e9d69291eafe197d28805810d",
+   "git_blob_working": "9140d8325519742e9d69291eafe197d28805810d",
+   "sha256": "1b04e331690b2f01796b4eadc894305f383e0d68a41c815dcdf2cbc752393d15",
+   "size": 1031,
+   "mtime_utc": "2026-07-05T02:34:53.059911Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "not-a-python-module",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "terminal_client.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "dfbc3b2bc24d7b17a6e6c323b403d72de2435d44",
+   "git_blob_working": "dfbc3b2bc24d7b17a6e6c323b403d72de2435d44",
+   "sha256": "a883b73b796659fe27ed589e1c89ede09c317ba1696139ed2b7c630e5c56ebab",
+   "size": 31790,
+   "mtime_utc": "2026-07-24T01:55:29.738826Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "pyc": {
+    "pyc_mtime_utc": "2026-07-17T13:46:16.797945Z",
+    "pyc_source_mtime_matches_current_file": false,
+    "pyc_written_after_process_start": false
+   },
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "thunderhead.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "18819f5551b639ea2358023421365d807a3306b7",
+   "git_blob_working": "18819f5551b639ea2358023421365d807a3306b7",
+   "sha256": "317fd1a6af8bf1e6feb2424e8234270b9bbcc1722d318e3826bd58f4f86b0332",
+   "size": 34942,
+   "mtime_utc": "2026-07-21T07:04:11.085146Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  },
+  {
+   "path": "verify_riverbrain.py",
+   "tracked": true,
+   "differs_from_HEAD": false,
+   "git_blob_HEAD": "0482cb295b4fea80dfa7fafce60b399ca6505f70",
+   "git_blob_working": "0482cb295b4fea80dfa7fafce60b399ca6505f70",
+   "sha256": "f830e57a71e6723eea78899b2f697888bf52edb4bfb11a89d4edee2fab860ed7",
+   "size": 16890,
+   "mtime_utc": "2026-07-03T17:58:04.584918Z",
+   "mtime_after_process_start": false,
+   "static_import_reachability": "no-static-import-path-from-run.py",
+   "runtime_load_evidence": "NOT_EVIDENCED (no static import path from run.py; may be data/config or invoked out-of-process)"
+  }
+ ]
+}

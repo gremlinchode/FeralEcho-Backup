@@ -1,0 +1,1771 @@
+{
+ "protocol_version": "v1.1",
+ "date": "2026-09-20",
+ "status": "FROZEN_NOT_IMPLEMENTED (frozen when hashes are recorded in the traceability artifact)",
+ "authority_note": "GENERATED FROM the Markdown protocol by script. The Markdown governs (DOC-2). rule_index and constants are extracted mechanically; a mismatch with the Markdown is a protocol defect.",
+ "supersedes": {
+  "md_sha256": "d1968caf5360e60b8b8d9ca0db9769de4f8bea518ca537a73ea00b8fa5898c06",
+  "json_sha256": "b35ad16b3c0fed878d74ff404f00892a6be66a8227211510b79e77e50db18131",
+  "modified": false
+ },
+ "motivating_review": "audits/2026-09-20_persistent_competence_protocol_v1_blind_review.md",
+ "claim_boundary": "Constructed pathway only. Worker weights unchanged (digest-verified). Never establishes that existing FeralEcho (RiverBrain, self_model_claims, behavioral_state, task_type_classifier, any production mechanism) possesses the property; nothing about consciousness, organism status, general learning, or recursive self-improvement.",
+ "claims": {
+  "R": "ROUTING LEARNING: experience improves selection among already-capable frozen workers (Track R only)",
+  "C": "CAPABILITY ACQUISITION (system-level): experience improves a FIXED worker's performance via a within-worker context mechanism, not explainable by switching workers (Track C only)",
+  "rule": "A routing result must never be labeled capability acquisition (SCOPE-6)"
+ },
+ "sections": {
+  "0": {
+   "title": "Document rules [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "1": {
+   "title": "Scope, claims, and definitions [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "2": {
+   "title": "Hypotheses [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "3": {
+   "title": "Infrastructure inventory and sandbox interface [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "4": {
+   "title": "Inference conditions [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "5": {
+   "title": "Partitions, pilot, and sealing [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "6": {
+   "title": "Oracle, grader identity, exclusions, and nondeterminism [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "7": {
+   "title": "Carrier and learning pathway [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "8": {
+   "title": "Selector and tie policy [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "9": {
+   "title": "Arms and controls [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "10": {
+   "title": "Baselines and DEV calibration [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "11": {
+   "title": "Evaluation modes and transfer cells [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "12": {
+   "title": "Longitudinal accumulation (Track C) [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "13": {
+   "title": "Isolation preflight [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "14": {
+   "title": "Apparatus qualification [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "15": {
+   "title": "Statistical procedures [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "16": {
+   "title": "Adjudication [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "17": {
+   "title": "Staging and stopping [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "18": {
+   "title": "Result tables (blank, frozen schema) [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "19": {
+   "title": "Raw evidence preservation [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "20": {
+   "title": "Conformance report — the first exhibit [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "21": {
+   "title": "Immutability, versioning, and reruns [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "22": {
+   "title": "Static protocol-consistency checklist [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "23": {
+   "title": "Claim boundary [NORMATIVE]",
+   "normative": true,
+   "commentary": false
+  },
+  "24": {
+   "title": "[COMMENTARY] Rationale (non-normative; contains no rules)",
+   "normative": false,
+   "commentary": true
+  }
+ },
+ "eligible_workers": [
+  "qwen2.5-coder:7b",
+  "llama3.2:3b",
+  "deepseek-r1:7b"
+ ],
+ "capabilities": {
+  "trained": [
+   "list_aggregation",
+   "string_transformation",
+   "dict_lookup_merge"
+  ],
+  "adjacent_control": "recursion_base_case",
+  "unrelated_negative_control": "date_arithmetic"
+ },
+ "partitions": [
+  "PILOT",
+  "DEV",
+  "TRAIN",
+  "LONG_TRAIN",
+  "QUAL",
+  "EVAL_E2",
+  "EVAL_E3",
+  "EVAL_E5",
+  "EVAL_E6",
+  "NEGCTL_E7",
+  "LONG_EVAL",
+  "E1_replay"
+ ],
+ "eval_seed_rule": "SHA-256(\"EVAL\" || P2_commit_hash)",
+ "freeze_points": {
+  "P1": "pre-registration commit (generator, harness, sandbox layer, analysis, constants, digests, pilot_decision_log)",
+  "P2": "DEV-derived decisions + sealed DEV ledger chain head"
+ },
+ "tie_policy": {
+  "forbidden": "alphabetical or identity-ordered",
+  "method": "HMAC-SHA256(TIE_KEY, task_id|capability_id|sorted_tied_set) mod |T|, tied set sorted by SHA-256(worker_id)",
+  "keys": {
+   "main": "pc-v1.1-tie-main",
+   "replicate_A_prime": "pc-v1.1-tie-repl"
+  }
+ },
+ "arms": {
+  "track_R": [
+   "A",
+   "A_prime",
+   "B",
+   "C",
+   "D",
+   "N",
+   "E",
+   "M",
+   "H-BLIND-qwen",
+   "H-BLIND-llama",
+   "H-BLIND-deepseek",
+   "H-DEV"
+  ],
+  "track_R_computed_baselines": [
+   "SW-qwen",
+   "SW-llama",
+   "SW-deepseek",
+   "RAND",
+   "BEST-STATIC-DEV",
+   "BEST-STATIC-PERCAP-DEV"
+  ],
+  "track_C": [
+   "EMPTY",
+   "LEARNED(all workers)",
+   "NEUTRAL(P)",
+   "HANDWRITTEN(P)",
+   "POISON(P)",
+   "D_C(P)"
+  ],
+  "longitudinal": [
+   "LB",
+   "LN",
+   "LE"
+  ],
+  "removed_from_v1_0": [
+   "S1 (duplicate of D)",
+   "S2 (replaced by M)",
+   "second-generation stage (D2, D_control, F)",
+   "gemma3:4b",
+   "lizard-tail L5-L8"
+  ]
+ },
+ "adjudication": {
+  "track_R_ladder_weakest_to_strongest": [
+   "APPARATUS INVALID",
+   "STATIC-WORKER REDISCOVERY",
+   "NO REPRODUCIBLE EFFECT",
+   "CARRIER-CONTROLLED BEHAVIOR",
+   "EXPERIENCE-DEPENDENT ROUTING ADAPTATION",
+   "PERSISTENT ROUTING ADAPTATION",
+   "TRANSFERABLE ROUTING ADAPTATION"
+  ],
+  "track_C_ladder_weakest_to_strongest": [
+   "APPARATUS INVALID",
+   "NO REPRODUCIBLE EFFECT",
+   "CARRIER-CONTROLLED BEHAVIOR",
+   "FIXED-WORKER EXPERIENCE-DEPENDENT IMPROVEMENT",
+   "PERSISTENT ACQUIRED SYSTEM-LEVEL COMPETENCE CONSISTENT WITH EVIDENCE",
+   "ACCUMULATED SYSTEM-LEVEL COMPETENCE CONSISTENT WITH EVIDENCE"
+  ],
+  "h4_load_bearing": true,
+  "algorithm_rules": [
+   "ADJ-0",
+   "ADJ-1",
+   "ADJ-2",
+   "ADJ-3",
+   "ADJ-4",
+   "ADJ-5",
+   "ADJ-6"
+  ],
+  "label_suffix": "(worker weights unchanged, digest-verified; constructed pathway only)"
+ },
+ "constants": {
+  "ROUTE_GAIN_PP": {
+   "value": 8,
+   "governing_section": 2
+  },
+  "CTX_GAIN_PP": {
+   "value": 10,
+   "governing_section": 2
+  },
+  "CTX_VS_NEUTRAL_PP": {
+   "value": 5,
+   "governing_section": 2
+  },
+  "MISMATCH_GAP_PP": {
+   "value": 5,
+   "governing_section": 2
+  },
+  "EQUIV_MARGIN_PP": {
+   "value": 5,
+   "governing_section": 2
+  },
+  "ALPHA": {
+   "value": 0.05,
+   "governing_section": 2
+  },
+  "RETENTION_ALPHA": {
+   "value": 0.1,
+   "governing_section": 2
+  },
+  "TREND_MIN_PP": {
+   "value": 5,
+   "governing_section": 2
+  },
+  "NEGCTL_MAX_PP": {
+   "value": 5,
+   "governing_section": 2
+  },
+  "CONCENTRATION": {
+   "value": 0.9,
+   "governing_section": 2
+  },
+  "SECONDARY_WORKER_GAIN_PP": {
+   "value": 5,
+   "governing_section": 2
+  },
+  "RETENTION_TOL_PP": {
+   "value": 5,
+   "governing_section": 2
+  },
+  "NEGCTL_BAND_LOW": {
+   "value": 0.2,
+   "governing_section": 2
+  },
+  "NEGCTL_BAND_HIGH": {
+   "value": 0.9,
+   "governing_section": 2
+  },
+  "TEMPERATURE": {
+   "value": 0,
+   "governing_section": 4
+  },
+  "TOP_P": {
+   "value": 1.0,
+   "governing_section": 4
+  },
+  "TOP_K": {
+   "value": 1,
+   "governing_section": 4
+  },
+  "OLLAMA_SEED": {
+   "value": 20260920,
+   "governing_section": 4
+  },
+  "NUM_PREDICT": {
+   "value": 2048,
+   "governing_section": 4
+  },
+  "NUM_CTX": {
+   "value": 8192,
+   "governing_section": 4
+  },
+  "GEN_TIMEOUT_S": {
+   "value": 180,
+   "governing_section": 4
+  },
+  "EXEC_TIMEOUT_S": {
+   "value": 10,
+   "governing_section": 4
+  },
+  "RETRY_MAX": {
+   "value": 3,
+   "governing_section": 4
+  },
+  "GEN_ORDER_SEED": {
+   "value": 5042026,
+   "governing_section": 4
+  },
+  "N_PILOT": {
+   "value": 20,
+   "governing_section": 5
+  },
+  "N_DEV": {
+   "value": 60,
+   "governing_section": 5
+  },
+  "N_TRAIN": {
+   "value": 60,
+   "governing_section": 5
+  },
+  "N_QUAL": {
+   "value": 20,
+   "governing_section": 5
+  },
+  "N_EVAL_E2": {
+   "value": 150,
+   "governing_section": 5
+  },
+  "N_EVAL_E3": {
+   "value": 75,
+   "governing_section": 5
+  },
+  "N_EVAL_E5": {
+   "value": 75,
+   "governing_section": 5
+  },
+  "N_EVAL_E6": {
+   "value": 75,
+   "governing_section": 5
+  },
+  "N_EVAL_E7": {
+   "value": 75,
+   "governing_section": 5
+  },
+  "N_LONG_TRAIN_ROUND": {
+   "value": 20,
+   "governing_section": 5
+  },
+  "N_LONG_EVAL_BLOCK": {
+   "value": 60,
+   "governing_section": 5
+  },
+  "N_DA_REF": {
+   "value": 12,
+   "governing_section": 5
+  },
+  "MASTER_SEED": {
+   "value": 20260920,
+   "governing_section": 5
+  },
+  "MIN_FAMILIES_E2": {
+   "value": 10,
+   "governing_section": 5
+  },
+  "MIN_FAMILIES_E3": {
+   "value": 10,
+   "governing_section": 5
+  },
+  "MIN_FAMILIES_E5": {
+   "value": 5,
+   "governing_section": 5
+  },
+  "MAX_REPLACEMENT_RATE": {
+   "value": 0.05,
+   "governing_section": 5
+  },
+  "HASHSEED_1": {
+   "value": 1042026,
+   "governing_section": 6
+  },
+  "HASHSEED_2": {
+   "value": 2042026,
+   "governing_section": 6
+  },
+  "MIN_OBS": {
+   "value": "5`",
+   "governing_section": 7
+  },
+  "K_MAX": {
+   "value": 8,
+   "governing_section": 7
+  },
+  "K_CONTEXT": {
+   "value": 4,
+   "governing_section": 7
+  },
+  "TRAIN_SHUFFLE_SEED": {
+   "value": 3042026,
+   "governing_section": 7
+  },
+  "TIE_KEY_MAIN": {
+   "value": "pc-v1.1-tie-main",
+   "governing_section": 8
+  },
+  "TIE_KEY_REPL": {
+   "value": "pc-v1.1-tie-repl",
+   "governing_section": 8
+  },
+  "HEADROOM_PP": {
+   "value": 8,
+   "governing_section": 10
+  },
+  "BEST_MARGIN_PP": {
+   "value": 5,
+   "governing_section": 10
+  },
+  "P_RANGE_LOW": {
+   "value": 0.3,
+   "governing_section": 10
+  },
+  "P_RANGE_HIGH": {
+   "value": 0.85,
+   "governing_section": 10
+  },
+  "HEADROOM_CLEAN_PP": {
+   "value": 5,
+   "governing_section": 10
+  },
+  "K_LONG_PER_ROUND": {
+   "value": 2,
+   "governing_section": 12
+  },
+  "PERM_RESAMPLES": {
+   "value": 10000,
+   "governing_section": 12
+  },
+  "NOVEL_TREND_ALPHA": {
+   "value": 0.1,
+   "governing_section": 12
+  },
+  "MIN_FAMILIES_LONG": {
+   "value": 6,
+   "governing_section": 12
+  },
+  "TIE_QUAL_N": {
+   "value": 100000,
+   "governing_section": 14
+  },
+  "TIE_QUAL_TOL": {
+   "value": 0.005,
+   "governing_section": 14
+  },
+  "SIM_REPLICATES": {
+   "value": 500,
+   "governing_section": 14
+  },
+  "NULL_FPR_MAX": {
+   "value": 0.07,
+   "governing_section": 14
+  },
+  "POS_POWER_MIN": {
+   "value": 0.8,
+   "governing_section": 14
+  },
+  "BOOT_RESAMPLES": {
+   "value": 10000,
+   "governing_section": 15
+  },
+  "STAT_SEED": {
+   "value": 4042026,
+   "governing_section": 15
+  },
+  "NAME": {
+   "value": "value`",
+   "governing_section": 22
+  }
+ },
+ "rule_index": {
+  "DOC-1": {
+   "governing_section": 0,
+   "load_bearing": true
+  },
+  "DOC-2": {
+   "governing_section": 0,
+   "load_bearing": true
+  },
+  "DOC-3": {
+   "governing_section": 0,
+   "load_bearing": true
+  },
+  "DOC-4": {
+   "governing_section": 0,
+   "load_bearing": true
+  },
+  "DOC-5": {
+   "governing_section": 0,
+   "load_bearing": true
+  },
+  "SCOPE-1": {
+   "governing_section": 1,
+   "load_bearing": true
+  },
+  "SCOPE-2": {
+   "governing_section": 1,
+   "load_bearing": true
+  },
+  "SCOPE-3": {
+   "governing_section": 1,
+   "load_bearing": true
+  },
+  "SCOPE-4": {
+   "governing_section": 1,
+   "load_bearing": true
+  },
+  "SCOPE-5": {
+   "governing_section": 1,
+   "load_bearing": true
+  },
+  "SCOPE-6": {
+   "governing_section": 1,
+   "load_bearing": true
+  },
+  "SCOPE-7": {
+   "governing_section": 1,
+   "load_bearing": true
+  },
+  "SCOPE-8": {
+   "governing_section": 1,
+   "load_bearing": true
+  },
+  "SCOPE-9": {
+   "governing_section": 1,
+   "load_bearing": true
+  },
+  "HYP-R0": {
+   "governing_section": 2,
+   "load_bearing": true
+  },
+  "HYP-R1": {
+   "governing_section": 2,
+   "load_bearing": true
+  },
+  "HYP-R2": {
+   "governing_section": 2,
+   "load_bearing": true
+  },
+  "HYP-R3": {
+   "governing_section": 2,
+   "load_bearing": true
+  },
+  "HYP-R4": {
+   "governing_section": 2,
+   "load_bearing": true
+  },
+  "HYP-R5": {
+   "governing_section": 2,
+   "load_bearing": true
+  },
+  "HYP-R6": {
+   "governing_section": 2,
+   "load_bearing": true
+  },
+  "HYP-RD": {
+   "governing_section": 2,
+   "load_bearing": false
+  },
+  "HYP-C1": {
+   "governing_section": 2,
+   "load_bearing": true
+  },
+  "HYP-C2": {
+   "governing_section": 2,
+   "load_bearing": true
+  },
+  "HYP-C3": {
+   "governing_section": 2,
+   "load_bearing": true
+  },
+  "HYP-C4": {
+   "governing_section": 2,
+   "load_bearing": true
+  },
+  "HYP-C5": {
+   "governing_section": 2,
+   "load_bearing": true
+  },
+  "HYP-C6": {
+   "governing_section": 2,
+   "load_bearing": true
+  },
+  "INFRA-1": {
+   "governing_section": 3,
+   "load_bearing": true
+  },
+  "INFRA-2": {
+   "governing_section": 3,
+   "load_bearing": true
+  },
+  "INFRA-3": {
+   "governing_section": 3,
+   "load_bearing": true
+  },
+  "INFRA-4": {
+   "governing_section": 3,
+   "load_bearing": true
+  },
+  "INFRA-5": {
+   "governing_section": 3,
+   "load_bearing": true
+  },
+  "INFRA-6": {
+   "governing_section": 3,
+   "load_bearing": true
+  },
+  "INF-1": {
+   "governing_section": 4,
+   "load_bearing": true
+  },
+  "INF-2": {
+   "governing_section": 4,
+   "load_bearing": true
+  },
+  "INF-3": {
+   "governing_section": 4,
+   "load_bearing": true
+  },
+  "INF-4": {
+   "governing_section": 4,
+   "load_bearing": true
+  },
+  "INF-5": {
+   "governing_section": 4,
+   "load_bearing": true
+  },
+  "INF-6": {
+   "governing_section": 4,
+   "load_bearing": true
+  },
+  "INF-7": {
+   "governing_section": 4,
+   "load_bearing": true
+  },
+  "INF-8": {
+   "governing_section": 4,
+   "load_bearing": true
+  },
+  "INF-9": {
+   "governing_section": 4,
+   "load_bearing": true
+  },
+  "INF-10": {
+   "governing_section": 4,
+   "load_bearing": false
+  },
+  "INF-11": {
+   "governing_section": 4,
+   "load_bearing": true
+  },
+  "INF-12": {
+   "governing_section": 4,
+   "load_bearing": true
+  },
+  "INF-13": {
+   "governing_section": 4,
+   "load_bearing": false
+  },
+  "INF-14": {
+   "governing_section": 4,
+   "load_bearing": true
+  },
+  "PART-1": {
+   "governing_section": 5,
+   "load_bearing": true
+  },
+  "PART-2": {
+   "governing_section": 5,
+   "load_bearing": true
+  },
+  "PART-3": {
+   "governing_section": 5,
+   "load_bearing": true
+  },
+  "PART-4": {
+   "governing_section": 5,
+   "load_bearing": true
+  },
+  "PART-5": {
+   "governing_section": 5,
+   "load_bearing": true
+  },
+  "PART-6": {
+   "governing_section": 5,
+   "load_bearing": true
+  },
+  "PART-7": {
+   "governing_section": 5,
+   "load_bearing": true
+  },
+  "ORC-1": {
+   "governing_section": 6,
+   "load_bearing": true
+  },
+  "ORC-2": {
+   "governing_section": 6,
+   "load_bearing": true
+  },
+  "ORC-3": {
+   "governing_section": 6,
+   "load_bearing": true
+  },
+  "ORC-4": {
+   "governing_section": 6,
+   "load_bearing": true
+  },
+  "EXC-1": {
+   "governing_section": 6,
+   "load_bearing": true
+  },
+  "EXC-2": {
+   "governing_section": 6,
+   "load_bearing": true
+  },
+  "EXC-3": {
+   "governing_section": 6,
+   "load_bearing": true
+  },
+  "EXC-4": {
+   "governing_section": 6,
+   "load_bearing": true
+  },
+  "CAR-1": {
+   "governing_section": 7,
+   "load_bearing": true
+  },
+  "CAR-2": {
+   "governing_section": 7,
+   "load_bearing": true
+  },
+  "CAR-3": {
+   "governing_section": 7,
+   "load_bearing": true
+  },
+  "CAR-4": {
+   "governing_section": 7,
+   "load_bearing": true
+  },
+  "CAR-5": {
+   "governing_section": 7,
+   "load_bearing": true
+  },
+  "CAR-6": {
+   "governing_section": 7,
+   "load_bearing": true
+  },
+  "CAR-7": {
+   "governing_section": 7,
+   "load_bearing": true
+  },
+  "CAR-8": {
+   "governing_section": 7,
+   "load_bearing": true
+  },
+  "CAR-9": {
+   "governing_section": 7,
+   "load_bearing": true
+  },
+  "CAR-10": {
+   "governing_section": 7,
+   "load_bearing": true
+  },
+  "SEL-1": {
+   "governing_section": 8,
+   "load_bearing": true
+  },
+  "TIE-1": {
+   "governing_section": 8,
+   "load_bearing": true
+  },
+  "TIE-2": {
+   "governing_section": 8,
+   "load_bearing": true
+  },
+  "TIE-3": {
+   "governing_section": 8,
+   "load_bearing": true
+  },
+  "TIE-4": {
+   "governing_section": 8,
+   "load_bearing": true
+  },
+  "ARM-1": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-2": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-3": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-4": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-5": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-6": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-7": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-8": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-9": {
+   "governing_section": 9,
+   "load_bearing": false
+  },
+  "ARM-10": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-11": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-12": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-13": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-14": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-15": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-16": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-17": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-18": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-19": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "ARM-20": {
+   "governing_section": 9,
+   "load_bearing": true
+  },
+  "BASE-1": {
+   "governing_section": 10,
+   "load_bearing": true
+  },
+  "BASE-2": {
+   "governing_section": 10,
+   "load_bearing": true
+  },
+  "BASE-3": {
+   "governing_section": 10,
+   "load_bearing": true
+  },
+  "BASE-4": {
+   "governing_section": 10,
+   "load_bearing": true
+  },
+  "BASE-5": {
+   "governing_section": 10,
+   "load_bearing": true
+  },
+  "BASE-6": {
+   "governing_section": 10,
+   "load_bearing": true
+  },
+  "BASE-7": {
+   "governing_section": 10,
+   "load_bearing": true
+  },
+  "EVALM-1": {
+   "governing_section": 11,
+   "load_bearing": true
+  },
+  "EVALM-2": {
+   "governing_section": 11,
+   "load_bearing": true
+  },
+  "EVALM-3": {
+   "governing_section": 11,
+   "load_bearing": true
+  },
+  "EVALM-4": {
+   "governing_section": 11,
+   "load_bearing": true
+  },
+  "EVALM-5": {
+   "governing_section": 11,
+   "load_bearing": true
+  },
+  "EVALM-6": {
+   "governing_section": 11,
+   "load_bearing": true
+  },
+  "EVALM-7": {
+   "governing_section": 11,
+   "load_bearing": true
+  },
+  "LONG-1": {
+   "governing_section": 12,
+   "load_bearing": true
+  },
+  "LONG-2": {
+   "governing_section": 12,
+   "load_bearing": true
+  },
+  "LONG-3": {
+   "governing_section": 12,
+   "load_bearing": true
+  },
+  "LONG-4": {
+   "governing_section": 12,
+   "load_bearing": true
+  },
+  "LONG-5": {
+   "governing_section": 12,
+   "load_bearing": true
+  },
+  "LONG-6": {
+   "governing_section": 12,
+   "load_bearing": true
+  },
+  "LONG-8": {
+   "governing_section": 12,
+   "load_bearing": true
+  },
+  "LONG-7": {
+   "governing_section": 12,
+   "load_bearing": true
+  },
+  "ISO-1": {
+   "governing_section": 13,
+   "load_bearing": true
+  },
+  "ISO-2": {
+   "governing_section": 13,
+   "load_bearing": true
+  },
+  "ISO-3": {
+   "governing_section": 13,
+   "load_bearing": true
+  },
+  "ISO-4": {
+   "governing_section": 13,
+   "load_bearing": true
+  },
+  "ISO-5": {
+   "governing_section": 13,
+   "load_bearing": true
+  },
+  "ISO-6": {
+   "governing_section": 13,
+   "load_bearing": true
+  },
+  "ISO-7": {
+   "governing_section": 13,
+   "load_bearing": true
+  },
+  "ISO-8": {
+   "governing_section": 13,
+   "load_bearing": true
+  },
+  "ISO-9": {
+   "governing_section": 13,
+   "load_bearing": true
+  },
+  "ISO-10": {
+   "governing_section": 13,
+   "load_bearing": true
+  },
+  "QUAL-1": {
+   "governing_section": 14,
+   "load_bearing": true
+  },
+  "QUAL-2": {
+   "governing_section": 14,
+   "load_bearing": true
+  },
+  "QUAL-3": {
+   "governing_section": 14,
+   "load_bearing": true
+  },
+  "QUAL-4": {
+   "governing_section": 14,
+   "load_bearing": true
+  },
+  "QUAL-5": {
+   "governing_section": 14,
+   "load_bearing": true
+  },
+  "QUAL-6": {
+   "governing_section": 14,
+   "load_bearing": true
+  },
+  "QUAL-7": {
+   "governing_section": 14,
+   "load_bearing": true
+  },
+  "QUAL-8": {
+   "governing_section": 14,
+   "load_bearing": false
+  },
+  "STAT-1": {
+   "governing_section": 15,
+   "load_bearing": true
+  },
+  "STAT-2": {
+   "governing_section": 15,
+   "load_bearing": true
+  },
+  "STAT-3": {
+   "governing_section": 15,
+   "load_bearing": true
+  },
+  "STAT-7": {
+   "governing_section": 15,
+   "load_bearing": true
+  },
+  "STAT-4": {
+   "governing_section": 15,
+   "load_bearing": true
+  },
+  "STAT-5": {
+   "governing_section": 15,
+   "load_bearing": false
+  },
+  "STAT-6": {
+   "governing_section": 15,
+   "load_bearing": true
+  },
+  "ADJ-0": {
+   "governing_section": 16,
+   "load_bearing": true
+  },
+  "ADJ-1": {
+   "governing_section": 16,
+   "load_bearing": true
+  },
+  "ADJ-2": {
+   "governing_section": 16,
+   "load_bearing": true
+  },
+  "ADJ-3": {
+   "governing_section": 16,
+   "load_bearing": true
+  },
+  "ADJ-4": {
+   "governing_section": 16,
+   "load_bearing": true
+  },
+  "ADJ-5": {
+   "governing_section": 16,
+   "load_bearing": true
+  },
+  "ADJ-6": {
+   "governing_section": 16,
+   "load_bearing": true
+  },
+  "STG-1": {
+   "governing_section": 17,
+   "load_bearing": true
+  },
+  "STG-2": {
+   "governing_section": 17,
+   "load_bearing": true
+  },
+  "STG-3": {
+   "governing_section": 17,
+   "load_bearing": true
+  },
+  "STG-4": {
+   "governing_section": 17,
+   "load_bearing": true
+  },
+  "STG-5": {
+   "governing_section": 17,
+   "load_bearing": true
+  },
+  "STG-6": {
+   "governing_section": 17,
+   "load_bearing": true
+  },
+  "STG-7": {
+   "governing_section": 17,
+   "load_bearing": true
+  },
+  "STG-8": {
+   "governing_section": 17,
+   "load_bearing": true
+  },
+  "TAB-1": {
+   "governing_section": 18,
+   "load_bearing": false
+  },
+  "TAB-2": {
+   "governing_section": 18,
+   "load_bearing": false
+  },
+  "TAB-3": {
+   "governing_section": 18,
+   "load_bearing": false
+  },
+  "TAB-4": {
+   "governing_section": 18,
+   "load_bearing": false
+  },
+  "TAB-5": {
+   "governing_section": 18,
+   "load_bearing": false
+  },
+  "TAB-6": {
+   "governing_section": 18,
+   "load_bearing": false
+  },
+  "TAB-7": {
+   "governing_section": 18,
+   "load_bearing": false
+  },
+  "EVID-1": {
+   "governing_section": 19,
+   "load_bearing": true
+  },
+  "EVID-2": {
+   "governing_section": 19,
+   "load_bearing": true
+  },
+  "EVID-3": {
+   "governing_section": 19,
+   "load_bearing": true
+  },
+  "EVID-4": {
+   "governing_section": 19,
+   "load_bearing": true
+  },
+  "CONF-1": {
+   "governing_section": 20,
+   "load_bearing": true
+  },
+  "CONF-2": {
+   "governing_section": 20,
+   "load_bearing": true
+  },
+  "CONF-3": {
+   "governing_section": 20,
+   "load_bearing": true
+  },
+  "CONF-4": {
+   "governing_section": 20,
+   "load_bearing": true
+  },
+  "CONF-5": {
+   "governing_section": 20,
+   "load_bearing": true
+  },
+  "CONF-6": {
+   "governing_section": 20,
+   "load_bearing": true
+  },
+  "VER-1": {
+   "governing_section": 21,
+   "load_bearing": true
+  },
+  "VER-2": {
+   "governing_section": 21,
+   "load_bearing": true
+  },
+  "VER-3": {
+   "governing_section": 21,
+   "load_bearing": true
+  },
+  "VER-4": {
+   "governing_section": 21,
+   "load_bearing": true
+  },
+  "VER-5": {
+   "governing_section": 21,
+   "load_bearing": true
+  },
+  "VER-6": {
+   "governing_section": 21,
+   "load_bearing": true
+  },
+  "VER-7": {
+   "governing_section": 21,
+   "load_bearing": true
+  },
+  "VER-9": {
+   "governing_section": 21,
+   "load_bearing": true
+  },
+  "VER-8": {
+   "governing_section": 21,
+   "load_bearing": true
+  },
+  "CHK-1": {
+   "governing_section": 22,
+   "load_bearing": true
+  },
+  "CHK-2": {
+   "governing_section": 22,
+   "load_bearing": true
+  },
+  "CHK-3": {
+   "governing_section": 22,
+   "load_bearing": true
+  },
+  "CHK-4": {
+   "governing_section": 22,
+   "load_bearing": true
+  },
+  "CHK-5": {
+   "governing_section": 22,
+   "load_bearing": true
+  },
+  "CLAIM-1": {
+   "governing_section": 23,
+   "load_bearing": false
+  },
+  "CLAIM-2": {
+   "governing_section": 23,
+   "load_bearing": false
+  },
+  "CLAIM-3": {
+   "governing_section": 23,
+   "load_bearing": false
+  },
+  "CLAIM-4": {
+   "governing_section": 23,
+   "load_bearing": false
+  }
+ },
+ "safeguards": [
+  {
+   "id": "tie_handling",
+   "rules": [
+    "TIE-1",
+    "TIE-2",
+    "TIE-3",
+    "TIE-4"
+   ],
+   "section": 8,
+   "anchors": [
+    "Alphabetical or any identity-ordered tie-breaking is forbidden",
+    "HMAC-SHA256",
+    "TIE_KEY_REPL"
+   ]
+  },
+  {
+   "id": "exclusion_cap",
+   "rules": [
+    "EXC-1",
+    "EXC-2",
+    "EXC-3",
+    "EXC-4"
+   ],
+   "section": 6,
+   "anchors": [
+    "zero permitted",
+    "APPARATUS INVALID",
+    "full frozen task manifest"
+   ]
+  },
+  {
+   "id": "pilot_rules",
+   "rules": [
+    "PART-3",
+    "PART-5",
+    "PART-6"
+   ],
+   "section": 5,
+   "anchors": [
+    "pilot_decision_log",
+    "MUST NOT be used to tune prompt text",
+    "eval_exposure_log"
+   ]
+  },
+  {
+   "id": "sealing",
+   "rules": [
+    "PART-4",
+    "PART-5"
+   ],
+   "section": 5,
+   "anchors": [
+    "SHA-256(\"EVAL\"",
+    "P2_commit_hash"
+   ]
+  },
+  {
+   "id": "grader_hash_verification",
+   "rules": [
+    "ORC-3"
+   ],
+   "section": 6,
+   "anchors": [
+    "grader_manifest",
+    "Any mismatch invalidates"
+   ]
+  },
+  {
+   "id": "nondeterminism_handling",
+   "rules": [
+    "ORC-2",
+    "ORC-4",
+    "INF-3",
+    "INF-13"
+   ],
+   "section": 6,
+   "anchors": [
+    "scored `y=0` (category `nondeterministic`)",
+    "cross_namespace_hits"
+   ]
+  },
+  {
+   "id": "inference_freeze",
+   "rules": [
+    "INF-1",
+    "INF-14"
+   ],
+   "section": 4,
+   "anchors": [
+    "No value may be changed after P1",
+    "inference-settings hash"
+   ]
+  },
+  {
+   "id": "conformance_check",
+   "rules": [
+    "CONF-1",
+    "CONF-2",
+    "CONF-3",
+    "CONF-4",
+    "CONF-5",
+    "CONF-6"
+   ],
+   "section": 20,
+   "anchors": [
+    "first exhibit",
+    "MUST refuse to run",
+    "load-bearing"
+   ]
+  },
+  {
+   "id": "freshness_accumulation",
+   "rules": [
+    "LONG-3",
+    "LONG-4",
+    "LONG-6",
+    "LONG-8"
+   ],
+   "section": 12,
+   "anchors": [
+    "cross_namespace_hits",
+    "force_regenerate",
+    "MUST NOT be read"
+   ]
+  },
+  {
+   "id": "h4_label_prohibition",
+   "rules": [
+    "ADJ-3"
+   ],
+   "section": 16,
+   "anchors": [
+    "prohibits EXPERIENCE-DEPENDENT ROUTING ADAPTATION",
+    "prohibits FIXED-WORKER EXPERIENCE-DEPENDENT IMPROVEMENT"
+   ]
+  },
+  {
+   "id": "sandbox_interface",
+   "rules": [
+    "INFRA-1",
+    "INFRA-2",
+    "INFRA-3",
+    "INFRA-4",
+    "INFRA-5"
+   ],
+   "section": 3,
+   "anchors": [
+    "READ_ALLOW",
+    "HIDDEN_ROOT",
+    "EXISTING INFRASTRUCTURE USED UNMODIFIED",
+    "NEW EXPERIMENTAL HARNESS / SECURITY LAYER REQUIRED",
+    "APPARATUS INVALID"
+   ]
+  },
+  {
+   "id": "handwritten_carrier_control",
+   "rules": [
+    "ARM-6",
+    "ARM-7",
+    "HYP-RD"
+   ],
+   "section": 9,
+   "anchors": [
+    "H-BLIND-X",
+    "H-DEV",
+    "no measurement access"
+   ]
+  },
+  {
+   "id": "transplant_redesign",
+   "rules": [
+    "ARM-5",
+    "ARM-8"
+   ],
+   "section": 9,
+   "anchors": [
+    "experience-derived transplant",
+    "null (cold) transplant"
+   ]
+  },
+  {
+   "id": "fixed_worker_control",
+   "rules": [
+    "ARM-13",
+    "QUAL-5"
+   ],
+   "section": 9,
+   "anchors": [
+    "Fixed-worker invariance control"
+   ]
+  },
+  {
+   "id": "static_baselines_without_eval",
+   "rules": [
+    "BASE-1",
+    "BASE-2",
+    "BASE-3"
+   ],
+   "section": 10,
+   "anchors": [
+    "Best-static selection without EVAL",
+    "Gate G1"
+   ]
+  },
+  {
+   "id": "provenance_blind_consumer",
+   "rules": [
+    "CAR-1",
+    "CAR-3",
+    "CAR-4"
+   ],
+   "section": 7,
+   "anchors": [
+    "MUST NOT be read by `score()`"
+   ]
+  },
+  {
+   "id": "pseudo_replication_guard",
+   "rules": [
+    "STAT-7"
+   ],
+   "section": 15,
+   "anchors": [
+    "cluster p-value",
+    "only if both"
+   ]
+  },
+  {
+   "id": "carrier_write_audit",
+   "rules": [
+    "CAR-7"
+   ],
+   "section": 7,
+   "anchors": [
+    "Every carrier write MUST be logged",
+    "load-bearing conformance FAIL"
+   ]
+  },
+  {
+   "id": "frozen_path_integrity",
+   "rules": [
+    "VER-9"
+   ],
+   "section": 21,
+   "anchors": [
+    "git diff P1 HEAD",
+    "refuse to run unless"
+   ]
+  },
+  {
+   "id": "rerun_policy",
+   "rules": [
+    "VER-3",
+    "VER-4",
+    "VER-7",
+    "VER-8"
+   ],
+   "section": 21,
+   "anchors": [
+    "One full-scale execution per (P1, P2)",
+    "EXPLORATORY",
+    "Cumulative disclosure"
+   ]
+  },
+  {
+   "id": "heterogeneity_artifact_guard",
+   "rules": [
+    "BASE-3"
+   ],
+   "section": 10,
+   "anchors": [
+    "not a format artifact"
+   ]
+  },
+  {
+   "id": "transfer_vs_neutral_and_negctl_informativeness",
+   "rules": [
+    "HYP-C5"
+   ],
+   "section": 2,
+   "anchors": [
+    "format-compliance effect",
+    "NEGCTL_BAND_LOW",
+    "uninformative"
+   ]
+  },
+  {
+   "id": "tie_qualification",
+   "rules": [
+    "QUAL-4"
+   ],
+   "section": 14,
+   "anchors": [
+    "Identity-bias",
+    "Null-effect calibration",
+    "Positive control"
+   ]
+  },
+  {
+   "id": "static_worker_rediscovery_label",
+   "rules": [
+    "ADJ-1"
+   ],
+   "section": 16,
+   "anchors": [
+    "STATIC-WORKER REDISCOVERY",
+    "the report MUST name X"
+   ]
+  }
+ ],
+ "result_tables": {
+  "common_columns": [
+   "run_id",
+   "arm_id",
+   "carrier_provenance_category",
+   "carrier_values_hash",
+   "state_hash_init",
+   "state_hash_post_learning",
+   "state_hash_post_restart",
+   "state_hash_post_eval",
+   "process_pid",
+   "filesystem_root",
+   "grader_hash",
+   "inference_settings_hash",
+   "ledger_namespace",
+   "exclusion_count",
+   "retry_count"
+  ],
+  "T1_track_R": {
+   "rows": [
+    "A",
+    "A_prime",
+    "B",
+    "C",
+    "D",
+    "N",
+    "E",
+    "M",
+    "H-BLIND-qwen",
+    "H-BLIND-llama",
+    "H-BLIND-deepseek",
+    "H-DEV",
+    "SW-qwen",
+    "SW-llama",
+    "SW-deepseek",
+    "RAND",
+    "BEST-STATIC-DEV",
+    "BEST-STATIC-PERCAP-DEV"
+   ],
+   "extra_columns": [
+    "task_partition",
+    "capability_scope",
+    "worker_selection_histogram",
+    "pass_rate",
+    "n_tasks",
+    "ci95_low",
+    "ci95_high",
+    "vs_best_static_pp",
+    "vs_A_pp",
+    "vs_A_prime_pp",
+    "p_values",
+    "tie_key_id"
+   ]
+  },
+  "T2_track_C": {
+   "rows": [
+    "EMPTY",
+    "LEARNED(qwen)",
+    "LEARNED(llama)",
+    "LEARNED(deepseek)",
+    "NEUTRAL(P)",
+    "HANDWRITTEN(P)",
+    "POISON(P)",
+    "D_C(P)"
+   ],
+   "extra_columns": [
+    "fixed_worker",
+    "exemplar_count",
+    "exemplar_store_hash",
+    "prompt_hash_set_hash",
+    "task_partition",
+    "pass_rate",
+    "n_tasks",
+    "ci95",
+    "vs_EMPTY_pp",
+    "vs_NEUTRAL_pp",
+    "p_values"
+   ]
+  },
+  "T3_transfer": {
+   "rows": "cell x arm x capability for E1,E2,E3,E5,E6,E7",
+   "extra_columns": [
+    "cell_id",
+    "transfer_category",
+    "pass_rate",
+    "n_tasks",
+    "ci95",
+    "effect_pp",
+    "p_value"
+   ]
+  },
+  "T4_longitudinal": {
+   "rows": "round x {LB,LN,LE} x {same_family,novel} + retention",
+   "extra_columns": [
+    "round",
+    "block_id",
+    "store_size",
+    "store_hash",
+    "restart_pid",
+    "pass_rate",
+    "n_tasks",
+    "paired_diff_pp",
+    "freshness_checks",
+    "cross_namespace_hits"
+   ]
+  },
+  "T5_dev_calibration": {
+   "rows": "worker x capability",
+   "extra_columns": [
+    "dev_pass_rate",
+    "malformed",
+    "truncated",
+    "timeout",
+    "nondeterministic",
+    "G1_components",
+    "P_selection"
+   ]
+  },
+  "T6_qualification_preflight": {
+   "rows": "one per QX/QUAL/ISO check",
+   "extra_columns": [
+    "check_id",
+    "required_outcome",
+    "observed_outcome",
+    "pass_fail"
+   ]
+  },
+  "T7_conformance_and_run_ledger": {
+   "rows": "one per rule in rule_index + one per Stage-3 execution of any version",
+   "extra_columns": [
+    "rule_id",
+    "implementation_location",
+    "runtime_evidence",
+    "pass_fail",
+    "protocol_version",
+    "p1_hash",
+    "p2_hash",
+    "outcome",
+    "abort_reason"
+   ]
+  }
+ },
+ "checklist": {
+  "checker_verifies": [
+   "CHK-1",
+   "CHK-2",
+   "CHK-3",
+   "CHK-4",
+   "CHK-5"
+  ],
+  "note": "Safeguards count only if defined in their governing normative section; commentary section 24 must define no rules."
+ }
+}

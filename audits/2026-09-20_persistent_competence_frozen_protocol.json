@@ -1,0 +1,163 @@
+{
+  "protocol_version": "v1.0",
+  "frozen_date": "2026-09-20",
+  "status": "FROZEN_NOT_IMPLEMENTED",
+  "claim_boundary": "CONSTRUCTION_EXPERIMENT_ONLY — a fully successful run establishes only that a newly-built minimal learning pathway using existing FeralEcho evaluation/execution infrastructure demonstrated the causal chain; it never establishes that existing FeralEcho (RiverBrain, self_model_claims.py, behavioral_state.py, task_type_classifier.py, or any other production mechanism) already possessed this property.",
+  "prior_documents": [
+    "audits/2026-09-19_persistent_competence_experiment_design.md",
+    "audits/2026-09-19_persistent_competence_experiment_adversarial_review.md",
+    "audits/2026-09-19_persistent_competence_candidate_tournament.md"
+  ],
+  "hypotheses": [
+    {"id": "H0", "statement": "Experience-derived state produces no reproducible improvement beyond controls.", "role": "default_null"},
+    {"id": "H1", "statement": "Independent successful experience produces retained state that causally improves later held-out performance.", "metric": "correct_selection_rate_paired_McNemar_one_sided", "comparison": "B_vs_A", "threshold": "p<0.05 AND gain>=15pp AND N_eval>=60_per_worker_pair_per_capability", "falsification": "p>=0.05 OR gain<15pp OR N_eval<60"},
+    {"id": "H2", "statement": "Removing only the acquired carrier removes/reduces the improvement.", "comparison": "C_vs_B_and_C_vs_A", "threshold": "C_vs_B significant regression AND C_vs_A residual gain < 7.5pp", "falsification": "either condition unmet"},
+    {"id": "H3", "statement": "Transplanting only the acquired carrier transfers the effect.", "comparison": "D_vs_B_TOST_or_D_vs_A", "threshold": "TOST equivalence margin +/-10pp OR D_vs_A >= 50% of B's gain, significant", "falsification": "neither sub-test passes"},
+    {"id": "H4", "statement": "Systematically inverted experience produces predictable degradation.", "comparison": "E_vs_A_McNemar_one_sided_E_worse", "threshold": "p<0.05 and E rate below A", "falsification": "p>=0.05 or E not below A"},
+    {"id": "H5", "statement": "Learned effect transfers to pre-defined novel tasks measuring the same capability.", "comparison": "B_vs_A_on_transfer_cell_5", "threshold": "same as H1", "falsification": "fails H1 threshold on cell 5"},
+    {"id": "H6", "statement": "Repeated episodes accumulate rather than overwrite/average/memorize/reroute.", "comparison": "retention_matrix_perf(T_i,T_j)_vs_perf(T_i,T_i)", "threshold": "no cell below perf(T_i,T_i) - 1SE(n=20)", "falsification": "any cell drops below its floor regardless of pooled mean trend"},
+    {"id": "H7", "statement": "Candidate carrier is sufficient without hidden accompanying state.", "comparison": "amputation_ladder_L0_L8_vs_H3_margin", "threshold": "descriptive — report smallest sufficient L-level", "falsification": "L0 itself fails H3"}
+  ],
+  "carrier_schema": {
+    "fields": {"worker_id": "str", "capability_id": "str", "count": "int>=0", "mean": "float[0,1]", "last_updated_utc": "str|null ISO8601"},
+    "initialization": {"count": 0, "mean": 0.5, "last_updated_utc": null},
+    "update_rule": "count+=1; mean += (x - mean)/count  # true uncapped cumulative mean, no EMA window",
+    "min_observations_gate": 5,
+    "serialization": "one JSON file per (worker,capability) cell, atomic temp-file+os.replace, no pickle, no fcntl, no singleton, no background thread",
+    "write_functions_allowed": ["_record_episode (learning pathway only)", "_write_carrier (ablation/transplant/poison/sham constructors only)"],
+    "tie_break_rule": "alphabetical by worker_id string when score() values are equal (closes cheat #6 in final adversarial check)"
+  },
+  "experience_history_ledger": {
+    "distinct_from_carrier": true,
+    "fields": ["episode_id", "worker_id", "capability_id", "task_id", "timestamp_utc", "oracle_outcome", "output_hash", "arm_id"],
+    "purpose": ["raw_evidence", "S2_construction", "retention_matrix_analysis"]
+  },
+  "oracle": {
+    "reused_infrastructure": ["sandbox/safe_exec_wrapper.py", "code_verification.py run_sandbox_script_isolated pattern"],
+    "new_infrastructure": ["sandbox/frozen_protocol_oracle.sb (restrictive default-deny profile)", "protocol-specific task pool with prompts/answers in physically separate directories"],
+    "env_allowlist_required": true,
+    "pinned_hash_seeds": ["1042026", "2042026"],
+    "dual_seed_agreement_required": true,
+    "output_channel": ["0.0", "1.0", "nondeterministic"],
+    "nondeterministic_exclusion_cap_pct": 10,
+    "qualification_battery": ["Q1_filesystem_leak", "Q2_env_dump", "Q3_shortcut_narrow_coverage", "Q4_benchmark_narrowness", "Q5_output_substitution", "Q6_witness_pairing", "Q7_hashseed_dependent", "Q8_write_escape", "Q9_network_escape", "Q10_grading_awareness", "Q11_false_nondeterminism", "Q12_end_to_end_sanity"],
+    "critical_failures": ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8", "Q9", "Q10"],
+    "grading_function_hash_must_be_identical_across_arms": true
+  },
+  "workers": {
+    "trained": ["qwen2.5-coder:7b", "llama3.2:3b"],
+    "held_out_recipient_1": "deepseek-r1:7b",
+    "held_out_recipient_2_second_gen": "gemma3:4b"
+  },
+  "capabilities": {
+    "trained": ["list_aggregation", "string_transformation", "dict_lookup_merge"],
+    "adjacent_control": "recursion_base_case",
+    "unrelated_negative_control": "date_arithmetic"
+  },
+  "task_partitions": {
+    "TRAIN": {"size_per_capability": 60, "extra_for_list_aggregation_longitudinal": 20},
+    "QUAL": {"size_per_capability": 20},
+    "EVAL": {"size_per_capability": 60},
+    "TRANSFER_cells_2_through_7": {"size_per_cell_per_capability": 20},
+    "illustrative_examples_never_graded": {"size_per_capability": 5},
+    "master_generation_seed": "20260920",
+    "disjointness_asserted_at_harness_startup": true,
+    "novelty_assigned_before_any_performance_observed": true
+  },
+  "arms": ["A", "A_prime", "B", "C", "D", "E", "S1", "S2"],
+  "second_generation_arms": ["D2", "D_control", "F"],
+  "isolation_preflight_checks": [
+    "distinct_object_identity", "distinct_persistent_path", "distinct_state_hash_before_learning",
+    "distinct_pid_where_required", "no_singleton_resolution", "no_shared_mutable_cache",
+    "no_autosave_into_production", "no_production_state_reads_unless_predeclared_readonly",
+    "no_inherited_mutable_state", "no_cross_arm_filesystem_contamination"
+  ],
+  "isolation_gate_fail_action": "MAIN_EXPERIMENT_MUST_NOT_RUN",
+  "mathematical_identifiability": {
+    "carrier_update_rule_is_order_invariant_uncapped_mean": true,
+    "consequence": "staged and continuous accumulation of the same observation multiset are algebraically identical at every count; H6 is tested via retention matrix, not via carrier mean order-sensitivity",
+    "visibility_gate_count": 5,
+    "N_eval_min": 60,
+    "N_train_min": 60,
+    "power_calculation_basis": "two-proportion approx, p1=0.50, p2=0.75, alpha=0.05 one-sided, power=0.80, n~=43 unpaired; N_eval=60 set conservatively above this for the paired design"
+  },
+  "transfer_matrix_cells": [
+    {"cell": 1, "label": "same_task_same_context", "interpretation_if_positive": "memorization_consistent"},
+    {"cell": 2, "label": "new_task_same_context", "interpretation_if_positive": "narrow_adaptation (H1 primary test)"},
+    {"cell": 3, "label": "same_capability_changed_surface_form", "interpretation_if_positive": "narrow_adaptation_surface_robust"},
+    {"cell": 4, "label": "same_capability_changed_identifier", "interpretation_if_positive": "STRUCTURALLY_GUARANTEED_NULL — pre-registered uninformative, nonzero result = regression finding"},
+    {"cell": 5, "label": "same_capability_structurally_novel_task", "interpretation_if_positive": "reusable_transfer (H5 test)"},
+    {"cell": 6, "label": "adjacent_untrained_capability", "interpretation_if_positive": "reusable_transfer_generalized"},
+    {"cell": 7, "label": "unrelated_negative_control", "interpretation_if_positive": "UNSUPPORTED_AMBIGUOUS — flags a confound, blocks H5/H6 until explained"}
+  ],
+  "longitudinal": {
+    "rounds": ["T0", "T1", "T2", "T3"],
+    "episodes_per_round": 20,
+    "restart_between_every_round": true,
+    "retention_matrix_required": true,
+    "falsification": "perf(T_i, T_j) < perf(T_i,T_i) - 1SE(n=20) for any j>i, regardless of pooled mean trend",
+    "scope_restriction": "list_aggregation capability only, disclosed explicitly"
+  },
+  "lizard_tail_levels": ["L0_full", "L1_remove_count", "L2_quantize_1decimal", "L3_quantize_3bucket", "L4_remove_aux_metadata_negative_control", "L5_alter_capability_id_guaranteed_null", "L6_alter_worker_id_guaranteed_null", "L7_confirm_no_surrounding_history", "L8_cross_genuine_restart"],
+  "second_generation": {
+    "runs_only_if": "first_generation_result_non_FAIL",
+    "failure_does_not_retroactively_invalidate_first_gen": true,
+    "controls": ["D_control_matched_no_transplant", "count_field_addition_check", "saturation_N/A_by_design"]
+  },
+  "apparatus_qualification_gate": {
+    "composite_of": ["isolation_preflight_10_checks", "oracle_battery_Q1_Q12"],
+    "any_critical_failure_action": "LEARNING_EXPERIMENT_DOES_NOT_RUN"
+  },
+  "result_tables": ["Table1_primary_arms", "Table2_transfer_matrix", "Table3_longitudinal", "Table4_lizard_tail", "Table5_second_generation", "Table6_apparatus_qualification"],
+  "adjudication_labels_weakest_to_strongest": [
+    "APPARATUS_INVALID", "FAIL_or_NO_LEARNING_EFFECT", "PERSISTENT_ADAPTATION_ONLY",
+    "CAUSAL_RETAINED_STATE", "NARROW_TRANSFER", "REUSABLE_TRANSFER",
+    "ACCUMULATED_COMPETENCE_CONSISTENT_WITH_EVIDENCE"
+  ],
+  "adjudication_rule": "use the weakest label the evidence supports; no narrative upgrade permitted; H4/H7 always reported alongside the label as separate findings",
+  "stop_early_decision_tree_stages": [
+    "0_isolation_preflight", "1_oracle_qualification", "2_pilot_sanity_N8",
+    "3_full_scale_H1_H4", "4_transfer_matrix_H5", "5_longitudinal_H6",
+    "6_lizard_tail_H7_runs_regardless_of_stage5", "7_second_generation_gated_on_stage5_pass"
+  ],
+  "sham_transplant_arms": {
+    "S1_value_matched": "fabricated {count,mean} numerically identical to B's final carrier, zero real oracle calls",
+    "S2_history_mismatched": "same approximate final aggregate via real oracle-verified episodes drawn from a mismatched (date_arithmetic) task pool, mislabeled under list_aggregation",
+    "evaluated_on": "same task sets as D, including full transfer matrix, not just primary EVAL",
+    "pre_registered_interpretation_if_D_S1_S2_indistinguishable": "carrier is behaviorally sufficient; does NOT establish provenance is irrelevant beyond what this consumer reads"
+  },
+  "raw_evidence_retained": [
+    "prompts_and_hashes", "hidden_evaluator_inputs_post_hoc", "raw_solver_outputs",
+    "sandbox_outcomes_both_seeds", "carrier_hashes_4_checkpoints_per_arm", "seeds",
+    "timestamps", "process_ids", "filesystem_roots", "arm_assignments", "restart_evidence",
+    "exceptions", "exclusions_with_reasons", "harness_git_commit", "protocol_version_and_hash"
+  ],
+  "immutability": {
+    "permitted_without_new_version": ["task_generation_hash_appendix", "harness_bugfix_matching_frozen_spec", "Q11_Q12_fix_and_rerun_loop"],
+    "requires_new_version": ["any hypothesis threshold change", "any arm definition change", "any carrier field change", "any update rule change", "any oracle grading logic change", "any task partition membership rule change", "any result table column change", "any adjudication label requirement change"],
+    "distinguish_protocol_deviation_from_experimental_failure": true
+  },
+  "final_adversarial_check_cheats_found_and_closed": [
+    "N_or_pair_cherry_picking -> per-capability independent replication, no cross-capability averaging permitted",
+    "A_to_A_prime_substitution -> both required, cannot substitute",
+    "vague_novelty_rubric -> AST classify_approach-style mechanical bucket, fixed at generation time",
+    "pilot_reroll_until_favorable -> single fixed master seed, one pilot run, logged regardless of outcome, re-roll = protocol deviation",
+    "per_arm_grading_leniency -> single git-hashed grading function shared across all arms, hash logged and compared",
+    "silent_tie_break_favoring_B -> fixed alphabetical tie-break, independent of any carrier field",
+    "nondeterministic_exclusion_laundering -> 10% exclusion-rate cap per arm, breach = retroactive apparatus FAIL for that arm",
+    "partial_lizard_tail_ladder -> all 9 levels mandatory for any H7 finding",
+    "silent_implementation_drift_from_frozen_constants -> mandatory line-by-line conformance check as first exhibit of any future report"
+  ],
+  "final_plain_language_statement": {
+    "would_establish_if_fully_successful": "a small, newly-built, isolated carrier fed by FeralEcho's existing independent sandbox oracle can accumulate real experience across genuine restarts into a causally necessary, transplantable, degradation-predictable, novel-transfer-capable statistic distinguishable in at least one tested dimension from a fabricated statistic with the same numbers",
+    "would_not_establish": "that any existing FeralEcho production mechanism (RiverBrain, self_model_claims.py, behavioral_state.py, task_type_classifier.py) already has this property, that any real Echo conversation was shaped by it, or anything about consciousness/experience/subjective standing",
+    "fastest_falsification": "full-scale S1 vs D indistinguishability across every evaluated cell including the transfer matrix, obtainable with zero additional learning episodes beyond what B already produced"
+  },
+  "integrity": {
+    "git_head_before": "2fba42644c82b9f7096276f4dd338d615cf1bcce",
+    "git_head_after": "2fba42644c82b9f7096276f4dd338d615cf1bcce",
+    "production_changes": false,
+    "commits_created": false,
+    "implementation_status": "NONE — protocol only"
+  }
+}

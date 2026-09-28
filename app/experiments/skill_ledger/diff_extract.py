@@ -105,6 +105,47 @@ def find_divergence(a, b):
     return (a, b)
 
 
+def _call_name(call: ast.Call) -> str:
+    f = call.func
+    if isinstance(f, ast.Name):
+        return f.id
+    if isinstance(f, ast.Attribute):
+        return f.attr
+    return "?"
+
+
+def _enclosing_call_name(root: ast.AST, target) -> Optional[str]:
+    """Finds the name of the nearest enclosing ast.Call containing `target` (by
+    identity), walking from `root`. Returns None if target sits inside no Call at
+    all. This is the structural context the original precondition representation
+    lacked: two occurrences of the identical local subtree pattern can require
+    OPPOSITE transformations depending on whether they sit inside e.g. a sorted()
+    key (which selects the smallest key via [0]) or a max() call (which selects the
+    largest key directly) -- confirmed as a real, live defect during this project's
+    first live MVK run (see audits/2026-09-27_verified_skill_ledger_mvk_first_run_report.md)."""
+    if not isinstance(target, ast.AST):
+        return None
+    result = {"call": None, "found": False}
+
+    def _walk(node, current_call):
+        if result["found"]:
+            return
+        if node is target:
+            result["call"] = current_call
+            result["found"] = True
+            return
+        next_call = current_call
+        if isinstance(node, ast.Call):
+            next_call = _call_name(node)
+        for child in ast.iter_child_nodes(node):
+            _walk(child, next_call)
+            if result["found"]:
+                return
+
+    _walk(root, None)
+    return result["call"]
+
+
 def extract_transformation(failing_code: str, passing_code: str, fn_name: str) -> Optional[dict]:
     """Top-level entry point. Returns a JSON-serializable {precondition, transformation}
     dict, or None if no usable transformation could be extracted (honest failure,
@@ -135,6 +176,16 @@ def extract_transformation(failing_code: str, passing_code: str, fn_name: str) -
             and isinstance(pass_node, (ast.AST, list, str, int, float, bool, type(None)))):
         return None
 
+    # Enclosing-call context (the fix for the defect found in the first live MVK run):
+    # a transformation is only meaningful within the aggregation context it was
+    # observed in. If the failing and passing examples themselves disagree about
+    # their own enclosing call (a genuinely inconsistent pair), refuse rather than
+    # store an ambiguous, ungrounded context -- honest failure, not a forced guess.
+    fail_call_ctx = _enclosing_call_name(fail_abs, fail_node)
+    pass_call_ctx = _enclosing_call_name(pass_abs, pass_node)
+    if fail_call_ctx != pass_call_ctx:
+        return None
+
     try:
         precondition_dump = _dump(fail_node)
         transformation_dump = _dump(pass_node)
@@ -148,6 +199,7 @@ def extract_transformation(failing_code: str, passing_code: str, fn_name: str) -
         "precondition": precondition_dump,
         "transformation": transformation_dump,
         "node_type": type(fail_node).__name__ if isinstance(fail_node, ast.AST) else "scalar",
+        "enclosing_call": fail_call_ctx,
     }
 
 
@@ -167,6 +219,16 @@ def apply_skill(candidate_code: str, fn_name: str, skill_pattern: dict) -> Optio
 
     for node in ast.walk(fn):
         if type(node).__name__ != skill_pattern.get("node_type"):
+            continue
+        # Enclosing-call gate: a candidate subtree matching the same local shape but
+        # sitting inside a DIFFERENT (or absent) aggregation call is a genuinely
+        # different applicability context -- do not apply a sorted()-derived
+        # transformation to a max()-based occurrence, or vice versa. Skills written
+        # before this field existed have enclosing_call=None by default, meaning they
+        # only match no-enclosing-call occurrences -- deliberately conservative
+        # (fails closed) rather than silently over-applying a pre-fix skill.
+        candidate_call_ctx = _enclosing_call_name(fn, node)
+        if candidate_call_ctx != skill_pattern.get("enclosing_call"):
             continue
         abs_node = abstract(node, vocab)
         bindings: dict = {}

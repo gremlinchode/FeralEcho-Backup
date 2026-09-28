@@ -133,3 +133,141 @@ redo acquisition). This is a Checkpoint-5 retry, not a restart of the whole MVK.
 
 **No git commit was made.** All work is on the isolated `vsl-implementation` branch;
 `main` is untouched, exactly as instructed.
+
+---
+
+## Follow-up (same day): enclosing-call-context fix implemented, tested, and re-run
+
+**Checkpoint commit**: `19e8135ddad519d65ae97651d8c3680040a080ad`, message
+`vsl: checkpoint initial cross-world transfer result` — the exact partial-result state
+described above, committed to `vsl-implementation` before any further changes were made
+(per the "Continue VSL Implementation" mission's explicit Phase 1 checkpoint-before-fixing
+instruction). `main` remains untouched.
+
+### Phase 2 — defect re-derived mechanically, all four required claims confirmed
+
+No new model calls. All four checked directly against already-collected artifacts:
+
+1. **The transformation originated from a `sorted()`-based pair.** Confirmed by direct
+   read of `memory/experiments/skill_ledger/mvk/acquisition_candidates.json`: candidate 1
+   (STEPWISE, failing) and candidate 3 (STEPWISE, passing) — the pair actually used
+   (`used_pair=(1,3)`, per `acquisition_result.json`) — both use
+   `sorted(entries, key=lambda x: (-x[1], ±tag_priority[x[2]], x[0]))[0]`. True.
+2. **The two fresh-world matches at transfer time both occurred under `max()`.** Confirmed
+   by direct re-derivation (below): both matching instances (2 and 3 in the *original*
+   transfer run) used `max(entries, key=lambda x: (x[1], -tag_priority[x[2]], x[0]))`. True.
+3. **Negation semantics genuinely differ between the two contexts.** Confirmed by direct
+   arithmetic, not assumed: for `sorted(..., key=lambda x: (-x[1], K, x[0]))[0]`, the
+   correct tiebreak needs the *lowest* raw priority number to win, which requires `K =
+   tag_priority[x[2]]` (no negation) when priority 1 = highest; for
+   `max(..., key=lambda x: (x[1], K, x[0]))`, `max` already selects the *largest* key
+   directly (no `[0]`-of-reversed-sort indirection), so the correct `K` for the identical
+   "lower number wins" semantics is `-tag_priority[x[2]]` — the **opposite** literal form
+   from the `sorted()` case. The two contexts are not interchangeable; a transformation
+   correct under one is wrong under the other by construction, not by accident. True.
+4. **The v1/v2 precondition carried no enclosing-call information.** Confirmed by direct
+   read of `K2.T5.tag_priority_direction.v1.json`/`v2.json`: `precondition` is a bare
+   `ast.dump()` string of the `UnaryOp` subtree alone, with no reference anywhere in the
+   precondition or provenance to what call it was found inside. True.
+
+All four confirmed — proceeded to Phase 3 per the mission's own gate.
+
+### Phase 3 — the fix
+
+`diff_extract.py` gained `_call_name()` and `_enclosing_call_name()` (walks from a given
+root AST to find the nearest enclosing `ast.Call` containing a target node by identity,
+returning its callee name or `None`). `extract_transformation()` now records
+`enclosing_call` on the extracted pattern (refusing extraction outright if the
+failing/passing pair's own enclosing-call contexts disagree with each other — an honest
+refusal, not a forced guess). `apply_skill()` now gates candidate-subtree matching on the
+candidate's own enclosing-call context equaling the stored pattern's — a skill mined
+under `sorted()` can no longer match (and therefore cannot misapply to) an occurrence
+inside `max()`, or any other different enclosing call, or no call at all. Pre-existing
+skills with no `enclosing_call` field default (via `.get()`) to matching only
+no-enclosing-call occurrences — deliberately conservative, fails closed rather than
+silently over-applying a pre-fix skill. No instance-specific/holdout-specific logic of
+any kind was added, per the mission's explicit hard constraint — the gate is a genuine
+structural property (which call a subtree sits inside), checked identically regardless of
+which task, world, or literal values are involved.
+
+### Phase 4 — tests, run before any live re-transfer
+
+Four new cases added to `verify_diff_extract.py` (positive-context assertion that the
+real pair's `enclosing_call` is correctly recorded as `'sorted'`; a **negative-context**
+case using the exact real historical `max()`-based defect shape, asserting `apply_skill()`
+now correctly returns `None` instead of misapplying; a re-confirmation that the existing
+proven `sorted()`-to-`sorted()` cross-world genericity still works with the gate active;
+a **serialization** round-trip test confirming `enclosing_call` survives a real ledger
+write/reload). Full suite: **15/15 passing** (the original 11 plus these 4).
+`harness.py`'s two pattern-dict construction sites (`cmd_acquire`'s `Skill(...)`
+provenance, `cmd_transfer`'s `apply_skill()` call) were updated to thread the new field
+through — both were previously missing it, found and fixed as part of this same pass.
+
+### Re-run: zero new model calls for re-extraction, fresh process for transfer/substitution
+
+Per the mission's explicit preference ("without reacquiring the skill unless mechanically
+necessary"), a new `reextract` subcommand was added to `harness.py`: it re-runs
+`extract_transformation()` against the *already-collected* real
+`acquisition_candidates.json` (the same candidate 1/candidate 3 pair used originally) —
+genuinely zero new model calls. Produced skill v3 (`enclosing_call='sorted'`, content
+hash `4bd4d72f8df...`).
+
+`transfer` was then re-run as a fresh OS process (PID=36245, confirmed distinct from the
+original run's PID=35287) against v3, on the same disjoint holdout world and the same 4
+seeds as the original transfer run:
+
+```
+instance 0: original_passed=False skill_applied=False patched_passed=False
+instance 1: original_passed=False skill_applied=False patched_passed=False
+instance 2: original_passed=False skill_applied=False patched_passed=False
+instance 3: original_passed=False skill_applied=False patched_passed=False
+DONE. original pass rate=0/4  with-skill pass rate=0/4  skill applied on 0 instances
+held_out_verdict=FAIL (eligible for consumption: False)
+```
+
+**This is a different result from before, for a mechanically confirmed, honest reason —
+not the same failure recurring.** In the original run, the skill *misapplied* to 2 of the
+4 instances (matched structurally, produced a wrong patch). Now it applies to **0 of 4** —
+correctly declining every instance, not misfiring on any. Deterministically re-generated
+all 4 real holdout instances at their exact original seeds to confirm why, directly (not
+guessed):
+
+```
+instance 0: max(entries, key=lambda x: (x[1], tag_priority[x[2]], x[0]))       # no negation present at all
+instance 1: max(entries, key=lambda x: (x[1], tag_priority[x[2]], x[0]))       # no negation present at all
+instance 2: max(entries, key=lambda x: (x[1], -tag_priority[x[2]], x[0]))      # negation present, but inside max()
+instance 3: max(entries, key=lambda x: (x[1], -tag_priority[x[2]], x[0]))      # negation present, but inside max()
+```
+
+All 4 real DIRECT-strategy holdout instances in this world are `max()`-based; none are
+`sorted()`-based. Instances 2/3 are exactly the two that were misapplied before — now
+correctly refused, since their enclosing call (`max`) doesn't match the skill's recorded
+context (`sorted`). Instances 0/1 never had the precondition's negation present at all, so
+they were never real candidates for this skill either way, fixed or not.
+
+Substitution was re-run for completeness (fresh process): no-skill pass rate 0/4,
+identical to with-skill — consistent, honest, no advantage either created or hidden.
+
+### What this establishes, and what it does not
+
+**The fix worked exactly as intended**: the misapplication defect (Checkpoint 5's original
+finding) is closed — mechanically confirmed via a direct negative-context unit test and
+now confirmed live, on the real holdout instances that previously triggered it. The skill
+no longer produces a wrong patch on out-of-context code.
+
+**The held-out transfer gate still does not pass** (`held_out_verdict=FAIL`, v4) — not
+because the fix failed, but because this specific holdout sample (4 DIRECT-strategy
+generations) happens to contain zero `sorted()`-context occurrences to demonstrate a
+transfer benefit against. This is an honest **coverage gap in this one sample**, not a
+new defect and not evidence against the fix or the mechanism: a `sorted()`-scoped skill
+was never going to help on code that structurally never uses `sorted()`. Whether a larger
+or differently-sampled holdout set would surface a genuine `sorted()`-context match is an
+open, uninvestigated question, and — per the mission's explicit standing instruction
+("Continue down the existing VSL roadmap only if the resulting evidence justifies it";
+"Do not reopen the architecture investigation... do not rerun closed research branches")
+— is **not chased further in this pass**. The gate outcome is reported exactly as it is:
+**FAIL, for a mechanically identified and qualitatively different reason than the original
+FAIL**, and Checkpoint 7 remains correctly un-started.
+
+**No git commit was made for this follow-up.** All changes remain uncommitted on
+`vsl-implementation`, on top of the checkpoint commit above.

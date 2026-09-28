@@ -141,6 +141,7 @@ def cmd_acquire():
             "failing_code_hash": sha256_text(failing[0]["code"]),
             "passing_code_hash": sha256_text(passing[0]["code"]),
             "node_type": pattern["node_type"],
+            "enclosing_call": pattern["enclosing_call"],
         },
         held_out_verdict=None, status="candidate", version=1,
     )
@@ -149,6 +150,64 @@ def cmd_acquire():
                     "feature_key": FEATURE_KEY, "content_hash": content_hash, "used_pair": used_pair})
     print(f"[acquire] RESULT: skill candidate written for {FEATURE_KEY} (status=candidate, "
           f"held_out_verdict=None). content_hash={content_hash}")
+
+
+def cmd_reextract():
+    """Re-run pattern extraction against the ALREADY-COLLECTED real acquisition
+    candidates (memory/experiments/skill_ledger/mvk/acquisition_candidates.json) --
+    zero new model calls. Exists specifically for the case where diff_extract.py's
+    extraction logic itself was fixed/improved (e.g. the enclosing-call-context fix)
+    after acquisition already produced real, valid failing/passing candidates: there
+    is no reason to spend new model calls re-generating candidates that were never
+    the source of the problem. Writes a new skill version (status='candidate',
+    held_out_verdict=None -- NOT yet re-validated; run 'transfer' next as usual)."""
+    d = LEDGER_ROOT / "mvk"
+    candidates = read_json(d / "acquisition_candidates.json")
+    passing = [c for c in candidates if c["passed"]]
+    failing = [c for c in candidates if not c["passed"]]
+    if not passing or not failing:
+        sys.exit("[reextract] STOP: acquisition_candidates.json has no passing/failing pair "
+                  "to diff -- nothing to re-extract.")
+
+    pattern = None
+    used_pair = None
+    for f in failing:
+        for p in passing:
+            pattern = DE.extract_transformation(f["code"], p["code"], FN_NAME)
+            if pattern is not None:
+                used_pair = (f["index"], p["index"])
+                break
+        if pattern is not None:
+            break
+
+    if pattern is None:
+        sys.exit("[reextract] STOP: re-extraction against the existing real candidates "
+                  "still produces no clean pattern -- the fix did not change this outcome.")
+
+    prior = Skill.load_latest(FEATURE_KEY)
+    next_version = (prior.version + 1) if prior is not None else 1
+    skill = Skill(
+        feature_key=FEATURE_KEY,
+        precondition=pattern["precondition"],
+        transformation=pattern["transformation"],
+        provenance={
+            "source_task_id": TASK_ID, "source_world_index": 0,
+            "failing_candidate_index": used_pair[0], "passing_candidate_index": used_pair[1],
+            "failing_code_hash": sha256_text(failing[0]["code"]),
+            "passing_code_hash": sha256_text(passing[0]["code"]),
+            "node_type": pattern["node_type"],
+            "enclosing_call": pattern["enclosing_call"],
+            "reextracted_from_version": prior.version if prior is not None else None,
+            "reextraction_reason": "enclosing-call-context fix in diff_extract.py "
+                                    "(see audits/2026-09-27_verified_skill_ledger_mvk_first_run_report.md)",
+        },
+        held_out_verdict=None, status="candidate", version=next_version,
+    )
+    content_hash = skill.save_new_version()
+    print(f"[reextract] RESULT: skill re-extracted with ZERO new model calls from the "
+          f"existing real acquisition_candidates.json, written as v{next_version} "
+          f"(status=candidate, held_out_verdict=None). content_hash={content_hash} "
+          f"enclosing_call={pattern['enclosing_call']!r}")
 
 
 def cmd_transfer():
@@ -183,7 +242,8 @@ def cmd_transfer():
         if not original_passed and code:
             fixed_code = DE.apply_skill(code, FN_NAME, {"precondition": skill.precondition,
                                                           "transformation": skill.transformation,
-                                                          "node_type": skill.provenance["node_type"]})
+                                                          "node_type": skill.provenance["node_type"],
+                                                          "enclosing_call": skill.provenance.get("enclosing_call")})
             if fixed_code is not None:
                 applied = True
                 test_code, _n = VT.make_hidden_tests(task, world, "VAL")
@@ -237,7 +297,7 @@ def cmd_substitution():
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("phase", choices=["build", "acquire", "transfer", "substitution"])
+    ap.add_argument("phase", choices=["build", "acquire", "reextract", "transfer", "substitution"])
     a = ap.parse_args()
-    {"build": cmd_build, "acquire": cmd_acquire, "transfer": cmd_transfer,
-     "substitution": cmd_substitution}[a.phase]()
+    {"build": cmd_build, "acquire": cmd_acquire, "reextract": cmd_reextract,
+     "transfer": cmd_transfer, "substitution": cmd_substitution}[a.phase]()

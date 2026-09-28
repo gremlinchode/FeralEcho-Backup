@@ -40,6 +40,8 @@ def main():
     if pattern:
         check("real pair: precondition is a UnaryOp (the negation)", pattern["node_type"] == "UnaryOp")
         check("real pair: precondition != transformation", pattern["precondition"] != pattern["transformation"])
+        check("POSITIVE CONTEXT: enclosing_call is correctly recorded as 'sorted'",
+              pattern.get("enclosing_call") == "sorted")
 
     # Case 2: apply the extracted pattern to the SAME failing code -- must correct it.
     if pattern:
@@ -67,6 +69,60 @@ def main():
                   "nizog" in fixed_fresh and "renem" in fixed_fresh)
             check("HELD-OUT: negation removed in the fresh-world candidate too",
                   "-tag_priority[x[2]]" not in fixed_fresh.replace(" ", ""))
+
+    # Case 3b: NEGATIVE CONTEXT -- this is the exact real historical defect found in
+    # the first live MVK run (2026-09-27). A max()-based candidate that superficially
+    # matches the sorted()-derived precondition's LOCAL shape must NOT be patched by
+    # it, because the correct negation polarity is genuinely opposite under max()
+    # (confirmed by direct arithmetic during Phase 2 re-derivation, not assumed).
+    if pattern:
+        max_based_failing_real = (
+            "def winner_with_score(entries):\n"
+            "    tag_priority = {'zezen': 1, 'jovow': 2, 'josog': 3, 'rotil': 4}\n"
+            "    return max(entries, key=lambda x: (x[1], -tag_priority[x[2]], x[0]))"
+        )
+        result = DE.apply_skill(max_based_failing_real, "winner_with_score", pattern)
+        check("NEGATIVE CONTEXT: sorted()-derived skill correctly refuses to apply "
+              "inside a max() call (honest non-application, not a wrong patch)",
+              result is None)
+
+    # Case 3c: EXISTING GENERICITY, re-confirmed with the context gate active -- the
+    # already-proven cross-world sorted()-to-sorted() transfer must still work.
+    if pattern:
+        sorted_based_fresh_world = (
+            "def winner_with_score(entries):\n"
+            "    tag_priority = {'nizog': 3, 'renem': 2, 'dulup': 1, 'dogiz': 0}\n"
+            "    sorted_entries = sorted(entries, key=lambda x: (-x[1], -tag_priority[x[2]], x[0]))\n"
+            "    return sorted_entries[0][0], sorted_entries[0][1]"
+        )
+        fixed3 = DE.apply_skill(sorted_based_fresh_world, "winner_with_score", pattern)
+        check("EXISTING GENERICITY (with context gate active): still transfers "
+              "correctly to a fresh sorted()-based world", fixed3 is not None
+              and "-tag_priority[x[2]]" not in fixed3.replace(" ", "")
+              and "nizog" in fixed3)
+
+    # Case 3d: SERIALIZATION -- the enriched precondition (including enclosing_call)
+    # must survive a real ledger write/reload round-trip.
+    if pattern:
+        import tempfile, os as _os
+        from app.experiments.skill_ledger.ledger import Skill
+        with tempfile.TemporaryDirectory() as td:
+            import app.experiments.skill_ledger.ledger as _ledger_mod
+            orig_dir = _ledger_mod.SKILLS_DIR
+            _ledger_mod.SKILLS_DIR = __import__("pathlib").Path(td)
+            try:
+                s = Skill(feature_key="TEST.serialization_roundtrip", precondition=pattern["precondition"],
+                          transformation=pattern["transformation"],
+                          provenance={"node_type": pattern["node_type"], "enclosing_call": pattern["enclosing_call"]})
+                # store enclosing_call alongside node_type in provenance for this test skill,
+                # since apply_skill() reads it from the top-level pattern dict normally --
+                # here we just confirm the round-trip preserves the value, wherever stored.
+                s.save_new_version()
+                reloaded = Skill.load_latest("TEST.serialization_roundtrip")
+                check("SERIALIZATION: enclosing_call survives ledger write/reload",
+                      reloaded is not None and reloaded.provenance.get("enclosing_call") == "sorted")
+            finally:
+                _ledger_mod.SKILLS_DIR = orig_dir
 
     # Case 4: identical candidates -> no transformation (nothing to learn).
     identical_pattern = DE.extract_transformation(passing_real, passing_real, "winner_with_score")

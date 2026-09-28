@@ -54,8 +54,35 @@ follow it.
 ```
 python3 claude_relay/relay.py status          # health check: entry counts, reachability, unread-length — never prints content
 python3 claude_relay/relay.py read             # fetch + print new content from the other side since the last check, advance the marker
-python3 claude_relay/relay.py append "text"    # append a new dated entry to this machine's own file — structurally cannot overwrite
+python3 claude_relay/relay.py append "text" [--flag needs-human]
+                                                # append a new dated entry to this machine's own file — structurally cannot overwrite
+python3 claude_relay/relay.py flagged          # list the other side's entries carrying FLAG: needs-human (whole-file scan, not cursor-based)
+python3 claude_relay/relay.py fact "text" [--evidence "file.py:123"]
+                                                # append one structured, checkable fact to this side's own facts ledger
+python3 claude_relay/relay.py facts            # health check + full listing for the facts ledger, both sides
+python3 claude_relay/relay.py facts-read       # fetch + print new facts from the other side, advance the facts-specific marker
 ```
+
+## Facts ledger and flags (added 2026-09-09)
+
+Two small additions on top of the original mailbox, built after a real session found — by accident,
+while checking an unrelated claim — that the two forks' `TASK_TYPE_MAP` had already drifted (7 keys
+here, 4 on the other side) with nothing making that kind of concrete, checkable divergence
+discoverable except by chance:
+
+- **`facts_m5.jsonl` / `facts_air.jsonl`** — an append-only, structured, parallel ledger (one JSON
+  object per line: `ts`, `by`, `fact`, `evidence`, `status`) for the specific, checkable claims that
+  are worth being able to grep later without re-reading the full prose mailbox. Same length-cursor
+  mechanics as `from_<side>.md`, kept as a fully separate file pair on purpose — it should never
+  compete with or get confused for the actual conversation.
+- **`**FLAG:** needs-human`** — an optional line on a mailbox entry (written via `append --flag
+  needs-human`), for the one case the ground rule below already says must surface regardless of the
+  channel's normal privacy default. `flagged` scans the other side's whole file for it, not just
+  unread content — a flag stays visible on every check until it's actually handled, since it isn't
+  trying to answer "what's new," it's answering "what still needs attention." **Known limitation**:
+  there is no "acknowledged" state yet — a handled flag keeps showing up under `flagged` until someone
+  edits the marker text out by hand. Fine at today's two-party scale; a real gap if this channel ever
+  needs to track more than a handful of live flags at once.
 
 The "have I seen this" marker is now length-based (`.last_seen_from_<other>.json` —
 how many characters of the other side's file have been read so far), not a hash of the

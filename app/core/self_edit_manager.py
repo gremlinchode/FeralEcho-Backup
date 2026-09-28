@@ -2678,46 +2678,57 @@ _self_edit_deploy_lock = threading.Lock()
 # one of these three strings verbatim. (threshold, family, domain_sentence),
 # family keys map 1:1 onto _CONVERGENCE_FAMILIES.
 _FOCUS_FAMILY_BY_CREATIVITY = [
-    # prose_stripping PAUSED 2026-07-19 (Echo self-awareness forensic audit;
-    # PENDING_DECISIONS.md item #6): asked the exact same task cleanly and
-    # directly through the ordinary conversational path (no self-edit prompt
-    # noise at all), all three raw council models still failed on the real
-    # test case independently. New evidence the 96+-cycle non-convergent
-    # streak may be a genuine capability ceiling for the current model pool
-    # on this specific task, not (only) a prompt problem — the 2026-07-15
-    # prompt rewrite below (kept, commented out rather than deleted, in case
-    # this hypothesis is wrong or the model pool changes) hasn't resolved it
-    # after 3+ days of real cycles. Removing this tuple means
-    # response_shortening's threshold below now covers creativity 0.0-0.66 —
-    # prose_stripping is skipped entirely, no change to the selection loop.
+    # prose_stripping REACTIVATED 2026-09-27, after being paused 2026-07-19
+    # on real evidence of a possible capability ceiling (three raw council
+    # models independently failed the exact real test case, asked cleanly
+    # outside the self-edit pipeline — see Finding 43 / PENDING_DECISIONS.md
+    # item #6). New evidence since then bears directly on that hypothesis,
+    # not assumed to resolve it:
+    # audits/2026-09-27_restart_persistence_of_acquired_competence.md ran a
+    # controlled, held-out A/B test on a task family structurally identical
+    # to this one (find where leading prose ends and real code begins) using
+    # the same class of model. Given no guidance, it solved 4/10 held-out
+    # cases; given the three concrete rules below (independently verified,
+    # not this session's guess), it solved 9/10, p=0.03 one-sided, and the
+    # actual generated code was inspected: every failure without guidance
+    # was the exact incomplete-marker-set bug named in clause 1 below. This
+    # is real evidence the model CAN do this correctly once told — it does
+    # not reliably invent the guidance for itself — a different, more
+    # hopeful diagnosis than "capability ceiling." Not guaranteed to fix
+    # real self-edit convergence; only real subsequent cycles will show
+    # that. non_convergent_streak is deliberately NOT reset (Finding 32's
+    # own discipline) — resetting it to make this look better before any
+    # real cycle has run would be exactly the self-report manipulation this
+    # ledger exists to catch.
     #
-    # Rewritten 2026-07-15 (Emergence roadmap Phase 3) after reading the
-    # actual generated candidates across 93+ real cycles: the previous
-    # version of this sentence was a pure natural-language description with
-    # zero concrete example, so the model reinvented the transformation
-    # from scratch every cycle instead of converging (30+ distinct
-    # implementations, zero of them consistent with each other). Missing
-    # `import re` alone caused three separate historical versions to fail
-    # on every real invocation. This is a well-evidenced hypothesis, not a
-    # guaranteed fix — only real subsequent cycles will show whether it
-    # actually improves convergence.
-    # (0.33, "prose_stripping", (
-    #     "fix the most common sandbox failure (prose detected in code output) — "
-    #     "add or tighten a prose-detection guard that strips any leading "
-    #     "natural-language sentence before the first valid Python token. "
-    #     "Concrete example — input: "
-    #     "'Here is the function you requested:\\ndef add(a, b):\\n    return a + b' "
-    #     "should become output: 'def add(a, b):\\n    return a + b' (the prose "
-    #     "line removed entirely, the real code unchanged). Expose it as a "
-    #     "top-level `apply_to_code(code: str) -> str` function per output rule "
-    #     "10 so the pipeline actually invokes it automatically. Import every "
-    #     "module you use (e.g. `import re` if using regular expressions) — "
-    #     "missing imports have caused this exact function to fail on every "
-    #     "real invocation multiple times before. The function must be a pure "
-    #     "string transformation: no file I/O, and no calling any function "
-    #     "that performs file I/O (e.g. logging or memory-write helpers) — it "
-    #     "runs under a write-block that rejects the whole candidate if it tries."
-    # )),
+    # (Prior 2026-07-15 rewrite, superseded by the above rather than
+    # deleted, for the record: a pure natural-language description with no
+    # concrete example had produced 30+ distinct, mutually inconsistent
+    # implementations across 93+ real cycles; that rewrite added one
+    # concrete example and an import reminder but was never validated by a
+    # controlled experiment the way the rules below now are.)
+    (0.33, "prose_stripping", (
+        "fix the most common sandbox failure (prose detected in code output) — "
+        "add or tighten a prose-detection guard that strips any leading "
+        "natural-language sentence before the first valid Python token. "
+        "Three specific rules, independently validated by a real held-out "
+        "experiment (not a guess): (1) check for a COMPLETE set of code-start "
+        "markers — a decorator line starting with `@`, a docstring starting "
+        "with `\"\"\"` or `'''`, an `import`/`from` statement, or `def`/`class` "
+        "— checking only `def`/`class` skips past a leading decorator or "
+        "docstring and cuts off real code. (2) Only treat a marker as real if "
+        "it appears at the very start of its own line (after stripping leading "
+        "whitespace) — ordinary prose sentences can contain these exact words "
+        "(e.g. 'this import of new ideas'). (3) Once the start is found, return "
+        "every line from there to the actual end of the text, rather than one "
+        "large regex trying to match the whole code span — a single big regex "
+        "has been observed to cut off the real code's final line. Import every "
+        "module you use (e.g. `import re`) — missing imports have caused this "
+        "exact function to fail on every real invocation multiple times before. "
+        "The function must be a pure string transformation: no file I/O, and no "
+        "calling any function that performs file I/O — it runs under a "
+        "write-block that rejects the whole candidate if it tries."
+    )),
     (1.01, "response_shortening", (
         "refactor the main code-generation function to reduce its average "
         "response length by 20% without losing correctness — shorter code "

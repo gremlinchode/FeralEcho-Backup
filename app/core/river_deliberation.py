@@ -42,6 +42,7 @@ import re
 import os
 import json
 import threading
+from collections import Counter
 from datetime import datetime, timezone
 
 # ── Token budgeting (tiktoken) ────────────────────────────────
@@ -941,23 +942,96 @@ def find_missing_agreed_definitions(valid_opinions: dict, synthesis_code: str) -
 
 def select_best_fallback_candidate(valid_opinions: dict) -> str:
     """Chooses which individual candidate to return when synthesis is
-    rejected (empty/error, or a detected completeness failure). Prefers
-    a candidate whose extracted code actually parses over one that
-    doesn't, breaking ties by length (a longer, still-valid candidate is
-    more likely to be the complete implementation rather than a partial
-    one) -- a small, deliberate improvement over the pre-existing
-    "longest raw response wins" fallback used elsewhere in this function
-    for the empty/errored-synthesis case, which has no way to prefer a
-    working candidate over a longer broken one. Never raises; always
-    returns some value from a non-empty input (falls back to raw
-    max-length text if literally nothing parses)."""
+    rejected (empty/error, or a detected completeness failure).
+
+    Three-stage rule, replacing the prior "prefer longest parseable
+    candidate" rule (measured by the Tier-6 forensic audit,
+    audits/tier6_disagreement_resolution_forensic.md, at 78.2% correct-pick
+    on real ARCH_COUNCIL council disagreement events — no better than
+    random among parseable candidates, root-caused to response length
+    being a confound for councillor identity/reliability rather than a
+    real correctness signal in this specific council composition: the
+    most reliable real councillor, mlx:qwen3, tends to produce the
+    SHORTEST responses of the three; the least reliable, echo:latest,
+    lands in the middle, so "prefer longest" systematically favors the
+    two less reliable models over the best one):
+
+    1. Majority AST-structural agreement (2+ candidates sharing an
+       identical fingerprint via _ast_normalize) — a genuine, non-accidental
+       majority (fires in only ~20% of real disagreement events on the
+       real Tier-4 corpus; most real disagreement is candidates that are
+       each individually unique, not a majority-vs-minority split). Ties
+       within the majority group broken by length (more of a genuinely
+       agreed-upon implementation is more likely to be complete than
+       less), unchanged from this function's original tie-break.
+    2. RiverBrain per-model historical score, DELIBERATELY NOT
+       implemented here despite being Tier-6's own next recommended
+       tiebreak for the no-majority case. Tier-7's dedicated follow-up
+       forensic audit
+       (audits/tier7_riverbrain_candidate_ranking_forensic.md) found this
+       specific signal is carried almost entirely by one model's identity
+       (echo:latest) and performs WORSE than chance (38.9%) on the one
+       real pair that isolates it from that confound — its own explicit
+       "Final Recommendation" is "Do not deploy this in production before
+       a fresh, out-of-sample experiment," which has not been run
+       (PENDING_DECISIONS.md #21 is a related but distinct next step: a
+       cheap re-run of Tier-3's two isolation-tainted sub-results, not
+       this specific fresh out-of-sample validation Tier-7 asked for).
+       Falls through to stage 3 instead of deploying an explicitly
+       not-yet-validated signal.
+    3. SHORTEST among parseable candidates, when no structural majority
+       exists — this is the common case (fires in ~80% of real
+       disagreement events, dominating real outcomes far more than stage
+       1 does) and a real, deliberate change from this function's
+       original "prefer longest" behavior for it, not a preservation of
+       it — see the root-cause explanation above.
+
+    Verified directly against the real, captured Tier-4 corpus (168+168
+    real events, real AST fingerprints, real sandbox-verified
+    correctness; see scripts/verify_select_best_fallback_candidate.py for
+    the exact replay methodology, reusable, no new model calls), not
+    assumed correct from the algorithm's own description:
+      - ARCH_COUNCIL (the real council shape — every real production
+        caller of this function passes genuine multi-model opinions,
+        never same-model repeats; confirmed via this file's own call
+        sites): 96.1% (up from the pre-fix baseline's measured 78.2%).
+      - BASE_N — a Tier-4 RESEARCH-ONLY secondary arm (same model called
+        N times, used to isolate whether model diversity itself matters;
+        this shape never occurs in real production, confirmed via this
+        file's own call sites): 86.7%, a real, disclosed ~2.6-point
+        regression from the pre-fix baseline's 89.3%. Root cause: Tier-6's
+        own report found length carries no directional correctness signal
+        for BASE_N at all (~83-85% flat across every length rank, since
+        same-model repeats have no councillor-identity confound to
+        correct for) — so switching stage 3 from longest to shortest for
+        this shape is close to a coin-flip change, and this run's measured
+        regression is real, not a methodology artifact. Not fixed
+        separately, because this shape is never real production traffic;
+        recorded here rather than silently dropped, per this project's own
+        standing discipline against hiding an inconvenient measured
+        result.
+
+    Never raises; always returns some value from a non-empty input (falls
+    back to raw max-length text if literally nothing parses)."""
     parsing = []
     for response in valid_opinions.values():
         extracted = _extract_candidate_code(response)
-        if extracted is not None and _ast_normalize(extracted) is not None:
-            parsing.append(response)
-    pool = parsing if parsing else list(valid_opinions.values())
-    return max(pool, key=len)
+        if extracted is None:
+            continue
+        fingerprint = _ast_normalize(extracted)
+        if fingerprint is not None:
+            parsing.append((response, fingerprint))
+
+    if not parsing:
+        return max(valid_opinions.values(), key=len)
+
+    fp_counts = Counter(fp for _, fp in parsing)
+    majority_fp, majority_n = fp_counts.most_common(1)[0]
+    if majority_n >= 2:
+        majority_candidates = [response for response, fp in parsing if fp == majority_fp]
+        return max(majority_candidates, key=len)
+
+    return min((response for response, _ in parsing), key=len)
 
 
 def _sha1_preview(text: str) -> dict:

@@ -1,0 +1,83 @@
+=== Tier-5 retest run starting, 20 tasks, PID=69603 ===
+
+[1/20] r-bf01 (bug_fixing)
+  TREATMENT passed=True gen_time=39.15s exc=None
+  CONTROL   passed=True gen_time=43.45s exc=None
+
+[2/20] r-bf02 (bug_fixing)
+  TREATMENT passed=False gen_time=38.83s exc=None
+  CONTROL   passed=True gen_time=32.44s exc=None
+
+[3/20] r-bf03 (bug_fixing)
+  TREATMENT passed=True gen_time=43.13s exc=None
+  CONTROL   passed=True gen_time=41.86s exc=None
+
+[4/20] r-bf04 (bug_fixing)
+  TREATMENT passed=True gen_time=54.79s exc=None
+  CONTROL   passed=True gen_time=52.31s exc=None
+
+[5/20] r-ae01 (algorithmic_edge_case)
+  TREATMENT passed=True gen_time=111.84s exc=None
+  CONTROL   passed=False gen_time=75.29s exc=None
+
+[6/20] r-ae02 (algorithmic_edge_case)
+  TREATMENT passed=True gen_time=75.77s exc=None
+  CONTROL   passed=True gen_time=62.25s exc=None
+
+[7/20] r-ae03 (algorithmic_edge_case)
+  TREATMENT passed=True gen_time=54.34s exc=None
+  CONTROL   passed=True gen_time=63.61s exc=None
+
+[8/20] r-ae04 (algorithmic_edge_case)
+  TREATMENT passed=True gen_time=89.86s exc=None
+  CONTROL   passed=True gen_time=48.53s exc=None
+
+[9/20] r-rf01 (refactoring)
+  TREATMENT passed=True gen_time=43.22s exc=None
+  CONTROL   passed=True gen_time=70.34s exc=None
+
+[10/20] r-rf02 (refactoring)
+  TREATMENT passed=True gen_time=74.11s exc=None
+  CONTROL   passed=True gen_time=350.09s exc=None
+
+[11/20] r-rf03 (refactoring)
+  TREATMENT passed=True gen_time=18024.08s exc=None
+  CONTROL   passed=True gen_time=16439.91s exc=None
+
+[12/20] r-rf04 (refactoring)
+  TREATMENT passed=True gen_time=72.65s exc=None
+  CONTROL   passed=False gen_time=91.04s exc=None
+
+[13/20] r-iv01 (input_validation_defensive)
+  TREATMENT passed=True gen_time=56.74s exc=None
+  CONTROL   passed=True gen_time=58.78s exc=None
+
+[14/20] r-iv02 (input_validation_defensive)
+  TREATMENT passed=False gen_time=44.07s exc=None
+  CONTROL   passed=True gen_time=112.42s exc=None
+
+[15/20] r-iv03 (input_validation_defensive)
+  TREATMENT passed=True gen_time=45.03s exc=None
+  CONTROL   passed=True gen_time=56.86s exc=None
+
+[16/20] r-iv04 (input_validation_defensive)
+  TREATMENT passed=False gen_time=39.36s exc=None
+  CONTROL   passed=True gen_time=40.28s exc=None
+
+[17/20] r-dt01 (data_transformation_parsing)
+  TREATMENT passed=True gen_time=25.86s exc=None
+  CONTROL   passed=True gen_time=36.78s exc=None
+
+[18/20] r-dt02 (data_transformation_parsing)
+  TREATMENT passed=True gen_time=25.7s exc=None
+  CONTROL   passed=True gen_time=34.49s exc=None
+
+[19/20] r-dt03 (data_transformation_parsing)
+  TREATMENT passed=False gen_time=50.71s exc=None
+  CONTROL   passed=False gen_time=41.65s exc=None
+
+[20/20] r-dt04 (data_transformation_parsing)
+  TREATMENT passed=True gen_time=25.92s exc=None
+  CONTROL   passed=True gen_time=28.78s exc=None
+
+=== Tier-5 retest run COMPLETE ===

@@ -1,0 +1,488 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "feralecho-backup-generation-manifest/1.0",
+  "title": "FeralEcho backup generation manifest (GENERATION.json)",
+  "description": "DESIGN ARTIFACT, 2026-09-20. Describes the manifest that fe_judge.py (defined in audits/2026-09-20_feralecho_verified_backup_and_recovery_plan.md, section 17) writes at the root of one immutable backup generation. No generation exists yet; nothing here is a claim about a real backup. The schema was exercised against a manifest produced from a SYNTHETIC fixture only. Values are strings where the runbook records them from shell output (kv.env); consumers must not assume numeric types for fields typed as strings.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generation_id",
+    "label",
+    "created_utc",
+    "completed_utc",
+    "host",
+    "tool_versions",
+    "source",
+    "destination",
+    "consistency_level",
+    "restore_drill",
+    "validation",
+    "counts",
+    "anomalies",
+    "exclusions",
+    "audit_references",
+    "files"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "generation_id": {
+      "type": "string",
+      "pattern": "^gen-[0-9]{8}T[0-9]{6}Z-[A-Za-z0-9_-]+-(M5|INTEL)$",
+      "description": "gen-<UTC>-<LABEL>-<HOSTTAG>; unique; never reused; the directory is created with plain mkdir so it cannot already exist."
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "os",
+        "arch"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "LocalHostName plus operator tag and hw.model. Hostnames alone do NOT distinguish M5 from Intel; arch does (arm64 = M5, x86_64 = Intel)."
+        },
+        "os": {
+          "type": "string"
+        },
+        "arch": {
+          "enum": [
+            "arm64",
+            "x86_64"
+          ]
+        }
+      }
+    },
+    "tool_versions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root",
+        "live",
+        "git",
+        "authored_tree_fingerprint",
+        "server"
+      ],
+      "properties": {
+        "root": {
+          "type": "string"
+        },
+        "live": {
+          "type": "boolean",
+          "description": "true = the FeralEcho server (or any writer) was running while files were read. Today this is always true."
+        },
+        "git": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "head",
+            "branch",
+            "dirty",
+            "porcelain_paths",
+            "unpushed_commits"
+          ],
+          "properties": {
+            "head": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "branch": {
+              "type": "string"
+            },
+            "dirty": {
+              "type": "boolean"
+            },
+            "porcelain_paths": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "unpushed_commits": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "String from git rev-list --count @{u}..HEAD, or UNKNOWN when no upstream is configured."
+            }
+          }
+        },
+        "authored_tree_fingerprint": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "definition",
+            "excluding_self_mutating_files_sha256",
+            "including_self_mutating_files_sha256",
+            "legacy_reference_not_recomputed"
+          ],
+          "properties": {
+            "definition": {
+              "type": "string"
+            },
+            "excluding_self_mutating_files_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "including_self_mutating_files_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "legacy_reference_not_recomputed": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The 2026-09-20 identity-manifest fingerprint (8e6808dc64fbebe5...). Recorded for reference only: its file set was restricted by suffix in a way the archived manifest does not fully specify, so it is NOT reproducible from this backup."
+            }
+          }
+        },
+        "server": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "pid_before",
+            "start_before",
+            "pid_after",
+            "start_after",
+            "restarted_during_backup"
+          ],
+          "properties": {
+            "pid_before": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "start_before": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "pid_after": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "start_after": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "restarted_during_backup": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "destination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class",
+        "root",
+        "filesystem",
+        "volume_uuid",
+        "device_location",
+        "same_physical_device_as_source",
+        "free_bytes_before"
+      ],
+      "properties": {
+        "class": {
+          "enum": [
+            "BEST-EXTERNAL",
+            "BEST-OTHER-MACHINE",
+            "GOOD-AIR",
+            "TEMPORARY-SAME-SSD"
+          ]
+        },
+        "root": {
+          "type": "string"
+        },
+        "filesystem": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "volume_uuid": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "device_location": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "same_physical_device_as_source": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "SAME-VOLUME (stat device ids equal) or UNKNOWN. UNKNOWN is NOT evidence of a different device; the operator confirms physical distinctness from diskutil output."
+        },
+        "free_bytes_before": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "consistency_level": {
+      "enum": [
+        "RESCUE-LIVE",
+        "VERIFIED-LIVE",
+        "VERIFIED-QUIESCENT",
+        "QUARANTINED",
+        "RESTORE-TESTED"
+      ],
+      "description": "RESCUE-LIVE: every copied file matches a complete or append-prefix version of its source, but pair alignment / validation / unchanged-server are not all established. VERIFIED-LIVE: RESCUE-LIVE plus copy validation passed, FAISS count == metadata count, same server PID/start throughout, every B1 file verified. VERIFIED-QUIESCENT: as VERIFIED-LIVE but taken with all writers stopped (future, needs explicit approval; not produced by fe_judge.py). QUARANTINED: NOT KNOWN GOOD - kept, never counted as a recovery copy. RESTORE-TESTED: a VERIFIED-* generation whose restore drill passed (see restore_drill.base_level)."
+    },
+    "restore_drill": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "performed_utc",
+        "restore_dir",
+        "result",
+        "base_level",
+        "checks"
+      ],
+      "properties": {
+        "performed_utc": {
+          "type": "string"
+        },
+        "restore_dir": {
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "PASS",
+            "FAIL"
+          ]
+        },
+        "base_level": {
+          "enum": [
+            "VERIFIED-LIVE",
+            "VERIFIED-QUIESCENT"
+          ]
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "ok"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "ok": {
+                "type": "boolean"
+              },
+              "detail": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "description": "Always null inside a sealed GENERATION.json (a sealed generation is never edited). A restore drill's result is recorded as an append-only line in generations.log (state RESTORE-TESTED) plus the drill's own output files; a sidecar document of this shape may be stored next to them. 'Effective level' = the newest registry line for the generation."
+    },
+    "validation": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "checks",
+        "failures",
+        "passed",
+        "pair_aligned"
+      ],
+      "properties": {
+        "checks": {
+          "type": "array"
+        },
+        "failures": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "pair_aligned": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "faiss ntotal == len(memory_meta). null when either file was absent."
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "files_total",
+        "verified",
+        "not_verified",
+        "bytes_total"
+      ],
+      "properties": {
+        "files_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "verified": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "not_verified": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bytes_total": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "anomalies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "exclusions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Glob patterns excluded from scope, each justified in the plan (section 16)."
+    },
+    "audit_references": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "tier",
+          "part",
+          "sha256",
+          "status",
+          "type",
+          "attempts"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Relative to the repository root, no leading ./"
+          },
+          "tier": {
+            "enum": [
+              "A",
+              "B1",
+              "B2",
+              "B3"
+            ]
+          },
+          "part": {
+            "enum": [
+              "A-source",
+              "B-state"
+            ]
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 of the DESTINATION bytes at the accepted attempt. For APPEND files this is the hash of a byte-prefix of the source, not of the source's current full content."
+          },
+          "source_sha256_pre": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_sha256_post": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "VERIFIED-STABLE",
+              "VERIFIED-LIVE-VERSION",
+              "VERIFIED-APPEND-PREFIX",
+              "LIVE-MUTATED-DURING-BACKUP",
+              "MISMATCH",
+              "MISSING-IN-DEST",
+              "NOT-COPIED"
+            ]
+          },
+          "type": {
+            "enum": [
+              "REWRITE",
+              "APPEND",
+              "?"
+            ]
+          },
+          "attempts": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,909 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "feralecho-cross-backup-relay-message/1.0",
+ "title": "FeralEcho cross-backup relay message (parsed form)",
+ "description": "DESIGN ARTIFACT, 2026-09-20. The parsed key/value form of one operator-relayed message between CLAUDE-M5 and CLAUDE-INTEL. Text form: banner line 'FERALECHO CROSS-BACKUP RELAY v1', 'KEY: value' lines, 'MSG_CRC: <8 hex>' (first 8 hex of sha256 over every preceding line, newline-terminated), 'END RELAY'. Secrets never appear in any field (ENV_FILE is restricted to PRESENT/ABSENT + size/mode/16-hex hash prefix). Every example in the plan was rendered, sealed, checked with relay_check and validated against this schema. x-transitions lists the only permitted step successors; ABORT is permitted from any step; the human-authorization gate is the absence of any edge from TRANSFER_AUTHORIZATION_REQUIRED to TRANSFER_COMPLETE_SOURCE.",
+ "type": "object",
+ "required": [
+  "MACHINE",
+  "LINEAGE",
+  "MACHINE_ID16",
+  "TO",
+  "SEQ",
+  "REPLY_TO",
+  "STEP",
+  "DIRECTION",
+  "GEN",
+  "GIT_HEAD",
+  "WORKTREE",
+  "FERALECHO_ROOT",
+  "SERVER",
+  "BACKUP_STATUS",
+  "STATUS",
+  "NOTES",
+  "MSG_CRC"
+ ],
+ "properties": {
+  "MACHINE": {
+   "enum": [
+    "M5",
+    "INTEL"
+   ],
+   "type": "string"
+  },
+  "LINEAGE": {
+   "enum": [
+    "FERALECHO-M5",
+    "FERALECHO-INTEL-2020"
+   ],
+   "type": "string"
+  },
+  "MACHINE_ID16": {
+   "pattern": "^[0-9a-f]{16}$",
+   "type": "string"
+  },
+  "TO": {
+   "enum": [
+    "M5",
+    "INTEL",
+    "OPERATOR"
+   ],
+   "type": "string"
+  },
+  "SEQ": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "REPLY_TO": {
+   "pattern": "^(NONE|[0-9]+)$",
+   "type": "string"
+  },
+  "STEP": {
+   "enum": [
+    "DISCOVERY_REQUEST",
+    "DISCOVERY_RESPONSE",
+    "DIRECTION_PROPOSAL",
+    "SOURCE_MANIFEST_OFFER",
+    "DESTINATION_CAPACITY_ACCEPT",
+    "TRANSFER_PLAN",
+    "TRANSFER_AUTHORIZATION_REQUIRED",
+    "AUTHORIZATION_ACK",
+    "TRANSFER_COMPLETE_SOURCE",
+    "TRANSFER_COMPLETE_DESTINATION",
+    "HASH_CHALLENGE",
+    "HASH_CONFIRM",
+    "HASH_VERDICT",
+    "STRUCTURAL_VALIDATION",
+    "GENERATION_SEALED",
+    "SECOND_DIRECTION_READY",
+    "ABORT"
+   ],
+   "type": "string"
+  },
+  "DIRECTION": {
+   "enum": [
+    "NONE",
+    "M5->INTEL",
+    "INTEL->M5"
+   ],
+   "type": "string"
+  },
+  "GEN": {
+   "pattern": "^(NONE|(M5|INTEL)_[0-9]{4}-[0-9]{2}-[0-9]{2}_G[0-9]{3})$",
+   "type": "string"
+  },
+  "GIT_HEAD": {
+   "pattern": "^([0-9a-f]{40}|NONE|UNKNOWN)$",
+   "type": "string"
+  },
+  "WORKTREE": {
+   "pattern": "^(CLEAN|DIRTY m=[0-9]+ u=[0-9]+|NOT_A_REPO|UNKNOWN)$",
+   "type": "string"
+  },
+  "FERALECHO_ROOT": {
+   "type": "string",
+   "maxLength": 300
+  },
+  "SERVER": {
+   "pattern": "^(RUNNING pid=[0-9]+ start=\\S+|STOPPED|UNKNOWN)$",
+   "type": "string"
+  },
+  "BACKUP_STATUS": {
+   "type": "string",
+   "maxLength": 300
+  },
+  "STATUS": {
+   "enum": [
+    "READY",
+    "BLOCKED",
+    "INFO",
+    "ERROR"
+   ],
+   "type": "string"
+  },
+  "NOTES": {
+   "type": "string",
+   "maxLength": 300
+  },
+  "MSG_CRC": {
+   "pattern": "^[0-9a-f]{8}$",
+   "type": "string"
+  },
+  "ENV_FILE": {
+   "pattern": "^(ABSENT|PRESENT size=[0-9]+ mode=[0-7]+ sha256_16=[0-9a-f]{16})$",
+   "type": "string"
+  },
+  "DEST_PATH": {
+   "pattern": "^/Users/[A-Za-z0-9._-]+/FeralEcho_Cross_Backups/FROM_(M5|INTEL)/(M5|INTEL)_[0-9]{4}-[0-9]{2}-[0-9]{2}_G[0-9]{3}$",
+   "type": "string"
+  },
+  "SRC_LOCAL_GEN_PATH": {
+   "pattern": "^/Users/[A-Za-z0-9._-]+/FeralEcho_Cross_Backups/OWN_LOCAL/(M5|INTEL)_[0-9]{4}-[0-9]{2}-[0-9]{2}_G[0-9]{3}$",
+   "type": "string"
+  },
+  "CONSISTENCY_LEVEL": {
+   "enum": [
+    "RESCUE-LIVE",
+    "VERIFIED-LIVE",
+    "VERIFIED-QUIESCENT",
+    "QUARANTINED"
+   ],
+   "type": "string"
+  },
+  "VERDICT": {
+   "enum": [
+    "MATCH",
+    "MISMATCH"
+   ],
+   "type": "string"
+  },
+  "DECISION": {
+   "enum": [
+    "ACCEPT",
+    "REJECT"
+   ],
+   "type": "string"
+  },
+  "TOPOLOGY": {
+   "enum": [
+    "SOURCE_PUSHES",
+    "DESTINATION_PULLS"
+   ],
+   "type": "string"
+  },
+  "NONCE": {
+   "pattern": "^[0-9a-f]{8,32}$",
+   "type": "string"
+  },
+  "ARCH_TRUE": {
+   "enum": [
+    "arm64",
+    "x86_64"
+   ],
+   "type": "string"
+  },
+  "WORKTREE_FINGERPRINT": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "SOURCE_LIST_HASH": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "SOURCE_MANIFEST_HASH": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "DEST_MANIFEST_HASH_SEEN": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "DEST_MANIFEST_HASH": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "REPORT_HASH": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "TOOLS_HASH": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "TRANSFER_PLAN_HASH": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "VALIDATION_HASH": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "DEST_SEAL_HASH": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "REGISTRY_LINE_HASH": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "SCRIPT_SHA256": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "D1": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "D2": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "D3": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "D4": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "STATE_LAYOUT_FP": {
+   "pattern": "^[0-9a-f]{16}$",
+   "type": "string"
+  },
+  "HW_ID16": {
+   "pattern": "^[0-9a-f]{16}$",
+   "type": "string"
+  },
+  "PHRASE_SHA16": {
+   "pattern": "^[0-9a-f]{16}$",
+   "type": "string"
+  },
+  "AUTH_PHRASE_SHA16": {
+   "pattern": "^[0-9a-f]{16}$",
+   "type": "string"
+  },
+  "REPO_BYTES": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "GITDIR_BYTES": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "MEMORY_BYTES": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "DATA_BYTES": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "SOURCE_BYTES": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "STATE_BYTES": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "PROPOSED_BACKUP_BYTES": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "HOME_FREE_BYTES": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "HOME_TOTAL_BYTES": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "FILE_COUNT": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "BYTE_COUNT": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "FILE_COUNT_EST": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "BYTE_COUNT_EST": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "SOURCE_PART_BYTES": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "STATE_PART_BYTES": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "REQUIRED_FREE_BYTES": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "FREE_DEST_BYTES": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "VOLUME_TOTAL_BYTES": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "POST_TRANSFER_FREE_BYTES": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "EXPECTED_FILE_COUNT": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "EXPECTED_BYTE_COUNT": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "FREE_DEST_BYTES_AFTER": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "SAMPLE_COUNT": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "EXIT_STATUS": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "MUTABLE_FILE_COUNT": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "LIVE_MUTATED_COUNT": {
+   "pattern": "^[0-9]+$",
+   "type": "string"
+  },
+  "HOSTKEY_FP": {
+   "pattern": "^SHA256:[A-Za-z0-9+/]{43}$",
+   "type": "string"
+  },
+  "MANIFEST_MATCH": {
+   "enum": [
+    "YES",
+    "NO"
+   ],
+   "type": "string"
+  },
+  "FILE_COUNT_MATCH": {
+   "enum": [
+    "YES",
+    "NO"
+   ],
+   "type": "string"
+  },
+  "BYTE_COUNT_MATCH": {
+   "enum": [
+    "YES",
+    "NO"
+   ],
+   "type": "string"
+  },
+  "CHALLENGE_MATCH": {
+   "enum": [
+    "YES",
+    "NO"
+   ],
+   "type": "string"
+  },
+  "PASSED": {
+   "enum": [
+    "YES",
+    "NO"
+   ],
+   "type": "string"
+  },
+  "DEST_EXISTS": {
+   "enum": [
+    "YES",
+    "NO"
+   ],
+   "type": "string"
+  },
+  "LOCAL_GEN_SEALED": {
+   "enum": [
+    "YES",
+    "NO"
+   ],
+   "type": "string"
+  },
+  "REQUIRED_PHRASE": {
+   "pattern": "^AUTHORIZE (M5 -> INTEL|INTEL -> M5) GENERATION G[0-9]{3} LISTHASH [0-9a-f]{8}$",
+   "type": "string"
+  }
+ },
+ "additionalProperties": {
+  "type": "string",
+  "maxLength": 300
+ },
+ "allOf": [
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "DISCOVERY_REQUEST"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "SCRIPT_NAME",
+     "SCRIPT_SHA256",
+     "REQUIRE"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "DISCOVERY_RESPONSE"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "ARCH_TRUE",
+     "ROSETTA_TRANSLATED",
+     "HW_MODEL",
+     "OS",
+     "HW_ID16",
+     "WORKTREE_FINGERPRINT",
+     "STATE_LAYOUT_FP",
+     "ROOT_CLASS",
+     "REPO_BYTES",
+     "GITDIR_BYTES",
+     "MEMORY_BYTES",
+     "DATA_BYTES",
+     "SOURCE_BYTES",
+     "STATE_BYTES",
+     "PROPOSED_BACKUP_BYTES",
+     "HOME_FREE_BYTES",
+     "HOME_TOTAL_BYTES",
+     "ENV_FILE",
+     "GIT_UNPUSHED",
+     "TRACKED_MODIFIED",
+     "UNTRACKED",
+     "OTHER_MATERIAL",
+     "SMART",
+     "FILEVAULT",
+     "TOOLS_OK",
+     "OLLAMA_MODELS",
+     "REPORT_HASH"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "DIRECTION_PROPOSAL"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "FIRST_DIRECTION",
+     "REASONS",
+     "REVERSAL_EVIDENCE"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "SOURCE_MANIFEST_OFFER"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "SOURCE_LIST_HASH",
+     "FILE_COUNT_EST",
+     "BYTE_COUNT_EST",
+     "SOURCE_PART_BYTES",
+     "STATE_PART_BYTES",
+     "MUTABLE_FILE_COUNT",
+     "TOOLS_HASH",
+     "REQUIRED_FREE_BYTES"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "DESTINATION_CAPACITY_ACCEPT"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "FREE_DEST_BYTES",
+     "VOLUME_TOTAL_BYTES",
+     "REQUIRED_FREE_BYTES",
+     "POST_TRANSFER_FREE_BYTES",
+     "MARGIN_RULE",
+     "DEST_PATH",
+     "DEST_EXISTS",
+     "DEST_FILEVAULT",
+     "REMOTE_LOGIN",
+     "HOSTKEY_FP",
+     "DECISION"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "TRANSFER_PLAN"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "TRANSPORT",
+     "TOPOLOGY",
+     "SOURCE_LIST_HASH",
+     "DEST_PATH",
+     "SRC_LOCAL_GEN_PATH",
+     "TRANSFER_PLAN_HASH",
+     "EXPECTED_FILE_COUNT",
+     "EXPECTED_BYTE_COUNT"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "TRANSFER_AUTHORIZATION_REQUIRED"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "REQUIRED_PHRASE",
+     "PHRASE_SHA16",
+     "GATE"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "AUTHORIZATION_ACK"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "AUTH_PHRASE_SHA16",
+     "AUTH_CHANNEL",
+     "AUTH_UTC"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "TRANSFER_COMPLETE_SOURCE"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "EXIT_STATUS",
+     "SOURCE_MANIFEST_HASH",
+     "FILE_COUNT",
+     "BYTE_COUNT",
+     "CONSISTENCY_LEVEL",
+     "LIVE_MUTATED_COUNT",
+     "LOCAL_GEN_SEALED"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "TRANSFER_COMPLETE_DESTINATION"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "EXIT_STATUS",
+     "DEST_MANIFEST_HASH",
+     "FILE_COUNT",
+     "BYTE_COUNT",
+     "EXTRA_OR_MISSING",
+     "FREE_DEST_BYTES_AFTER"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "HASH_CHALLENGE"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "NONCE",
+     "CHALLENGE_RULE",
+     "SAMPLE_COUNT",
+     "SAMPLE_PATHS"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "HASH_CONFIRM"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "NONCE",
+     "D1",
+     "D2",
+     "D3",
+     "D4"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "HASH_VERDICT"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "SOURCE_MANIFEST_HASH",
+     "DEST_MANIFEST_HASH_SEEN",
+     "MANIFEST_MATCH",
+     "FILE_COUNT_MATCH",
+     "BYTE_COUNT_MATCH",
+     "CHALLENGE_MATCH",
+     "VERDICT"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "STRUCTURAL_VALIDATION"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "VALIDATION_HASH",
+     "PASSED",
+     "CHECKS_RUN",
+     "CHECKS_NOT_RUN",
+     "FAILURES",
+     "PAIR_ALIGNED"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "GENERATION_SEALED"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "DEST_SEAL_HASH",
+     "MARKER",
+     "CONSISTENCY_LEVEL",
+     "PERMISSIONS",
+     "REGISTRY_LINE_HASH"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "SECOND_DIRECTION_READY"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "THIS_DIRECTION_STATUS",
+     "OTHER_DIRECTION_STATUS",
+     "NEXT"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "STEP": {
+      "const": "ABORT"
+     }
+    },
+    "required": [
+     "STEP"
+    ]
+   },
+   "then": {
+    "required": [
+     "REASON",
+     "DIRECTION_STATUS",
+     "LEFT_BEHIND"
+    ]
+   }
+  }
+ ],
+ "x-transitions": {
+  "DISCOVERY_REQUEST": [
+   "DISCOVERY_RESPONSE",
+   "ABORT"
+  ],
+  "DISCOVERY_RESPONSE": [
+   "DISCOVERY_RESPONSE",
+   "DIRECTION_PROPOSAL",
+   "SOURCE_MANIFEST_OFFER",
+   "ABORT"
+  ],
+  "DIRECTION_PROPOSAL": [
+   "SOURCE_MANIFEST_OFFER",
+   "ABORT"
+  ],
+  "SOURCE_MANIFEST_OFFER": [
+   "DESTINATION_CAPACITY_ACCEPT",
+   "ABORT"
+  ],
+  "DESTINATION_CAPACITY_ACCEPT": [
+   "TRANSFER_PLAN",
+   "ABORT"
+  ],
+  "TRANSFER_PLAN": [
+   "TRANSFER_AUTHORIZATION_REQUIRED",
+   "ABORT"
+  ],
+  "TRANSFER_AUTHORIZATION_REQUIRED": [
+   "AUTHORIZATION_ACK",
+   "ABORT"
+  ],
+  "AUTHORIZATION_ACK": [
+   "AUTHORIZATION_ACK",
+   "TRANSFER_COMPLETE_SOURCE",
+   "ABORT"
+  ],
+  "TRANSFER_COMPLETE_SOURCE": [
+   "TRANSFER_COMPLETE_DESTINATION",
+   "ABORT"
+  ],
+  "TRANSFER_COMPLETE_DESTINATION": [
+   "HASH_CHALLENGE",
+   "ABORT"
+  ],
+  "HASH_CHALLENGE": [
+   "HASH_CONFIRM",
+   "ABORT"
+  ],
+  "HASH_CONFIRM": [
+   "HASH_VERDICT",
+   "ABORT"
+  ],
+  "HASH_VERDICT": [
+   "STRUCTURAL_VALIDATION",
+   "ABORT"
+  ],
+  "STRUCTURAL_VALIDATION": [
+   "GENERATION_SEALED",
+   "ABORT"
+  ],
+  "GENERATION_SEALED": [
+   "SECOND_DIRECTION_READY",
+   "ABORT"
+  ],
+  "SECOND_DIRECTION_READY": [
+   "DISCOVERY_REQUEST",
+   "ABORT"
+  ],
+  "ABORT": [
+   "ABORT"
+  ]
+ },
+ "x-abort": "ABORT is permitted from every step and is terminal for one direction only",
+ "x-senders": {
+  "DISCOVERY_REQUEST": "either",
+  "DISCOVERY_RESPONSE": "either",
+  "DIRECTION_PROPOSAL": "M5 (or either)",
+  "SOURCE_MANIFEST_OFFER": "SRC",
+  "DESTINATION_CAPACITY_ACCEPT": "DST",
+  "TRANSFER_PLAN": "SRC",
+  "TRANSFER_AUTHORIZATION_REQUIRED": "both (each, independently)",
+  "AUTHORIZATION_ACK": "both (each, after the human types the phrase into ITS OWN session)",
+  "TRANSFER_COMPLETE_SOURCE": "SRC",
+  "TRANSFER_COMPLETE_DESTINATION": "DST",
+  "HASH_CHALLENGE": "SRC",
+  "HASH_CONFIRM": "DST",
+  "HASH_VERDICT": "SRC",
+  "STRUCTURAL_VALIDATION": "DST",
+  "GENERATION_SEALED": "DST",
+  "SECOND_DIRECTION_READY": "either",
+  "ABORT": "either"
+ }
+}

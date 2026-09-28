@@ -84,6 +84,7 @@ Patches applied before exec_module():
   importlib.reload                     — blocks patch-undoing via reload
   ctypes.CDLL / ctypes.cdll / cffi    — blocks direct libc syscall access
   sys.stdin                            — replaced with _BlockedStdin (see below)
+  fd 0 (file descriptor)               — closed outright (see below)
 
 ── stdin policy (audits/2026-09-09_f2_stdin_enforcement_boundary.md, Mission 27/28) ──
 Autonomous sandboxed execution has no interactive stdin, established as
@@ -118,6 +119,22 @@ is intentionally left in place, unmodified, as harmless defense-in-depth —
 it will simply never trigger once sys.stdin.readline() fails first.
 Whether to simplify or remove it later is a separate, future decision, not
 part of this change.
+
+── fd 0 policy (audits/2026-09-09_os_level_stdin_fd0_forensics.md,
+audits/2026-09-09_os_level_stdin_fd0_implementation.md, Mission 29/30) ──
+The sys.stdin replacement above closes the Python object surface only;
+candidate code can still reach the real, inherited file descriptor 0
+directly (os.read(0, ...), os.fdopen(0, ...), os.dup(0), /dev/fd/0 all
+resolve to the same underlying open file description, confirmed to hang
+against the real inherited terminal in Mission 29). fd 0 is closed
+outright via os.close(0) — not redirected to /dev/null, which was tested
+and rejected because it reproduces the exact false-success ambiguity
+already found and rejected for stdin=subprocess.DEVNULL (Mission 26) at
+this lower layer: os.read() against /dev/null returns b'' indistinguishably
+from legitimate EOF, while a closed fd raises a real, explicit
+OSError: [Errno 9] Bad file descriptor. Verified independent of fd 1/2
+(stdout/stderr) and of sys.stdin's own Python-level behavior — closing fd
+0 has no effect on either.
 """
 
 import builtins as _builtins
@@ -416,6 +433,31 @@ def _install_patches(scratch: str) -> None:
     # mode. See the module docstring's stdin-policy section for the full
     # design rationale.
     sys.stdin = _BlockedStdin()
+
+    # ── fd 0 policy (Mission 29/30, audits/2026-09-09_os_level_stdin_fd0_forensics.md,
+    # audits/2026-09-09_os_level_stdin_fd0_implementation.md) ──
+    # _BlockedStdin above closes the Python sys.stdin surface, but candidate
+    # code can still reach the real, inherited OS-level file descriptor 0
+    # directly -- os.read(0, ...), os.fdopen(0, ...), os.dup(0), and
+    # /dev/fd/0 all resolve to the same underlying open file description
+    # and were confirmed (Mission 29) to hang against the real inherited
+    # terminal, independent of whatever sys.stdin currently points to. The
+    # sandbox is autonomous: candidate code must not inherit a live
+    # human-controlled terminal on fd 0. Close fd 0 rather than
+    # redirecting it to /dev/null so reads fail explicitly (OSError: Bad
+    # file descriptor) instead of producing ambiguous EOF -- redirecting
+    # to /dev/null was tested and rejected (Mission 29) because it
+    # reproduces the exact false-success ambiguity already found and
+    # rejected for stdin=subprocess.DEVNULL (Mission 26) at this lower
+    # layer. Fails silently only on the already-safe case (fd 0 already
+    # closed/invalid) -- that's not a new failure, it's the invariant
+    # already holding; any other OSError is unexpected and is allowed to
+    # propagate. Never touches fd 1/2 (stdout/stderr), confirmed
+    # independent.
+    try:
+        _os.close(0)
+    except OSError:
+        pass
 
 
 if __name__ == "__main__":

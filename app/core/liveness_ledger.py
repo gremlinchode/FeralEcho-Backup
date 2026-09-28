@@ -3715,9 +3715,23 @@ def _evaluate_f2_stdin_contract(blocked_stdin_cls, install_patches_source: "str 
     behavior does.
 
     (2) Static: confirms _install_patches()'s real source still assigns
-    sys.stdin = _BlockedStdin() — same source-anchor shape as
-    wolf_friction_bridge/dissent_log_hook, protecting against a future
-    edit that keeps the class but forgets to wire it in (or vice versa).
+    sys.stdin = _BlockedStdin() (the Python-level surface) AND still
+    closes fd 0 via _os.close(0) (the OS-level surface, Mission 29/30,
+    audits/2026-09-09_os_level_stdin_fd0_implementation.md) — same
+    source-anchor shape as wolf_friction_bridge/dissent_log_hook,
+    protecting against a future edit that keeps either mechanism but
+    forgets to wire it in. Deliberately kept as a source-anchor for the
+    fd0 half too, not a functional subprocess-spawning test: verifying
+    "does os.close(0) actually block a real read" requires either closing
+    this live process's own fd 0 (a real risk to a shared production
+    process, the same reasoning that already ruled out live-testing
+    input() end-to-end above) or spawning a real sandboxed subprocess
+    every 120s purely to prove it (a real, avoidable cost this project's
+    own established pattern, e.g. apply_to_code_sandbox_isolation, already
+    argues against for exactly this class of property). The evidence dict
+    reports python_stdin_blocked and os_fd0_blocked as two independent
+    booleans, so a future regression in either layer is individually
+    diagnosable rather than collapsed into one undifferentiated pass/fail.
     """
     if blocked_stdin_cls is None:
         return _result(False, "sandbox.safe_exec_wrapper._BlockedStdin could not be imported.")
@@ -3762,20 +3776,37 @@ def _evaluate_f2_stdin_contract(blocked_stdin_cls, install_patches_source: "str 
 
     if install_patches_source is None:
         return _result(False, "Could not read sandbox/safe_exec_wrapper.py's own source to verify wiring.")
-    if "sys.stdin = _BlockedStdin()" not in install_patches_source:
+
+    python_stdin_blocked = "sys.stdin = _BlockedStdin()" in install_patches_source
+    os_fd0_blocked = "_os.close(0)" in install_patches_source
+
+    if not python_stdin_blocked:
         return _result(
             False,
             "_BlockedStdin's own behavior is still correct, but _install_patches() "
             "no longer assigns sys.stdin = _BlockedStdin() anywhere in its source — "
             "the class exists but is no longer wired into the sandbox execution path.",
+            {"raised": raised, "isatty_honest": isatty_honest,
+             "python_stdin_blocked": python_stdin_blocked, "os_fd0_blocked": os_fd0_blocked},
+        )
+    if not os_fd0_blocked:
+        return _result(
+            False,
+            "The Python-level sys.stdin contract is still wired correctly, but "
+            "_install_patches() no longer calls _os.close(0) anywhere in its "
+            "source — the OS-level fd 0 boundary (Mission 29/30) has silently "
+            "regressed even though the Python-level one hasn't.",
+            {"raised": raised, "isatty_honest": isatty_honest,
+             "python_stdin_blocked": python_stdin_blocked, "os_fd0_blocked": os_fd0_blocked},
         )
 
     return _result(
         True,
         "_BlockedStdin correctly raises PermissionError for read()/readline()/"
-        "readlines()/iteration, isatty() stays honestly False, and "
-        "_install_patches() still installs it.",
-        {"raised": raised, "isatty_honest": isatty_honest},
+        "readlines()/iteration, isatty() stays honestly False, "
+        "_install_patches() still installs it, and still closes fd 0.",
+        {"raised": raised, "isatty_honest": isatty_honest,
+         "python_stdin_blocked": python_stdin_blocked, "os_fd0_blocked": os_fd0_blocked},
     )
 
 

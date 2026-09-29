@@ -92,6 +92,20 @@ class CursorIsolationTests(unittest.TestCase):
         result = relay.read_new()  # no consumer at all -- the original call shape
         self.assertIn("first", result)
 
+    def test_c7_path_traversal_consumer_name_is_rejected(self):
+        # Found live during the 2026-09-29 pre-merge adversarial gate: a raw
+        # consumer string was interpolated directly into a filesystem path
+        # with zero validation, and a traversal-shaped name demonstrably
+        # resolved OUTSIDE _RELAY_DIR before this test's corresponding fix.
+        for hostile in ("../../../../tmp/evil", "a/b", "..", "", "x" * 200):
+            with self.assertRaises(ValueError, msg=f"{hostile!r} should have been rejected"):
+                relay._marker_file(consumer=hostile)
+
+    def test_c7_legitimate_consumer_names_still_work(self):
+        for ok in ("hub", "alpha", "codex-m5", "session_1"):
+            path = relay._marker_file(consumer=ok)
+            self.assertIn(f"__{ok}.json", path)
+
     def test_c6_concurrent_same_consumer_access_does_not_corrupt_state(self):
         errors = []
 

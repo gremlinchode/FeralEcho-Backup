@@ -12,6 +12,7 @@ import argparse
 import hmac
 import json
 import os
+import re
 import sys
 import threading
 import urllib.error
@@ -24,6 +25,22 @@ from pathlib import Path
 
 MAX_BODY_BYTES = 64 * 1024
 DEFAULT_PORT = 8765
+
+# Found during the 2026-09-29 pre-merge adversarial gate (audits/2026-09-29_
+# relay_repair_final_premerge_gate.md, Phase 4/C7) -- see claude_relay/
+# relay.py's identical guard for the full rationale: a raw --consumer string
+# demonstrably escaped the intended data_dir via path traversal before this
+# fix. Fails loud rather than silently sanitizing.
+_CONSUMER_NAME_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+
+
+def _validate_consumer_name(consumer: "str | None") -> None:
+    if consumer is not None and not _CONSUMER_NAME_RE.match(consumer):
+        raise ValueError(
+            f"Invalid --consumer name {consumer!r}: must be 1-64 characters, "
+            "letters/digits/underscore/hyphen only (no path separators or "
+            "'..' — this name becomes part of a cursor filename)."
+        )
 
 
 def now() -> str:
@@ -62,6 +79,8 @@ def paths(data_dir: Path, consumer: "str | None" = None) -> tuple[Path, Path, Pa
     entire backlog forever, which is worse than the collision it would
     "fix"."""
     data_dir.mkdir(parents=True, exist_ok=True)
+    if consumer is not None:
+        _validate_consumer_name(consumer)
     marker_name = ".last_seen.json" if consumer is None else f".last_seen__{consumer}.json"
     return (
         data_dir / "inbox.jsonl",

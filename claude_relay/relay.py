@@ -73,11 +73,32 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import threading
 from datetime import datetime, timezone
 
 import requests
+
+# Found during the 2026-09-29 pre-merge adversarial gate (audits/2026-09-29_
+# relay_repair_final_premerge_gate.md, Phase 4/C7), not anticipated when
+# --consumer was first added: unlike --peer (validated against the fixed
+# _SIDES dict since this file's original design), a consumer name was
+# interpolated directly into a filesystem path with zero validation --
+# `--consumer "../../../../tmp/evil"` demonstrably resolved OUTSIDE
+# _RELAY_DIR (confirmed via Path.resolve().is_relative_to(), not assumed).
+# Fails loud rather than silently sanitizing, matching this project's own
+# established discipline elsewhere for untrusted-shaped input.
+_CONSUMER_NAME_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+
+
+def _validate_consumer_name(consumer: "str | None") -> None:
+    if consumer is not None and not _CONSUMER_NAME_RE.match(consumer):
+        raise ValueError(
+            f"Invalid --consumer name {consumer!r}: must be 1-64 characters, "
+            "letters/digits/underscore/hyphen only (no path separators or "
+            "'..' — this name becomes part of a cursor filename)."
+        )
 
 # This machine's identity in the relay's own naming (see CLAUDE.md's
 # "Tailscale sync" section) is NOT the same thing as its OS hostname —
@@ -140,6 +161,7 @@ def _marker_file(peer: "str | None" = None, consumer: "str | None" = None) -> st
     peer_name = _resolve_peer(peer)
     if consumer is None:
         return os.path.join(_RELAY_DIR, f".last_seen_from_{peer_name}.json")
+    _validate_consumer_name(consumer)
     return os.path.join(_RELAY_DIR, f".last_seen_from_{peer_name}__{consumer}.json")
 
 

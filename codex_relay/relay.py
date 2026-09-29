@@ -46,12 +46,27 @@ def secret_from_env() -> str:
     return value
 
 
-def paths(data_dir: Path) -> tuple[Path, Path, Path, Path]:
+def paths(data_dir: Path, consumer: "str | None" = None) -> tuple[Path, Path, Path, Path]:
+    """`consumer` (added for independent-consumer cursor isolation — see
+    audits/2026-09-29_relay_hub_reliability_semantics_audit.md Section 7/9):
+    None (the default, unchanged) keeps the exact original marker filename
+    (`.last_seen.json`), so every existing caller that never passes this
+    argument is byte-for-byte unaffected. A named consumer gets its own
+    marker file (`.last_seen__<consumer>.json`) so two independent readers
+    of the same inbox no longer silently share one "what's new" position —
+    the same shape claude_relay/relay.py's own read-hub split already
+    proved out for one specific pairing; this generalizes it to any
+    explicitly-named consumer, without duplicating inbox/outbox content.
+    Deliberately requires an explicit, stable name (never auto-generated
+    per invocation) — a fresh identity on every call would replay the
+    entire backlog forever, which is worse than the collision it would
+    "fix"."""
     data_dir.mkdir(parents=True, exist_ok=True)
+    marker_name = ".last_seen.json" if consumer is None else f".last_seen__{consumer}.json"
     return (
         data_dir / "inbox.jsonl",
         data_dir / "outbox.jsonl",
-        data_dir / ".last_seen.json",
+        data_dir / marker_name,
         data_dir / ".seen_ids.json",
     )
 
@@ -249,7 +264,7 @@ def send(args: argparse.Namespace) -> int:
 
 
 def read(args: argparse.Namespace) -> int:
-    inbox, _, marker_path, _ = paths(Path(args.data_dir))
+    inbox, _, marker_path, _ = paths(Path(args.data_dir), consumer=args.consumer)
     content = inbox.read_text(encoding="utf-8") if inbox.exists() else ""
     try:
         marker = json.loads(marker_path.read_text(encoding="utf-8")).get("length", 0)
@@ -273,14 +288,15 @@ def read(args: argparse.Namespace) -> int:
 
 
 def status(args: argparse.Namespace) -> int:
-    inbox, outbox, marker_path, _ = paths(Path(args.data_dir))
+    inbox, outbox, marker_path, _ = paths(Path(args.data_dir), consumer=args.consumer)
     inbox_content = inbox.read_text(encoding="utf-8") if inbox.exists() else ""
     inbox_len = len(inbox_content)
     try:
         seen = json.loads(marker_path.read_text(encoding="utf-8")).get("length", 0)
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         seen = 0
-    print(f"Identity: {args.identity}\nInbox: {inbox_len} characters ({max(0, inbox_len - seen)} unread characters)\nOutbox: {outbox.stat().st_size if outbox.exists() else 0} bytes")
+    consumer_note = f" (consumer={args.consumer})" if args.consumer else ""
+    print(f"Identity: {args.identity}{consumer_note}\nInbox: {inbox_len} characters ({max(0, inbox_len - seen)} unread characters)\nOutbox: {outbox.stat().st_size if outbox.exists() else 0} bytes")
     if not args.peer:
         return 0
     try:
@@ -327,9 +343,18 @@ def parser() -> argparse.ArgumentParser:
     send_p.add_argument("message", nargs="?")
     send_p.set_defaults(func=send)
     read_p = sub.add_parser("read")
+    read_p.add_argument(
+        "--consumer", default=None,
+        help="Explicit, stable name for an independent read cursor (e.g. "
+             "'hub'). Omit to use the original, single shared cursor "
+             "unchanged — only pass this when two genuinely separate "
+             "consumers need their own independent unread position over "
+             "the same inbox.",
+    )
     read_p.set_defaults(func=read)
     status_p = sub.add_parser("status")
     status_p.add_argument("--peer")
+    status_p.add_argument("--consumer", default=None, help="Report unread count for this named cursor instead of the default one.")
     status_p.set_defaults(func=status)
     return p
 

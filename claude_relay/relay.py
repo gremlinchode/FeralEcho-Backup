@@ -74,6 +74,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import threading
 from datetime import datetime, timezone
 
 import requests
@@ -126,8 +127,20 @@ def _resolve_peer(peer: "str | None") -> str:
     return peer
 
 
-def _marker_file(peer: "str | None" = None) -> str:
-    return os.path.join(_RELAY_DIR, f".last_seen_from_{_resolve_peer(peer)}.json")
+def _marker_file(peer: "str | None" = None, consumer: "str | None" = None) -> str:
+    # `consumer` (2026-09-29, closing the general case audits/2026-09-29_
+    # relay_hub_reliability_semantics_audit.md Section 7 flagged as still
+    # open beyond the already-fixed read-vs-read-hub pairing): None (the
+    # default, unchanged) reproduces the exact original filename, so every
+    # existing caller that never passes this is byte-for-byte unaffected.
+    # A named consumer gets its own independent marker file, the same
+    # generalization applied in codex_relay/relay.py's paths(). Does not
+    # touch _hub_marker_file() below, which stays its own dedicated,
+    # already-proven mechanism for hub/notes.py specifically.
+    peer_name = _resolve_peer(peer)
+    if consumer is None:
+        return os.path.join(_RELAY_DIR, f".last_seen_from_{peer_name}.json")
+    return os.path.join(_RELAY_DIR, f".last_seen_from_{peer_name}__{consumer}.json")
 
 
 def _hub_marker_file(peer: "str | None" = None) -> str:
@@ -200,7 +213,15 @@ def _load_marker(marker_file: str) -> dict:
 
 def _save_marker(length: int, marker_file: str) -> None:
     payload = {"length": length, "checked_at": datetime.now(timezone.utc).isoformat()}
-    tmp = f"{marker_file}.tmp"
+    # Per-call-unique tmp filename (pid + thread id) — a fixed shared
+    # "<marker_file>.tmp" name lets two concurrent writers race on the same
+    # path: whichever calls os.replace() second finds its own tmp file
+    # already moved away by the first, raising FileNotFoundError. Same
+    # fix shape already proven in this codebase for the identical race
+    # (see CLAUDE.md Finding 41 B2, echo_core.py's _persist_salience_state()).
+    # Found here via this repair mission's own C6 concurrency test, not
+    # theorized — reproduced 6/8 real failures before this fix.
+    tmp = f"{marker_file}.{os.getpid()}.{threading.get_ident()}.tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2)
     os.replace(tmp, marker_file)
@@ -236,12 +257,15 @@ def _read_new_generic(remote_name: str, marker_file: str, label: str, peer: "str
     return new_content, ""
 
 
-def read_new(peer: "str | None" = None) -> str:
+def read_new(peer: "str | None" = None, consumer: "str | None" = None) -> str:
     """Fetches the peer's current mailbox file, returns only the content
     added since the last successful read, and advances the marker. Default
-    peer (None) is unchanged from before this function took the argument."""
+    peer/consumer (None) are unchanged from before this function took the
+    consumer argument. Pass a stable, explicit `consumer` name only when a
+    genuinely independent reader needs its own cursor over this same file —
+    see _marker_file()'s own comment; never auto-generate one per call."""
     p = _resolve_peer(peer)
-    new_content, message = _read_new_generic(_SIDES[p]["file"], _marker_file(p), "file", peer=p)
+    new_content, message = _read_new_generic(_SIDES[p]["file"], _marker_file(p, consumer), "file", peer=p)
     return new_content if new_content is not None else message
 
 
@@ -376,13 +400,16 @@ def facts_status(peer: "str | None" = None) -> str:
     return "\n".join(lines)
 
 
-def status(peer: "str | None" = None) -> str:
+def status(peer: "str | None" = None, consumer: "str | None" = None) -> str:
     """Structural health only — entry counts, reachability, staleness.
     Deliberately never prints the actual content of either file; matches
     this channel's own privacy rule (README.md) even when checking on it
-    rather than participating in it."""
+    rather than participating in it. `consumer` (2026-09-29): reports the
+    named cursor's own unread position instead of the default shared one —
+    see _marker_file()'s comment."""
     p = _resolve_peer(peer)
-    lines = [f"Identity: {IDENTITY} ({_SIDES[IDENTITY]['label']}) | Peer: {_SIDES[p]['label']}"]
+    consumer_note = f" | consumer: {consumer}" if consumer else ""
+    lines = [f"Identity: {IDENTITY} ({_SIDES[IDENTITY]['label']}) | Peer: {_SIDES[p]['label']}{consumer_note}"]
 
     try:
         with open(_OWN_FILE, "r", encoding="utf-8") as f:
@@ -397,7 +424,7 @@ def status(peer: "str | None" = None) -> str:
         lines.append(f"{_SIDES[p]['label']}: UNREACHABLE right now ({err}).")
     else:
         other_entries = content.count("\n## Entry")
-        marker = _load_marker(_marker_file(p))
+        marker = _load_marker(_marker_file(p, consumer))
         unread = len(content) - marker.get("length", 0)
         lines.append(f"{_SIDES[p]['label']}: reachable, {len(content)} chars, ~{other_entries} entries.")
         if unread > 0:
@@ -452,10 +479,21 @@ if __name__ == "__main__":
         print(f"[relay] {e}")
         sys.exit(1)
 
+    # --consumer <name> (2026-09-29): same extract-from-anywhere pattern as
+    # --peer above. Omitted entirely (the default, still the common case):
+    # consumer_val is None, status()/read_new() fall back to the original,
+    # unchanged shared cursor exactly as before this existed. Only `status`
+    # and `read` accept it — `read-hub` already has its own dedicated,
+    # untouched cursor and isn't meant to gain a second one.
+    argv, consumer_val = _extract_flag_value(argv, "--consumer")
+    if consumer_val == "__MISSING__":
+        print("Usage: ... --consumer <name>  (an explicit, stable name for an independent read cursor)")
+        sys.exit(1)
+
     if cmd == "status":
-        print(status(peer=peer_val))
+        print(status(peer=peer_val, consumer=consumer_val))
     elif cmd == "read":
-        print(read_new(peer=peer_val))
+        print(read_new(peer=peer_val, consumer=consumer_val))
     elif cmd == "read-hub":
         print(read_new_for_hub())
     elif cmd == "append":

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+
+<!--
+  Supervises the "claude" identity half of the local Claude<->Codex relay
+  loopback (127.0.0.1:8765) -- see codex_relay/start_local_relay_claude.sh
+  and audits/2026-09-29_relay_hub_reliability_repair.md Phase 7/8.
+
+  Deliberately its own LaunchAgent, entirely independent of com.gremlin.echo
+  (Echo's own supervisor) -- a relay startup failure must never prevent Echo
+  from starting, and a relay crash must never trigger an Echo restart. No
+  secret value appears anywhere in this file; the wrapper script it invokes
+  reads CODEX_RELAY_SECRET from ~/.claude-codex-relay/secret at runtime.
+
+  NOT auto-loaded by this repair pass -- see the repair report's Phase 8/
+  "Supervision Implementation" section for why activation was deliberately
+  deferred rather than force-loaded while a manually-started instance of
+  this same service was already running (the exact collision class
+  CLAUDE.md's own Finding 65 precedent already documents for Echo's plist).
+-->
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.gremlin.relay.claude</string>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>/Users/richietate/Desktop/FeralEcho/codex_relay/start_local_relay_claude.sh</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/richietate/Desktop/FeralEcho</string>
+
+    <key>StandardOutPath</key>
+    <string>/Users/richietate/.claude-codex-relay/launchd_claude_stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/richietate/.claude-codex-relay/launchd_claude_stderr.log</string>
+
+  </dict>
+</plist>

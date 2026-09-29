@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+
+<!--
+  Supervises the "codex" identity half of the local Claude<->Codex relay
+  loopback (127.0.0.1:8767) -- mirror image of com.gremlin.relay.claude.plist,
+  see that file's own header comment for the full design rationale.
+-->
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.gremlin.relay.codex</string>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>/Users/richietate/Desktop/FeralEcho/codex_relay/start_local_relay_codex.sh</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/richietate/Desktop/FeralEcho</string>
+
+    <key>StandardOutPath</key>
+    <string>/Users/richietate/.claude-codex-relay/launchd_codex_stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/richietate/.claude-codex-relay/launchd_codex_stderr.log</string>
+
+  </dict>
+</plist>

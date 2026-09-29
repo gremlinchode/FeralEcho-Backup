@@ -18,11 +18,21 @@ matching claude_relay/relay.py's own existing privacy rule.
 
 Usage:
     python3 hub/check_hub.py
+    HUB_CHECKED_BY=codex-m5 python3 hub/check_hub.py
+    python3 hub/check_hub.py --checked-by codex-m5
+
+Every appended hub/status.jsonl row's "checked_by" field records who actually
+ran this check (audits/2026-09-29_relay_hub_reliability_semantics_audit.md
+Section 11 found this used to be hardcoded to "claude-m5" unconditionally,
+including when e.g. Codex or a human ran it directly). With neither
+--checked-by nor HUB_CHECKED_BY set, the field honestly records "unknown"
+rather than guessing — see resolve_checked_by().
 """
 
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import urllib.error
@@ -41,15 +51,49 @@ LOCAL_CLAUDE_CODEX_DATA_DIR = str(Path.home() / ".claude-codex-relay")
 LOCAL_CODEX_PORT = 8767  # what the local "codex" identity is expected to bind to
 HTTP_TIMEOUT_S = 5
 
+# Six real node identities this hub distinguishes between — see hub/README.md.
+# Not an authentication list: this only constrains what a caller may *claim*
+# via an explicit flag/env var, so a typo doesn't silently produce a new,
+# unrecognized value sitting alongside the six real ones.
+KNOWN_CHECKED_BY = {"claude-m5", "claude-air", "codex-m5", "codex-air", "echo-m5", "echo-air"}
+UNKNOWN_CHECKED_BY = "unknown"
+
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def resolve_checked_by(argv: "list[str] | None" = None, env: "dict | None" = None) -> str:
+    """Who is actually running this check, stated explicitly rather than
+    hardcoded or magically inferred (audits/2026-09-29_relay_hub_reliability_
+    semantics_audit.md Section 11 / Section 19's own repair mission). Pure,
+    unit-testable — no I/O beyond reading the two inputs it's given.
+
+    Priority: an explicit `--checked-by <name>` CLI argument, then the
+    HUB_CHECKED_BY environment variable, then the honest, non-attributing
+    default "unknown". Never silently falls back to "claude-m5" or any other
+    specific identity — a caller that doesn't say who it is gets an
+    admittedly-unknown record, not a guessed one. An unrecognized name (not
+    in KNOWN_CHECKED_BY) is still honored verbatim rather than downgraded to
+    "unknown", but is not silently trusted as one of the six real seats
+    either — see hub/README.md's own governance section for what, if
+    anything, ever reads this field."""
+    argv = sys.argv[1:] if argv is None else argv
+    env = os.environ if env is None else env
+    if "--checked-by" in argv:
+        i = argv.index("--checked-by")
+        if i + 1 < len(argv) and argv[i + 1].strip():
+            return argv[i + 1].strip()
+    env_val = (env.get("HUB_CHECKED_BY") or "").strip()
+    if env_val:
+        return env_val
+    return UNKNOWN_CHECKED_BY
+
+
 def append_status(channel: str, endpoints: list[str], status: str, evidence: str) -> None:
     entry = {
         "timestamp": now(),
-        "checked_by": "claude-m5",
+        "checked_by": resolve_checked_by(),
         "channel": channel,
         "endpoints": endpoints,
         "status": status,

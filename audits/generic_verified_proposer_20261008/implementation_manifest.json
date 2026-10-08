@@ -1,0 +1,32 @@
+{
+  "at": "2026-10-08T13:51:38.510170-07:00",
+  "kind": "B-PROTOTYPE-1 research implementation handoff; not a scientific protocol freeze",
+  "files": {
+    "audits/generic_verified_proposer_20261008/IMPLEMENTATION_REPORT.md": "d036c69ebaf1b03878a70cc53c5b4b3660949dd174dd6019ed41ea1cc8474a8d",
+    "audits/generic_verified_proposer_20261008/IMPLEMENTATION_SCOPE.md": "305920a325bae0ac5c5ac0a2e8a336f0342555c0945660f6267fb46f6d2b16fe",
+    "audits/generic_verified_proposer_20261008/README.md": "f44ab1cf0cf8712764fa5b2837178c218ba64042b28806815329bf7736711461",
+    "audits/generic_verified_proposer_20261008/b_prototype/__init__.py": "8e5517f25a68c78eddb86d8c9b1fc9ffbe8dcb481db5ed5ba8da5c5ac7702455",
+    "audits/generic_verified_proposer_20261008/b_prototype/analysis.py": "132ec98ab80373a66ad501bff75d0d242bf57ccb6a410ea9e495bdd512a7d1f3",
+    "audits/generic_verified_proposer_20261008/b_prototype/contracts.py": "8558ae2db287213d2893e8f3d11ebd07396628c4bf3fe3f2ca815dbeb4a3493d",
+    "audits/generic_verified_proposer_20261008/b_prototype/journal.py": "37b2dd33e341d016a521ff1a4a3109919fb34e8c5539e4bb0e6858c7d5a84368",
+    "audits/generic_verified_proposer_20261008/b_prototype/proposer.py": "7ff4731d04d3699bc1bcf39486c0c2142cfcea191356983ef28d1dffdc558107",
+    "audits/generic_verified_proposer_20261008/b_prototype/verification.py": "c4541ad03e2706c6b9face3ba3586eb71d19fed323dd06a885252c9081a0d729",
+    "audits/generic_verified_proposer_20261008/cli_component_checks.json": "35ef752ecbd5e5af66217fe949f33037540d5ac0ee6917a774dad4a4ca1b6b2e",
+    "audits/generic_verified_proposer_20261008/cli_component_checks_02.json": "8ea2c56c7570d278228b04ed0ad8328b5d3209f883f3173e1c83be4f0cb6d6df",
+    "audits/generic_verified_proposer_20261008/closing.json": "fb0fb048fd699d70e80544e8f84db8955700999c77f96ca9d1cddf31a5fdfc43",
+    "audits/generic_verified_proposer_20261008/closing_processes.txt": "0fe0da5675613f6e013bd032ad9026256bf6b30c8afab045092acc97751e880c",
+    "audits/generic_verified_proposer_20261008/component_tests_01.txt": "ab86567bb78d75dd618361e2ac804a526c63317f90797a9864dd762f1f773d8c",
+    "audits/generic_verified_proposer_20261008/component_tests_02.txt": "4ee04daa99a09add7fe507e7c11687d8f5a2e0d561698e5a1f0070eb17f22f05",
+    "audits/generic_verified_proposer_20261008/opening.json": "9be581e94c3bbe7d0de8b1359aacf69b1288c9c524f7f2ca351ea36a04c97d0a",
+    "audits/generic_verified_proposer_20261008/opening_processes.txt": "c5407ce2607a9e39d90dc6a58828266a8277a5ab707baa495400a898eb0960f8",
+    "audits/generic_verified_proposer_20261008/propose_cli.py": "da012ad4440f3b0c3523d7ec7309016654e979889d3b3e37af7cece2cb2afe25",
+    "audits/generic_verified_proposer_20261008/run_component_tests.py": "478c84ee18a780be6fb670ef8d24ba0c6ad1846667507795ad6f590e0050fc78",
+    "audits/generic_verified_proposer_20261008/tests/test_components.py": "0d7126926663a0f6761bd2c9831064d88a929a75161096411b496bbd7a393161"
+  },
+  "self_excluded": true,
+  "candidate_execution_authorized": false,
+  "candidate_execution_backend_present": false,
+  "production_integration": false,
+  "C_implemented": false,
+  "validation": "29 public component tests passed; final 3 CLI checks passed; earlier results preserved."
+}

@@ -1,0 +1,308 @@
+{
+  "scope": "Final public static CLI checks after contract/helper-bound refinements; no candidate execution or held-out cases.",
+  "proposer_cli_processes": 3,
+  "candidate_processes": 0,
+  "checks": [
+    {
+      "label": "public_static_request",
+      "exit_code": 0,
+      "stdout": {
+        "authority": "NOT_ESTABLISHED_BY_PROPOSER",
+        "candidate_executions": 0,
+        "commit_sha256": "81f5b4c543d7fee7bab12b73d8a45e2ef46012880efab35a24b677f3384357e9",
+        "contract_sha256": "32ee86a960c4780d2d34a648fe15706837bc4b51cf73fc457e480be88dfd5e57",
+        "eligible_sites": [
+          {
+            "distance": 0,
+            "map_derived": true,
+            "path": [
+              "body",
+              0,
+              "body",
+              1,
+              "value",
+              "keywords",
+              0,
+              "value",
+              "body",
+              "elts",
+              1
+            ],
+            "polarity": "POLARITY_INCONSISTENT",
+            "position": [
+              3,
+              56,
+              3,
+              70
+            ],
+            "uses": [
+              {
+                "d_signs": [
+                  -1,
+                  -1,
+                  -1
+                ],
+                "q": -1,
+                "role": "tag",
+                "s": -1,
+                "status": "POLARITY_INCONSISTENT"
+              }
+            ]
+          },
+          {
+            "distance": 1,
+            "map_derived": true,
+            "path": [
+              "body",
+              0,
+              "body",
+              1,
+              "value",
+              "keywords",
+              0,
+              "value",
+              "body",
+              "elts",
+              1,
+              "operand"
+            ],
+            "polarity": "POLARITY_INCONSISTENT",
+            "position": [
+              3,
+              57,
+              3,
+              70
+            ],
+            "uses": [
+              {
+                "d_signs": [
+                  -1,
+                  -1,
+                  -1
+                ],
+                "q": -1,
+                "role": "tag",
+                "s": -1,
+                "status": "POLARITY_INCONSISTENT"
+              }
+            ]
+          },
+          {
+            "distance": 0,
+            "map_derived": false,
+            "path": [
+              "body",
+              0,
+              "body",
+              1,
+              "value",
+              "keywords",
+              0,
+              "value",
+              "body",
+              "elts",
+              0
+            ],
+            "polarity": "POLARITY_CONSISTENT",
+            "position": [
+              3,
+              47,
+              3,
+              54
+            ],
+            "uses": [
+              {
+                "d_signs": [
+                  1
+                ],
+                "q": -1,
+                "role": "score",
+                "s": -1,
+                "status": "POLARITY_CONSISTENT"
+              }
+            ]
+          },
+          {
+            "distance": 1,
+            "map_derived": false,
+            "path": [
+              "body",
+              0,
+              "body",
+              1,
+              "value",
+              "keywords",
+              0,
+              "value",
+              "body",
+              "elts",
+              0,
+              "operand"
+            ],
+            "polarity": "POLARITY_CONSISTENT",
+            "position": [
+              3,
+              48,
+              3,
+              54
+            ],
+            "uses": [
+              {
+                "d_signs": [
+                  1
+                ],
+                "q": -1,
+                "role": "score",
+                "s": -1,
+                "status": "POLARITY_CONSISTENT"
+              }
+            ]
+          }
+        ],
+        "implementation_sha256": "daeec6ac74d17a38c6097f66e512e6ebcc041255625bad0daa9a074139b42797",
+        "max_proposals": 2,
+        "proposals": [
+          {
+            "derived_source_sha256": "029b8c4809897941a492e167b7e551ed7b816eaacae86632343ca2f5a8e85972",
+            "patch": {
+              "old_subtree_sha256": "0442b4498a11745ad6cbf70d6418dab26edb4ebc4f3ccaf0f16bd3620b084820",
+              "operation": "TOGGLE_SIGN",
+              "path": [
+                "body",
+                0,
+                "body",
+                1,
+                "value",
+                "keywords",
+                0,
+                "value",
+                "body",
+                "elts",
+                1
+              ]
+            },
+            "site": {
+              "distance": 0,
+              "map_derived": true,
+              "path": [
+                "body",
+                0,
+                "body",
+                1,
+                "value",
+                "keywords",
+                0,
+                "value",
+                "body",
+                "elts",
+                1
+              ],
+              "polarity": "POLARITY_INCONSISTENT",
+              "position": [
+                3,
+                56,
+                3,
+                70
+              ],
+              "uses": [
+                {
+                  "d_signs": [
+                    -1,
+                    -1,
+                    -1
+                  ],
+                  "q": -1,
+                  "role": "tag",
+                  "s": -1,
+                  "status": "POLARITY_INCONSISTENT"
+                }
+              ]
+            }
+          },
+          {
+            "derived_source_sha256": "aa197d406e79cccf9395ce14feff27128dff3c7e6bb965f016a2d2b2c8c1bca3",
+            "patch": {
+              "old_subtree_sha256": "d4c816b8118d1e1098d6ac77a18fa8c18bd0c3d8a9e0784485333cc8ba95ef99",
+              "operation": "TOGGLE_SIGN",
+              "path": [
+                "body",
+                0,
+                "body",
+                1,
+                "value",
+                "keywords",
+                0,
+                "value",
+                "body",
+                "elts",
+                1,
+                "operand"
+              ]
+            },
+            "site": {
+              "distance": 1,
+              "map_derived": true,
+              "path": [
+                "body",
+                0,
+                "body",
+                1,
+                "value",
+                "keywords",
+                0,
+                "value",
+                "body",
+                "elts",
+                1,
+                "operand"
+              ],
+              "polarity": "POLARITY_INCONSISTENT",
+              "position": [
+                3,
+                57,
+                3,
+                70
+              ],
+              "uses": [
+                {
+                  "d_signs": [
+                    -1,
+                    -1,
+                    -1
+                  ],
+                  "q": -1,
+                  "role": "tag",
+                  "s": -1,
+                  "status": "POLARITY_INCONSISTENT"
+                }
+              ]
+            }
+          }
+        ],
+        "refusal": null,
+        "schema": "B-COMMIT-1",
+        "source_sha256": "c4b2ecbd0960b6c93bdc1d7df271ea7403abfd888631fe364d501dd1b7e1e62f",
+        "version": "B-PROTOTYPE-1"
+      },
+      "stderr": ""
+    },
+    {
+      "label": "forbidden_expected_channel",
+      "exit_code": 2,
+      "stdout": {
+        "error": "ValueError",
+        "detail": "request permits source and current contract only"
+      },
+      "stderr": ""
+    },
+    {
+      "label": "duplicate_key",
+      "exit_code": 2,
+      "stdout": {
+        "error": "ValueError",
+        "detail": "duplicate JSON key"
+      },
+      "stderr": ""
+    }
+  ]
+}

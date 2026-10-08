@@ -1,0 +1,32 @@
+test_approval_is_external_to_contract (test_components.AuthorityTests.test_approval_is_external_to_contract) ... ok
+test_nonvalid_states_never_authorize (test_components.AuthorityTests.test_nonvalid_states_never_authorize) ... ok
+test_proposer_unknown_and_stale (test_components.AuthorityTests.test_proposer_unknown_and_stale) ... ok
+test_strict_json (test_components.AuthorityTests.test_strict_json) ... ok
+test_exclusive_create_and_evidence_survives_cleanup_exception (test_components.JournalTests.test_exclusive_create_and_evidence_survives_cleanup_exception) ... ok
+test_symlink_leaf_does_not_overwrite_target (test_components.JournalTests.test_symlink_leaf_does_not_overwrite_target) ... ok
+test_alpha_renaming_preserves_polarity (test_components.ProposalTests.test_alpha_renaming_preserves_polarity) ... ok
+test_bad_precedence_and_nonmonotone_maps_use_fallback (test_components.ProposalTests.test_bad_precedence_and_nonmonotone_maps_use_fallback) ... ok
+test_dead_sort_does_not_consume_slots (test_components.ProposalTests.test_dead_sort_does_not_consume_slots) ... ok
+test_direct_score_uses_common_rule (test_components.ProposalTests.test_direct_score_uses_common_rule) ... ok
+test_four_selection_modes_and_two_map_orientations (test_components.ProposalTests.test_four_selection_modes_and_two_map_orientations) ... ok
+test_helper_extraction (test_components.ProposalTests.test_helper_extraction) ... ok
+test_input_alias_is_rejected (test_components.ProposalTests.test_input_alias_is_rejected) ... ok
+test_opposite_task_changes_direction_without_source_change (test_components.ProposalTests.test_opposite_task_changes_direction_without_source_change) ... ok
+test_owned_sort_and_shallow_comprehension (test_components.ProposalTests.test_owned_sort_and_shallow_comprehension) ... ok
+test_patch_is_exact_and_commit_tampering_rejected (test_components.ProposalTests.test_patch_is_exact_and_commit_tampering_rejected) ... ok
+test_simple_repair_is_prioritized_not_authorized (test_components.ProposalTests.test_simple_repair_is_prioritized_not_authorized) ... ok
+test_unsupported_effects_fail_closed_without_execution (test_components.ProposalTests.test_unsupported_effects_fail_closed_without_execution) ... ok
+test_candidate_timeout_is_not_conformance (test_components.VerificationTests.test_candidate_timeout_is_not_conformance) ... ok
+test_correct_original_rejects_edit (test_components.VerificationTests.test_correct_original_rejects_edit) ... ok
+test_correct_repair_is_only_provisional (test_components.VerificationTests.test_correct_repair_is_only_provisional) ... ok
+test_execution_backend_unavailable (test_components.VerificationTests.test_execution_backend_unavailable) ... ok
+test_hidden_incomplete_stale_and_infrastructure_fail_closed (test_components.VerificationTests.test_hidden_incomplete_stale_and_infrastructure_fail_closed) ... ok
+test_independent_oracle_score_tag_name_singleton (test_components.VerificationTests.test_independent_oracle_score_tag_name_singleton) ... ok
+test_missing_approval_abstains_before_evidence (test_components.VerificationTests.test_missing_approval_abstains_before_evidence) ... ok
+test_mutation_bool_int_and_wrong_return_type (test_components.VerificationTests.test_mutation_bool_int_and_wrong_return_type) ... ok
+test_partial_fix_and_regression_rejected (test_components.VerificationTests.test_partial_fix_and_regression_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 0.083s
+
+OK

@@ -1710,6 +1710,121 @@ except Exception as e:
     print(f"[SKIP] task_type_map_sync real-source case: import failed ({e})")
 
 
+# ── user_rating_reaches_ranking — human ratings must reach score_model()'s mean ──
+# Historical gap this check exists to catch: learn_from_rating() trained the
+# River classifier 3× and returned on rating 3, and never wrote
+# model_task_stats. score_model() reads that mean, so a rating already
+# collected left the chooser unchanged.
+
+_REAL_RATING_METHOD = """
+def learn_from_rating(self, model_name, task_type, response_preview, user_rating):
+    if not RIVER_AVAILABLE or user_rating == 3:
+        return
+    if task_type not in self.classifiers:
+        task_type = "general"
+    label = 1 if user_rating >= 4 else 0
+    with self._lock:
+        for _ in range(3):
+            self.classifiers[task_type].learn_one(scaled, label)
+        self.observation_counts[task_type] += 3
+        stats = self.model_task_stats[model_name].setdefault(task_type, {"count": 0, "mean": 0.5})
+        _apply_user_rating_to_rank_stats(stats, user_rating, self._MEAN_EFFECTIVE_WINDOW)
+"""
+
+_CLASSIFIER_ONLY_METHOD = """
+def learn_from_rating(self, model_name, task_type, response_preview, user_rating):
+    if not RIVER_AVAILABLE or user_rating == 3:
+        return
+    with self._lock:
+        for _ in range(3):
+            self.classifiers[task_type].learn_one(scaled, label)
+        self.observation_counts[task_type] += 3
+"""
+
+_NEUTRAL_STILL_WRITES_METHOD = """
+def learn_from_rating(self, model_name, task_type, response_preview, user_rating):
+    if not RIVER_AVAILABLE:
+        return
+    with self._lock:
+        stats = self.model_task_stats[model_name].setdefault(task_type, {"count": 0, "mean": 0.5})
+        _apply_user_rating_to_rank_stats(stats, user_rating, self._MEAN_EFFECTIVE_WINDOW)
+"""
+
+
+def _rank_value_maps_three(user_rating):
+    # Degraded helper: rating 3 becomes a real mean contribution.
+    if user_rating == 3:
+        return 0.6
+    return {1: 0.2, 2: 0.4, 4: 0.8, 5: 1.0}.get(user_rating)
+
+
+def _apply_triples_the_mean(stats, user_rating, window):
+    # Degraded helper: repeats the mean update 3×, the classifier's weight
+    # leaking into the ranking mean.
+    normalized = {1: 0.2, 2: 0.4, 4: 0.8, 5: 1.0}.get(user_rating)
+    if normalized is None:
+        return False
+    for _ in range(3):
+        stats["count"] = int(stats.get("count", 0)) + 1
+        effective_n = min(stats["count"], window)
+        mean = float(stats.get("mean", 0.5))
+        stats["mean"] = mean + (normalized - mean) / effective_n
+        stats["user_rating_count"] = int(stats.get("user_rating_count", 0)) + 1
+    return True
+
+
+try:
+    from app.core.echo_model_orchestrator import (
+        _apply_user_rating_to_rank_stats as _real_apply_rating,
+        _user_rating_rank_value as _real_rank_value,
+    )
+    _orch_src = open(
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                     "app", "core", "echo_model_orchestrator.py"),
+        encoding="utf-8",
+    ).read()
+    _rating_idx = _orch_src.find("def learn_from_rating(")
+    _real_rating_source = _orch_src[_rating_idx:_rating_idx + 2500] if _rating_idx != -1 else None
+    r = ll._evaluate_user_rating_reaches_ranking(_real_rank_value, _real_apply_rating, _real_rating_source)
+    check(
+        "user_rating_reaches_ranking: real helpers and real learn_from_rating() source",
+        r["pass"], True, r["evidence"],
+    )
+except Exception as e:
+    print(f"[SKIP] user_rating_reaches_ranking real-function case: import failed ({e})")
+    _real_rank_value = _real_apply_rating = None
+
+if _real_rank_value is not None:
+    r = ll._evaluate_user_rating_reaches_ranking(_rank_value_maps_three, _real_apply_rating, _REAL_RATING_METHOD)
+    check(
+        "user_rating_reaches_ranking: rating 3 is given a mean value (neutral rating would move the chooser)",
+        r["pass"], False, r["evidence"],
+    )
+    r = ll._evaluate_user_rating_reaches_ranking(_real_rank_value, _apply_triples_the_mean, _REAL_RATING_METHOD)
+    check(
+        "user_rating_reaches_ranking: the classifier's 3× repeat is applied to the ranking mean",
+        r["pass"], False, r["evidence"],
+    )
+
+r = ll._evaluate_user_rating_reaches_ranking(_real_rank_value, _real_apply_rating, _CLASSIFIER_ONLY_METHOD)
+check(
+    "user_rating_reaches_ranking: learn_from_rating() returns on rating 3 but never writes rank stats (the original gap)",
+    r["pass"], False, r["evidence"],
+)
+
+r = ll._evaluate_user_rating_reaches_ranking(_real_rank_value, _real_apply_rating, _NEUTRAL_STILL_WRITES_METHOD)
+check(
+    "user_rating_reaches_ranking: rank stats are written and the rating-3 return is gone",
+    r["pass"], False, r["evidence"],
+)
+
+r = ll._evaluate_user_rating_reaches_ranking(None, None, _REAL_RATING_METHOD)
+check(
+    "user_rating_reaches_ranking: rank helpers not importable at all",
+    r["pass"], False, r["evidence"],
+)
+
+
 print()
 if FAILURES:
     print(f"=== {len(FAILURES)} DISCRIMINATION FAILURE(S) — ledger is not trustworthy as-is ===")

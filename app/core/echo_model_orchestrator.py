@@ -755,6 +755,47 @@ def _blend_council_and_quality(council_rating, quality_score,
     label = 1 if blended >= 0.75 else 0
     return blended, label
 
+
+def _user_rating_rank_value(user_rating) -> "float | None":
+    """Map a human 1-5 rating onto the 0-1 scale model_task_stats["mean"] uses.
+
+    Same normalization _blend_council_and_quality() uses for a council
+    rating (rating / 5.0): 1→0.2, 2→0.4, 4→0.8, 5→1.0. Rating 3 is the
+    neutral learn_from_rating() already skips, and returns None so the
+    ranking mean is not written. Anything that is not one of those four
+    ratings also returns None. Pure: no RiverBrain, no file, no model call.
+    """
+    if not isinstance(user_rating, int) or isinstance(user_rating, bool):
+        return None
+    if user_rating not in (1, 2, 4, 5):
+        return None
+    return user_rating / 5.0
+
+
+def _apply_user_rating_to_rank_stats(stats: dict, user_rating, window: int) -> bool:
+    """Fold one human rating into a model_task_stats entry.
+
+    One rating is one mean update. The 3× repeat learn_from_rating()
+    applies to the River classifier stays on learn_one only and must not
+    land here. Returns False, leaving stats unchanged, when
+    _user_rating_rank_value() is None (rating 3, or not a real 1-5).
+    Increments user_rating_count only on a real write, the same kind of
+    provenance counter council_vetted_count already is. Old pickled
+    entries lack the key; .get(..., 0) keeps them readable.
+    """
+    normalized = _user_rating_rank_value(user_rating)
+    if normalized is None:
+        return False
+    if not isinstance(window, int) or isinstance(window, bool) or window <= 0:
+        return False
+    stats["count"] = int(stats.get("count", 0)) + 1
+    effective_n = min(stats["count"], window)
+    mean = float(stats.get("mean", 0.5))
+    stats["mean"] = mean + (normalized - mean) / effective_n
+    stats["user_rating_count"] = int(stats.get("user_rating_count", 0)) + 1
+    return True
+
+
 class RiverBrain:
     def __init__(self):
         self.classifiers = {}
@@ -921,8 +962,16 @@ class RiverBrain:
     def learn_from_rating(self, model_name: str, task_type: str,
                           response_preview: str, user_rating: int) -> None:
         """Apply explicit user feedback (1-5) as a high-trust learning signal.
-        Neutral ratings (3) are skipped. Positive/negative applied 3x to
-        outweigh the automatic quality scorer's single-pass estimate."""
+
+        Neutral ratings (3) are skipped entirely. Positive and negative
+        ratings are applied 3× to the River classifier, to outweigh the
+        automatic quality scorer's single-pass estimate. That 3× repeat
+        does not touch the ranking mean. score_model() reads
+        model_task_stats[model][task]["mean"], not the classifier, so the
+        same rating is also folded into that mean once, as rating/5.0,
+        with user_rating_count incremented so a later reader can see how
+        many of the mean's updates were human ratings.
+        """
         if not RIVER_AVAILABLE or user_rating == 3:
             return
         if task_type not in self.classifiers:
@@ -935,9 +984,17 @@ class RiverBrain:
             for _ in range(3):
                 self.classifiers[task_type].learn_one(scaled, label)
             self.observation_counts[task_type] += 3
+            stats = self.model_task_stats[model_name].setdefault(
+                task_type, {"count": 0, "mean": 0.5}
+            )
+            _apply_user_rating_to_rank_stats(
+                stats, user_rating, self._MEAN_EFFECTIVE_WINDOW
+            )
         logging.info(
             f"[RIVER] User rating {user_rating}/5 → label={label} | "
-            f"model={model_name} | task={task_type}"
+            f"model={model_name} | task={task_type} | "
+            f"rank_mean={stats['mean']:.4f} | "
+            f"user_rating_count={stats.get('user_rating_count', 0)}/{stats.get('count', 0)}"
         )
 
     # PENDING_DECISIONS.md #4 / CLAUDE.md's Council Peer Rating section,

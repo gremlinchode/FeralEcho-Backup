@@ -3925,6 +3925,131 @@ def _check_task_type_map_sync() -> dict:
     return _evaluate_task_type_map_sync(_canonical_map, _feature_fn)
 
 
+# ── user_rating_reaches_ranking — a human rating already collected must
+# move the mean score_model() actually reads. Added 2026-10-18. Until
+# this wire, learn_from_rating() updated the River classifier 3× and
+# returned on rating 3, and never wrote model_task_stats. score_model()
+# does not read the classifier. Calls the pure helpers, never
+# learn_from_rating() itself: that method mutates the live classifier
+# and would inject a canary observation every 120s.
+
+_USER_RATING_RANK_EXPECTED = {1: 0.2, 2: 0.4, 4: 0.8, 5: 1.0}
+
+
+def _evaluate_user_rating_reaches_ranking(rank_value_fn, apply_fn,
+                                          method_source: "str | None",
+                                          window: int = 200) -> dict:
+    if rank_value_fn is None or apply_fn is None:
+        return _result(
+            False,
+            "Could not import the user-rating rank helpers — failing closed.",
+        )
+
+    failures = []
+    try:
+        for rating, expected in _USER_RATING_RANK_EXPECTED.items():
+            got = rank_value_fn(rating)
+            if got is None or abs(float(got) - expected) > 1e-9:
+                failures.append(f"rating {rating} mapped to {got}, expected {expected}")
+        neutral = rank_value_fn(3)
+        if neutral is not None:
+            failures.append(f"rating 3 mapped to {neutral}, expected no mean write (None)")
+    except Exception as e:
+        return _result(False, f"_user_rating_rank_value() raised {e!r}")
+
+    try:
+        stats = {"count": 0, "mean": 0.5}
+        if not apply_fn(stats, 5, window):
+            failures.append("rating 5 was not applied to rank stats")
+        elif stats.get("count") != 1 or abs(float(stats.get("mean", 0)) - 1.0) > 1e-9:
+            failures.append(f"rating 5 produced {stats}, expected count=1 mean=1.0")
+        elif stats.get("user_rating_count") != 1:
+            failures.append(f"user_rating_count={stats.get('user_rating_count')}, expected 1")
+        else:
+            snapshot = dict(stats)
+            if apply_fn(stats, 3, window):
+                failures.append("rating 3 was applied to rank stats")
+            if stats != snapshot:
+                failures.append(f"rating 3 mutated stats from {snapshot} to {stats}")
+
+        saturated = {"count": window, "mean": 0.5}
+        if not apply_fn(saturated, 4, window):
+            failures.append("rating 4 was not applied to a full-window entry")
+        else:
+            expected_mean = 0.5 + (0.8 - 0.5) / window
+            if abs(float(saturated["mean"]) - expected_mean) > 1e-9:
+                failures.append(
+                    f"one rating on a full window moved the mean to {saturated['mean']}, "
+                    f"expected a single update {expected_mean} "
+                    f"(the classifier's 3× repeat must not hit the ranking mean)"
+                )
+            if saturated.get("count") != window + 1:
+                failures.append(f"count became {saturated.get('count')}, expected {window + 1}")
+            if saturated.get("user_rating_count") != 1:
+                failures.append(
+                    f"user_rating_count={saturated.get('user_rating_count')}, expected exactly 1"
+                )
+    except Exception as e:
+        return _result(False, f"_apply_user_rating_to_rank_stats() raised {e!r}")
+
+    if not method_source:
+        failures.append(
+            "could not locate learn_from_rating() in echo_model_orchestrator.py — "
+            "either it moved (update this check's anchor) or the ranking wire was removed"
+        )
+    else:
+        returns_on_three = "user_rating == 3" in method_source
+        calls_apply = "_apply_user_rating_to_rank_stats" in method_source
+        uses_window = "_MEAN_EFFECTIVE_WINDOW" in method_source
+        if not returns_on_three:
+            failures.append(
+                "learn_from_rating() no longer returns on rating 3 — a neutral rating would move the ranking mean"
+            )
+        if not calls_apply:
+            failures.append(
+                "learn_from_rating() no longer calls _apply_user_rating_to_rank_stats() — "
+                "human ratings would update the classifier and leave score_model() unchanged"
+            )
+        if not uses_window:
+            failures.append(
+                "learn_from_rating() no longer passes _MEAN_EFFECTIVE_WINDOW — "
+                "the ranking update would use a different horizon than learn()"
+            )
+        if returns_on_three and calls_apply:
+            if method_source.find("user_rating == 3") > method_source.find("_apply_user_rating_to_rank_stats"):
+                failures.append(
+                    "the rating-3 return sits after the rank-stats write — a neutral rating could still move the mean"
+                )
+
+    if failures:
+        return _result(False, "; ".join(failures))
+    return _result(
+        True,
+        "Human ratings 1/2/4/5 still map to 0.2/0.4/0.8/1.0, rating 3 still writes nothing, "
+        "one rating is one effective-window mean update, and learn_from_rating() still "
+        "calls _apply_user_rating_to_rank_stats() after returning on rating 3.",
+    )
+
+
+def _check_user_rating_reaches_ranking() -> dict:
+    try:
+        from app.core.echo_model_orchestrator import (
+            _apply_user_rating_to_rank_stats,
+            _user_rating_rank_value,
+        )
+    except Exception:
+        _user_rating_rank_value = _apply_user_rating_to_rank_stats = None
+
+    source = _read_text(_ORCHESTRATOR_PATH)
+    block = None
+    idx = source.find("def learn_from_rating(")
+    if idx != -1:
+        block = source[idx:idx + 2500]
+    return _evaluate_user_rating_reaches_ranking(
+        _user_rating_rank_value, _apply_user_rating_to_rank_stats, block
+    )
+
+
 # ── Orchestration ──────────────────────────────────────────────────────
 
 _CHECKS = (
@@ -3981,6 +4106,7 @@ _CHECKS = (
     "self_model_claims_integrity",
     "f2_stdin_contract",
     "task_type_map_sync",
+    "user_rating_reaches_ranking",
 )
 
 
@@ -4062,6 +4188,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "self_model_claims_integrity": _check_self_model_claims_integrity,
         "f2_stdin_contract": _check_f2_stdin_contract,
         "task_type_map_sync": _check_task_type_map_sync,
+        "user_rating_reaches_ranking": _check_user_rating_reaches_ranking,
     }
 
     ledger = {"generated_at": _now_iso()}

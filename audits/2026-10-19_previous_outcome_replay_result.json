@@ -1,0 +1,861 @@
+{
+ "always_direct": {
+  "conflict": 0,
+  "holdout_n": 12,
+  "passed": 4,
+  "scored": 12,
+  "unscorable": 0
+ },
+ "arm_B_holdout_all_DIRECT": true,
+ "coarse_buckets_with_two_strategies": 1,
+ "decisions_changed_from_DIRECT": 0,
+ "exams": [
+  {
+   "always_direct_passed": true,
+   "always_direct_strategy": "DIRECT",
+   "decision_changed_from_direct": false,
+   "lineage": 0,
+   "logged_signatures": [
+    [
+     "1",
+     "dict"
+    ],
+    [
+     "1",
+     "dict"
+    ],
+    [
+     "1",
+     "dict"
+    ],
+    [
+     "1",
+     "dict"
+    ]
+   ],
+   "previous_outcome_real": "none",
+   "previous_outcome_shuffled": "none",
+   "real_choice": "DIRECT",
+   "real_grade": {
+    "passed": true,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "real_row_empty": true,
+   "recomputed_signature": [
+    "1",
+    "dict"
+   ],
+   "shuffled_choice": "DIRECT",
+   "shuffled_grade": {
+    "passed": true,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "shuffled_row_empty": true,
+   "signature_matches_log": true,
+   "task_id": "K2.S1"
+  },
+  {
+   "always_direct_passed": false,
+   "always_direct_strategy": "DIRECT",
+   "decision_changed_from_direct": false,
+   "lineage": 0,
+   "logged_signatures": [
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ]
+   ],
+   "previous_outcome_real": "fail",
+   "previous_outcome_shuffled": "fail",
+   "real_choice": "DIRECT",
+   "real_grade": {
+    "passed": false,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "real_row_empty": false,
+   "recomputed_signature": [
+    "1",
+    "tuple"
+   ],
+   "shuffled_choice": "WORKED_EXAMPLE",
+   "shuffled_grade": {
+    "passed": null,
+    "sources": [],
+    "status": "unscorable"
+   },
+   "shuffled_row_empty": false,
+   "signature_matches_log": true,
+   "task_id": "K2.S2"
+  },
+  {
+   "always_direct_passed": false,
+   "always_direct_strategy": "DIRECT",
+   "decision_changed_from_direct": false,
+   "lineage": 0,
+   "logged_signatures": [
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ]
+   ],
+   "previous_outcome_real": "fail",
+   "previous_outcome_shuffled": "fail",
+   "real_choice": "DIRECT",
+   "real_grade": {
+    "passed": false,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "real_row_empty": false,
+   "recomputed_signature": [
+    "1",
+    "tuple"
+   ],
+   "shuffled_choice": "WORKED_EXAMPLE",
+   "shuffled_grade": {
+    "passed": null,
+    "sources": [],
+    "status": "unscorable"
+   },
+   "shuffled_row_empty": false,
+   "signature_matches_log": true,
+   "task_id": "K2.S3"
+  },
+  {
+   "always_direct_passed": false,
+   "always_direct_strategy": "DIRECT",
+   "decision_changed_from_direct": false,
+   "lineage": 0,
+   "logged_signatures": [
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ]
+   ],
+   "previous_outcome_real": "fail",
+   "previous_outcome_shuffled": "fail",
+   "real_choice": "DIRECT",
+   "real_grade": {
+    "passed": false,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "real_row_empty": false,
+   "recomputed_signature": [
+    "1",
+    "tuple"
+   ],
+   "shuffled_choice": "WORKED_EXAMPLE",
+   "shuffled_grade": {
+    "passed": null,
+    "sources": [],
+    "status": "unscorable"
+   },
+   "shuffled_row_empty": false,
+   "signature_matches_log": true,
+   "task_id": "K2.S4"
+  },
+  {
+   "always_direct_passed": true,
+   "always_direct_strategy": "DIRECT",
+   "decision_changed_from_direct": false,
+   "lineage": 1,
+   "logged_signatures": [
+    [
+     "1",
+     "dict"
+    ],
+    [
+     "1",
+     "dict"
+    ],
+    [
+     "1",
+     "dict"
+    ],
+    [
+     "1",
+     "dict"
+    ]
+   ],
+   "previous_outcome_real": "none",
+   "previous_outcome_shuffled": "none",
+   "real_choice": "DIRECT",
+   "real_grade": {
+    "passed": true,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "real_row_empty": true,
+   "recomputed_signature": [
+    "1",
+    "dict"
+   ],
+   "shuffled_choice": "DIRECT",
+   "shuffled_grade": {
+    "passed": true,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "shuffled_row_empty": true,
+   "signature_matches_log": true,
+   "task_id": "K2.S1"
+  },
+  {
+   "always_direct_passed": false,
+   "always_direct_strategy": "DIRECT",
+   "decision_changed_from_direct": false,
+   "lineage": 1,
+   "logged_signatures": [
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ]
+   ],
+   "previous_outcome_real": "fail",
+   "previous_outcome_shuffled": "pass",
+   "real_choice": "DIRECT",
+   "real_grade": {
+    "passed": false,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "real_row_empty": false,
+   "recomputed_signature": [
+    "1",
+    "tuple"
+   ],
+   "shuffled_choice": "DIRECT",
+   "shuffled_grade": {
+    "passed": false,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "shuffled_row_empty": false,
+   "signature_matches_log": true,
+   "task_id": "K2.S2"
+  },
+  {
+   "always_direct_passed": true,
+   "always_direct_strategy": "DIRECT",
+   "decision_changed_from_direct": false,
+   "lineage": 1,
+   "logged_signatures": [
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ]
+   ],
+   "previous_outcome_real": "fail",
+   "previous_outcome_shuffled": "pass",
+   "real_choice": "DIRECT",
+   "real_grade": {
+    "passed": true,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "real_row_empty": false,
+   "recomputed_signature": [
+    "1",
+    "tuple"
+   ],
+   "shuffled_choice": "DIRECT",
+   "shuffled_grade": {
+    "passed": true,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "shuffled_row_empty": false,
+   "signature_matches_log": true,
+   "task_id": "K2.S3"
+  },
+  {
+   "always_direct_passed": false,
+   "always_direct_strategy": "DIRECT",
+   "decision_changed_from_direct": false,
+   "lineage": 1,
+   "logged_signatures": [
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ]
+   ],
+   "previous_outcome_real": "fail",
+   "previous_outcome_shuffled": "pass",
+   "real_choice": "DIRECT",
+   "real_grade": {
+    "passed": false,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "real_row_empty": false,
+   "recomputed_signature": [
+    "1",
+    "tuple"
+   ],
+   "shuffled_choice": "DIRECT",
+   "shuffled_grade": {
+    "passed": false,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "shuffled_row_empty": false,
+   "signature_matches_log": true,
+   "task_id": "K2.S4"
+  },
+  {
+   "always_direct_passed": false,
+   "always_direct_strategy": "DIRECT",
+   "decision_changed_from_direct": false,
+   "lineage": 2,
+   "logged_signatures": [
+    [
+     "1",
+     "dict"
+    ],
+    [
+     "1",
+     "dict"
+    ],
+    [
+     "1",
+     "dict"
+    ],
+    [
+     "1",
+     "dict"
+    ]
+   ],
+   "previous_outcome_real": "none",
+   "previous_outcome_shuffled": "none",
+   "real_choice": "DIRECT",
+   "real_grade": {
+    "passed": false,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "real_row_empty": true,
+   "recomputed_signature": [
+    "1",
+    "dict"
+   ],
+   "shuffled_choice": "DIRECT",
+   "shuffled_grade": {
+    "passed": false,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "shuffled_row_empty": true,
+   "signature_matches_log": true,
+   "task_id": "K2.S1"
+  },
+  {
+   "always_direct_passed": false,
+   "always_direct_strategy": "DIRECT",
+   "decision_changed_from_direct": false,
+   "lineage": 2,
+   "logged_signatures": [
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ]
+   ],
+   "previous_outcome_real": "fail",
+   "previous_outcome_shuffled": "fail",
+   "real_choice": "DIRECT",
+   "real_grade": {
+    "passed": false,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "real_row_empty": false,
+   "recomputed_signature": [
+    "1",
+    "tuple"
+   ],
+   "shuffled_choice": "DIRECT",
+   "shuffled_grade": {
+    "passed": false,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "shuffled_row_empty": false,
+   "signature_matches_log": true,
+   "task_id": "K2.S2"
+  },
+  {
+   "always_direct_passed": true,
+   "always_direct_strategy": "DIRECT",
+   "decision_changed_from_direct": false,
+   "lineage": 2,
+   "logged_signatures": [
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ]
+   ],
+   "previous_outcome_real": "fail",
+   "previous_outcome_shuffled": "fail",
+   "real_choice": "DIRECT",
+   "real_grade": {
+    "passed": true,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "real_row_empty": false,
+   "recomputed_signature": [
+    "1",
+    "tuple"
+   ],
+   "shuffled_choice": "DIRECT",
+   "shuffled_grade": {
+    "passed": true,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "shuffled_row_empty": false,
+   "signature_matches_log": true,
+   "task_id": "K2.S3"
+  },
+  {
+   "always_direct_passed": false,
+   "always_direct_strategy": "DIRECT",
+   "decision_changed_from_direct": false,
+   "lineage": 2,
+   "logged_signatures": [
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ],
+    [
+     "1",
+     "tuple"
+    ]
+   ],
+   "previous_outcome_real": "fail",
+   "previous_outcome_shuffled": "fail",
+   "real_choice": "DIRECT",
+   "real_grade": {
+    "passed": false,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "real_row_empty": false,
+   "recomputed_signature": [
+    "1",
+    "tuple"
+   ],
+   "shuffled_choice": "DIRECT",
+   "shuffled_grade": {
+    "passed": false,
+    "sources": [
+     "holdout_result_B_S1_B.json",
+     "holdout_result_C_S0_C.json",
+     "holdout_result_C_S1_C.json"
+    ],
+    "status": "scored"
+   },
+   "shuffled_row_empty": false,
+   "signature_matches_log": true,
+   "task_id": "K2.S4"
+  }
+ ],
+ "fail_reasons": [
+  "real labels did not beat always-DIRECT by one scored pass",
+  "shuffled labels did as well as real labels, or a grade conflict blocked the comparison",
+  "no holdout decision changed"
+ ],
+ "holdout_files": [
+  "holdout_result_B_S1_B.json",
+  "holdout_result_C_S0_C.json",
+  "holdout_result_C_S1_C.json",
+  "holdout_result_B_S1_B.json",
+  "holdout_result_C_S0_C.json",
+  "holdout_result_C_S1_C.json",
+  "holdout_result_B_S1_B.json",
+  "holdout_result_C_S0_C.json",
+  "holdout_result_C_S1_C.json"
+ ],
+ "holdout_n": 12,
+ "lineages": [
+  {
+   "coarse_buckets": {
+    "1|tuple": [
+     "DIRECT",
+     "WORKED_EXAMPLE"
+    ],
+    "2|tuple": [
+     "DIRECT"
+    ]
+   },
+   "empty_start_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+   "lineage": 0,
+   "real_outcomes": [
+    true,
+    false,
+    false,
+    true,
+    false,
+    true
+   ],
+   "real_state": {
+    "1|tuple|fail": {
+     "DIRECT": {
+      "count": 1,
+      "mean": 1.0
+     },
+     "WORKED_EXAMPLE": {
+      "count": 1,
+      "mean": 0.0
+     }
+    },
+    "1|tuple|none": {
+     "DIRECT": {
+      "count": 1,
+      "mean": 1.0
+     }
+    },
+    "1|tuple|pass": {
+     "DIRECT": {
+      "count": 2,
+      "mean": 0.0
+     }
+    },
+    "2|tuple|none": {
+     "DIRECT": {
+      "count": 1,
+      "mean": 1.0
+     }
+    }
+   },
+   "real_state_hash": "d897c5b39eddd5c65d21852c7f3f4a6aa573ff86b64ef840565d4f4889865930",
+   "shuffled_outcomes": [
+    true,
+    false,
+    true,
+    true,
+    false,
+    false
+   ],
+   "teaching_rows": 6
+  },
+  {
+   "coarse_buckets": {
+    "1|tuple": [
+     "DIRECT"
+    ],
+    "2|tuple": [
+     "DIRECT"
+    ]
+   },
+   "empty_start_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+   "lineage": 1,
+   "real_outcomes": [
+    true,
+    false,
+    true,
+    true,
+    false,
+    true
+   ],
+   "real_state": {
+    "1|tuple|fail": {
+     "DIRECT": {
+      "count": 1,
+      "mean": 1.0
+     }
+    },
+    "1|tuple|none": {
+     "DIRECT": {
+      "count": 1,
+      "mean": 1.0
+     }
+    },
+    "1|tuple|pass": {
+     "DIRECT": {
+      "count": 3,
+      "mean": 0.33333333333333337
+     }
+    },
+    "2|tuple|none": {
+     "DIRECT": {
+      "count": 1,
+      "mean": 1.0
+     }
+    }
+   },
+   "real_state_hash": "ef4b6b5925f4a5ecf25aa9f1e2449d30155d861873ab2db6d6853eb6cd57079f",
+   "shuffled_outcomes": [
+    false,
+    true,
+    true,
+    true,
+    true,
+    false
+   ],
+   "teaching_rows": 6
+  },
+  {
+   "coarse_buckets": {
+    "1|tuple": [
+     "DIRECT"
+    ],
+    "2|tuple": [
+     "DIRECT"
+    ]
+   },
+   "empty_start_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+   "lineage": 2,
+   "real_outcomes": [
+    true,
+    false,
+    true,
+    true,
+    false,
+    true
+   ],
+   "real_state": {
+    "1|tuple|fail": {
+     "DIRECT": {
+      "count": 1,
+      "mean": 1.0
+     }
+    },
+    "1|tuple|none": {
+     "DIRECT": {
+      "count": 1,
+      "mean": 1.0
+     }
+    },
+    "1|tuple|pass": {
+     "DIRECT": {
+      "count": 3,
+      "mean": 0.33333333333333337
+     }
+    },
+    "2|tuple|none": {
+     "DIRECT": {
+      "count": 1,
+      "mean": 1.0
+     }
+    }
+   },
+   "real_state_hash": "ef4b6b5925f4a5ecf25aa9f1e2449d30155d861873ab2db6d6853eb6cd57079f",
+   "shuffled_outcomes": [
+    true,
+    false,
+    true,
+    true,
+    false,
+    true
+   ],
+   "teaching_rows": 6
+  }
+ ],
+ "new_keys_with_two_strategies": 1,
+ "pass_rule_met": false,
+ "real_empty_holdout_rows": 3,
+ "real_labels": {
+  "conflict": 0,
+  "holdout_n": 12,
+  "passed": 4,
+  "scored": 12,
+  "unscorable": 0
+ },
+ "seed": 20261019,
+ "shuffled_labels": {
+  "conflict": 0,
+  "holdout_n": 12,
+  "passed": 4,
+  "scored": 9,
+  "unscorable": 3
+ },
+ "teaching_updates_arm_C": 18
+}

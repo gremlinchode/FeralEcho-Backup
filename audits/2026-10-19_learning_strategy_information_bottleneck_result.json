@@ -1,0 +1,2109 @@
+{
+ "other_recorded_families": {
+  "accumulation_stage0_arms": [
+   "E",
+   "H",
+   "H2",
+   "IC",
+   "MISMATCH",
+   "N",
+   "N2",
+   "NEUTRAL"
+  ],
+  "accumulation_stage0_by_arm": {
+   "E": {
+    "failure": 39,
+    "incomparable": 0,
+    "success": 15
+   },
+   "H": {
+    "failure": 21,
+    "incomparable": 0,
+    "success": 91
+   },
+   "H2": {
+    "failure": 9,
+    "incomparable": 0,
+    "success": 45
+   },
+   "IC": {
+    "failure": 42,
+    "incomparable": 0,
+    "success": 12
+   },
+   "MISMATCH": {
+    "failure": 54,
+    "incomparable": 0,
+    "success": 0
+   },
+   "N": {
+    "failure": 73,
+    "incomparable": 0,
+    "success": 15
+   },
+   "N2": {
+    "failure": 54,
+    "incomparable": 0,
+    "success": 0
+   },
+   "NEUTRAL": {
+    "failure": 63,
+    "incomparable": 0,
+    "success": 21
+   }
+  },
+  "accumulation_stage0_rows": 554,
+  "g3_has_oracle_grade": false,
+  "g3_keys": [
+   "_line",
+   "arm",
+   "diagnostic_hash",
+   "episode",
+   "failed_code_hash",
+   "model",
+   "options",
+   "parse_failed",
+   "parsed_candidate",
+   "probe_seed",
+   "prompt_hash",
+   "raw_response",
+   "source_repeat",
+   "source_seed",
+   "source_strategy",
+   "source_task_id",
+   "source_world",
+   "task_spec_hash",
+   "timestamp"
+  ],
+  "g3_parse_failed": 0,
+  "g3_rows": 7,
+  "g3_source_strategy_counts": {
+   "DIRECT": 2,
+   "STEPWISE": 3,
+   "WORKED_EXAMPLE": 2
+  },
+  "note": "G3 and accumulation arms are not the DIRECT/STEPWISE/WORKED_EXAMPLE comparison. They are counted so they are not silently omitted."
+ },
+ "persistent_routing": {
+  "holdout_decision_rows": 48,
+  "holdout_executed_class": {
+   "failure": 32,
+   "incomparable": 0,
+   "missing": 0,
+   "success": 16
+  },
+  "holdout_outcome_rows": 48,
+  "holdout_selected_strategy_counts": {
+   "DIRECT": 48,
+   "STEPWISE": 0,
+   "WORKED_EXAMPLE": 0
+  },
+  "holdouts": [
+   {
+    "arm": "B",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "0_B_S1_B",
+    "signature": "1|dict",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S1",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "B",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "0_B_S1_B",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S2",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "B",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "0_B_S1_B",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S3",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "B",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "0_B_S1_B",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S4",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "0_C_S1_C",
+    "signature": "1|dict",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S1",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "0_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S2",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "0_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S3",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "0_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S4",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "0_C_S0_C",
+    "signature": "1|dict",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S1",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "0_C_S0_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S2",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "0_C_S0_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S3",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "0_C_S0_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S4",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "0_C_S1_C",
+    "signature": "1|dict",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S1",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "0_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S2",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "0_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S3",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "0_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S4",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "B",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "1_B_S1_B",
+    "signature": "1|dict",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S1",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "B",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "1_B_S1_B",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S2",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "B",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "1_B_S1_B",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S3",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "B",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "1_B_S1_B",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S4",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "1_C_S1_C",
+    "signature": "1|dict",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S1",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "1_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S2",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "1_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S3",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "1_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S4",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "1_C_S0_C",
+    "signature": "1|dict",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S1",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "1_C_S0_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S2",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "1_C_S0_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S3",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "1_C_S0_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S4",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "1_C_S1_C",
+    "signature": "1|dict",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S1",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "1_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S2",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "1_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S3",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "1_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S4",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "B",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "2_B_S1_B",
+    "signature": "1|dict",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S1",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "B",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "2_B_S1_B",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S2",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "B",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "2_B_S1_B",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S3",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "B",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "2_B_S1_B",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S4",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "2_C_S1_C",
+    "signature": "1|dict",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S1",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "2_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S2",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "2_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S3",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "2_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S4",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "2_C_S0_C",
+    "signature": "1|dict",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S1",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "2_C_S0_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S2",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "2_C_S0_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S3",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "2_C_S0_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S4",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "2_C_S1_C",
+    "signature": "1|dict",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S1",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "2_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S2",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "success",
+    "infra": false,
+    "lineage_id": "2_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S3",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "arm": "C",
+    "executed": "failure",
+    "infra": false,
+    "lineage_id": "2_C_S1_C",
+    "signature": "1|tuple",
+    "strategy_selected": "DIRECT",
+    "task_id": "K2.S4",
+    "timeout": false,
+    "unexecuted_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ]
+   }
+  ],
+  "teaching_cells": [
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 3
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "comparable": false,
+    "lineage_id": "0_B",
+    "missing_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ],
+    "signature": "1|tuple",
+    "strategies_with_a_scored_row": [
+     "DIRECT"
+    ]
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 1
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "comparable": false,
+    "lineage_id": "0_B",
+    "missing_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ],
+    "signature": "2|tuple",
+    "strategies_with_a_scored_row": [
+     "DIRECT"
+    ]
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 2
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 1,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "comparable": true,
+    "lineage_id": "0_C",
+    "missing_strategies": [
+     "STEPWISE"
+    ],
+    "signature": "1|tuple",
+    "strategies_with_a_scored_row": [
+     "DIRECT",
+     "WORKED_EXAMPLE"
+    ]
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 1
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "comparable": false,
+    "lineage_id": "0_C",
+    "missing_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ],
+    "signature": "2|tuple",
+    "strategies_with_a_scored_row": [
+     "DIRECT"
+    ]
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 3
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "comparable": false,
+    "lineage_id": "1_B",
+    "missing_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ],
+    "signature": "1|tuple",
+    "strategies_with_a_scored_row": [
+     "DIRECT"
+    ]
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 1
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "comparable": false,
+    "lineage_id": "1_B",
+    "missing_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ],
+    "signature": "2|tuple",
+    "strategies_with_a_scored_row": [
+     "DIRECT"
+    ]
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 3
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "comparable": false,
+    "lineage_id": "1_C",
+    "missing_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ],
+    "signature": "1|tuple",
+    "strategies_with_a_scored_row": [
+     "DIRECT"
+    ]
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 1
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "comparable": false,
+    "lineage_id": "1_C",
+    "missing_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ],
+    "signature": "2|tuple",
+    "strategies_with_a_scored_row": [
+     "DIRECT"
+    ]
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 3
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "comparable": false,
+    "lineage_id": "2_B",
+    "missing_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ],
+    "signature": "1|tuple",
+    "strategies_with_a_scored_row": [
+     "DIRECT"
+    ]
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 1
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "comparable": false,
+    "lineage_id": "2_B",
+    "missing_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ],
+    "signature": "2|tuple",
+    "strategies_with_a_scored_row": [
+     "DIRECT"
+    ]
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 3
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "comparable": false,
+    "lineage_id": "2_C",
+    "missing_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ],
+    "signature": "1|tuple",
+    "strategies_with_a_scored_row": [
+     "DIRECT"
+    ]
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 1
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "comparable": false,
+    "lineage_id": "2_C",
+    "missing_strategies": [
+     "STEPWISE",
+     "WORKED_EXAMPLE"
+    ],
+    "signature": "2|tuple",
+    "strategies_with_a_scored_row": [
+     "DIRECT"
+    ]
+   }
+  ],
+  "teaching_cells_with_two_or_more_strategies": 1,
+  "teaching_row_class_ignoring_strategy": {
+   "failure": 13,
+   "incomparable": 0,
+   "success": 23
+  },
+  "teaching_rows": 36,
+  "teaching_rows_by_strategy_name": {
+   "DIRECT": 35,
+   "WORKED_EXAMPLE": 1
+  },
+  "teaching_strategies_never_used": [
+   "STEPWISE"
+  ]
+ },
+ "stage1": {
+  "duplicate_grid_keys": 0,
+  "expected_grid": 216,
+  "flip_rate_by_strategy": {
+   "DIRECT": {
+    "disagreements": 13,
+    "flip_rate": 0.12037037037037036,
+    "pairs": 108
+   },
+   "STEPWISE": {
+    "disagreements": 44,
+    "flip_rate": 0.4074074074074074,
+    "pairs": 108
+   },
+   "WORKED_EXAMPLE": {
+    "disagreements": 34,
+    "flip_rate": 0.3148148148148148,
+    "pairs": 108
+   }
+  },
+  "heldout_routing_signature_grain": {
+   "changed_validate_beats_direct": 0,
+   "changed_validate_loses_to_direct": 0,
+   "changed_validate_ties_direct": 0,
+   "choices_changed_from_direct": 0,
+   "comparable_groups": 2,
+   "decisions": [
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "1|tuple",
+     "select_rates": {
+      "DIRECT": 0.6,
+      "STEPWISE": 0.6,
+      "WORKED_EXAMPLE": 0.3333333333333333
+     },
+     "validate_rates": {
+      "DIRECT": 0.5,
+      "STEPWISE": 0.5,
+      "WORKED_EXAMPLE": 0.3333333333333333
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "2|tuple",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 0.0
+     },
+     "validate_rates": {
+      "DIRECT": 0.6666666666666666,
+      "STEPWISE": 0.8333333333333334,
+      "WORKED_EXAMPLE": 0.3333333333333333
+     }
+    }
+   ],
+   "groups": 2,
+   "incomparable_groups": 0,
+   "mean_delta_on_changed_only": null,
+   "mean_delta_vs_direct": 0.0
+  },
+  "heldout_situation_grain": {
+   "changed_validate_beats_direct": 2,
+   "changed_validate_loses_to_direct": 0,
+   "changed_validate_ties_direct": 2,
+   "choices_changed_from_direct": 4,
+   "comparable_groups": 18,
+   "decisions": [
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T1|0",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 1.0
+     },
+     "validate_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 0.5,
+      "WORKED_EXAMPLE": 0.5
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T1|1",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 0.5,
+      "WORKED_EXAMPLE": 0.5
+     },
+     "validate_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 0.0,
+      "WORKED_EXAMPLE": 0.5
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T1|2",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 0.0
+     },
+     "validate_rates": {
+      "DIRECT": 0.5,
+      "STEPWISE": 0.0,
+      "WORKED_EXAMPLE": 0.5
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T2|0",
+     "select_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 0.0,
+      "WORKED_EXAMPLE": 0.0
+     },
+     "validate_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 0.0
+     }
+    },
+    {
+     "changed_from_direct": true,
+     "chosen": "STEPWISE",
+     "comparable": true,
+     "delta_vs_direct": 1.0,
+     "group": "K2.T2|1",
+     "select_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 0.0
+     },
+     "validate_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 0.0
+     }
+    },
+    {
+     "changed_from_direct": true,
+     "chosen": "STEPWISE",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T2|2",
+     "select_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 0.0
+     },
+     "validate_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 0.0,
+      "WORKED_EXAMPLE": 0.0
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T3|0",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 0.5,
+      "WORKED_EXAMPLE": 1.0
+     },
+     "validate_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 0.0
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T3|1",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 0.5
+     },
+     "validate_rates": {
+      "DIRECT": 0.5,
+      "STEPWISE": 0.0,
+      "WORKED_EXAMPLE": 0.0
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T3|2",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 0.0,
+      "WORKED_EXAMPLE": 0.5
+     },
+     "validate_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 0.5,
+      "WORKED_EXAMPLE": 0.5
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T4|0",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 1.0
+     },
+     "validate_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 1.0
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T4|1",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 0.5,
+      "WORKED_EXAMPLE": 0.5
+     },
+     "validate_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 0.5,
+      "WORKED_EXAMPLE": 1.0
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T4|2",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 0.5,
+      "WORKED_EXAMPLE": 0.0
+     },
+     "validate_rates": {
+      "DIRECT": 0.5,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 1.0
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T5|0",
+     "select_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 0.0,
+      "WORKED_EXAMPLE": 0.0
+     },
+     "validate_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 0.0,
+      "WORKED_EXAMPLE": 0.0
+     }
+    },
+    {
+     "changed_from_direct": true,
+     "chosen": "STEPWISE",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T5|1",
+     "select_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 0.5,
+      "WORKED_EXAMPLE": 0.0
+     },
+     "validate_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 0.0,
+      "WORKED_EXAMPLE": 0.0
+     }
+    },
+    {
+     "changed_from_direct": true,
+     "chosen": "STEPWISE",
+     "comparable": true,
+     "delta_vs_direct": 1.0,
+     "group": "K2.T5|2",
+     "select_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 0.5,
+      "WORKED_EXAMPLE": 0.0
+     },
+     "validate_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 0.0
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T6|0",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 0.0
+     },
+     "validate_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 0.5
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T6|1",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 0.0
+     },
+     "validate_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 0.0
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T6|2",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 0.0
+     },
+     "validate_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 0.5,
+      "WORKED_EXAMPLE": 0.5
+     }
+    }
+   ],
+   "groups": 18,
+   "incomparable_groups": 0,
+   "mean_delta_on_changed_only": 0.5,
+   "mean_delta_vs_direct": 0.1111111111111111
+  },
+  "heldout_task_grain": {
+   "changed_validate_beats_direct": 2,
+   "changed_validate_loses_to_direct": 0,
+   "changed_validate_ties_direct": 0,
+   "choices_changed_from_direct": 2,
+   "comparable_groups": 6,
+   "decisions": [
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T1",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 0.8333333333333334,
+      "WORKED_EXAMPLE": 0.5
+     },
+     "validate_rates": {
+      "DIRECT": 0.8333333333333334,
+      "STEPWISE": 0.16666666666666666,
+      "WORKED_EXAMPLE": 0.5
+     }
+    },
+    {
+     "changed_from_direct": true,
+     "chosen": "STEPWISE",
+     "comparable": true,
+     "delta_vs_direct": 0.6666666666666666,
+     "group": "K2.T2",
+     "select_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 0.6666666666666666,
+      "WORKED_EXAMPLE": 0.0
+     },
+     "validate_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 0.6666666666666666,
+      "WORKED_EXAMPLE": 0.0
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T3",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 0.5,
+      "WORKED_EXAMPLE": 0.6666666666666666
+     },
+     "validate_rates": {
+      "DIRECT": 0.8333333333333334,
+      "STEPWISE": 0.5,
+      "WORKED_EXAMPLE": 0.16666666666666666
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T4",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 0.6666666666666666,
+      "WORKED_EXAMPLE": 0.5
+     },
+     "validate_rates": {
+      "DIRECT": 0.8333333333333334,
+      "STEPWISE": 0.8333333333333334,
+      "WORKED_EXAMPLE": 1.0
+     }
+    },
+    {
+     "changed_from_direct": true,
+     "chosen": "STEPWISE",
+     "comparable": true,
+     "delta_vs_direct": 0.3333333333333333,
+     "group": "K2.T5",
+     "select_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 0.3333333333333333,
+      "WORKED_EXAMPLE": 0.0
+     },
+     "validate_rates": {
+      "DIRECT": 0.0,
+      "STEPWISE": 0.3333333333333333,
+      "WORKED_EXAMPLE": 0.0
+     }
+    },
+    {
+     "changed_from_direct": false,
+     "chosen": "DIRECT",
+     "comparable": true,
+     "delta_vs_direct": 0.0,
+     "group": "K2.T6",
+     "select_rates": {
+      "DIRECT": 1.0,
+      "STEPWISE": 1.0,
+      "WORKED_EXAMPLE": 0.0
+     },
+     "validate_rates": {
+      "DIRECT": 0.6666666666666666,
+      "STEPWISE": 0.8333333333333334,
+      "WORKED_EXAMPLE": 0.3333333333333333
+     }
+    }
+   ],
+   "groups": 6,
+   "incomparable_groups": 0,
+   "mean_delta_on_changed_only": 0.5,
+   "mean_delta_vs_direct": 0.16666666666666666
+  },
+  "routing_signature_by_task": {
+   "K2.S1": [
+    "1|dict"
+   ],
+   "K2.S2": [
+    "1|tuple"
+   ],
+   "K2.S3": [
+    "1|tuple"
+   ],
+   "K2.S4": [
+    "1|tuple"
+   ],
+   "K2.T1": [
+    "1|tuple"
+   ],
+   "K2.T2": [
+    "1|tuple"
+   ],
+   "K2.T3": [
+    "1|tuple"
+   ],
+   "K2.T4": [
+    "1|tuple"
+   ],
+   "K2.T5": [
+    "1|tuple"
+   ],
+   "K2.T6": [
+    "2|tuple"
+   ]
+  },
+  "row_class_by_strategy": {
+   "DIRECT": {
+    "failure": 29,
+    "incomparable": 0,
+    "success": 43
+   },
+   "STEPWISE": {
+    "failure": 28,
+    "incomparable": 0,
+    "success": 44
+   },
+   "WORKED_EXAMPLE": {
+    "failure": 50,
+    "incomparable": 0,
+    "success": 22
+   }
+  },
+  "rows": 216,
+  "situation_detail": [
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 4
+     },
+     "STEPWISE": {
+      "failure": 1,
+      "incomparable": 0,
+      "success": 3
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 1,
+      "incomparable": 0,
+      "success": 3
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T1",
+    "world_index": 0
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 4
+     },
+     "STEPWISE": {
+      "failure": 3,
+      "incomparable": 0,
+      "success": 1
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 2
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T1",
+    "world_index": 1
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 1,
+      "incomparable": 0,
+      "success": 3
+     },
+     "STEPWISE": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 2
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 3,
+      "incomparable": 0,
+      "success": 1
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T1",
+    "world_index": 2
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 4,
+      "incomparable": 0,
+      "success": 0
+     },
+     "STEPWISE": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 2
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 4,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T2",
+    "world_index": 0
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 4,
+      "incomparable": 0,
+      "success": 0
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 4
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 4,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T2",
+    "world_index": 1
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 4,
+      "incomparable": 0,
+      "success": 0
+     },
+     "STEPWISE": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 2
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 4,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T2",
+    "world_index": 2
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 4
+     },
+     "STEPWISE": {
+      "failure": 1,
+      "incomparable": 0,
+      "success": 3
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 2
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T3",
+    "world_index": 0
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 1,
+      "incomparable": 0,
+      "success": 3
+     },
+     "STEPWISE": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 2
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 3,
+      "incomparable": 0,
+      "success": 1
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T3",
+    "world_index": 1
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 4
+     },
+     "STEPWISE": {
+      "failure": 3,
+      "incomparable": 0,
+      "success": 1
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 2
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T3",
+    "world_index": 2
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 4
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 4
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 4
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T4",
+    "world_index": 0
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 4
+     },
+     "STEPWISE": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 2
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 1,
+      "incomparable": 0,
+      "success": 3
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T4",
+    "world_index": 1
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 1,
+      "incomparable": 0,
+      "success": 3
+     },
+     "STEPWISE": {
+      "failure": 1,
+      "incomparable": 0,
+      "success": 3
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 2
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T4",
+    "world_index": 2
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 4,
+      "incomparable": 0,
+      "success": 0
+     },
+     "STEPWISE": {
+      "failure": 4,
+      "incomparable": 0,
+      "success": 0
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 4,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T5",
+    "world_index": 0
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 4,
+      "incomparable": 0,
+      "success": 0
+     },
+     "STEPWISE": {
+      "failure": 3,
+      "incomparable": 0,
+      "success": 1
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 4,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T5",
+    "world_index": 1
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 4,
+      "incomparable": 0,
+      "success": 0
+     },
+     "STEPWISE": {
+      "failure": 1,
+      "incomparable": 0,
+      "success": 3
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 4,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T5",
+    "world_index": 2
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 4
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 4
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 3,
+      "incomparable": 0,
+      "success": 1
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T6",
+    "world_index": 0
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 4
+     },
+     "STEPWISE": {
+      "failure": 0,
+      "incomparable": 0,
+      "success": 4
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 4,
+      "incomparable": 0,
+      "success": 0
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T6",
+    "world_index": 1
+   },
+   {
+    "by_strategy": {
+     "DIRECT": {
+      "failure": 2,
+      "incomparable": 0,
+      "success": 2
+     },
+     "STEPWISE": {
+      "failure": 1,
+      "incomparable": 0,
+      "success": 3
+     },
+     "WORKED_EXAMPLE": {
+      "failure": 3,
+      "incomparable": 0,
+      "success": 1
+     }
+    },
+    "missing_strategies": [],
+    "task_id": "K2.T6",
+    "world_index": 2
+   }
+  ],
+  "situations": 18,
+  "situations_missing_any_strategy": 0,
+  "situations_strictly_separable_in_sample_descriptive": 13,
+  "situations_with_all_three_strategies_scored": 18,
+  "tasks": [
+   "K2.T1",
+   "K2.T2",
+   "K2.T3",
+   "K2.T4",
+   "K2.T5",
+   "K2.T6"
+  ],
+  "tasks_without_exactly_one_routing_signature": [],
+  "unique_grid_keys": 1,
+  "worlds": [
+   0,
+   1,
+   2
+  ]
+ }
+}

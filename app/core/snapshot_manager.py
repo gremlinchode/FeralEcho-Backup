@@ -21,10 +21,11 @@ Alert conditions (ground-truth signals only — system_guard chain):
                            river_brain.pkl in response to "quality patterns shifted"
                            risks reverting a legitimate change, not just breakage.
 
-weekly_delta (self_model.json's slower, weekly comparative quality trend — a
-different signal, different data source, different cadence than drift_alerts)
-remains deliberately out of scope for any alert path — a possible future
-follow-up, not decided.  It still appears in self_model.json only, informational.
+weekly_delta (self_model.json's slower, weekly comparative quality trend)
+and echo_state dimensions [1] and [2] (coherence_tension, orientation_drift)
+raise the same review-only notice, on the same _DRIFT_ALERT_SUSTAIN window,
+only once baseline_trusted_since is set. PENDING_DECISIONS.md #24, option (a),
+2026-10-21. They do not call raise_restore_alert() and do not suggest a restore.
 
 Restore is ALWAYS alert-and-propose.  The /admin/restore endpoint requires
 a human to supply the snapshot_id explicitly.  No autonomous restore path exists.
@@ -408,7 +409,7 @@ def raise_restore_alert(condition: str, duration_s: int) -> None:
     )
 
 
-def raise_drift_notice(drifted_tasks: list, duration_s: int) -> None:
+def raise_drift_notice(drifted_tasks: list, duration_s: int, condition: str = "river_drift_sustained") -> None:
     """
     PENDING_DECISIONS.md #16, decided 2026-07-22: a real, deliberately
     lower-urgency sibling to raise_restore_alert(), for RiverBrain's own
@@ -435,7 +436,7 @@ def raise_drift_notice(drifted_tasks: list, duration_s: int) -> None:
     """
     entry = {
         "timestamp_utc":   datetime.now(timezone.utc).isoformat(),
-        "condition":       "river_drift_sustained",
+        "condition":       condition,
         "duration_s":      duration_s,
         "drifted_tasks":   drifted_tasks,
         "action_required": "review_only",
@@ -443,11 +444,18 @@ def raise_drift_notice(drifted_tasks: list, duration_s: int) -> None:
     os.makedirs(os.path.dirname(_ALERTS_LOG), exist_ok=True)
     with open(_ALERTS_LOG, "a", encoding="utf-8") as fh:
         fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
-    logger.warning(
-        "[DRIFT-NOTICE] river_drift_sustained sustained=%ds | drifted_tasks=%s | "
-        "review_only, no restore suggested — drift can reflect a legitimate change.",
-        duration_s, drifted_tasks,
-    )
+    if condition == "river_drift_sustained":
+        logger.warning(
+            "[DRIFT-NOTICE] river_drift_sustained sustained=%ds | drifted_tasks=%s | "
+            "review_only, no restore suggested — drift can reflect a legitimate change.",
+            duration_s, drifted_tasks,
+        )
+    else:
+        logger.warning(
+            "[DRIFT-NOTICE] %s sustained=%ds | drifted_tasks=%s | "
+            "review_only, no restore suggested.",
+            condition, duration_s, drifted_tasks,
+        )
 
 
 # ── Guardian hook ─────────────────────────────────────────────────────────────
@@ -480,6 +488,59 @@ def _evaluate_sustained_condition(condition: str, active: bool, counts: dict, th
     return {"new_counts": new_counts, "should_fire": False, "fired_count": 0}
 
 
+def _review_only_signal_state() -> dict:
+    """
+    Current readings for the two review-only notices added with
+    PENDING_DECISIONS.md #24. Not part of _collect_health(), so snapshot
+    manifests and restore review prompts stay on the health fields they
+    already had.
+
+    Active only when baseline_trusted_since is set — the same gate
+    river_drift_sustained already uses — and the upstream value is actually
+    present. No magnitude cutoff: these signals have no existing alert
+    threshold, and none is added here. A present reading then uses the
+    existing _DRIFT_ALERT_SUSTAIN window inside check_and_alert().
+    """
+    empty = {
+        "weekly_delta": {"active": False, "detail": []},
+        "echo_state_dims_1_2": {"active": False, "detail": []},
+    }
+    if not _read_baseline_meta().get("baseline_trusted_since"):
+        return empty
+
+    try:
+        sm_path = os.path.join(_PROJECT_ROOT, "memory", "self_model.json")
+        with open(sm_path, encoding="utf-8") as fh:
+            weekly = json.load(fh).get("weekly_delta") or {}
+        deltas = weekly.get("quality_delta_by_task")
+        if isinstance(deltas, dict) and deltas:
+            empty["weekly_delta"] = {
+                "active": True,
+                "detail": [f"{task}={deltas[task]}" for task in sorted(deltas)],
+            }
+    except Exception:
+        pass
+
+    try:
+        import numpy as np
+        npy_path = os.path.join(_PROJECT_ROOT, "memory", "echo_state.npy")
+        vec = np.load(npy_path)
+        if getattr(vec, "ndim", None) == 1 and vec.shape[0] > 2:
+            d1 = float(vec[1])
+            d2 = float(vec[2])
+            if d1 == d1 and d2 == d2 and abs(d1) != float("inf") and abs(d2) != float("inf"):
+                empty["echo_state_dims_1_2"] = {
+                    "active": True,
+                    "detail": [
+                        f"[1] coherence_tension={round(d1, 4)}",
+                        f"[2] orientation_drift={round(d2, 4)}",
+                    ],
+                }
+    except Exception:
+        pass
+    return empty
+
+
 def check_and_alert(guardian_interval_s: int = 60) -> None:
     """
     Called from the guardian loop each cycle.
@@ -488,6 +549,8 @@ def check_and_alert(guardian_interval_s: int = 60) -> None:
     river_drift_sustained (PENDING_DECISIONS.md #16) fires raise_drift_notice()
     — a deliberately separate, lower-urgency path — after _DRIFT_ALERT_SUSTAIN
     cycles, a longer window than the resource conditions above use.
+    weekly_delta and echo_state dimensions [1] and [2] (PENDING_DECISIONS.md #24)
+    use that same notice and the same sustain window. They do not restore.
     After an alert/notice fires, its counter resets so it does not re-fire every cycle.
     """
     health = _collect_health()
@@ -508,6 +571,19 @@ def check_and_alert(guardian_interval_s: int = 60) -> None:
     _alert_counts["river_drift_sustained"] = r["new_counts"]["river_drift_sustained"]
     if r["should_fire"]:
         raise_drift_notice(health.get("drifted_tasks", []), duration_s=r["fired_count"] * guardian_interval_s)
+
+    review = _review_only_signal_state()
+    for cond in ("weekly_delta", "echo_state_dims_1_2"):
+        r = _evaluate_sustained_condition(
+            cond, review[cond]["active"], _alert_counts, _DRIFT_ALERT_SUSTAIN,
+        )
+        _alert_counts[cond] = r["new_counts"][cond]
+        if r["should_fire"]:
+            raise_drift_notice(
+                review[cond]["detail"],
+                duration_s=r["fired_count"] * guardian_interval_s,
+                condition=cond,
+            )
 
 
 # ── Restore ───────────────────────────────────────────────────────────────────

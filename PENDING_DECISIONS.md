@@ -25,7 +25,12 @@ match ground truth." When an item is resolved, remove its row; the
 resolution itself stays recorded in CLAUDE.md's Finding history and git,
 so it doesn't need to be duplicated here.
 
-*(No open rows remain as of 2026-09-09 — see the dated notes below for the full history.)*
+| # | Item | What's being decided | Options on the table | Detail |
+|---|---|---|---|---|
+
+*(No open rows remain. Item #24, the Finding 70 leftover, was implemented 2026-10-21 — see the dated note below. Nothing else was reopened.)*
+
+*2026-10-21, item #24 built and closed — option (a). `check_and_alert()` now raises the existing review-only `raise_drift_notice()` for `weekly_delta` and for echo_state dimensions [1] and [2] (the live vector labels those slots `coherence_tension` and `orientation_drift`). Same `_DRIFT_ALERT_SUSTAIN` window as `river_drift_sustained`, and only once `baseline_trusted_since` is set. The `river_drift_sustained` call itself is unchanged. Neither new notice calls `raise_restore_alert()` or suggests a restore. No new magnitude threshold was added.*
 
 *Everything raised through 2026-07-23 was either decided-and-built or explicitly decided-not-to-build — see the dated notes below for that history. Three rows (19–21) added 2026-09-05 while backfilling CLAUDE.md for the six-week documentation gap this file itself had gone stale across (see Finding 86's own framing of that gap); a fourth (22) added the same day from a direct public-sharing readiness review (Finding 90).*
 

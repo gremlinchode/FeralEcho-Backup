@@ -29,16 +29,45 @@ def get_season(now=None):
 # -----------------------------
 # 2. Auto Location Detection
 # -----------------------------
+#
+# PENDING_DECISIONS.md #23 (2026-09-09): this section used to resolve to
+# ONE value via get_location(), unconditionally preferring the iPhone
+# symbiote's pushed GPS over IP geolocation with no staleness check --
+# collapsing two genuinely different things ("where is Gremlin's phone"
+# and "where is Echo/the MacBook actually running") into one, which is
+# wrong on its own terms even when both readings are fresh: the MacBook
+# stays at the apartment on short trips while the phone can be hundreds
+# of miles away. Gremlin's own direction, verbatim: "the fix isn't
+# picking a winner between these two sources -- it's stopping them from
+# being merged into one value at all." Split into two independent
+# functions below; get_temporal_environment_context() (date/time/weather)
+# now uses ONLY get_macbook_location() -- the phone's location is never
+# consulted for Echo's own environmental context. get_phone_location() is
+# real, staleness-annotated, and available, but deliberately not wired
+# into the context string yet -- whether/how it should be surfaced to
+# Echo at all is the still-open half of #23, not decided by this pass.
 
 SYMBIOTE_LOCATION_FILE = os.path.join(
     os.path.dirname(__file__), "../../data/symbiote_location.json"
 )
 
+# The real symbiote_location.json has no timestamp field of its own (the
+# phone script just overwrites lat/lon/timezone in place) -- file mtime is
+# the only available staleness signal, confirmed by reading the real file
+# directly before writing this. 6h is a judgment call, not a measured
+# threshold: short enough to catch the "2-day-old reading on a moving
+# train" case PENDING_DECISIONS #23 found live, generous enough not to
+# flag a phone GPS reading from earlier the same day as stale.
+_PHONE_LOCATION_STALE_AFTER_HOURS = 6.0
+
 def get_location_from_symbiote():
     """
-    Read GPS location pushed by feral_echo_symbiote.py (iPhone).
-    Expected format: {"lat": 49.2057, "lon": -122.9110, "timezone": "America/Vancouver"}
-    Returns None if unavailable.
+    Read GPS location pushed by feral_echo_symbiote.py (iPhone) --
+    Gremlin's phone location, not Echo/the MacBook's. Returns None if
+    unavailable. Includes staleness info (age_hours, stale) derived from
+    the file's own mtime, since the file format itself carries no
+    timestamp. Never used by get_temporal_environment_context() -- see
+    this section's own header comment.
     """
     try:
         path = os.path.abspath(SYMBIOTE_LOCATION_FILE)
@@ -49,22 +78,46 @@ def get_location_from_symbiote():
             lon = data.get("lon")
             timezone = data.get("timezone", "America/Vancouver")
             if lat and lon:
-                return {"lat": lat, "lon": lon, "timezone": timezone, "source": "symbiote"}
+                age_hours = (time.time() - os.path.getmtime(path)) / 3600.0
+                return {
+                    "lat": lat, "lon": lon, "timezone": timezone,
+                    "source": "symbiote",
+                    "age_hours": round(age_hours, 2),
+                    "stale": age_hours > _PHONE_LOCATION_STALE_AFTER_HOURS,
+                }
     except Exception:
         pass
     return None
 
+def get_phone_location():
+    """Gremlin's phone location, as its own distinct signal -- never
+    Echo/the MacBook's location. Thin, clearly-named wrapper around
+    get_location_from_symbiote() so callers don't have to know that
+    "symbiote" means "phone." Returns None if unavailable; callers should
+    check the "stale" field before treating a real result as current."""
+    return get_location_from_symbiote()
+
 def get_location_from_ip():
     """
-    Geolocate via outbound IP using ipapi.co.
-    Returns lat, lon, timezone or None on failure.
+    Geolocate via outbound IP -- this machine's (the MacBook's, i.e.
+    Echo's own) real physical network location, independent of Gremlin's
+    phone. Returns lat, lon, timezone or None on failure.
+
+    Uses ip-api.com, not ipapi.co: confirmed live 2026-09-09 (per
+    PENDING_DECISIONS #23) that ipapi.co's free tier now returns
+    HTTP 429 "RateLimited... sign up for a paid plan" unconditionally --
+    a real, structural service change, not a transient outage retries
+    would fix. ip-api.com is free, requires no API key, and was verified
+    live to return a real result before this switch was made.
     """
     try:
-        response = requests.get("https://ipapi.co/json/", timeout=5)
+        response = requests.get("http://ip-api.com/json/", timeout=5)
         response.raise_for_status()
         data = response.json()
-        lat = data.get("latitude")
-        lon = data.get("longitude")
+        if data.get("status") != "success":
+            return None
+        lat = data.get("lat")
+        lon = data.get("lon")
         timezone = data.get("timezone", "America/Vancouver")
         city = data.get("city", "Unknown")
         if lat and lon:
@@ -79,18 +132,17 @@ def get_location_from_ip():
         pass
     return None
 
-def get_location(default_lat=49.2057, default_lon=-122.9110,
-                 default_timezone="America/Vancouver"):
+def get_macbook_location(default_lat=49.2057, default_lon=-122.9110,
+                          default_timezone="America/Vancouver"):
     """
-    Location resolution order:
-    1. iPhone symbiote GPS (most accurate)
-    2. IP geolocation (good enough for weather/timezone)
-    3. Hardcoded default (Delta/New Westminster area)
-    """
-    location = get_location_from_symbiote()
-    if location:
-        return location
+    Echo/the MacBook's own real physical location -- used for the actual
+    environment Echo is running in (date/time/weather). Never the phone's
+    location; see this section's header comment for why they're split.
 
+    Resolution order:
+    1. IP geolocation (this machine's real network location)
+    2. Hardcoded default (Delta/New Westminster area)
+    """
     location = get_location_from_ip()
     if location:
         return location
@@ -168,10 +220,14 @@ def get_temporal_environment_context(
     weather_api_key=None
 ):
     """
-    Return formatted string with location, time, season, and weather.
-    Location resolves automatically: symbiote GPS > IP > default.
+    Return formatted string with location, time, season, and weather --
+    Echo/the MacBook's own environment. Location resolves via
+    get_macbook_location() only (IP geolocation, falling back to a
+    hardcoded default) -- deliberately never Gremlin's phone location;
+    see the "Auto Location Detection" section header comment for why
+    (PENDING_DECISIONS.md #23).
     """
-    location = get_location(
+    location = get_macbook_location(
         default_lat=lat or 49.2057,
         default_lon=lon or -122.9110,
         default_timezone=timezone or "America/Vancouver"

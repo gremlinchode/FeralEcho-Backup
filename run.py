@@ -704,7 +704,12 @@ def save_conversation_turn():
         is_tpq = _is_thought_provoking(user_msg)
         retention = "standing" if is_tpq else "standard"
 
-        add_to_vector_memory(user_msg, meta={
+        from app.core.memory_write_outcome import (
+            MemoryWriteOutcome,
+            conversation_turn_response,
+        )
+
+        user_outcome = add_to_vector_memory(user_msg, meta={
             "memory_source": "user_conversation",
             "role": "user",
             "task_type": task_type,
@@ -712,7 +717,7 @@ def save_conversation_turn():
             "retention": retention,
             "is_thought_provoking": is_tpq,
         })
-        add_to_vector_memory(echo_response, meta={
+        echo_outcome = add_to_vector_memory(echo_response, meta={
             "memory_source": "user_conversation",
             "role": "echo",
             "task_type": task_type,
@@ -720,11 +725,23 @@ def save_conversation_turn():
             "retention": retention,
         })
 
-        return jsonify({
-            "status": "ok",
-            "thought_provoking": is_tpq,
-            "retention": retention,
-        }), 200
+        if (
+            isinstance(user_outcome, MemoryWriteOutcome)
+            and isinstance(echo_outcome, MemoryWriteOutcome)
+        ):
+            body = conversation_turn_response(
+                user_outcome, echo_outcome, is_tpq, retention,
+            )
+        else:
+            # Import-failure stub returns None and stores nothing. Keep the
+            # historical completed-handler body. Real outcomes never take
+            # this branch.
+            body = {
+                "status": "ok",
+                "thought_provoking": is_tpq,
+                "retention": retention,
+            }
+        return jsonify(body), 200
 
     except Exception as e:
         logger.error(f"[/memory/conversation] {e}", exc_info=True)

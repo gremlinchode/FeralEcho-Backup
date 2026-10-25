@@ -9,12 +9,18 @@ parameters instead of closing over module globals.
 Not on EDIT_FORBIDDEN_TARGETS — freely editable.
 """
 
+import logging
 import os
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
 import requests
+
+from app.core.memory_write_outcome import (
+    TRANSPORT_OR_HANDLER_ERROR,
+    interpret_client_response,
+)
 
 # terminal_client.py runs as a separate process from run.py's Flask server,
 # so it needs its own .env load to read GREMLIN_SECRET for save_turn_to_server()
@@ -287,18 +293,24 @@ def save_turn_to_server(
     task_type: str,
     server_url: str = SERVER_URL_DEFAULT,
     require_server_check: bool = True,
-) -> None:
+) -> Optional[dict]:
     """POST a conversation turn to the server for FAISS persistence.
 
-    Silent on all errors — never blocks the conversation. require_server_check
-    exists because terminal_client.py runs as a separate process and must
-    confirm the server is alive before POSTing; callers already running inside
-    the Flask process (e.g. routes_echo_studio.py) can skip the check.
+    Never raises and never retries. require_server_check exists because
+    terminal_client.py runs as a separate process and must confirm the
+    server is alive before POSTing; callers already running inside the
+    Flask process (e.g. routes_echo_studio.py) can skip the check.
+
+    On a completed HTTP 200 whose user and echo halves are both
+    allow-listed, returns those halves and, when either was not accepted,
+    logs only the outcome enums and reason codes. Any other result logs
+    the transport token and returns None. The log does not include message
+    text, ids, hashes, signals, or paths.
     """
     if require_server_check and not server_is_running():
-        return
+        return None
     try:
-        requests.post(
+        response = requests.post(
             f"{server_url}/memory/conversation",
             json={
                 "user_msg": user_msg,
@@ -309,5 +321,22 @@ def save_turn_to_server(
             },
             timeout=3,
         )
+        if response.status_code != 200:
+            logging.info(
+                "memory_conversation_outcome %s",
+                TRANSPORT_OR_HANDLER_ERROR,
+            )
+            return None
+        log_line, sanitized = interpret_client_response(
+            response.status_code,
+            response.json(),
+        )
+        if log_line is not None:
+            logging.info("memory_conversation_outcome %s", log_line)
+        return sanitized
     except Exception:
-        pass
+        logging.info(
+            "memory_conversation_outcome %s",
+            TRANSPORT_OR_HANDLER_ERROR,
+        )
+        return None

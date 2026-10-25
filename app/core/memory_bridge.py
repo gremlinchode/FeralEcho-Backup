@@ -21,6 +21,7 @@ from app.core.sentence_transformer_singleton import get_sentence_transformer
 
 from app.core import config
 from app.lib.vector_memory import VectorMemory, MemoryItem
+from app.core.memory_write_outcome import MemoryWriteOutcome, classify_memory_write
 
 # --- Validator Import ---
 # Graceful fallback if validator is missing — logs warning but does not crash
@@ -361,11 +362,20 @@ def log_memory_edit_bridge(edit_content: str) -> None:
 # --- Vector Memory Utilities -
 # -----------------------------
 
-def add_to_vector_memory(text: str, meta: Optional[dict] = None) -> None:
+def add_to_vector_memory(text: str, meta: Optional[dict] = None) -> MemoryWriteOutcome:
     """
     Add a single memory item to vector memory safely.
     v2.1: validator gates before FAISS commit.
     Uses text as both signal and reflection since no distinction available.
+
+    Returns a MemoryWriteOutcome. Future callers must read `.outcome`
+    explicitly and must not rely on the truthiness of the returned
+    object: the object is truthy when the write was rejected or when
+    persistence failed. `accepted` means `_persist()` returned True. It
+    does not mean FAISS ntotal increased, and it does not mean a later
+    retrieval will find the text. A false persist result is `failed`
+    even if the in-memory add already ran. This function does not retry,
+    roll back, or catch exceptions raised by `vector_memory.add`.
     """
     if not _validate_before_commit(
         signal=text[:200],
@@ -373,7 +383,7 @@ def add_to_vector_memory(text: str, meta: Optional[dict] = None) -> None:
         source="add_to_vector_memory"
     ):
         logging.info(f"[MEMORY_GATE] add_to_vector_memory blocked: '{text[:60]}'")
-        return
+        return classify_memory_write(validator_allowed=False, embed_rows=None, persist_ok=None)
 
     timestamp = datetime.now(timezone.utc).isoformat()
     meta = meta or {}
@@ -381,9 +391,14 @@ def add_to_vector_memory(text: str, meta: Optional[dict] = None) -> None:
     embedding = embed_text(text)
     if embedding.shape[0] == 1:
         with memory_lock:
-            vector_memory.add([item], embedding)
-    else:
-        logging.warning("Embedding shape unexpected; skipping vector add.")
+            persist_ok = vector_memory.add([item], embedding)
+        return classify_memory_write(validator_allowed=True, embed_rows=1, persist_ok=persist_ok)
+    logging.warning("Embedding shape unexpected; skipping vector add.")
+    return classify_memory_write(
+        validator_allowed=True,
+        embed_rows=int(embedding.shape[0]),
+        persist_ok=None,
+    )
 
 # --- Global Workspace bias (Emergence roadmap Phase 4a) ---
 # A short-lived retrieval nudge set by whatever last won broadcast on the

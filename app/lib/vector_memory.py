@@ -84,8 +84,16 @@ class VectorMemory:
             self._persist()
             logging.info(f"Rebuilt FAISS index with dim {self.dim}")
 
-    def add(self, items: List[MemoryItem], embeddings: np.ndarray) -> None:
-        """Add items with embeddings to FAISS index and metadata."""
+    def add(self, items: List[MemoryItem], embeddings: np.ndarray) -> bool:
+        """Add items with embeddings to FAISS index and metadata.
+
+        Returns whether `_persist()` returned success. True is not an
+        increase in `index.ntotal` (a duplicate id updates metadata and
+        still persists) and not a promise about later retrieval. Callers
+        that ignore the return keep their previous behavior. False leaves
+        any in-memory mutation in place; this method does not retry or
+        roll that mutation back.
+        """
         if embeddings.ndim == 1:
             embeddings = embeddings.reshape(1, -1)
 
@@ -147,8 +155,9 @@ class VectorMemory:
             self.meta[item.id] = {"text": item.text, "meta": item.meta or {}}
             self.id_order.append(item.id)
 
-        self._persist()
+        persisted = self._persist()
         logging.info(f"Added {len(new_items)} items to VectorMemory and persisted data.")
+        return persisted
 
     def search(self, query_embedding: np.ndarray, k: int = 5) -> List[Tuple[str, float, Dict]]:
         """Return top-k results for a query embedding."""
@@ -178,7 +187,7 @@ class VectorMemory:
 
         return results
 
-    def _persist(self) -> None:
+    def _persist(self) -> bool:
         """Persist metadata and FAISS index atomically via temp-file swap.
 
         Order: meta written and committed first, then FAISS index.
@@ -186,6 +195,10 @@ class VectorMemory:
         while FAISS has N vectors — a detectable ntotal/meta-count mismatch.
         The inverse (FAISS first, then meta open("w") truncates the file) was
         the 2026-07-02 split-brain root cause and is eliminated by this ordering.
+
+        Returns True only after that sequence finishes. An exception is still
+        logged and swallowed, and the function returns False. It does not
+        retry the write and it does not repair a partial pair.
         """
         try:
             os.makedirs(os.path.dirname(self.index_path), exist_ok=True)
@@ -207,6 +220,8 @@ class VectorMemory:
                 "Persisted VectorMemory: %d vectors, %d meta entries",
                 self.index.ntotal if self.index else 0, len(self.meta),
             )
+            return True
         except Exception as e:
             logging.error(f"Failed to persist VectorMemory data: {e}")
+            return False
 

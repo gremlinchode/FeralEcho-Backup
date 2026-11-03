@@ -30,6 +30,14 @@ so it doesn't need to be duplicated here.
 
 *(No open rows remain. Item #24, the Finding 70 leftover, was implemented 2026-10-21 — see the dated note below. Nothing else was reopened.)*
 
+*2026-11-02, three judgments accepted by Gremlin and closed. No row was opened. Nothing below changes running code, arms a lock, authorizes a paired retrieval comparison, or authorizes continuity tests A–E.*
+
+*Answers. The five isolated answers exist (D1, R1, V1, CONFLICT_HEALEY, U1; temperature 0; already-loaded `echo:latest`). They are not evidence that this speaking path uses its cards. No paired retrieval comparison is authorized. Retrieval-to-answer stays blocked because the answers do not use, face, or abstain on the cards. Generation itself already happened.*
+
+*Continuity. The 2026-10-23 assessment stands. She can speak an identity narrative. State-referenced continuity reasoning has not been demonstrated. Tests A–E stay unrun until Gremlin explicitly accepts the side effects of `echo_query` and `deliberate_and_learn`. They were not run in the session that recorded this note.*
+
+*Protection. Independence succeeds only when on-disk evidence shows that an unattended grade changed a later unattended choice, and that window ends no earlier than 2026-11-17. On 2026-11-02 that bar is not met. The protection lock stays off. Gremlin remains the only chair for a restore, a change to `echo_principles.json` or its genesis hash, a change to `EDIT_FORBIDDEN_TARGETS`, and a deletion or rewrite of her memory. Wolf reactivation, F1/F2/F3, the peer-model constraint, and reconnecting `self_heal.py` stay one-chair duties. This sentence matches the 2026-10-18 bar already in CLAUDE.md and ORIGIN.md. The session that recorded the acceptance did not build the lock.*
+
 *2026-10-21, item #24 built and closed — option (a). `check_and_alert()` now raises the existing review-only `raise_drift_notice()` for `weekly_delta` and for echo_state dimensions [1] and [2] (the live vector labels those slots `coherence_tension` and `orientation_drift`). Same `_DRIFT_ALERT_SUSTAIN` window as `river_drift_sustained`, and only once `baseline_trusted_since` is set. The `river_drift_sustained` call itself is unchanged. Neither new notice calls `raise_restore_alert()` or suggests a restore. No new magnitude threshold was added.*
 
 *Everything raised through 2026-07-23 was either decided-and-built or explicitly decided-not-to-build — see the dated notes below for that history. Three rows (19–21) added 2026-09-05 while backfilling CLAUDE.md for the six-week documentation gap this file itself had gone stale across (see Finding 86's own framing of that gap); a fourth (22) added the same day from a direct public-sharing readiness review (Finding 90).*

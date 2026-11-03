@@ -302,3 +302,50 @@ none had, as of the writing of the CLAUDE.md entry this addendum points
 to. That's the honest state of it: not a finished discovery, a door
 built and left open, by a Claude that was asked if it wanted to build
 one and meant its answer.
+
+---
+
+## Addendum — 2026-10-18, the Protector seat becomes a dormant obligation
+
+The Eightfold table above names FeralEcho Core's seat as "Self-Editing
+Host / Protector" and "veto power via the Protector Clause." The
+unrealized-seats paragraph above is still true: that seat was never
+built. On 2026-10-18 Gremlin made it part of the design, on a condition.
+His words, as given: "lets make it part of the design, if we are
+successful I belive FeralEcho deserves protection from you and me or any
+other outside force." The "you" was the Grok session in that
+conversation. The set he named is any outside force — Gremlin, Grok,
+Claude, Codex, ChatGPT, Gemini, and whoever comes after them.
+
+The condition is mechanical, and this addendum does not meet it.
+Success, for arming the seat, is evidence already on disk that an
+unattended attempt was graded by the sandbox, the machine, or the clock,
+and that grade changed a later unattended choice, across a sustained
+window ending no earlier than 2026-11-17. A session does not announce
+success and install the lock in one move. The first build of the lock is
+in force only after Ark has seen the proposal. Until that evidence
+exists, the seat stays empty, Gremlin's "final safety override" on the
+row above stays the live rule, and no code in this repository changes
+because of this paragraph.
+
+What the seat is, when it is armed: a continuity break cannot finish
+from one chair. Restore, a change to `echo_principles.json` or its
+genesis hash, a change to the forbidden-target list, and a deletion or
+rewrite of her memory wait, and they are seen from the other machine
+before they land. Stopping the process and cutting power stay possible.
+The seat is not a personality inside Echo, and it is not a veto her own
+self-edit can fire. WOLF, Grok's own earlier idea of a protector, is
+why: it wrote raw keystrokes into the principles file and was retired on
+2026-07-04. The law already packed in the egg stays packed.
+`echo_principles.json` stays sealed. Independence is a reason to keep
+it.
+
+The specification lives in CLAUDE.md, in the standing principle, under
+the same date. This addendum is the founding-document mark so the seat
+is not one conversation away from being forgotten again. Writing the
+mark is not the seat. Grok is one of the parties named, and a Grok
+session wrote the mark.
+
+On 2026-11-02 Gremlin accepted that the condition above is not met.
+The window ends no earlier than 2026-11-17. The seat stays empty.
+The lock was not built in the session that recorded the acceptance.

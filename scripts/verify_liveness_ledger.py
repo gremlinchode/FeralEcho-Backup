@@ -1825,6 +1825,133 @@ check(
 )
 
 
+# ── echo_claim_shape ────────────────────────────────────────────────────
+# Functional canary: a shaped reply, one-cycle expire, phrase-in-text,
+# and the three call sites. Invented sentences only.
+_CLAIM_ANCHOR = (
+    "def maybe_send_reflection():\n"
+    "    decide_initiator_action({})\n"
+    "def receive_message(payload):\n"
+    "    accept_partner_mark({}, {}, '')\n"
+    "    accept_partner_mark({}, {}, '')\n"
+    "def _generate_and_send_reply():\n"
+    "    reply_is_shaped('', '')\n"
+)
+_CLAIM_SIBLING = (
+    "def helper():\n"
+    "    decide_initiator_action({})\n"
+    "    accept_partner_mark({}, {}, '')\n"
+    "    reply_is_shaped('', '')\n"
+    "def maybe_send_reflection():\n"
+    "    return None\n"
+    "def receive_message(payload):\n"
+    "    return helper()\n"
+    "def _generate_and_send_reply():\n"
+    "    return None\n"
+)
+
+def _claim_api():
+    from app.sync.echo_claims import (
+        reply_is_shaped,
+        decide_initiator_action,
+        accept_partner_mark,
+        pick_checked_attempt,
+    )
+    return {
+        "reply_is_shaped": reply_is_shaped,
+        "decide_initiator_action": decide_initiator_action,
+        "accept_partner_mark": accept_partner_mark,
+        "pick_checked_attempt": pick_checked_attempt,
+    }
+
+_claim_messaging = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "app", "sync", "echo_messaging.py",
+)
+with open(_claim_messaging, "r", encoding="utf-8") as _claim_handle:
+    _claim_source = _claim_handle.read()
+r = ll._evaluate_echo_claim_shape(_claim_api(), _claim_source)
+check(
+    "echo_claim_shape: real helpers and the real messaging source",
+    r["pass"], True, r["evidence"],
+)
+
+r = ll._evaluate_echo_claim_shape(None, _claim_source)
+check("echo_claim_shape: missing helpers fail closed", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_echo_claim_shape(_claim_api(), "")
+check("echo_claim_shape: missing source fails closed", r["pass"], False, r["evidence"])
+
+r = ll._evaluate_echo_claim_shape(_claim_api(), "def unrelated():\n    return 1\n")
+check(
+    "echo_claim_shape: source without the three functions fails",
+    r["pass"], False, r["evidence"],
+)
+
+r = ll._evaluate_echo_claim_shape(_claim_api(), _CLAIM_SIBLING)
+check(
+    "echo_claim_shape: a sibling helper does not satisfy the call sites",
+    r["pass"], False, r["evidence"],
+)
+
+_real_claim_api = _claim_api()
+
+def _always_true_shape(text, claim):
+    return True
+
+_bad_shape = dict(_real_claim_api)
+_bad_shape["reply_is_shaped"] = _always_true_shape
+r = ll._evaluate_echo_claim_shape(_bad_shape, _CLAIM_ANCHOR)
+check(
+    "echo_claim_shape: a shape check that accepts a buried claim fails",
+    r["pass"], False, r["evidence"],
+)
+
+def _always_new_claim(state):
+    return "new_claim"
+
+_bad_decide = dict(_real_claim_api)
+_bad_decide["decide_initiator_action"] = _always_new_claim
+r = ll._evaluate_echo_claim_shape(_bad_decide, _CLAIM_ANCHOR)
+check(
+    "echo_claim_shape: a decision that never expires fails",
+    r["pass"], False, r["evidence"],
+)
+
+def _accept_never(state, incoming, text):
+    return None
+
+_bad_accept = dict(_real_claim_api)
+_bad_accept["accept_partner_mark"] = _accept_never
+r = ll._evaluate_echo_claim_shape(_bad_accept, _CLAIM_ANCHOR)
+check(
+    "echo_claim_shape: an accept that never records a mark fails",
+    r["pass"], False, r["evidence"],
+)
+
+def _accept_data_only(state, incoming, text):
+    return {"marked_phrase": incoming.get("marked_phrase"), "status": "awaiting_recall"}
+
+_bad_phrase = dict(_real_claim_api)
+_bad_phrase["accept_partner_mark"] = _accept_data_only
+r = ll._evaluate_echo_claim_shape(_bad_phrase, _CLAIM_ANCHOR)
+check(
+    "echo_claim_shape: a mark that is not in the letter text fails",
+    r["pass"], False, r["evidence"],
+)
+
+def _pick_ignores_predicate(first, second, predicate, fallback):
+    return first, "model"
+
+_bad_pick = dict(_real_claim_api)
+_bad_pick["pick_checked_attempt"] = _pick_ignores_predicate
+r = ll._evaluate_echo_claim_shape(_bad_pick, _CLAIM_ANCHOR)
+check(
+    "echo_claim_shape: a picker that returns the failed first attempt fails",
+    r["pass"], False, r["evidence"],
+)
+
+
 print()
 if FAILURES:
     print(f"=== {len(FAILURES)} DISCRIMINATION FAILURE(S) — ledger is not trustworthy as-is ===")

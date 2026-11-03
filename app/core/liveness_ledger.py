@@ -98,6 +98,7 @@ _WINDOWS_DAYS = {
     "awareness_scan_hygiene": None,  # static source-anchor + functional canary, not time-windowed
     "code_analysis_retrieval_exclusion": None,  # static source-invariant, same shape as wolf_friction_bridge
     "architecture_slice_bounded": None,  # static source-anchor + functional canary on CartographerDB's contract
+    "echo_claim_shape": None,  # functional canary plus source anchors, not time-windowed
 }
 
 
@@ -364,6 +365,7 @@ def _check_nature_spark() -> dict:
 # ── 4. wolf_friction_bridge — still calling simulate_self_edit, not perform_self_edit ──
 
 _ORCHESTRATOR_PATH = os.path.join(_PROJECT_ROOT, "app", "core", "echo_model_orchestrator.py")
+_DELIBERATION_PATH = os.path.join(_PROJECT_ROOT, "app", "core", "river_deliberation.py")
 _SELF_EDIT_MANAGER_PATH = os.path.join(_PROJECT_ROOT, "app", "core", "self_edit_manager.py")
 
 
@@ -1959,6 +1961,195 @@ def _check_echo_messaging_auth_classification() -> dict:
     except Exception:
         _classify_delivery_status = None
     return _evaluate_echo_messaging_auth_classification(_classify_delivery_status)
+
+
+def _claim_norm(text) -> str:
+    if not isinstance(text, str):
+        return ""
+    return " ".join(text.split())
+
+
+def _claim_contains(haystack, needle) -> bool:
+    normalized = _claim_norm(needle)
+    if not normalized or not isinstance(haystack, str):
+        return False
+    return normalized in _claim_norm(haystack)
+
+
+def _claim_shaped_local(text, claim) -> bool:
+    if not isinstance(text, str) or not isinstance(claim, str):
+        return False
+    normalized_claim = _claim_norm(claim)
+    if not normalized_claim:
+        return False
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if len(lines) < 2:
+        return False
+    if _claim_norm(lines[0]) != normalized_claim:
+        return False
+    second = _claim_norm(lines[1])
+    return bool(second) and second != normalized_claim
+
+
+def _claim_calls_inside(tree: ast.AST, fn_name: str, call_name: str) -> int:
+    count = 0
+    for node in getattr(tree, "body", []):
+        if not isinstance(node, ast.FunctionDef) or node.name != fn_name:
+            continue
+        for sub in ast.walk(node):
+            if not isinstance(sub, ast.Call):
+                continue
+            func = sub.func
+            name = None
+            if isinstance(func, ast.Name):
+                name = func.id
+            elif isinstance(func, ast.Attribute):
+                name = func.attr
+            if name == call_name:
+                count += 1
+        return count
+    return 0
+
+
+def _evaluate_echo_claim_shape(api, source) -> dict:
+    """Reply shape, one-cycle expire, and the three call sites stay put.
+
+    The phrase-in-text check is local. A degraded reply_is_shaped cannot
+    bless a mark the letter does not contain.
+    """
+    if not isinstance(api, dict):
+        return _result(False, "echo_claims helpers were not available — failing closed.")
+    needed = (
+        "reply_is_shaped",
+        "decide_initiator_action",
+        "accept_partner_mark",
+        "pick_checked_attempt",
+    )
+    if any(api.get(name) is None for name in needed):
+        return _result(False, "echo_claims helpers were incomplete — failing closed.")
+    if not isinstance(source, str) or not source.strip():
+        return _result(False, "echo_messaging.py source was missing — failing closed.")
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return _result(False, "echo_messaging.py source did not parse — failing closed.")
+
+    claim = "The invented claim sentence stands alone."
+    second = "A second sentence adds one reason it fails."
+    good_letter = claim + "\n" + second
+    buried = "A preface comes first.\n" + claim + "\n" + second
+    reply_is_shaped = api["reply_is_shaped"]
+    decide = api["decide_initiator_action"]
+    accept = api["accept_partner_mark"]
+    pick = api["pick_checked_attempt"]
+
+    try:
+        if not reply_is_shaped(good_letter, claim):
+            return _result(False, "A shaped reply was not recognized.")
+        if reply_is_shaped(buried, claim):
+            return _result(False, "A claim buried in an essay was treated as shaped.")
+
+        if decide(None) != "new_claim" or decide({}) != "new_claim":
+            return _result(False, "A missing thread did not open a new claim.")
+        if decide({"status": "idle"}) != "new_claim":
+            return _result(False, "An idle thread did not open a new claim.")
+        if decide({"status": None}) != "new_claim" or decide({"status": ""}) != "new_claim":
+            return _result(False, "An empty status did not open a new claim.")
+        awaiting = {"status": "awaiting_reply", "claim": claim, "claim_id": "invented-id"}
+        if decide(awaiting) == "new_claim" or decide(awaiting) != "expire_unmet":
+            return _result(False, "An unanswered claim did not expire after one cycle.")
+        short = {"status": "awaiting_recall", "marked_phrase": second}
+        if decide(short) != "recall":
+            return _result(False, "A stored partner sentence was not recalled.")
+        if decide({"status": "awaiting_recall"}) != "expire_unmet":
+            return _result(False, "A recall with no sentence did not expire.")
+        if decide({"status": "awaiting_recall", "marked_phrase": "x" * 501}) != "expire_unmet":
+            return _result(False, "An over-long mark was recalled.")
+        if decide({"status": "unknown-status"}) != "expire_unmet":
+            return _result(False, "An unknown thread status did not expire.")
+
+        state = {
+            "status": "awaiting_reply",
+            "claim": claim,
+            "claim_id": "invented-id",
+            "conversation_id": "invented-conv",
+        }
+        incoming = {
+            "claim_role": "reply",
+            "claim_id": "invented-id",
+            "conversation_id": "invented-conv",
+            "claim": claim,
+            "marked_phrase": second,
+        }
+        before = dict(state)
+        updated = accept(state, incoming, good_letter)
+        if state != before:
+            return _result(False, "accept_partner_mark mutated the caller's state.")
+        if not isinstance(updated, dict) or not _claim_contains(good_letter, updated.get("marked_phrase")):
+            return _result(False, "A shaped reply whose sentence is in the text was not accepted.")
+        essay = "An essay that never repeats the partner sentence."
+        phantom = dict(incoming)
+        phantom["marked_phrase"] = "A phantom sentence is not in the essay."
+        before = dict(state)
+        phantom_result = accept(state, phantom, essay)
+        if state != before:
+            return _result(False, "accept_partner_mark mutated the caller's state.")
+        if phantom_result is not None and not _claim_contains(
+            essay, phantom_result.get("marked_phrase") if isinstance(phantom_result, dict) else ""
+        ):
+            return _result(False, "A mark that is not in the letter text was accepted.")
+
+        def _pred(text):
+            return _claim_shaped_local(text, claim)
+
+        chosen, how = pick(good_letter, "unused second", _pred, good_letter)
+        if how != "model" or chosen != good_letter:
+            return _result(False, "A first letter that already had the shape was not kept.")
+        chosen, how = pick("not the claim", good_letter, _pred, good_letter)
+        if how != "retry" or chosen != good_letter:
+            return _result(False, "A failed first letter was not replaced by the retry.")
+        chosen, how = pick("not the claim", "still not the claim", _pred, good_letter)
+        if how != "withheld" or not _claim_shaped_local(chosen, claim):
+            return _result(False, "Two failed letters were sent instead of the withheld fallback.")
+    except Exception as exc:
+        return _result(False, f"claim shape canary raised {type(exc).__name__}")
+
+    anchors = (
+        ("maybe_send_reflection", "decide_initiator_action"),
+        ("receive_message", "accept_partner_mark"),
+        ("_generate_and_send_reply", "reply_is_shaped"),
+    )
+    missing = [
+        f"{fn} does not call {call}"
+        for fn, call in anchors
+        if _claim_calls_inside(tree, fn, call) < 1
+    ]
+    if missing:
+        return _result(False, "Claim call sites moved: " + "; ".join(missing))
+    return _result(
+        True,
+        "Claim reply shape, one-cycle expire, and the three call sites still hold.",
+    )
+
+
+def _check_echo_claim_shape() -> dict:
+    try:
+        from app.sync.echo_claims import (
+            reply_is_shaped,
+            decide_initiator_action,
+            accept_partner_mark,
+            pick_checked_attempt,
+        )
+        api = {
+            "reply_is_shaped": reply_is_shaped,
+            "decide_initiator_action": decide_initiator_action,
+            "accept_partner_mark": accept_partner_mark,
+            "pick_checked_attempt": pick_checked_attempt,
+        }
+    except Exception:
+        api = None
+    source = _read_text(os.path.join(_PROJECT_ROOT, "app", "sync", "echo_messaging.py"))
+    return _evaluate_echo_claim_shape(api, source)
 
 
 # ── echo_state_archiving — log_retention.archive_if_due() still correctly ──
@@ -4102,6 +4293,7 @@ _CHECKS = (
     "code_analysis_retrieval_exclusion",
     "architecture_slice_bounded",
     "echo_messaging_auth_classification",
+    "echo_claim_shape",
     "council_cursor_health",
     "self_model_claims_integrity",
     "f2_stdin_contract",
@@ -4184,6 +4376,7 @@ def run_liveness_checks(introspection_memory: "dict | None" = None) -> dict:
         "code_analysis_retrieval_exclusion": _check_code_analysis_retrieval_exclusion,
         "architecture_slice_bounded": _check_architecture_slice_bounded,
         "echo_messaging_auth_classification": _check_echo_messaging_auth_classification,
+        "echo_claim_shape": _check_echo_claim_shape,
         "council_cursor_health": _check_council_cursor_health,
         "self_model_claims_integrity": _check_self_model_claims_integrity,
         "f2_stdin_contract": _check_f2_stdin_contract,

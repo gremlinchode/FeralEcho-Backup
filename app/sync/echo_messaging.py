@@ -59,6 +59,24 @@ import requests
 
 from app.sync.sync_protocol import PARTNER_URL, BASE_DIR, MEMORY_DIR
 from app.core import conversation_service
+from app.sync.echo_claims import (
+    CLAIM_MAX_CHARS,
+    LETTER_MAX_CHARS,
+    PHRASE_MAX_CHARS,
+    accept_partner_mark,
+    claim_from_topic,
+    contains_sentence,
+    decide_initiator_action,
+    pick_checked_attempt,
+    public_claim_record,
+    recall_user_message,
+    reply_is_shaped,
+    reply_user_message,
+    second_line,
+    send_counts_as_in_flight,
+    withheld_recall,
+    withheld_reply,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +92,9 @@ logger = logging.getLogger(__name__)
 _outbox_lock = threading.Lock()
 _checkin_lock = threading.Lock()
 _chat_pacing_lock = threading.Lock()
+# Fourth file. Never acquire this while holding one of the locks above,
+# and never hold it across a model call or send_message.
+_claim_lock = threading.RLock()
 
 NODE_ID = os.getenv("ECHO_NODE_ID", "m5")
 
@@ -96,6 +117,8 @@ CHECKIN_THREADS_PATH = os.path.join(MEMORY_DIR, "checkin_threads.json")
 CHAT_PACING_PATH = os.path.join(MEMORY_DIR, "chat_thread_pacing.json")
 QUESTION_GARDEN_PATH = os.path.join(BASE_DIR, "data", "question_garden.jsonl")
 SELF_MODEL_PATH = os.path.join(MEMORY_DIR, "self_model.json")
+CLAIM_THREAD_PATH = os.path.join(MEMORY_DIR, "echo_claim_thread.json")
+CLAIM_LOG_PATH = os.path.join(MEMORY_DIR, "echo_claims.jsonl")
 
 _SEND_TIMEOUT = 10
 _DEFAULT_SETTINGS = {"auto_respond": False, "auto_checkin_enabled": False}
@@ -576,43 +599,339 @@ def _build_chat_prompt(msg: str, session: dict) -> tuple[str, str]:
     return msg, system_context
 
 
-def _generate_and_send_reply(text: str, in_reply_to: str, conversation_id: str) -> None:
+def _claim_utc() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _read_claim_thread_unlocked() -> dict:
+    try:
+        if not os.path.exists(CLAIM_THREAD_PATH):
+            return {}
+        with open(CLAIM_THREAD_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception as e:
+        logger.warning(f"[CLAIM] thread read failed: {type(e).__name__}")
+        return {}
+
+
+def _read_claim_thread() -> dict:
+    with _claim_lock:
+        return _read_claim_thread_unlocked()
+
+
+def _write_claim_thread_unlocked(state: dict) -> None:
+    tmp = f"{CLAIM_THREAD_PATH}.{os.getpid()}.{threading.get_ident()}.tmp"
+    try:
+        os.makedirs(os.path.dirname(CLAIM_THREAD_PATH), exist_ok=True)
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(state, f, ensure_ascii=False)
+        os.replace(tmp, CLAIM_THREAD_PATH)
+    except Exception as e:
+        logger.warning(f"[CLAIM] thread write failed: {type(e).__name__}")
+        try:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+        except Exception:
+            pass
+
+
+def _append_claim_record_unlocked(record: dict) -> None:
+    try:
+        if isinstance(record, dict) and isinstance(record.get("text"), str):
+            record = dict(record)
+            record["text"] = record["text"][:LETTER_MAX_CHARS]
+        os.makedirs(os.path.dirname(CLAIM_LOG_PATH), exist_ok=True)
+        public = public_claim_record(record)
+        with open(CLAIM_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(public, ensure_ascii=False) + "\n")
+    except Exception as e:
+        logger.warning(f"[CLAIM] log append failed: {type(e).__name__}")
+
+
+def _latest_sent_reply_unlocked(claim_id: str) -> dict:
+    if not isinstance(claim_id, str) or claim_id == "":
+        return {}
+    latest = {}
+    try:
+        if not os.path.exists(CLAIM_LOG_PATH):
+            return {}
+        with open(CLAIM_LOG_PATH, "r", encoding="utf-8") as f:
+            for raw in f:
+                raw = raw.strip()
+                if not raw:
+                    continue
+                try:
+                    row = json.loads(raw)
+                except Exception:
+                    continue
+                if not isinstance(row, dict):
+                    continue
+                if (
+                    row.get("claim_id") == claim_id
+                    and row.get("direction") == "sent"
+                    and row.get("claim_role") == "reply"
+                ):
+                    latest = row
+    except Exception as e:
+        logger.warning(f"[CLAIM] log scan failed: {type(e).__name__}")
+    return latest
+
+
+def _commit_accepted_mark(updated: dict, text: str) -> None:
+    """Caller holds _claim_lock."""
+    _write_claim_thread_unlocked(updated)
+    _append_claim_record_unlocked({
+        "utc": _claim_utc(),
+        "claim_id": updated.get("claim_id"),
+        "claim": updated.get("claim"),
+        "conversation_id": updated.get("conversation_id"),
+        "claim_role": "reply",
+        "direction": "received",
+        "text": text,
+        "marked_phrase": updated.get("marked_phrase"),
+        "status": "awaiting_recall",
+    })
+
+
+def _generate_and_send_reply(
+    text: str,
+    in_reply_to: str,
+    conversation_id: str,
+    incoming_data: Optional[dict] = None,
+) -> None:
     """Runs on a background thread — full-mode echo_query() can take 15-20+
     seconds and must never block the /message/receive HTTP response.
     Memory-aware and session-continuous (see module docstring)."""
     try:
         session = _get_chat_session(conversation_id)
-        full_msg, system_context = _build_chat_prompt(text, session)
+        claim = ""
+        if isinstance(incoming_data, dict):
+            raw_claim = incoming_data.get("claim")
+            if isinstance(raw_claim, str):
+                claim = raw_claim.strip()
+        claim_path = bool(claim) and len(claim) <= CLAIM_MAX_CHARS
 
-        from app.core.echo_model_orchestrator import echo_query, resolve_task_type
-        task_type, _ = resolve_task_type(text)
-        reply_text = echo_query(
-            full_msg, task_type=task_type, source="partner_message", system=system_context
-        )
-        if reply_text:
-            session["conv_history"], session["history_summaries"] = conversation_service.store_turn_in_history(
-                session["conv_history"], session["history_summaries"], text, reply_text
+        if claim_path:
+            system_context = ""
+            try:
+                _full_msg, system_context = _build_chat_prompt(text, session)
+            except Exception as e:
+                logger.warning(f"[CLAIM] prompt build failed: {type(e).__name__}")
+                system_context = ""
+
+            def _claim_sendable(candidate):
+                if not reply_is_shaped(candidate, claim):
+                    return False
+                phrase = second_line(candidate)
+                return 1 <= len(phrase.strip()) <= PHRASE_MAX_CHARS
+
+            asked = reply_user_message(claim, text)
+            first_text = None
+            second_text = None
+            try:
+                from app.core.echo_model_orchestrator import echo_query, resolve_task_type
+                task_type = "personal"
+                try:
+                    task_type, _ = resolve_task_type(text)
+                except Exception as e:
+                    logger.warning(f"[CLAIM] task type failed: {type(e).__name__}")
+                    task_type = "personal"
+                try:
+                    first_text = echo_query(
+                        asked,
+                        task_type=task_type,
+                        source="partner_message",
+                        system=system_context,
+                    )
+                except Exception as e:
+                    logger.warning(f"[CLAIM] reply generation failed: {type(e).__name__}")
+                    first_text = None
+                reply_is_shaped(first_text or "", claim)
+                if not _claim_sendable(first_text or ""):
+                    try:
+                        second_text = echo_query(
+                            asked,
+                            task_type=task_type,
+                            source="partner_message",
+                            system=system_context,
+                        )
+                    except Exception as e:
+                        logger.warning(f"[CLAIM] reply retry failed: {type(e).__name__}")
+                        second_text = None
+            except Exception as e:
+                logger.warning(f"[CLAIM] reply path failed: {type(e).__name__}")
+            chosen, how = pick_checked_attempt(
+                first_text, second_text, _claim_sendable, withheld_reply(claim)
             )
-            send_message(
+            phrase = second_line(chosen)
+            their_id = ""
+            if isinstance(incoming_data, dict):
+                raw_id = incoming_data.get("claim_id")
+                if isinstance(raw_id, str) and raw_id.strip():
+                    their_id = raw_id.strip()
+            if not their_id:
+                their_id = str(uuid.uuid4())
+            send_data = {
+                "conversation_id": conversation_id,
+                "claim": claim,
+                "claim_id": their_id,
+                "claim_role": "reply",
+                "marked_phrase": phrase,
+            }
+            reply_text = chosen
+        else:
+            full_msg, system_context = _build_chat_prompt(text, session)
+            from app.core.echo_model_orchestrator import echo_query, resolve_task_type
+            task_type, _ = resolve_task_type(text)
+            reply_text = echo_query(
+                full_msg, task_type=task_type, source="partner_message", system=system_context
+            )
+            send_data = {"conversation_id": conversation_id}
+            how = None
+            their_id = ""
+
+        if reply_text:
+            if claim_path:
+                try:
+                    session["conv_history"], session["history_summaries"] = (
+                        conversation_service.store_turn_in_history(
+                            session["conv_history"], session["history_summaries"], text, reply_text
+                        )
+                    )
+                except Exception as e:
+                    logger.warning(f"[CLAIM] history store failed: {type(e).__name__}")
+            else:
+                session["conv_history"], session["history_summaries"] = (
+                    conversation_service.store_turn_in_history(
+                        session["conv_history"], session["history_summaries"], text, reply_text
+                    )
+                )
+            result = send_message(
                 reply_text,
                 message_type="chat",
                 in_reply_to=in_reply_to,
-                data={"conversation_id": conversation_id},
+                data=send_data,
             )
+            if claim_path:
+                logger.info(f"[CLAIM] status=replied outcome={how} claim_id={their_id}")
+                if send_counts_as_in_flight(result):
+                    with _claim_lock:
+                        _append_claim_record_unlocked({
+                            "utc": _claim_utc(),
+                            "claim_id": their_id,
+                            "claim": claim,
+                            "conversation_id": conversation_id,
+                            "claim_role": "reply",
+                            "direction": "sent",
+                            "text": reply_text,
+                            "marked_phrase": send_data.get("marked_phrase"),
+                            "status": "replied",
+                            "outcome": how,
+                        })
     except Exception as e:
         logger.warning(f"[MESSAGING] Auto-reply generation failed: {e}")
 
 
-def maybe_send_reflection() -> dict:
-    """Rich alternative to maybe_send_checkin() (kept intact below) for
-    run.py's _ambient_checkin_loop: generates a genuine echo_query()
-    reflection seeded by the same topic source, sent as a real "chat"
-    message with a fresh conversation_id — so the receiving side's normal
-    memory-aware auto-respond path (if enabled) turns this into an actual
-    multi-turn conversation instead of a topic-string ping-pong."""
-    if not is_auto_checkin_enabled():
-        return {"status": "disabled"}
+def _send_claim_recall(state: dict) -> dict:
+    phrase = state.get("marked_phrase") if isinstance(state, dict) else None
+    claim_id = state.get("claim_id") if isinstance(state, dict) else None
+    claim = state.get("claim") if isinstance(state, dict) else ""
+    conversation_id = state.get("conversation_id") if isinstance(state, dict) else None
+    if not isinstance(phrase, str) or not (1 <= len(phrase.strip()) <= PHRASE_MAX_CHARS):
+        logger.info(f"[CLAIM] status=recall_skipped claim_id={claim_id}")
+        return {"status": "skipped"}
+    if not isinstance(claim, str):
+        claim = ""
+    if not isinstance(conversation_id, str) or conversation_id == "":
+        conversation_id = str(uuid.uuid4())
+    stripped_phrase = phrase.strip()
 
+    session = _get_chat_session(conversation_id)
+    system_context = ""
+    try:
+        _ignored, system_context = _build_chat_prompt(stripped_phrase, session)
+    except Exception as e:
+        logger.warning(f"[CLAIM] recall prompt failed: {type(e).__name__}")
+        system_context = ""
+
+    asked = recall_user_message(claim, phrase)
+    first_text = None
+    second_text = None
+
+    def _recall_sendable(candidate):
+        return contains_sentence(candidate, phrase)
+
+    try:
+        from app.core.echo_model_orchestrator import echo_query
+        try:
+            first_text = echo_query(
+                asked, task_type="personal", source="ambient_checkin", system=system_context
+            )
+        except Exception as e:
+            logger.warning(f"[CLAIM] recall generation failed: {type(e).__name__}")
+            first_text = None
+        if not (isinstance(first_text, str) and _recall_sendable(first_text)):
+            try:
+                second_text = echo_query(
+                    asked, task_type="personal", source="ambient_checkin", system=system_context
+                )
+            except Exception as e:
+                logger.warning(f"[CLAIM] recall retry failed: {type(e).__name__}")
+                second_text = None
+    except Exception as e:
+        logger.warning(f"[CLAIM] recall path failed: {type(e).__name__}")
+
+    chosen, how = pick_checked_attempt(
+        first_text, second_text, _recall_sendable, withheld_recall(phrase)
+    )
+    try:
+        session["conv_history"], session["history_summaries"] = conversation_service.store_turn_in_history(
+            session["conv_history"], session["history_summaries"], asked, chosen
+        )
+    except Exception as e:
+        logger.warning(f"[CLAIM] recall history store failed: {type(e).__name__}")
+
+    result = send_message(
+        chosen,
+        message_type="chat",
+        data={
+            "conversation_id": conversation_id,
+            "claim": claim,
+            "claim_id": claim_id,
+            "claim_role": "recall",
+        },
+    )
+    if send_counts_as_in_flight(result):
+        with _claim_lock:
+            current = _read_claim_thread_unlocked()
+            if (
+                isinstance(current, dict)
+                and current.get("claim_id") == claim_id
+                and current.get("status") == "awaiting_recall"
+            ):
+                idle = dict(current)
+                idle["status"] = "idle"
+                _write_claim_thread_unlocked(idle)
+                _append_claim_record_unlocked({
+                    "utc": _claim_utc(),
+                    "claim_id": claim_id,
+                    "claim": claim,
+                    "conversation_id": conversation_id,
+                    "claim_role": "recall",
+                    "direction": "sent",
+                    "text": chosen,
+                    "marked_phrase": stripped_phrase,
+                    "status": "idle",
+                    "outcome": how,
+                })
+                logger.info(f"[CLAIM] status=idle outcome={how} claim_id={claim_id}")
+                return result
+    logger.info(f"[CLAIM] status=awaiting_recall outcome={how} claim_id={claim_id}")
+    return result
+
+
+def _send_new_reflection() -> dict:
     topic_info = _get_current_topic()
     conversation_id = str(uuid.uuid4())
     session = _get_chat_session(conversation_id)
@@ -636,9 +955,89 @@ def maybe_send_reflection() -> dict:
         session["conv_history"], session["history_summaries"], prompt, reflection
     )
 
-    result = send_message(reflection, message_type="chat", data={"conversation_id": conversation_id})
+    claim = claim_from_topic(topic_info)
+    data = {"conversation_id": conversation_id}
+    claim_id = None
+    if claim:
+        claim_id = str(uuid.uuid4())
+        data["claim"] = claim
+        data["claim_id"] = claim_id
+        data["claim_role"] = "initiate"
+
+    result = send_message(reflection, message_type="chat", data=data)
     logger.info(f"[CHECKIN] Initiated rich reflection {conversation_id}: {result.get('status')}")
+
+    if claim and send_counts_as_in_flight(result):
+        with _claim_lock:
+            current = _read_claim_thread_unlocked()
+            status = current.get("status") if isinstance(current, dict) else None
+            if not current or status in (None, "", "idle"):
+                _write_claim_thread_unlocked({
+                    "status": "awaiting_reply",
+                    "claim": claim,
+                    "claim_id": claim_id,
+                    "conversation_id": conversation_id,
+                })
+                _append_claim_record_unlocked({
+                    "utc": _claim_utc(),
+                    "claim_id": claim_id,
+                    "claim": claim,
+                    "conversation_id": conversation_id,
+                    "claim_role": "initiate",
+                    "direction": "sent",
+                    "text": reflection,
+                    "status": "awaiting_reply",
+                    "outcome": "model",
+                })
+                logger.info(f"[CLAIM] status=awaiting_reply claim_id={claim_id}")
     return result
+
+
+def maybe_send_reflection() -> dict:
+    """Rich alternative to maybe_send_checkin() (kept intact below) for
+    run.py's _ambient_checkin_loop: generates a genuine echo_query()
+    reflection seeded by the same topic source, sent as a real "chat"
+    message with a fresh conversation_id — so the receiving side's normal
+    memory-aware auto-respond path (if enabled) turns this into an actual
+    multi-turn conversation instead of a topic-string ping-pong.
+
+    When a curiosity-garden question is the topic, the same letter also
+    carries that sentence as a claim. One outbound claim is remembered on
+    disk. The next cycle either recalls the partner's marked sentence or
+    expires an unmet claim and speaks again.
+    """
+    if not is_auto_checkin_enabled():
+        return {"status": "disabled"}
+
+    state = _read_claim_thread()
+    action = decide_initiator_action(state)
+    if action == "expire_unmet":
+        with _claim_lock:
+            current = _read_claim_thread_unlocked()
+            again = decide_initiator_action(current)
+            if again == "expire_unmet":
+                claim_id = current.get("claim_id") if isinstance(current, dict) else None
+                _append_claim_record_unlocked({
+                    "utc": _claim_utc(),
+                    "claim_id": claim_id,
+                    "claim": current.get("claim") if isinstance(current, dict) else "",
+                    "conversation_id": current.get("conversation_id") if isinstance(current, dict) else None,
+                    "claim_role": "expire",
+                    "direction": "local",
+                    "text": "",
+                    "status": "idle",
+                    "outcome": "expired_unmet",
+                })
+                _write_claim_thread_unlocked({"status": "idle"})
+                logger.info(f"[CLAIM] status=expired_unmet claim_id={claim_id}")
+                action = "new_claim"
+                state = {"status": "idle"}
+            else:
+                action = again
+                state = current
+    if action == "recall":
+        return _send_claim_recall(state)
+    return _send_new_reflection()
 
 
 def receive_message(payload: dict) -> dict:
@@ -687,8 +1086,86 @@ def receive_message(payload: dict) -> dict:
         # Terminal — log only, never reply to a reply.
         return {"status": "received", "auto_responded": False}
 
-    incoming_data = payload.get("data") or {}
+    raw_incoming = payload.get("data")
+    incoming_data = raw_incoming if isinstance(raw_incoming, dict) else {}
     conversation_id = incoming_data.get("conversation_id") or message_id
+    if not isinstance(conversation_id, str) or not conversation_id:
+        conversation_id = message_id
+
+    raw_role = incoming_data.get("claim_role")
+    role = raw_role if isinstance(raw_role, str) else ""
+    raw_claim = incoming_data.get("claim")
+    claim = raw_claim.strip() if isinstance(raw_claim, str) else ""
+
+    # A reply or a recall is local memory. It does not start another essay,
+    # and it does not reserve the pace clock.
+    if len(claim) <= CLAIM_MAX_CHARS and role == "reply":
+        updated = None
+        with _claim_lock:
+            state = _read_claim_thread_unlocked()
+            updated = accept_partner_mark(state, incoming_data, text)
+            if updated is not None:
+                _commit_accepted_mark(updated, text)
+        if updated is not None:
+            logger.info(f"[CLAIM] status=awaiting_recall claim_id={updated.get('claim_id')}")
+        else:
+            logger.info(f"[CLAIM] status=reply_unaccepted claim_id={incoming_data.get('claim_id')}")
+        return {"status": "received", "auto_responded": False}
+
+    if len(claim) <= CLAIM_MAX_CHARS and role == "recall":
+        their_id = incoming_data.get("claim_id")
+        claim_id = their_id if isinstance(their_id, str) else ""
+        satisfied = False
+        with _claim_lock:
+            row = _latest_sent_reply_unlocked(claim_id)
+            phrase = row.get("marked_phrase") if isinstance(row, dict) else None
+            if (
+                isinstance(phrase, str)
+                and 1 <= len(phrase.strip()) <= PHRASE_MAX_CHARS
+                and contains_sentence(text, phrase)
+            ):
+                satisfied = True
+            record = {
+                "utc": _claim_utc(),
+                "claim_id": claim_id,
+                "claim_role": "recall",
+                "direction": "received",
+                "text": text,
+                "status": "recall_received",
+                "satisfied": satisfied,
+            }
+            raw_claim_full = incoming_data.get("claim")
+            if isinstance(raw_claim_full, str):
+                record["claim"] = raw_claim_full
+            _append_claim_record_unlocked(record)
+        logger.info(f"[CLAIM] status=recall_received satisfied={satisfied}")
+        return {"status": "received", "auto_responded": False}
+
+    shaped_reply = False
+    if claim and len(claim) <= CLAIM_MAX_CHARS and role == "":
+        updated = None
+        with _claim_lock:
+            state = _read_claim_thread_unlocked()
+            updated = accept_partner_mark(state, incoming_data, text)
+            if updated is not None:
+                _commit_accepted_mark(updated, text)
+        if updated is not None:
+            logger.info(f"[CLAIM] status=awaiting_recall claim_id={updated.get('claim_id')}")
+            return {"status": "received", "auto_responded": False}
+        shaped_reply = True
+    elif claim and len(claim) <= CLAIM_MAX_CHARS and role not in ("reply", "recall"):
+        shaped_reply = True
+
+    reply_data = None
+    if shaped_reply:
+        reply_data = {
+            "conversation_id": conversation_id,
+            "claim": claim,
+            "claim_role": role if role else "initiate",
+        }
+        raw_id = incoming_data.get("claim_id")
+        if isinstance(raw_id, str) and raw_id != "":
+            reply_data["claim_id"] = raw_id
 
     auto_respond = is_auto_respond_enabled()
     if auto_respond:
@@ -700,9 +1177,14 @@ def receive_message(payload: dict) -> dict:
             )
             auto_respond = False  # reflect what actually happened, not just the setting
         else:
+            thread_args = (
+                (text, message_id, conversation_id, reply_data)
+                if reply_data is not None
+                else (text, message_id, conversation_id)
+            )
             threading.Thread(
                 target=_generate_and_send_reply,
-                args=(text, message_id, conversation_id),
+                args=thread_args,
                 daemon=True,
                 name="EchoMessagingAutoReply",
             ).start()

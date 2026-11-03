@@ -1,5 +1,10 @@
 # === RELAY BOOKKEEPING (not project content) ===
 claude_relay/.last_seen_from_air.marker
+grok_relay/from_*.md
+grok_relay/.last_seen*
+grok_relay/.inbox_from_*
+grok_relay/.outbox.jsonl
+grok_relay/facts_*.jsonl
 
 # === MEMORY & INDEX ===
 *.index

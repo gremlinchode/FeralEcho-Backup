@@ -108,7 +108,21 @@ other's. This document exists specifically because that assumption failed
 silently for weeks (see "Known history" below) with no mechanism that
 would have caught it earlier than a human noticing a 403 storm in the logs.
 
+Extra keys inside the optional `data` dict are not part of that exact match. A peer that does not understand `claim`, `claim_id`, `claim_role`, or `marked_phrase` must ignore those keys and keep the rest of the v1 envelope. Adding them is not a protocol break and does not need a new version number. The required v1 fields, the origin allowlist, and the hmac secret check stay exact.
+
 ---
+
+## Claim thread
+
+One outbound claim at a time. The claim is one sentence in `data`, separate from the essay. It is the curiosity-garden question verbatim, and only when `topic_source` is `curiosity_engine`. A self-model performance string is not a claim.
+
+`claim_role` is `initiate`, `reply`, or `recall`. Caps are 1000 characters for the claim, 500 for `marked_phrase`, and 12000 for stored letter text. A reply's first non-empty line repeats the claim. The next non-empty line is one reason it fails or one new sentence. Before send, that shape is checked in the text. One retry is allowed. If both attempts miss, the failed essay is not sent. A constructed fallback that contains the claim by construction is sent instead.
+
+A later letter from the original sender must contain one marked sentence from the partner's actual reply, checked in the text the same way. A `marked_phrase` that appears only in `data` does not count. Their `reply` and their `recall` are recorded and do not get a generative auto-reply. Answering their initiate does not open our own outbound claim.
+
+State lives in `memory/echo_claim_thread.json` (`idle`, `awaiting_reply`, `awaiting_recall`). The append-only memory is `memory/echo_claims.jsonl`. An `awaiting_reply` that never receives a mark expires on the next local cycle, so a peer that ignores the new keys cannot silence the channel. An `awaiting_recall` that already has a short phrase retries the recall instead of expiring. Delivered and queued sends count as in flight.
+
+The test that counts is a file comparison: pick one `claim_id`, read the stored sentence, read the next letter, and see whether the sentence or the marked phrase is in it.
 
 ## Known history (why this document exists)
 
@@ -140,4 +154,4 @@ instead of an unbounded retry storm. It does not and cannot verify that
 (that would require live comparison of a secret, which this project's own
 security discipline does not do automatically) — it verifies the local
 failure-mode-handling logic stays correct, which is the part a code change
-can actually regress.
+can actually regress. `echo_claim_shape` verifies the claim reply shape, the one-cycle expire decision, and that the three call sites still sit inside `maybe_send_reflection`, `receive_message`, and `_generate_and_send_reply`.

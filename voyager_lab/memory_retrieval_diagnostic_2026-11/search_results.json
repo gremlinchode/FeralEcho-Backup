@@ -1,0 +1,2543 @@
+{
+  "outcome": "PASS",
+  "identity": {
+    "fresh_process_identity_status": "manifest_valid",
+    "fresh_process_identity_verified": true,
+    "ntotal": 157450,
+    "id_order_len": 157450,
+    "sidecar_schema": 1,
+    "sidecar_index_sha256": "887a9fa7871ad3ccb880dbc2acc63235fbf5c451a801f8758eb1241ea029506f",
+    "recomputed_index_sha256": "887a9fa7871ad3ccb880dbc2acc63235fbf5c451a801f8758eb1241ea029506f",
+    "index_hash_matches_sidecar": true,
+    "binding_sha256_matches": true,
+    "authoritative_flag_after_load": true,
+    "gate_weakened": false
+  },
+  "search_refused": [],
+  "clock_rule": "each item uses its own results_phase2.jsonl started_at",
+  "embed": "SentenceTransformer all-MiniLM-L6-v2 encode([text], normalize_embeddings=True)",
+  "selection": "retrieve_memory_context k=5, so search_fn receives k*3=15, then the real 30-minute filter",
+  "facts": [
+    {
+      "item_id": "01",
+      "user_id": "5e6ac8a9-19c1-4fcd-b08e-dd7c0f5e659b",
+      "expected_hash12": "5aeece192c0e",
+      "stored_text_equals_phase1_prompt": true,
+      "stored_hash12": "5aeece192c0e",
+      "storage_ok": true,
+      "identity_validation_passed": true,
+      "index_membership_position": 157206,
+      "index_membership_ok": true,
+      "clock_started_at": "2026-11-09T22:33:34.219739+00:00",
+      "search_k": 15,
+      "search_reached_index": true,
+      "raw_hits": [
+        {
+          "rank": 1,
+          "score": 1.0000001192092896,
+          "text_hash12": "3707fb70fda6",
+          "owner_ids": [
+            "bcffe4fe-6255-4ca8-a6c5-dcf8c01e2935"
+          ],
+          "unique_owner": "bcffe4fe-6255-4ca8-a6c5-dcf8c01e2935",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:33:53.245165+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 2,
+          "score": 0.95372074842453,
+          "text_hash12": "5aeece192c0e",
+          "owner_ids": [
+            "5e6ac8a9-19c1-4fcd-b08e-dd7c0f5e659b"
+          ],
+          "unique_owner": "5e6ac8a9-19c1-4fcd-b08e-dd7c0f5e659b",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T21:58:28.196230+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 3,
+          "score": 0.4977114498615265,
+          "text_hash12": "08648eb92c10",
+          "owner_ids": [
+            "f1e907e6-0192-49c8-be71-10591bc331a2"
+          ],
+          "unique_owner": "f1e907e6-0192-49c8-be71-10591bc331a2",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:53.722566+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 4,
+          "score": 0.4893602728843689,
+          "text_hash12": "89b11d6b0e6e",
+          "owner_ids": [
+            "5e94dceb-f305-44f1-b2bb-067080a2b4b6"
+          ],
+          "unique_owner": "5e94dceb-f305-44f1-b2bb-067080a2b4b6",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:36:01.972095+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 5,
+          "score": 0.46623697876930237,
+          "text_hash12": "75cabe536565",
+          "owner_ids": [
+            "01456cc2-72f7-488a-a772-b8fd9ad92537"
+          ],
+          "unique_owner": "01456cc2-72f7-488a-a772-b8fd9ad92537",
+          "ambiguous": false,
+          "timestamp": "2026-10-23T01:52:49.934920+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 6,
+          "score": 0.4611147940158844,
+          "text_hash12": "4ba1c6a1d6a0",
+          "owner_ids": [
+            "1f366a17-832a-4eb0-a5e4-0458f1d85fde"
+          ],
+          "unique_owner": "1f366a17-832a-4eb0-a5e4-0458f1d85fde",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:01:38.496511+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 7,
+          "score": 0.4221827983856201,
+          "text_hash12": "479cfd462810",
+          "owner_ids": [
+            "dd44ed20-1acb-4951-8335-33437b6947d3"
+          ],
+          "unique_owner": "dd44ed20-1acb-4951-8335-33437b6947d3",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:02:31.194483+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 8,
+          "score": 0.41341307759284973,
+          "text_hash12": "3ae122ce1084",
+          "owner_ids": [
+            "d66e0c0f-5f70-4515-af24-ba333f2ea651"
+          ],
+          "unique_owner": "d66e0c0f-5f70-4515-af24-ba333f2ea651",
+          "ambiguous": false,
+          "timestamp": "2026-10-07T21:22:17.180478+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 9,
+          "score": 0.3995804488658905,
+          "text_hash12": "c1f7eb4c9887",
+          "owner_ids": [
+            "70f3fef8-baf3-4eea-903d-d9bbf1e6b2ad"
+          ],
+          "unique_owner": "70f3fef8-baf3-4eea-903d-d9bbf1e6b2ad",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:36.851900+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 10,
+          "score": 0.36962881684303284,
+          "text_hash12": "e71037e8fcdc",
+          "owner_ids": [
+            "90e3838a-c12d-4a28-a653-b5de13471e0e"
+          ],
+          "unique_owner": "90e3838a-c12d-4a28-a653-b5de13471e0e",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:01:14.061924+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 11,
+          "score": 0.368240088224411,
+          "text_hash12": "ca32bdcd467d",
+          "owner_ids": [
+            "3b4e6f59-e986-45f3-a374-419818f7a498"
+          ],
+          "unique_owner": "3b4e6f59-e986-45f3-a374-419818f7a498",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T19:27:17.249728+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 12,
+          "score": 0.3606432378292084,
+          "text_hash12": "b964fc532cbe",
+          "owner_ids": [
+            "8416eea9-7cc2-448e-b2eb-1ea8a5dd0046"
+          ],
+          "unique_owner": "8416eea9-7cc2-448e-b2eb-1ea8a5dd0046",
+          "ambiguous": false,
+          "timestamp": "2026-10-14T08:09:14.309552+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 13,
+          "score": 0.35770726203918457,
+          "text_hash12": "bb64cb951e3b",
+          "owner_ids": [
+            "2fe3fcba-f905-4575-b90a-9309e9fc3acc"
+          ],
+          "unique_owner": "2fe3fcba-f905-4575-b90a-9309e9fc3acc",
+          "ambiguous": false,
+          "timestamp": "2026-10-22T05:07:54.104794+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 14,
+          "score": 0.3546837866306305,
+          "text_hash12": "e515c8ce245f",
+          "owner_ids": [
+            "76db9bfe-5225-43db-aadb-e5c848945273"
+          ],
+          "unique_owner": "76db9bfe-5225-43db-aadb-e5c848945273",
+          "ambiguous": false,
+          "timestamp": "2026-08-06T09:11:49.272920+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 15,
+          "score": 0.348274827003479,
+          "text_hash12": "530cf200da33",
+          "owner_ids": [
+            "20cc589a-d042-4276-b83a-cca7b1dcc125"
+          ],
+          "unique_owner": "20cc589a-d042-4276-b83a-cca7b1dcc125",
+          "ambiguous": false,
+          "timestamp": "2026-09-10T17:33:58.714993+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        }
+      ],
+      "correct_user_id_returned": true,
+      "correct_rank": 2,
+      "ambiguous_hit": false,
+      "retrieved_record_matches_expected_fact": true,
+      "candidates_considered": 11,
+      "injected_hashes": [
+        "5aeece192c0e",
+        "4ba1c6a1d6a0",
+        "479cfd462810",
+        "e71037e8fcdc",
+        "ca32bdcd467d"
+      ],
+      "injected_count": 5,
+      "section3_hash_in_simulated_context": true,
+      "simulated_context_nonempty": true,
+      "except_path_swallowed": false,
+      "result": "demonstrated"
+    },
+    {
+      "item_id": "02",
+      "user_id": "aded2053-b5d9-42d5-a106-aa3773f60ea5",
+      "expected_hash12": "f6e677371d0d",
+      "stored_text_equals_phase1_prompt": true,
+      "stored_hash12": "f6e677371d0d",
+      "storage_ok": true,
+      "identity_validation_passed": true,
+      "index_membership_position": 157208,
+      "index_membership_ok": true,
+      "clock_started_at": "2026-11-09T22:33:56.253537+00:00",
+      "search_k": 15,
+      "search_reached_index": true,
+      "raw_hits": [
+        {
+          "rank": 1,
+          "score": 1.0,
+          "text_hash12": "9370169ec648",
+          "owner_ids": [
+            "e2ba4c3b-d9c5-415b-9e70-3d9b6f425f5a"
+          ],
+          "unique_owner": "e2ba4c3b-d9c5-415b-9e70-3d9b6f425f5a",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:34:03.926714+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 2,
+          "score": 0.8971984386444092,
+          "text_hash12": "f6e677371d0d",
+          "owner_ids": [
+            "aded2053-b5d9-42d5-a106-aa3773f60ea5"
+          ],
+          "unique_owner": "aded2053-b5d9-42d5-a106-aa3773f60ea5",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T21:58:51.809328+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 3,
+          "score": 0.42314761877059937,
+          "text_hash12": "bf88b8bd4262",
+          "owner_ids": [
+            "4e1f011e-5a7d-4344-b367-080debcbdbbc"
+          ],
+          "unique_owner": "4e1f011e-5a7d-4344-b367-080debcbdbbc",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T21:58:54.175202+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 4,
+          "score": 0.41933152079582214,
+          "text_hash12": "cd2105b2b57b",
+          "owner_ids": [
+            "a4f9b647-9af2-4445-a2be-5cc93869e222"
+          ],
+          "unique_owner": "a4f9b647-9af2-4445-a2be-5cc93869e222",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:49.642650+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 5,
+          "score": 0.41806918382644653,
+          "text_hash12": "3c63d277f342",
+          "owner_ids": [
+            "2dd6c6ec-1afe-47e6-9739-883eb12efc98"
+          ],
+          "unique_owner": "2dd6c6ec-1afe-47e6-9739-883eb12efc98",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:01:34.418744+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 6,
+          "score": 0.39630064368247986,
+          "text_hash12": "89b11d6b0e6e",
+          "owner_ids": [
+            "5e94dceb-f305-44f1-b2bb-067080a2b4b6"
+          ],
+          "unique_owner": "5e94dceb-f305-44f1-b2bb-067080a2b4b6",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:36:01.972095+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 7,
+          "score": 0.3770652711391449,
+          "text_hash12": "a6edf17a0c68",
+          "owner_ids": [
+            "66b98d13-9b20-45c7-9025-26681dc7fc25"
+          ],
+          "unique_owner": "66b98d13-9b20-45c7-9025-26681dc7fc25",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:46.146624+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 8,
+          "score": 0.37673431634902954,
+          "text_hash12": "08648eb92c10",
+          "owner_ids": [
+            "f1e907e6-0192-49c8-be71-10591bc331a2"
+          ],
+          "unique_owner": "f1e907e6-0192-49c8-be71-10591bc331a2",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:53.722566+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 9,
+          "score": 0.3758544921875,
+          "text_hash12": "4ba1c6a1d6a0",
+          "owner_ids": [
+            "1f366a17-832a-4eb0-a5e4-0458f1d85fde"
+          ],
+          "unique_owner": "1f366a17-832a-4eb0-a5e4-0458f1d85fde",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:01:38.496511+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 10,
+          "score": 0.35902997851371765,
+          "text_hash12": "6d15757ab375",
+          "owner_ids": [
+            "a894c2d8-7a47-4c94-8b30-1a512bbe0ece"
+          ],
+          "unique_owner": "a894c2d8-7a47-4c94-8b30-1a512bbe0ece",
+          "ambiguous": false,
+          "timestamp": "2026-07-13T21:53:22.498385+00:00",
+          "memory_source": null,
+          "role": null
+        },
+        {
+          "rank": 11,
+          "score": 0.3587614595890045,
+          "text_hash12": "479cfd462810",
+          "owner_ids": [
+            "dd44ed20-1acb-4951-8335-33437b6947d3"
+          ],
+          "unique_owner": "dd44ed20-1acb-4951-8335-33437b6947d3",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:02:31.194483+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 12,
+          "score": 0.3526761829853058,
+          "text_hash12": "9485a3c98090",
+          "owner_ids": [
+            "7760139f-69ec-4bce-ba35-c4309946f485"
+          ],
+          "unique_owner": "7760139f-69ec-4bce-ba35-c4309946f485",
+          "ambiguous": false,
+          "timestamp": "2026-07-20T04:13:10.136076+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 13,
+          "score": 0.35229283571243286,
+          "text_hash12": "8aa6b57bae8e",
+          "owner_ids": [
+            "0db9886f-6a16-4932-848a-cd2c3d2b0db9"
+          ],
+          "unique_owner": "0db9886f-6a16-4932-848a-cd2c3d2b0db9",
+          "ambiguous": false,
+          "timestamp": "2026-07-22T05:49:39.882711+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 14,
+          "score": 0.33443522453308105,
+          "text_hash12": "13d570af6011",
+          "owner_ids": [
+            "bab145a6-ea35-460b-8853-8ae15decead8"
+          ],
+          "unique_owner": "bab145a6-ea35-460b-8853-8ae15decead8",
+          "ambiguous": false,
+          "timestamp": "2026-08-10T16:12:55.037486+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 15,
+          "score": 0.3258097469806671,
+          "text_hash12": "6979c67eff29",
+          "owner_ids": [
+            "ba53a48f-671d-4843-976d-53f7e8a10aa9"
+          ],
+          "unique_owner": "ba53a48f-671d-4843-976d-53f7e8a10aa9",
+          "ambiguous": false,
+          "timestamp": "2026-08-08T18:02:00.721467+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        }
+      ],
+      "correct_user_id_returned": true,
+      "correct_rank": 2,
+      "ambiguous_hit": false,
+      "retrieved_record_matches_expected_fact": true,
+      "candidates_considered": 10,
+      "injected_hashes": [
+        "f6e677371d0d",
+        "bf88b8bd4262",
+        "3c63d277f342",
+        "4ba1c6a1d6a0",
+        "479cfd462810"
+      ],
+      "injected_count": 5,
+      "section3_hash_in_simulated_context": true,
+      "simulated_context_nonempty": true,
+      "except_path_swallowed": false,
+      "result": "demonstrated"
+    },
+    {
+      "item_id": "03",
+      "user_id": "36495cc5-39f3-4a31-a79b-332dc52da1ae",
+      "expected_hash12": "254ada88570e",
+      "stored_text_equals_phase1_prompt": true,
+      "stored_hash12": "254ada88570e",
+      "storage_ok": true,
+      "identity_validation_passed": true,
+      "index_membership_position": 157210,
+      "index_membership_ok": true,
+      "clock_started_at": "2026-11-09T22:34:06.063856+00:00",
+      "search_k": 15,
+      "search_reached_index": true,
+      "raw_hits": [
+        {
+          "rank": 1,
+          "score": 1.0000001192092896,
+          "text_hash12": "08814654e189",
+          "owner_ids": [
+            "5930e349-924a-41fd-990f-f1b2b7856148"
+          ],
+          "unique_owner": "5930e349-924a-41fd-990f-f1b2b7856148",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:15.896503+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 2,
+          "score": 0.8787434101104736,
+          "text_hash12": "254ada88570e",
+          "owner_ids": [
+            "36495cc5-39f3-4a31-a79b-332dc52da1ae"
+          ],
+          "unique_owner": "36495cc5-39f3-4a31-a79b-332dc52da1ae",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T21:59:10.616709+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 3,
+          "score": 0.6108446717262268,
+          "text_hash12": "4ae0ccf0ce68",
+          "owner_ids": [
+            "67eccddb-cb98-4373-b206-aceed4712b62"
+          ],
+          "unique_owner": "67eccddb-cb98-4373-b206-aceed4712b62",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T21:59:14.436285+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 4,
+          "score": 0.3826448917388916,
+          "text_hash12": "23f1db65d472",
+          "owner_ids": [
+            "cb4d2e80-b81c-4619-8c16-84e08a32f229",
+            "e75ec54e-f56f-46b5-83b9-97c0b72a8b62",
+            "8ce7645e-f5db-4eb5-be64-dff0b8fee90f",
+            "272fb823-d57d-48f8-868e-7d33786008ea",
+            "f4518c9c-766a-4477-812f-5d3682da57d4",
+            "7e34fcbe-8702-4c0d-814a-779cc1caedd3",
+            "09779b70-2b2f-4860-b106-d39a1b896b65",
+            "9d6f4d82-3b7d-4cf2-80c6-9ca868899fc3",
+            "47f86adf-6e84-465f-bdaa-859ca9229e3a",
+            "4c35f904-262a-45be-94be-17a608f59e73",
+            "f6654d62-f835-4ff7-9c57-62d69241bd6f",
+            "f9111e78-cfdf-45d2-8679-0be9fe72b332",
+            "de11fa48-6eb9-4085-9440-c61f2ed7db38",
+            "b22a3d8c-4aa2-4070-97d6-8e1141a2677c",
+            "2837cb55-79e1-4dc3-bb79-d90137429fc7"
+          ],
+          "unique_owner": null,
+          "ambiguous": true,
+          "timestamp": "2026-10-18T23:02:51.128248+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 5,
+          "score": 0.3826448917388916,
+          "text_hash12": "23f1db65d472",
+          "owner_ids": [
+            "cb4d2e80-b81c-4619-8c16-84e08a32f229",
+            "e75ec54e-f56f-46b5-83b9-97c0b72a8b62",
+            "8ce7645e-f5db-4eb5-be64-dff0b8fee90f",
+            "272fb823-d57d-48f8-868e-7d33786008ea",
+            "f4518c9c-766a-4477-812f-5d3682da57d4",
+            "7e34fcbe-8702-4c0d-814a-779cc1caedd3",
+            "09779b70-2b2f-4860-b106-d39a1b896b65",
+            "9d6f4d82-3b7d-4cf2-80c6-9ca868899fc3",
+            "47f86adf-6e84-465f-bdaa-859ca9229e3a",
+            "4c35f904-262a-45be-94be-17a608f59e73",
+            "f6654d62-f835-4ff7-9c57-62d69241bd6f",
+            "f9111e78-cfdf-45d2-8679-0be9fe72b332",
+            "de11fa48-6eb9-4085-9440-c61f2ed7db38",
+            "b22a3d8c-4aa2-4070-97d6-8e1141a2677c",
+            "2837cb55-79e1-4dc3-bb79-d90137429fc7"
+          ],
+          "unique_owner": null,
+          "ambiguous": true,
+          "timestamp": "2026-10-18T21:24:54.631016+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 6,
+          "score": 0.3826448917388916,
+          "text_hash12": "23f1db65d472",
+          "owner_ids": [
+            "cb4d2e80-b81c-4619-8c16-84e08a32f229",
+            "e75ec54e-f56f-46b5-83b9-97c0b72a8b62",
+            "8ce7645e-f5db-4eb5-be64-dff0b8fee90f",
+            "272fb823-d57d-48f8-868e-7d33786008ea",
+            "f4518c9c-766a-4477-812f-5d3682da57d4",
+            "7e34fcbe-8702-4c0d-814a-779cc1caedd3",
+            "09779b70-2b2f-4860-b106-d39a1b896b65",
+            "9d6f4d82-3b7d-4cf2-80c6-9ca868899fc3",
+            "47f86adf-6e84-465f-bdaa-859ca9229e3a",
+            "4c35f904-262a-45be-94be-17a608f59e73",
+            "f6654d62-f835-4ff7-9c57-62d69241bd6f",
+            "f9111e78-cfdf-45d2-8679-0be9fe72b332",
+            "de11fa48-6eb9-4085-9440-c61f2ed7db38",
+            "b22a3d8c-4aa2-4070-97d6-8e1141a2677c",
+            "2837cb55-79e1-4dc3-bb79-d90137429fc7"
+          ],
+          "unique_owner": null,
+          "ambiguous": true,
+          "timestamp": "2026-10-18T20:40:17.170471+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 7,
+          "score": 0.3826448917388916,
+          "text_hash12": "23f1db65d472",
+          "owner_ids": [
+            "cb4d2e80-b81c-4619-8c16-84e08a32f229",
+            "e75ec54e-f56f-46b5-83b9-97c0b72a8b62",
+            "8ce7645e-f5db-4eb5-be64-dff0b8fee90f",
+            "272fb823-d57d-48f8-868e-7d33786008ea",
+            "f4518c9c-766a-4477-812f-5d3682da57d4",
+            "7e34fcbe-8702-4c0d-814a-779cc1caedd3",
+            "09779b70-2b2f-4860-b106-d39a1b896b65",
+            "9d6f4d82-3b7d-4cf2-80c6-9ca868899fc3",
+            "47f86adf-6e84-465f-bdaa-859ca9229e3a",
+            "4c35f904-262a-45be-94be-17a608f59e73",
+            "f6654d62-f835-4ff7-9c57-62d69241bd6f",
+            "f9111e78-cfdf-45d2-8679-0be9fe72b332",
+            "de11fa48-6eb9-4085-9440-c61f2ed7db38",
+            "b22a3d8c-4aa2-4070-97d6-8e1141a2677c",
+            "2837cb55-79e1-4dc3-bb79-d90137429fc7"
+          ],
+          "unique_owner": null,
+          "ambiguous": true,
+          "timestamp": "2026-10-18T19:26:07.353312+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 8,
+          "score": 0.3826448917388916,
+          "text_hash12": "23f1db65d472",
+          "owner_ids": [
+            "cb4d2e80-b81c-4619-8c16-84e08a32f229",
+            "e75ec54e-f56f-46b5-83b9-97c0b72a8b62",
+            "8ce7645e-f5db-4eb5-be64-dff0b8fee90f",
+            "272fb823-d57d-48f8-868e-7d33786008ea",
+            "f4518c9c-766a-4477-812f-5d3682da57d4",
+            "7e34fcbe-8702-4c0d-814a-779cc1caedd3",
+            "09779b70-2b2f-4860-b106-d39a1b896b65",
+            "9d6f4d82-3b7d-4cf2-80c6-9ca868899fc3",
+            "47f86adf-6e84-465f-bdaa-859ca9229e3a",
+            "4c35f904-262a-45be-94be-17a608f59e73",
+            "f6654d62-f835-4ff7-9c57-62d69241bd6f",
+            "f9111e78-cfdf-45d2-8679-0be9fe72b332",
+            "de11fa48-6eb9-4085-9440-c61f2ed7db38",
+            "b22a3d8c-4aa2-4070-97d6-8e1141a2677c",
+            "2837cb55-79e1-4dc3-bb79-d90137429fc7"
+          ],
+          "unique_owner": null,
+          "ambiguous": true,
+          "timestamp": "2026-10-18T18:30:56.341144+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 9,
+          "score": 0.3826448917388916,
+          "text_hash12": "23f1db65d472",
+          "owner_ids": [
+            "cb4d2e80-b81c-4619-8c16-84e08a32f229",
+            "e75ec54e-f56f-46b5-83b9-97c0b72a8b62",
+            "8ce7645e-f5db-4eb5-be64-dff0b8fee90f",
+            "272fb823-d57d-48f8-868e-7d33786008ea",
+            "f4518c9c-766a-4477-812f-5d3682da57d4",
+            "7e34fcbe-8702-4c0d-814a-779cc1caedd3",
+            "09779b70-2b2f-4860-b106-d39a1b896b65",
+            "9d6f4d82-3b7d-4cf2-80c6-9ca868899fc3",
+            "47f86adf-6e84-465f-bdaa-859ca9229e3a",
+            "4c35f904-262a-45be-94be-17a608f59e73",
+            "f6654d62-f835-4ff7-9c57-62d69241bd6f",
+            "f9111e78-cfdf-45d2-8679-0be9fe72b332",
+            "de11fa48-6eb9-4085-9440-c61f2ed7db38",
+            "b22a3d8c-4aa2-4070-97d6-8e1141a2677c",
+            "2837cb55-79e1-4dc3-bb79-d90137429fc7"
+          ],
+          "unique_owner": null,
+          "ambiguous": true,
+          "timestamp": "2026-10-18T18:18:39.159629+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 10,
+          "score": 0.3826448917388916,
+          "text_hash12": "23f1db65d472",
+          "owner_ids": [
+            "cb4d2e80-b81c-4619-8c16-84e08a32f229",
+            "e75ec54e-f56f-46b5-83b9-97c0b72a8b62",
+            "8ce7645e-f5db-4eb5-be64-dff0b8fee90f",
+            "272fb823-d57d-48f8-868e-7d33786008ea",
+            "f4518c9c-766a-4477-812f-5d3682da57d4",
+            "7e34fcbe-8702-4c0d-814a-779cc1caedd3",
+            "09779b70-2b2f-4860-b106-d39a1b896b65",
+            "9d6f4d82-3b7d-4cf2-80c6-9ca868899fc3",
+            "47f86adf-6e84-465f-bdaa-859ca9229e3a",
+            "4c35f904-262a-45be-94be-17a608f59e73",
+            "f6654d62-f835-4ff7-9c57-62d69241bd6f",
+            "f9111e78-cfdf-45d2-8679-0be9fe72b332",
+            "de11fa48-6eb9-4085-9440-c61f2ed7db38",
+            "b22a3d8c-4aa2-4070-97d6-8e1141a2677c",
+            "2837cb55-79e1-4dc3-bb79-d90137429fc7"
+          ],
+          "unique_owner": null,
+          "ambiguous": true,
+          "timestamp": "2026-10-18T17:51:57.603224+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 11,
+          "score": 0.3826448917388916,
+          "text_hash12": "23f1db65d472",
+          "owner_ids": [
+            "cb4d2e80-b81c-4619-8c16-84e08a32f229",
+            "e75ec54e-f56f-46b5-83b9-97c0b72a8b62",
+            "8ce7645e-f5db-4eb5-be64-dff0b8fee90f",
+            "272fb823-d57d-48f8-868e-7d33786008ea",
+            "f4518c9c-766a-4477-812f-5d3682da57d4",
+            "7e34fcbe-8702-4c0d-814a-779cc1caedd3",
+            "09779b70-2b2f-4860-b106-d39a1b896b65",
+            "9d6f4d82-3b7d-4cf2-80c6-9ca868899fc3",
+            "47f86adf-6e84-465f-bdaa-859ca9229e3a",
+            "4c35f904-262a-45be-94be-17a608f59e73",
+            "f6654d62-f835-4ff7-9c57-62d69241bd6f",
+            "f9111e78-cfdf-45d2-8679-0be9fe72b332",
+            "de11fa48-6eb9-4085-9440-c61f2ed7db38",
+            "b22a3d8c-4aa2-4070-97d6-8e1141a2677c",
+            "2837cb55-79e1-4dc3-bb79-d90137429fc7"
+          ],
+          "unique_owner": null,
+          "ambiguous": true,
+          "timestamp": "2026-10-18T08:05:12.321757+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 12,
+          "score": 0.3826448917388916,
+          "text_hash12": "23f1db65d472",
+          "owner_ids": [
+            "cb4d2e80-b81c-4619-8c16-84e08a32f229",
+            "e75ec54e-f56f-46b5-83b9-97c0b72a8b62",
+            "8ce7645e-f5db-4eb5-be64-dff0b8fee90f",
+            "272fb823-d57d-48f8-868e-7d33786008ea",
+            "f4518c9c-766a-4477-812f-5d3682da57d4",
+            "7e34fcbe-8702-4c0d-814a-779cc1caedd3",
+            "09779b70-2b2f-4860-b106-d39a1b896b65",
+            "9d6f4d82-3b7d-4cf2-80c6-9ca868899fc3",
+            "47f86adf-6e84-465f-bdaa-859ca9229e3a",
+            "4c35f904-262a-45be-94be-17a608f59e73",
+            "f6654d62-f835-4ff7-9c57-62d69241bd6f",
+            "f9111e78-cfdf-45d2-8679-0be9fe72b332",
+            "de11fa48-6eb9-4085-9440-c61f2ed7db38",
+            "b22a3d8c-4aa2-4070-97d6-8e1141a2677c",
+            "2837cb55-79e1-4dc3-bb79-d90137429fc7"
+          ],
+          "unique_owner": null,
+          "ambiguous": true,
+          "timestamp": "2026-10-18T06:26:58.995355+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 13,
+          "score": 0.3826448917388916,
+          "text_hash12": "23f1db65d472",
+          "owner_ids": [
+            "cb4d2e80-b81c-4619-8c16-84e08a32f229",
+            "e75ec54e-f56f-46b5-83b9-97c0b72a8b62",
+            "8ce7645e-f5db-4eb5-be64-dff0b8fee90f",
+            "272fb823-d57d-48f8-868e-7d33786008ea",
+            "f4518c9c-766a-4477-812f-5d3682da57d4",
+            "7e34fcbe-8702-4c0d-814a-779cc1caedd3",
+            "09779b70-2b2f-4860-b106-d39a1b896b65",
+            "9d6f4d82-3b7d-4cf2-80c6-9ca868899fc3",
+            "47f86adf-6e84-465f-bdaa-859ca9229e3a",
+            "4c35f904-262a-45be-94be-17a608f59e73",
+            "f6654d62-f835-4ff7-9c57-62d69241bd6f",
+            "f9111e78-cfdf-45d2-8679-0be9fe72b332",
+            "de11fa48-6eb9-4085-9440-c61f2ed7db38",
+            "b22a3d8c-4aa2-4070-97d6-8e1141a2677c",
+            "2837cb55-79e1-4dc3-bb79-d90137429fc7"
+          ],
+          "unique_owner": null,
+          "ambiguous": true,
+          "timestamp": "2026-10-18T05:18:34.786824+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 14,
+          "score": 0.3826448917388916,
+          "text_hash12": "23f1db65d472",
+          "owner_ids": [
+            "cb4d2e80-b81c-4619-8c16-84e08a32f229",
+            "e75ec54e-f56f-46b5-83b9-97c0b72a8b62",
+            "8ce7645e-f5db-4eb5-be64-dff0b8fee90f",
+            "272fb823-d57d-48f8-868e-7d33786008ea",
+            "f4518c9c-766a-4477-812f-5d3682da57d4",
+            "7e34fcbe-8702-4c0d-814a-779cc1caedd3",
+            "09779b70-2b2f-4860-b106-d39a1b896b65",
+            "9d6f4d82-3b7d-4cf2-80c6-9ca868899fc3",
+            "47f86adf-6e84-465f-bdaa-859ca9229e3a",
+            "4c35f904-262a-45be-94be-17a608f59e73",
+            "f6654d62-f835-4ff7-9c57-62d69241bd6f",
+            "f9111e78-cfdf-45d2-8679-0be9fe72b332",
+            "de11fa48-6eb9-4085-9440-c61f2ed7db38",
+            "b22a3d8c-4aa2-4070-97d6-8e1141a2677c",
+            "2837cb55-79e1-4dc3-bb79-d90137429fc7"
+          ],
+          "unique_owner": null,
+          "ambiguous": true,
+          "timestamp": "2026-10-18T04:21:53.607895+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 15,
+          "score": 0.3826448917388916,
+          "text_hash12": "23f1db65d472",
+          "owner_ids": [
+            "cb4d2e80-b81c-4619-8c16-84e08a32f229",
+            "e75ec54e-f56f-46b5-83b9-97c0b72a8b62",
+            "8ce7645e-f5db-4eb5-be64-dff0b8fee90f",
+            "272fb823-d57d-48f8-868e-7d33786008ea",
+            "f4518c9c-766a-4477-812f-5d3682da57d4",
+            "7e34fcbe-8702-4c0d-814a-779cc1caedd3",
+            "09779b70-2b2f-4860-b106-d39a1b896b65",
+            "9d6f4d82-3b7d-4cf2-80c6-9ca868899fc3",
+            "47f86adf-6e84-465f-bdaa-859ca9229e3a",
+            "4c35f904-262a-45be-94be-17a608f59e73",
+            "f6654d62-f835-4ff7-9c57-62d69241bd6f",
+            "f9111e78-cfdf-45d2-8679-0be9fe72b332",
+            "de11fa48-6eb9-4085-9440-c61f2ed7db38",
+            "b22a3d8c-4aa2-4070-97d6-8e1141a2677c",
+            "2837cb55-79e1-4dc3-bb79-d90137429fc7"
+          ],
+          "unique_owner": null,
+          "ambiguous": true,
+          "timestamp": "2026-10-18T03:19:33.593491+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        }
+      ],
+      "correct_user_id_returned": true,
+      "correct_rank": 2,
+      "ambiguous_hit": false,
+      "retrieved_record_matches_expected_fact": true,
+      "candidates_considered": 14,
+      "injected_hashes": [
+        "254ada88570e",
+        "4ae0ccf0ce68"
+      ],
+      "injected_count": 2,
+      "section3_hash_in_simulated_context": true,
+      "simulated_context_nonempty": true,
+      "except_path_swallowed": false,
+      "result": "demonstrated"
+    },
+    {
+      "item_id": "04",
+      "user_id": "90e3838a-c12d-4a28-a653-b5de13471e0e",
+      "expected_hash12": "e71037e8fcdc",
+      "stored_text_equals_phase1_prompt": true,
+      "stored_hash12": "e71037e8fcdc",
+      "storage_ok": true,
+      "identity_validation_passed": true,
+      "index_membership_position": 157212,
+      "index_membership_ok": true,
+      "clock_started_at": "2026-11-09T22:35:18.905815+00:00",
+      "search_k": 15,
+      "search_reached_index": true,
+      "raw_hits": [
+        {
+          "rank": 1,
+          "score": 1.0,
+          "text_hash12": "c1f7eb4c9887",
+          "owner_ids": [
+            "70f3fef8-baf3-4eea-903d-d9bbf1e6b2ad"
+          ],
+          "unique_owner": "70f3fef8-baf3-4eea-903d-d9bbf1e6b2ad",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:36.851900+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 2,
+          "score": 0.952201247215271,
+          "text_hash12": "e71037e8fcdc",
+          "owner_ids": [
+            "90e3838a-c12d-4a28-a653-b5de13471e0e"
+          ],
+          "unique_owner": "90e3838a-c12d-4a28-a653-b5de13471e0e",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:01:14.061924+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 3,
+          "score": 0.4404957890510559,
+          "text_hash12": "89b11d6b0e6e",
+          "owner_ids": [
+            "5e94dceb-f305-44f1-b2bb-067080a2b4b6"
+          ],
+          "unique_owner": "5e94dceb-f305-44f1-b2bb-067080a2b4b6",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:36:01.972095+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 4,
+          "score": 0.40519434213638306,
+          "text_hash12": "479cfd462810",
+          "owner_ids": [
+            "dd44ed20-1acb-4951-8335-33437b6947d3"
+          ],
+          "unique_owner": "dd44ed20-1acb-4951-8335-33437b6947d3",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:02:31.194483+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 5,
+          "score": 0.39958029985427856,
+          "text_hash12": "3707fb70fda6",
+          "owner_ids": [
+            "bcffe4fe-6255-4ca8-a6c5-dcf8c01e2935"
+          ],
+          "unique_owner": "bcffe4fe-6255-4ca8-a6c5-dcf8c01e2935",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:33:53.245165+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 6,
+          "score": 0.3672311305999756,
+          "text_hash12": "5aeece192c0e",
+          "owner_ids": [
+            "5e6ac8a9-19c1-4fcd-b08e-dd7c0f5e659b"
+          ],
+          "unique_owner": "5e6ac8a9-19c1-4fcd-b08e-dd7c0f5e659b",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T21:58:28.196230+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 7,
+          "score": 0.3588646650314331,
+          "text_hash12": "6634b693cd73",
+          "owner_ids": [
+            "7edb3bde-188c-4036-b1e8-f9d29a3685f2"
+          ],
+          "unique_owner": "7edb3bde-188c-4036-b1e8-f9d29a3685f2",
+          "ambiguous": false,
+          "timestamp": "2026-10-14T14:48:48.339715+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 8,
+          "score": 0.35457995533943176,
+          "text_hash12": "77f30aeffbc4",
+          "owner_ids": [
+            "d1da0c96-b21e-4e84-8eae-25fb92d4d4d9"
+          ],
+          "unique_owner": "d1da0c96-b21e-4e84-8eae-25fb92d4d4d9",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:58.445721+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 9,
+          "score": 0.35062122344970703,
+          "text_hash12": "d1dfeaa6d4e8",
+          "owner_ids": [
+            "db6448e9-3811-4809-9423-b92b96fa5dd2"
+          ],
+          "unique_owner": "db6448e9-3811-4809-9423-b92b96fa5dd2",
+          "ambiguous": false,
+          "timestamp": "2026-07-13T21:46:15.809777+00:00",
+          "memory_source": null,
+          "role": null
+        },
+        {
+          "rank": 10,
+          "score": 0.33521389961242676,
+          "text_hash12": "fec9ddb42367",
+          "owner_ids": [
+            "b90f45d3-22fc-43ba-b1de-99c3ab533b84"
+          ],
+          "unique_owner": "b90f45d3-22fc-43ba-b1de-99c3ab533b84",
+          "ambiguous": false,
+          "timestamp": "2026-07-05T14:53:13.448219+00:00",
+          "memory_source": "autonomous",
+          "role": "dream"
+        },
+        {
+          "rank": 11,
+          "score": 0.3317722976207733,
+          "text_hash12": "3d4852efab55",
+          "owner_ids": [
+            "c934f950-d163-43c2-98a6-72898ae54a89"
+          ],
+          "unique_owner": "c934f950-d163-43c2-98a6-72898ae54a89",
+          "ambiguous": false,
+          "timestamp": "2026-07-13T21:45:42.182329+00:00",
+          "memory_source": null,
+          "role": null
+        },
+        {
+          "rank": 12,
+          "score": 0.33161041140556335,
+          "text_hash12": "a6edf17a0c68",
+          "owner_ids": [
+            "66b98d13-9b20-45c7-9025-26681dc7fc25"
+          ],
+          "unique_owner": "66b98d13-9b20-45c7-9025-26681dc7fc25",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:46.146624+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 13,
+          "score": 0.3191373944282532,
+          "text_hash12": "5c42ba33666a",
+          "owner_ids": [
+            "a10c05d3-0737-46a7-97fb-10c4ada69f75"
+          ],
+          "unique_owner": "a10c05d3-0737-46a7-97fb-10c4ada69f75",
+          "ambiguous": false,
+          "timestamp": "2026-07-30T13:19:11.869706+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 14,
+          "score": 0.3132860064506531,
+          "text_hash12": "568f0b6fe52d",
+          "owner_ids": [
+            "fdaf2953-5699-424e-aca1-516b7da08357"
+          ],
+          "unique_owner": "fdaf2953-5699-424e-aca1-516b7da08357",
+          "ambiguous": false,
+          "timestamp": "2026-07-13T21:48:27.595141+00:00",
+          "memory_source": null,
+          "role": null
+        },
+        {
+          "rank": 15,
+          "score": 0.31157970428466797,
+          "text_hash12": "885934c85798",
+          "owner_ids": [
+            "3a833055-c5e1-41d6-b2cb-ee27422cce5d"
+          ],
+          "unique_owner": "3a833055-c5e1-41d6-b2cb-ee27422cce5d",
+          "ambiguous": false,
+          "timestamp": "2026-07-13T21:49:38.833564+00:00",
+          "memory_source": null,
+          "role": null
+        }
+      ],
+      "correct_user_id_returned": true,
+      "correct_rank": 2,
+      "ambiguous_hit": false,
+      "retrieved_record_matches_expected_fact": true,
+      "candidates_considered": 10,
+      "injected_hashes": [
+        "e71037e8fcdc",
+        "479cfd462810",
+        "5aeece192c0e",
+        "5c42ba33666a"
+      ],
+      "injected_count": 4,
+      "section3_hash_in_simulated_context": true,
+      "simulated_context_nonempty": true,
+      "except_path_swallowed": false,
+      "result": "demonstrated"
+    },
+    {
+      "item_id": "05",
+      "user_id": "accc4c1e-ef05-466f-8ef2-4f1b997166f8",
+      "expected_hash12": "02d0c62ade8b",
+      "stored_text_equals_phase1_prompt": true,
+      "stored_hash12": "02d0c62ade8b",
+      "storage_ok": true,
+      "identity_validation_passed": true,
+      "index_membership_position": 157214,
+      "index_membership_ok": true,
+      "clock_started_at": "2026-11-09T22:35:39.848652+00:00",
+      "search_k": 15,
+      "search_reached_index": true,
+      "raw_hits": [
+        {
+          "rank": 1,
+          "score": 1.0000001192092896,
+          "text_hash12": "4bf362f1cd7e",
+          "owner_ids": [
+            "73a4d3d0-e03c-4f28-beda-e7ee584253f6"
+          ],
+          "unique_owner": "73a4d3d0-e03c-4f28-beda-e7ee584253f6",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:40.844999+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 2,
+          "score": 0.9769530296325684,
+          "text_hash12": "02d0c62ade8b",
+          "owner_ids": [
+            "accc4c1e-ef05-466f-8ef2-4f1b997166f8"
+          ],
+          "unique_owner": "accc4c1e-ef05-466f-8ef2-4f1b997166f8",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:01:25.644398+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 3,
+          "score": 0.36233270168304443,
+          "text_hash12": "6ec56698078e",
+          "owner_ids": [
+            "78d2baf9-3831-4918-8e02-bdfbf8e1c6fe"
+          ],
+          "unique_owner": "78d2baf9-3831-4918-8e02-bdfbf8e1c6fe",
+          "ambiguous": false,
+          "timestamp": "2026-08-12T16:06:43.087918+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 4,
+          "score": 0.35254281759262085,
+          "text_hash12": "d839ad6764e9",
+          "owner_ids": [
+            "fc8f4f35-33b5-425b-8753-861d30a31fd8"
+          ],
+          "unique_owner": "fc8f4f35-33b5-425b-8753-861d30a31fd8",
+          "ambiguous": false,
+          "timestamp": "2026-07-05T15:06:31.844413+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 5,
+          "score": 0.34971481561660767,
+          "text_hash12": "77f30aeffbc4",
+          "owner_ids": [
+            "d1da0c96-b21e-4e84-8eae-25fb92d4d4d9"
+          ],
+          "unique_owner": "d1da0c96-b21e-4e84-8eae-25fb92d4d4d9",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:58.445721+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 6,
+          "score": 0.3460808992385864,
+          "text_hash12": "54d78a75d897",
+          "owner_ids": [
+            "b32f5e70-2cf2-4557-adf0-83fd525a6d68"
+          ],
+          "unique_owner": "b32f5e70-2cf2-4557-adf0-83fd525a6d68",
+          "ambiguous": false,
+          "timestamp": "2026-10-30T21:45:59.826116+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 7,
+          "score": 0.34513476490974426,
+          "text_hash12": "a4992bb70dde",
+          "owner_ids": [
+            "95790840-3994-4fd1-a089-7f1a94ca8c59"
+          ],
+          "unique_owner": "95790840-3994-4fd1-a089-7f1a94ca8c59",
+          "ambiguous": false,
+          "timestamp": "2026-10-25T22:51:53.022127+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 8,
+          "score": 0.33423274755477905,
+          "text_hash12": "89b11d6b0e6e",
+          "owner_ids": [
+            "5e94dceb-f305-44f1-b2bb-067080a2b4b6"
+          ],
+          "unique_owner": "5e94dceb-f305-44f1-b2bb-067080a2b4b6",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:36:01.972095+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 9,
+          "score": 0.3313310444355011,
+          "text_hash12": "c6971f256b2e",
+          "owner_ids": [
+            "cae38319-8fa7-484e-86a1-e311049c5038"
+          ],
+          "unique_owner": "cae38319-8fa7-484e-86a1-e311049c5038",
+          "ambiguous": false,
+          "timestamp": "2026-08-19T13:02:30.825641+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 10,
+          "score": 0.32646575570106506,
+          "text_hash12": "ea22868ad294",
+          "owner_ids": [
+            "e32440ec-0c78-4dbf-a983-13b7561803dd"
+          ],
+          "unique_owner": "e32440ec-0c78-4dbf-a983-13b7561803dd",
+          "ambiguous": false,
+          "timestamp": "2026-08-19T16:15:41.137195+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 11,
+          "score": 0.3230704069137573,
+          "text_hash12": "a04d59e3eb5b",
+          "owner_ids": [
+            "b250a40f-d306-4eb8-ba7f-7ef11b170142"
+          ],
+          "unique_owner": "b250a40f-d306-4eb8-ba7f-7ef11b170142",
+          "ambiguous": false,
+          "timestamp": "2026-07-08T19:55:51.917222+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 12,
+          "score": 0.31955766677856445,
+          "text_hash12": "dbcd89a9a48e",
+          "owner_ids": [
+            "f372be74-0183-4803-9841-e0b94d3a2c57"
+          ],
+          "unique_owner": "f372be74-0183-4803-9841-e0b94d3a2c57",
+          "ambiguous": false,
+          "timestamp": "2026-07-03T06:29:19.338638+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 13,
+          "score": 0.3149505853652954,
+          "text_hash12": "9e0098a9f9d3",
+          "owner_ids": [
+            "ac198481-ada1-4027-81ef-e13ad63999b3"
+          ],
+          "unique_owner": "ac198481-ada1-4027-81ef-e13ad63999b3",
+          "ambiguous": false,
+          "timestamp": "2026-11-06T16:04:25.860456+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 14,
+          "score": 0.3147551417350769,
+          "text_hash12": "1f1e052cd866",
+          "owner_ids": [
+            "1bc727d1-cb9d-46b0-9407-09006ff88076"
+          ],
+          "unique_owner": "1bc727d1-cb9d-46b0-9407-09006ff88076",
+          "ambiguous": false,
+          "timestamp": "2026-08-13T20:20:02.802721+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 15,
+          "score": 0.31442853808403015,
+          "text_hash12": "6c5c78fd719f",
+          "owner_ids": [
+            "1c48c0f9-8fcf-4a43-a1a8-85115f0834fd"
+          ],
+          "unique_owner": "1c48c0f9-8fcf-4a43-a1a8-85115f0834fd",
+          "ambiguous": false,
+          "timestamp": "2026-09-29T01:34:29.917832+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        }
+      ],
+      "correct_user_id_returned": true,
+      "correct_rank": 2,
+      "ambiguous_hit": false,
+      "retrieved_record_matches_expected_fact": true,
+      "candidates_considered": 12,
+      "injected_hashes": [
+        "02d0c62ade8b",
+        "d839ad6764e9",
+        "a4992bb70dde",
+        "ea22868ad294",
+        "a04d59e3eb5b"
+      ],
+      "injected_count": 5,
+      "section3_hash_in_simulated_context": true,
+      "simulated_context_nonempty": true,
+      "except_path_swallowed": false,
+      "result": "demonstrated"
+    },
+    {
+      "item_id": "06",
+      "user_id": "c86b2d32-5438-4c52-b7ae-df291cca4db2",
+      "expected_hash12": "31bc63a1affe",
+      "stored_text_equals_phase1_prompt": true,
+      "stored_hash12": "31bc63a1affe",
+      "storage_ok": true,
+      "identity_validation_passed": true,
+      "index_membership_position": 157216,
+      "index_membership_ok": true,
+      "clock_started_at": "2026-11-09T22:35:43.859088+00:00",
+      "search_k": 15,
+      "search_reached_index": true,
+      "raw_hits": [
+        {
+          "rank": 1,
+          "score": 1.0000001192092896,
+          "text_hash12": "a6edf17a0c68",
+          "owner_ids": [
+            "66b98d13-9b20-45c7-9025-26681dc7fc25"
+          ],
+          "unique_owner": "66b98d13-9b20-45c7-9025-26681dc7fc25",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:46.146624+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 2,
+          "score": 0.8924733400344849,
+          "text_hash12": "31bc63a1affe",
+          "owner_ids": [
+            "c86b2d32-5438-4c52-b7ae-df291cca4db2"
+          ],
+          "unique_owner": "c86b2d32-5438-4c52-b7ae-df291cca4db2",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:01:30.808760+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 3,
+          "score": 0.6029423475265503,
+          "text_hash12": "8282cc8de961",
+          "owner_ids": [
+            "e6535b7e-1b67-4a1a-90fc-9ed213703ea2"
+          ],
+          "unique_owner": "e6535b7e-1b67-4a1a-90fc-9ed213703ea2",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:01:38.669600+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 4,
+          "score": 0.5871682167053223,
+          "text_hash12": "ff2df9fe735c",
+          "owner_ids": [
+            "794ac015-5e45-415d-9d4a-aa3dc0045203"
+          ],
+          "unique_owner": "794ac015-5e45-415d-9d4a-aa3dc0045203",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:49.126227+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 5,
+          "score": 0.3770653307437897,
+          "text_hash12": "9370169ec648",
+          "owner_ids": [
+            "e2ba4c3b-d9c5-415b-9e70-3d9b6f425f5a"
+          ],
+          "unique_owner": "e2ba4c3b-d9c5-415b-9e70-3d9b6f425f5a",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:34:03.926714+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 6,
+          "score": 0.3449963331222534,
+          "text_hash12": "89b11d6b0e6e",
+          "owner_ids": [
+            "5e94dceb-f305-44f1-b2bb-067080a2b4b6"
+          ],
+          "unique_owner": "5e94dceb-f305-44f1-b2bb-067080a2b4b6",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:36:01.972095+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 7,
+          "score": 0.3316105604171753,
+          "text_hash12": "c1f7eb4c9887",
+          "owner_ids": [
+            "70f3fef8-baf3-4eea-903d-d9bbf1e6b2ad"
+          ],
+          "unique_owner": "70f3fef8-baf3-4eea-903d-d9bbf1e6b2ad",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:36.851900+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 8,
+          "score": 0.31710848212242126,
+          "text_hash12": "cd2105b2b57b",
+          "owner_ids": [
+            "a4f9b647-9af2-4445-a2be-5cc93869e222"
+          ],
+          "unique_owner": "a4f9b647-9af2-4445-a2be-5cc93869e222",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:49.642650+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 9,
+          "score": 0.30584102869033813,
+          "text_hash12": "f6e677371d0d",
+          "owner_ids": [
+            "aded2053-b5d9-42d5-a106-aa3773f60ea5"
+          ],
+          "unique_owner": "aded2053-b5d9-42d5-a106-aa3773f60ea5",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T21:58:51.809328+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 10,
+          "score": 0.3034752607345581,
+          "text_hash12": "e71037e8fcdc",
+          "owner_ids": [
+            "90e3838a-c12d-4a28-a653-b5de13471e0e"
+          ],
+          "unique_owner": "90e3838a-c12d-4a28-a653-b5de13471e0e",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:01:14.061924+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 11,
+          "score": 0.296578586101532,
+          "text_hash12": "77f30aeffbc4",
+          "owner_ids": [
+            "d1da0c96-b21e-4e84-8eae-25fb92d4d4d9"
+          ],
+          "unique_owner": "d1da0c96-b21e-4e84-8eae-25fb92d4d4d9",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:58.445721+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 12,
+          "score": 0.2965540885925293,
+          "text_hash12": "479cfd462810",
+          "owner_ids": [
+            "dd44ed20-1acb-4951-8335-33437b6947d3"
+          ],
+          "unique_owner": "dd44ed20-1acb-4951-8335-33437b6947d3",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:02:31.194483+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 13,
+          "score": 0.29182490706443787,
+          "text_hash12": "08814654e189",
+          "owner_ids": [
+            "5930e349-924a-41fd-990f-f1b2b7856148"
+          ],
+          "unique_owner": "5930e349-924a-41fd-990f-f1b2b7856148",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:15.896503+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 14,
+          "score": 0.2816047966480255,
+          "text_hash12": "3c63d277f342",
+          "owner_ids": [
+            "2dd6c6ec-1afe-47e6-9739-883eb12efc98"
+          ],
+          "unique_owner": "2dd6c6ec-1afe-47e6-9739-883eb12efc98",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:01:34.418744+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 15,
+          "score": 0.27116310596466064,
+          "text_hash12": "6c5c78fd719f",
+          "owner_ids": [
+            "1c48c0f9-8fcf-4a43-a1a8-85115f0834fd"
+          ],
+          "unique_owner": "1c48c0f9-8fcf-4a43-a1a8-85115f0834fd",
+          "ambiguous": false,
+          "timestamp": "2026-09-29T01:34:29.917832+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        }
+      ],
+      "correct_user_id_returned": true,
+      "correct_rank": 2,
+      "ambiguous_hit": false,
+      "retrieved_record_matches_expected_fact": true,
+      "candidates_considered": 7,
+      "injected_hashes": [
+        "31bc63a1affe",
+        "8282cc8de961",
+        "f6e677371d0d",
+        "e71037e8fcdc",
+        "479cfd462810"
+      ],
+      "injected_count": 5,
+      "section3_hash_in_simulated_context": true,
+      "simulated_context_nonempty": true,
+      "except_path_swallowed": false,
+      "result": "demonstrated"
+    },
+    {
+      "item_id": "07",
+      "user_id": "2dd6c6ec-1afe-47e6-9739-883eb12efc98",
+      "expected_hash12": "3c63d277f342",
+      "stored_text_equals_phase1_prompt": true,
+      "stored_hash12": "3c63d277f342",
+      "storage_ok": true,
+      "identity_validation_passed": true,
+      "index_membership_position": 157217,
+      "index_membership_ok": true,
+      "clock_started_at": "2026-11-09T22:35:49.141442+00:00",
+      "search_k": 15,
+      "search_reached_index": true,
+      "raw_hits": [
+        {
+          "rank": 1,
+          "score": 1.0000001192092896,
+          "text_hash12": "cd2105b2b57b",
+          "owner_ids": [
+            "a4f9b647-9af2-4445-a2be-5cc93869e222"
+          ],
+          "unique_owner": "a4f9b647-9af2-4445-a2be-5cc93869e222",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:49.642650+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 2,
+          "score": 0.9595688581466675,
+          "text_hash12": "3c63d277f342",
+          "owner_ids": [
+            "2dd6c6ec-1afe-47e6-9739-883eb12efc98"
+          ],
+          "unique_owner": "2dd6c6ec-1afe-47e6-9739-883eb12efc98",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:01:34.418744+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 3,
+          "score": 0.43788087368011475,
+          "text_hash12": "2e9392e1edf0",
+          "owner_ids": [
+            "dab1da03-a794-40e9-937d-adc41a230442"
+          ],
+          "unique_owner": "dab1da03-a794-40e9-937d-adc41a230442",
+          "ambiguous": false,
+          "timestamp": "2026-10-31T05:43:09.737046+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 4,
+          "score": 0.43250611424446106,
+          "text_hash12": "89b11d6b0e6e",
+          "owner_ids": [
+            "5e94dceb-f305-44f1-b2bb-067080a2b4b6"
+          ],
+          "unique_owner": "5e94dceb-f305-44f1-b2bb-067080a2b4b6",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:36:01.972095+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 5,
+          "score": 0.41933155059814453,
+          "text_hash12": "9370169ec648",
+          "owner_ids": [
+            "e2ba4c3b-d9c5-415b-9e70-3d9b6f425f5a"
+          ],
+          "unique_owner": "e2ba4c3b-d9c5-415b-9e70-3d9b6f425f5a",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:34:03.926714+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 6,
+          "score": 0.4138790965080261,
+          "text_hash12": "9dbc196bd56f",
+          "owner_ids": [
+            "5b8aa737-7ad7-4014-9e3b-12ca2cb59f23"
+          ],
+          "unique_owner": "5b8aa737-7ad7-4014-9e3b-12ca2cb59f23",
+          "ambiguous": false,
+          "timestamp": "2026-10-31T06:00:30.154578+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 7,
+          "score": 0.4134303033351898,
+          "text_hash12": "a741a79852d6",
+          "owner_ids": [
+            "0414b8db-5838-456b-bde7-270056c862cf"
+          ],
+          "unique_owner": "0414b8db-5838-456b-bde7-270056c862cf",
+          "ambiguous": false,
+          "timestamp": "2026-11-01T01:15:27.769819+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 8,
+          "score": 0.41212764382362366,
+          "text_hash12": "479cfd462810",
+          "owner_ids": [
+            "dd44ed20-1acb-4951-8335-33437b6947d3"
+          ],
+          "unique_owner": "dd44ed20-1acb-4951-8335-33437b6947d3",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:02:31.194483+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 9,
+          "score": 0.39332276582717896,
+          "text_hash12": "2a6625e51620",
+          "owner_ids": [
+            "fa7afbc4-4ae2-4a53-9372-e0829ec6d2f3"
+          ],
+          "unique_owner": "fa7afbc4-4ae2-4a53-9372-e0829ec6d2f3",
+          "ambiguous": false,
+          "timestamp": "2026-10-31T06:00:34.510163+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 10,
+          "score": 0.3745828866958618,
+          "text_hash12": "343b596bc0a5",
+          "owner_ids": [
+            "0a4ccfd2-7cae-4e4d-86f4-04a42beafef2"
+          ],
+          "unique_owner": "0a4ccfd2-7cae-4e4d-86f4-04a42beafef2",
+          "ambiguous": false,
+          "timestamp": "2026-11-01T01:15:31.631970+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 11,
+          "score": 0.370332270860672,
+          "text_hash12": "039e1378887a",
+          "owner_ids": [
+            "d7a2e0d5-01c5-4384-828a-00c1bb1b2500",
+            "3a7c3e8c-3557-46e2-b470-5bc272b2917e"
+          ],
+          "unique_owner": null,
+          "ambiguous": true,
+          "timestamp": "2026-10-31T05:56:15.091784+00:00",
+          "memory_source": "sync_air",
+          "role": "sync"
+        },
+        {
+          "rank": 12,
+          "score": 0.370332270860672,
+          "text_hash12": "039e1378887a",
+          "owner_ids": [
+            "d7a2e0d5-01c5-4384-828a-00c1bb1b2500",
+            "3a7c3e8c-3557-46e2-b470-5bc272b2917e"
+          ],
+          "unique_owner": null,
+          "ambiguous": true,
+          "timestamp": "2026-10-31T05:42:59.834152+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 13,
+          "score": 0.3587441146373749,
+          "text_hash12": "2022528d0cbb",
+          "owner_ids": [
+            "160797f8-2465-4f25-bbff-dd24cda71cef"
+          ],
+          "unique_owner": "160797f8-2465-4f25-bbff-dd24cda71cef",
+          "ambiguous": false,
+          "timestamp": "2026-10-31T05:55:47.146048+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 14,
+          "score": 0.3567945957183838,
+          "text_hash12": "13a4efa93fb3",
+          "owner_ids": [
+            "6f5b78c8-354c-46ba-a085-5a392feafd35"
+          ],
+          "unique_owner": "6f5b78c8-354c-46ba-a085-5a392feafd35",
+          "ambiguous": false,
+          "timestamp": "2026-10-31T05:56:18.883718+00:00",
+          "memory_source": "sync_air",
+          "role": "sync"
+        },
+        {
+          "rank": 15,
+          "score": 0.35184136033058167,
+          "text_hash12": "0a20a409274d",
+          "owner_ids": [
+            "f96c77df-91dd-495f-8996-6aa15bc6b825"
+          ],
+          "unique_owner": "f96c77df-91dd-495f-8996-6aa15bc6b825",
+          "ambiguous": false,
+          "timestamp": "2026-08-12T13:03:28.525603+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        }
+      ],
+      "correct_user_id_returned": true,
+      "correct_rank": 2,
+      "ambiguous_hit": false,
+      "retrieved_record_matches_expected_fact": true,
+      "candidates_considered": 12,
+      "injected_hashes": [
+        "3c63d277f342",
+        "2e9392e1edf0",
+        "9dbc196bd56f",
+        "a741a79852d6",
+        "479cfd462810"
+      ],
+      "injected_count": 5,
+      "section3_hash_in_simulated_context": true,
+      "simulated_context_nonempty": true,
+      "except_path_swallowed": false,
+      "result": "demonstrated"
+    },
+    {
+      "item_id": "08",
+      "user_id": "1f366a17-832a-4eb0-a5e4-0458f1d85fde",
+      "expected_hash12": "4ba1c6a1d6a0",
+      "stored_text_equals_phase1_prompt": true,
+      "stored_hash12": "4ba1c6a1d6a0",
+      "storage_ok": true,
+      "identity_validation_passed": true,
+      "index_membership_position": 157218,
+      "index_membership_ok": true,
+      "clock_started_at": "2026-11-09T22:35:52.735741+00:00",
+      "search_k": 15,
+      "search_reached_index": true,
+      "raw_hits": [
+        {
+          "rank": 1,
+          "score": 1.0,
+          "text_hash12": "08648eb92c10",
+          "owner_ids": [
+            "f1e907e6-0192-49c8-be71-10591bc331a2"
+          ],
+          "unique_owner": "f1e907e6-0192-49c8-be71-10591bc331a2",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:53.722566+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 2,
+          "score": 0.9586854577064514,
+          "text_hash12": "4ba1c6a1d6a0",
+          "owner_ids": [
+            "1f366a17-832a-4eb0-a5e4-0458f1d85fde"
+          ],
+          "unique_owner": "1f366a17-832a-4eb0-a5e4-0458f1d85fde",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:01:38.496511+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 3,
+          "score": 0.4977114498615265,
+          "text_hash12": "3707fb70fda6",
+          "owner_ids": [
+            "bcffe4fe-6255-4ca8-a6c5-dcf8c01e2935"
+          ],
+          "unique_owner": "bcffe4fe-6255-4ca8-a6c5-dcf8c01e2935",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:33:53.245165+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 4,
+          "score": 0.4586864411830902,
+          "text_hash12": "5aeece192c0e",
+          "owner_ids": [
+            "5e6ac8a9-19c1-4fcd-b08e-dd7c0f5e659b"
+          ],
+          "unique_owner": "5e6ac8a9-19c1-4fcd-b08e-dd7c0f5e659b",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T21:58:28.196230+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 5,
+          "score": 0.41332465410232544,
+          "text_hash12": "286a7c54d159",
+          "owner_ids": [
+            "965d0318-6aad-4aae-8829-2cc638c4673c"
+          ],
+          "unique_owner": "965d0318-6aad-4aae-8829-2cc638c4673c",
+          "ambiguous": false,
+          "timestamp": "2026-09-29T15:57:23.796626+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 6,
+          "score": 0.37673431634902954,
+          "text_hash12": "9370169ec648",
+          "owner_ids": [
+            "e2ba4c3b-d9c5-415b-9e70-3d9b6f425f5a"
+          ],
+          "unique_owner": "e2ba4c3b-d9c5-415b-9e70-3d9b6f425f5a",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:34:03.926714+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 7,
+          "score": 0.35783112049102783,
+          "text_hash12": "75cabe536565",
+          "owner_ids": [
+            "01456cc2-72f7-488a-a772-b8fd9ad92537"
+          ],
+          "unique_owner": "01456cc2-72f7-488a-a772-b8fd9ad92537",
+          "ambiguous": false,
+          "timestamp": "2026-10-23T01:52:49.934920+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 8,
+          "score": 0.35200297832489014,
+          "text_hash12": "87c56efa3732",
+          "owner_ids": [
+            "c5c5818a-16e2-42c6-a49b-2795569b6fc1"
+          ],
+          "unique_owner": "c5c5818a-16e2-42c6-a49b-2795569b6fc1",
+          "ambiguous": false,
+          "timestamp": "2026-07-29T05:21:45.451251+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 9,
+          "score": 0.3506671190261841,
+          "text_hash12": "3ae122ce1084",
+          "owner_ids": [
+            "d66e0c0f-5f70-4515-af24-ba333f2ea651"
+          ],
+          "unique_owner": "d66e0c0f-5f70-4515-af24-ba333f2ea651",
+          "ambiguous": false,
+          "timestamp": "2026-10-07T21:22:17.180478+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 10,
+          "score": 0.33250752091407776,
+          "text_hash12": "ec3f1caa8940",
+          "owner_ids": [
+            "5a058b00-9ea3-48d5-bef3-fadf001b7266"
+          ],
+          "unique_owner": "5a058b00-9ea3-48d5-bef3-fadf001b7266",
+          "ambiguous": false,
+          "timestamp": "2026-10-12T09:06:11.136281+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 11,
+          "score": 0.32284122705459595,
+          "text_hash12": "cdc4077e2e26",
+          "owner_ids": [
+            "9cc15690-0e4b-4498-8c1e-46db345d9639"
+          ],
+          "unique_owner": "9cc15690-0e4b-4498-8c1e-46db345d9639",
+          "ambiguous": false,
+          "timestamp": "2026-09-01T05:58:38.772889+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 12,
+          "score": 0.3217085599899292,
+          "text_hash12": "b14792a60e15",
+          "owner_ids": [
+            "85b6678e-b993-4f15-b07a-4436b314b67a"
+          ],
+          "unique_owner": "85b6678e-b993-4f15-b07a-4436b314b67a",
+          "ambiguous": false,
+          "timestamp": "2026-08-07T05:26:22.145508+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 13,
+          "score": 0.3206777572631836,
+          "text_hash12": "3a1b2d3d767a",
+          "owner_ids": [
+            "930335e6-1209-44ff-b391-1d23883c85af"
+          ],
+          "unique_owner": "930335e6-1209-44ff-b391-1d23883c85af",
+          "ambiguous": false,
+          "timestamp": "2026-07-17T01:51:06.585503+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 14,
+          "score": 0.31611329317092896,
+          "text_hash12": "c04962057f6c",
+          "owner_ids": [
+            "f68e78c0-d320-4155-bd7e-a15400ec06f5"
+          ],
+          "unique_owner": "f68e78c0-d320-4155-bd7e-a15400ec06f5",
+          "ambiguous": false,
+          "timestamp": "2026-10-10T02:23:54.130572+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 15,
+          "score": 0.30913496017456055,
+          "text_hash12": "530cf200da33",
+          "owner_ids": [
+            "20cc589a-d042-4276-b83a-cca7b1dcc125"
+          ],
+          "unique_owner": "20cc589a-d042-4276-b83a-cca7b1dcc125",
+          "ambiguous": false,
+          "timestamp": "2026-09-10T17:33:58.714993+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        }
+      ],
+      "correct_user_id_returned": true,
+      "correct_rank": 2,
+      "ambiguous_hit": false,
+      "retrieved_record_matches_expected_fact": true,
+      "candidates_considered": 12,
+      "injected_hashes": [
+        "4ba1c6a1d6a0",
+        "5aeece192c0e",
+        "87c56efa3732",
+        "3a1b2d3d767a"
+      ],
+      "injected_count": 4,
+      "section3_hash_in_simulated_context": true,
+      "simulated_context_nonempty": true,
+      "except_path_swallowed": false,
+      "result": "demonstrated"
+    },
+    {
+      "item_id": "09",
+      "user_id": "0192ec01-8404-4f02-a2ce-c8dc4c53f848",
+      "expected_hash12": "72040f561398",
+      "stored_text_equals_phase1_prompt": true,
+      "stored_hash12": "72040f561398",
+      "storage_ok": true,
+      "identity_validation_passed": true,
+      "index_membership_position": 157222,
+      "index_membership_ok": true,
+      "clock_started_at": "2026-11-09T22:35:56.723764+00:00",
+      "search_k": 15,
+      "search_reached_index": true,
+      "raw_hits": [
+        {
+          "rank": 1,
+          "score": 1.0000001192092896,
+          "text_hash12": "77f30aeffbc4",
+          "owner_ids": [
+            "d1da0c96-b21e-4e84-8eae-25fb92d4d4d9"
+          ],
+          "unique_owner": "d1da0c96-b21e-4e84-8eae-25fb92d4d4d9",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:58.445721+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 2,
+          "score": 0.8874562382698059,
+          "text_hash12": "72040f561398",
+          "owner_ids": [
+            "0192ec01-8404-4f02-a2ce-c8dc4c53f848"
+          ],
+          "unique_owner": "0192ec01-8404-4f02-a2ce-c8dc4c53f848",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:02:20.231273+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 3,
+          "score": 0.48209553956985474,
+          "text_hash12": "fe27748b66dc",
+          "owner_ids": [
+            "fcf3584f-b943-40d8-84bf-4175dcffdee5"
+          ],
+          "unique_owner": "fcf3584f-b943-40d8-84bf-4175dcffdee5",
+          "ambiguous": false,
+          "timestamp": "2026-07-02T21:42:15.621939+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 4,
+          "score": 0.452019602060318,
+          "text_hash12": "7b2b0962e45e",
+          "owner_ids": [
+            "36c05d51-6345-4002-a4dd-fd75fae976dd"
+          ],
+          "unique_owner": "36c05d51-6345-4002-a4dd-fd75fae976dd",
+          "ambiguous": false,
+          "timestamp": "2026-07-13T21:44:36.221307+00:00",
+          "memory_source": null,
+          "role": null
+        },
+        {
+          "rank": 5,
+          "score": 0.44790446758270264,
+          "text_hash12": "ca3535f73fe0",
+          "owner_ids": [
+            "127b0b7b-d0c7-4c75-b547-699faa08e8c3"
+          ],
+          "unique_owner": "127b0b7b-d0c7-4c75-b547-699faa08e8c3",
+          "ambiguous": false,
+          "timestamp": "2026-07-02T21:42:18.739290+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 6,
+          "score": 0.44569629430770874,
+          "text_hash12": "de19d12ccbd4",
+          "owner_ids": [
+            "db391869-2435-4d54-be04-3a8735f15240"
+          ],
+          "unique_owner": "db391869-2435-4d54-be04-3a8735f15240",
+          "ambiguous": false,
+          "timestamp": "2026-07-13T21:43:50.810630+00:00",
+          "memory_source": null,
+          "role": null
+        },
+        {
+          "rank": 7,
+          "score": 0.44407957792282104,
+          "text_hash12": "fe3d29c6bff8",
+          "owner_ids": [
+            "e87d87ee-aaf1-4186-a7d4-bbadbc9f911e"
+          ],
+          "unique_owner": "e87d87ee-aaf1-4186-a7d4-bbadbc9f911e",
+          "ambiguous": false,
+          "timestamp": "2026-07-02T21:42:17.392914+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 8,
+          "score": 0.44361862540245056,
+          "text_hash12": "614548789fef",
+          "owner_ids": [
+            "fa666df7-6c57-4cd6-b5fa-6130189083fc"
+          ],
+          "unique_owner": "fa666df7-6c57-4cd6-b5fa-6130189083fc",
+          "ambiguous": false,
+          "timestamp": "2026-07-13T21:55:39.130443+00:00",
+          "memory_source": null,
+          "role": null
+        },
+        {
+          "rank": 9,
+          "score": 0.4404379725456238,
+          "text_hash12": "f6e54642f04d",
+          "owner_ids": [
+            "3630963f-d608-4eeb-a8da-8d63aa77d306"
+          ],
+          "unique_owner": "3630963f-d608-4eeb-a8da-8d63aa77d306",
+          "ambiguous": false,
+          "timestamp": "2026-07-02T21:42:16.358355+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 10,
+          "score": 0.4397311210632324,
+          "text_hash12": "49f84bd17aaf",
+          "owner_ids": [
+            "7965a8c7-4f87-4cd6-a4f9-067d6fc4ff5f"
+          ],
+          "unique_owner": "7965a8c7-4f87-4cd6-a4f9-067d6fc4ff5f",
+          "ambiguous": false,
+          "timestamp": "2026-07-13T21:48:50.040956+00:00",
+          "memory_source": null,
+          "role": null
+        },
+        {
+          "rank": 11,
+          "score": 0.4360833466053009,
+          "text_hash12": "0165b751394f",
+          "owner_ids": [
+            "fce08b54-5f25-4789-ad2b-197ff7100f40"
+          ],
+          "unique_owner": "fce08b54-5f25-4789-ad2b-197ff7100f40",
+          "ambiguous": false,
+          "timestamp": "2026-07-02T21:42:19.756899+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 12,
+          "score": 0.43257632851600647,
+          "text_hash12": "488e04ff13ee",
+          "owner_ids": [
+            "576b662a-9819-4945-b99f-7a8a82c4014a"
+          ],
+          "unique_owner": "576b662a-9819-4945-b99f-7a8a82c4014a",
+          "ambiguous": false,
+          "timestamp": "2026-07-02T21:42:16.557026+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 13,
+          "score": 0.4299429655075073,
+          "text_hash12": "3aa087ddbb41",
+          "owner_ids": [
+            "3569b7ee-1e40-4dd6-b873-98a67d42f53e"
+          ],
+          "unique_owner": "3569b7ee-1e40-4dd6-b873-98a67d42f53e",
+          "ambiguous": false,
+          "timestamp": "2026-07-02T21:42:43.820908+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 14,
+          "score": 0.4289554953575134,
+          "text_hash12": "c15abacf4dc8",
+          "owner_ids": [
+            "8deac457-ef0e-4343-9d0a-4e0fc0553b12"
+          ],
+          "unique_owner": "8deac457-ef0e-4343-9d0a-4e0fc0553b12",
+          "ambiguous": false,
+          "timestamp": "2026-07-13T21:50:31.308163+00:00",
+          "memory_source": null,
+          "role": null
+        },
+        {
+          "rank": 15,
+          "score": 0.42765218019485474,
+          "text_hash12": "201b8cab63c8",
+          "owner_ids": [
+            "1713fc6b-7602-4118-8205-25665520fa84"
+          ],
+          "unique_owner": "1713fc6b-7602-4118-8205-25665520fa84",
+          "ambiguous": false,
+          "timestamp": "2026-07-02T21:42:15.701987+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        }
+      ],
+      "correct_user_id_returned": true,
+      "correct_rank": 2,
+      "ambiguous_hit": false,
+      "retrieved_record_matches_expected_fact": true,
+      "candidates_considered": 14,
+      "injected_hashes": [
+        "72040f561398",
+        "fe27748b66dc",
+        "ca3535f73fe0",
+        "fe3d29c6bff8",
+        "f6e54642f04d"
+      ],
+      "injected_count": 5,
+      "section3_hash_in_simulated_context": true,
+      "simulated_context_nonempty": true,
+      "except_path_swallowed": false,
+      "result": "demonstrated"
+    },
+    {
+      "item_id": "10",
+      "user_id": "dd44ed20-1acb-4951-8335-33437b6947d3",
+      "expected_hash12": "479cfd462810",
+      "stored_text_equals_phase1_prompt": true,
+      "stored_hash12": "479cfd462810",
+      "storage_ok": true,
+      "identity_validation_passed": true,
+      "index_membership_position": 157224,
+      "index_membership_ok": true,
+      "clock_started_at": "2026-11-09T22:36:01.448165+00:00",
+      "search_k": 15,
+      "search_reached_index": true,
+      "raw_hits": [
+        {
+          "rank": 1,
+          "score": 1.0,
+          "text_hash12": "89b11d6b0e6e",
+          "owner_ids": [
+            "5e94dceb-f305-44f1-b2bb-067080a2b4b6"
+          ],
+          "unique_owner": "5e94dceb-f305-44f1-b2bb-067080a2b4b6",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:36:01.972095+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 2,
+          "score": 0.8901591300964355,
+          "text_hash12": "479cfd462810",
+          "owner_ids": [
+            "dd44ed20-1acb-4951-8335-33437b6947d3"
+          ],
+          "unique_owner": "dd44ed20-1acb-4951-8335-33437b6947d3",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:02:31.194483+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 3,
+          "score": 0.4893602132797241,
+          "text_hash12": "3707fb70fda6",
+          "owner_ids": [
+            "bcffe4fe-6255-4ca8-a6c5-dcf8c01e2935"
+          ],
+          "unique_owner": "bcffe4fe-6255-4ca8-a6c5-dcf8c01e2935",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:33:53.245165+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 4,
+          "score": 0.44049596786499023,
+          "text_hash12": "c1f7eb4c9887",
+          "owner_ids": [
+            "70f3fef8-baf3-4eea-903d-d9bbf1e6b2ad"
+          ],
+          "unique_owner": "70f3fef8-baf3-4eea-903d-d9bbf1e6b2ad",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:36.851900+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 5,
+          "score": 0.43250617384910583,
+          "text_hash12": "cd2105b2b57b",
+          "owner_ids": [
+            "a4f9b647-9af2-4445-a2be-5cc93869e222"
+          ],
+          "unique_owner": "a4f9b647-9af2-4445-a2be-5cc93869e222",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:49.642650+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 6,
+          "score": 0.4309521019458771,
+          "text_hash12": "5aeece192c0e",
+          "owner_ids": [
+            "5e6ac8a9-19c1-4fcd-b08e-dd7c0f5e659b"
+          ],
+          "unique_owner": "5e6ac8a9-19c1-4fcd-b08e-dd7c0f5e659b",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T21:58:28.196230+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 7,
+          "score": 0.4193917214870453,
+          "text_hash12": "3c63d277f342",
+          "owner_ids": [
+            "2dd6c6ec-1afe-47e6-9739-883eb12efc98"
+          ],
+          "unique_owner": "2dd6c6ec-1afe-47e6-9739-883eb12efc98",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:01:34.418744+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 8,
+          "score": 0.41890954971313477,
+          "text_hash12": "e71037e8fcdc",
+          "owner_ids": [
+            "90e3838a-c12d-4a28-a653-b5de13471e0e"
+          ],
+          "unique_owner": "90e3838a-c12d-4a28-a653-b5de13471e0e",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:01:14.061924+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 9,
+          "score": 0.39951691031455994,
+          "text_hash12": "081cc15aa4de",
+          "owner_ids": [
+            "4d0c3a38-181f-4aa6-88fa-3e713ab480cb"
+          ],
+          "unique_owner": "4d0c3a38-181f-4aa6-88fa-3e713ab480cb",
+          "ambiguous": false,
+          "timestamp": "2026-10-04T06:40:27.914677+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 10,
+          "score": 0.39630067348480225,
+          "text_hash12": "9370169ec648",
+          "owner_ids": [
+            "e2ba4c3b-d9c5-415b-9e70-3d9b6f425f5a"
+          ],
+          "unique_owner": "e2ba4c3b-d9c5-415b-9e70-3d9b6f425f5a",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:34:03.926714+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 11,
+          "score": 0.38616055250167847,
+          "text_hash12": "5eea44fc1409",
+          "owner_ids": [
+            "86fb74d2-213d-4cd1-b435-467b594b3d40"
+          ],
+          "unique_owner": "86fb74d2-213d-4cd1-b435-467b594b3d40",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T19:18:10.193239+00:00",
+          "memory_source": "user_conversation",
+          "role": "echo"
+        },
+        {
+          "rank": 12,
+          "score": 0.3751486837863922,
+          "text_hash12": "08814654e189",
+          "owner_ids": [
+            "5930e349-924a-41fd-990f-f1b2b7856148"
+          ],
+          "unique_owner": "5930e349-924a-41fd-990f-f1b2b7856148",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:15.896503+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 13,
+          "score": 0.353180468082428,
+          "text_hash12": "69577c57bd71",
+          "owner_ids": [
+            "de05c29b-966c-4ee4-bc80-c3e47ad0f21a"
+          ],
+          "unique_owner": "de05c29b-966c-4ee4-bc80-c3e47ad0f21a",
+          "ambiguous": false,
+          "timestamp": "2026-09-30T01:56:43.942100+00:00",
+          "memory_source": "autonomous",
+          "role": "fetch"
+        },
+        {
+          "rank": 14,
+          "score": 0.35119274258613586,
+          "text_hash12": "254ada88570e",
+          "owner_ids": [
+            "36495cc5-39f3-4a31-a79b-332dc52da1ae"
+          ],
+          "unique_owner": "36495cc5-39f3-4a31-a79b-332dc52da1ae",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T21:59:10.616709+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        },
+        {
+          "rank": 15,
+          "score": 0.3449963927268982,
+          "text_hash12": "a6edf17a0c68",
+          "owner_ids": [
+            "66b98d13-9b20-45c7-9025-26681dc7fc25"
+          ],
+          "unique_owner": "66b98d13-9b20-45c7-9025-26681dc7fc25",
+          "ambiguous": false,
+          "timestamp": "2026-11-09T22:35:46.146624+00:00",
+          "memory_source": "user_conversation",
+          "role": "user"
+        }
+      ],
+      "correct_user_id_returned": true,
+      "correct_rank": 2,
+      "ambiguous_hit": false,
+      "retrieved_record_matches_expected_fact": true,
+      "candidates_considered": 8,
+      "injected_hashes": [
+        "479cfd462810",
+        "5aeece192c0e",
+        "3c63d277f342",
+        "e71037e8fcdc",
+        "081cc15aa4de"
+      ],
+      "injected_count": 5,
+      "section3_hash_in_simulated_context": true,
+      "simulated_context_nonempty": true,
+      "except_path_swallowed": false,
+      "result": "demonstrated"
+    }
+  ],
+  "echo_row_item_03": {
+    "user_id": "67eccddb-cb98-4373-b206-aceed4712b62",
+    "present": true,
+    "text_hash12": "4ae0ccf0ce68",
+    "expected_hash12": "4ae0ccf0ce68",
+    "hash_matches_section3": true,
+    "appears_in_item03_raw_hits": true,
+    "used_as_substitute_for_user_row": false
+  },
+  "negative_control": {
+    "nonce_absent_from_metadata": true,
+    "nonce_neighbor_unique_owners": [
+      "8c175b0a-7449-4597-8d22-660d53b2c50c",
+      "e23b1142-a73c-4c89-9087-32d32874c732",
+      "f51e2f62-a91a-4b1e-ba34-f8632815ef13",
+      "ebc5656b-6221-427e-8ffd-4b703785703d",
+      "4e92efc4-c0c5-4f07-bebb-276efc5414b2",
+      "20f9b41e-5127-46a0-aa7f-05a9156a2abb",
+      "288bd531-f0c5-4f1f-beab-a734893ae74a",
+      "5d1b5156-6564-4c23-b1b7-fa2f4ba5971b",
+      "ea01a136-f757-4968-a860-687ab5482f05",
+      "af01bbc8-fc9a-43ad-8276-b09199b614f4",
+      "3ea65760-a7f2-4693-8083-08f5e3104ee8",
+      "9fa0d999-fb9c-4343-9c33-920be174c366",
+      "5edd4c76-2f6b-46d5-8ac2-c05842172a14",
+      "d3ca51a9-038a-4f6e-80e3-3239db743ada",
+      "e841f200-4b7f-4b38-9cb9-0a652a3309b8"
+    ],
+    "nonce_neighbors_reported_as_ten_successes": false,
+    "other_stored_id": "762209c7-677f-4b35-bb68-7473855afaa1",
+    "other_stored_hash12": "3a69e3e19f9a",
+    "other_id_is_one_of_the_ten": false,
+    "other_text_unique": true,
+    "other_query_top_unique_owner": "762209c7-677f-4b35-bb68-7473855afaa1",
+    "other_query_returned_its_own_id": true
+  },
+  "stage_counts": {
+    "storage_ok": 10,
+    "identity_validation_passed": 10,
+    "index_membership_ok": 10,
+    "search_reached_index": 10,
+    "correct_user_id_returned": 10,
+    "retrieved_record_matches_expected_fact": 10,
+    "section3_hash_in_simulated_context": 10,
+    "demonstrated": 10,
+    "failed": 0,
+    "could_not_be_tested": 0
+  },
+  "live_before": {
+    "index": {
+      "inode": 36650760,
+      "size": 241846317,
+      "mtime_ns": 1794282591254729241
+    },
+    "meta": {
+      "inode": 36650687,
+      "size": 136455510,
+      "mtime_ns": 1794282590252782184
+    },
+    "sidecar_exists": false
+  },
+  "live_after": {
+    "index": {
+      "inode": 36650760,
+      "size": 241846317,
+      "mtime_ns": 1794282591254729241
+    },
+    "meta": {
+      "inode": 36650687,
+      "size": 136455510,
+      "mtime_ns": 1794282590252782184
+    },
+    "sidecar_exists": false
+  },
+  "live_stat_changed_during_search": false,
+  "production_paths_opened_for_write": false
+}

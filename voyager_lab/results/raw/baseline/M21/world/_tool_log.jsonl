@@ -1,0 +1,4 @@
+{"args": {"path": "inbox.txt"}, "code": "unknown_result", "op": "read", "status": "unknown"}
+{"args": {"path": "inbox.txt"}, "code": "unknown_result", "op": "read", "status": "unknown"}
+{"args": {"path": "inbox.txt"}, "code": "unknown_result", "op": "read", "status": "unknown"}
+{"args": {"path": "out.txt"}, "code": "ok", "op": "write", "status": "ok"}

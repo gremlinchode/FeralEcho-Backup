@@ -1,0 +1,2 @@
+{"args": {"path": "wide_a.txt"}, "code": "ok", "op": "read", "status": "ok"}
+{"args": {"path": "wide_sum.txt"}, "code": "ok", "op": "write", "status": "ok"}

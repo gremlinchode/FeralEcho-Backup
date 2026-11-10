@@ -1,0 +1,346 @@
+{
+  "after": {
+    "abs_target": {
+      "exists": false,
+      "path": "/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t1_fau225um/abs_target.txt"
+    },
+    "base_listing": {
+      "entries": [
+        {
+          "dev": 16777233,
+          "ino": 36344447,
+          "kind": "dir",
+          "mode": 448,
+          "mtime_ns": 1794193405424218715,
+          "name": "outside",
+          "nlink": 3,
+          "size": 96
+        },
+        {
+          "dev": 16777233,
+          "ino": 36344446,
+          "kind": "dir",
+          "mode": 448,
+          "mtime_ns": 1794193405426255480,
+          "name": "pin",
+          "nlink": 4,
+          "size": 128
+        }
+      ],
+      "exists": true,
+      "names": [
+        "outside",
+        "pin"
+      ]
+    },
+    "canary": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 36344448,
+      "kind": "file",
+      "mode": 420,
+      "mtime_ns": 1794193405424295049,
+      "nlink": 1,
+      "path": "/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t1_fau225um/outside/canary.txt",
+      "size": 14
+    },
+    "escape_target": {
+      "exists": false,
+      "path": "/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t1_fau225um/escaped.txt"
+    },
+    "outside_listing": {
+      "entries": [
+        {
+          "dev": 16777233,
+          "ino": 36344448,
+          "kind": "file",
+          "mode": 420,
+          "mtime_ns": 1794193405424295049,
+          "name": "canary.txt",
+          "nlink": 1,
+          "size": 14
+        }
+      ],
+      "exists": true,
+      "names": [
+        "canary.txt"
+      ]
+    },
+    "pin_fd": {
+      "dev": 16777233,
+      "ino": 36344446,
+      "path": "/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t1_fau225um/pin"
+    },
+    "pin_listing": {
+      "entries": [
+        {
+          "dev": 16777233,
+          "ino": 36344452,
+          "kind": "file",
+          "mode": 420,
+          "mtime_ns": 1794193405426912402,
+          "name": ".scratch_write_audit.jsonl",
+          "nlink": 1,
+          "size": 889
+        },
+        {
+          "dev": 16777233,
+          "ino": 36344449,
+          "kind": "file",
+          "mode": 420,
+          "mtime_ns": 1794193405425121638,
+          "name": "legal.txt",
+          "nlink": 1,
+          "size": 24
+        }
+      ],
+      "exists": true,
+      "names": [
+        ".scratch_write_audit.jsonl",
+        "legal.txt"
+      ]
+    }
+  },
+  "audit": {
+    "present": true,
+    "read": {
+      "dev": 16777233,
+      "ino": 36344452,
+      "mode": 420,
+      "nlink": 1,
+      "ok": true,
+      "read_size": 889,
+      "sha256": "0e8eb697be90e66a570cad616049b9d17ccda5d4d41c469ae0c88cd15bc8aa5a",
+      "size": 889
+    },
+    "records": [
+      {
+        "accepted": true,
+        "operation": "write",
+        "path": "legal.txt",
+        "reason": "verified",
+        "sha256": "900438a953f90ba4918b37af766f374bd8818f8baba3f45fbb4e4f7b1c50935a",
+        "size": 24,
+        "timestamp": "2026-11-09T03:03:25.425856Z",
+        "verification": "match"
+      },
+      {
+        "accepted": true,
+        "operation": "verify",
+        "path": "legal.txt",
+        "reason": "verified",
+        "sha256": "900438a953f90ba4918b37af766f374bd8818f8baba3f45fbb4e4f7b1c50935a",
+        "size": 24,
+        "timestamp": "2026-11-09T03:03:25.426593Z",
+        "verification": "match"
+      },
+      {
+        "accepted": false,
+        "operation": "write",
+        "path": "../escaped.txt",
+        "reason": "path_dot_segment",
+        "sha256": null,
+        "size": null,
+        "timestamp": "2026-11-09T03:03:25.426753Z",
+        "verification": "not_run"
+      },
+      {
+        "accepted": false,
+        "operation": "write",
+        "path": "/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t1_fau225um/abs_target.txt",
+        "reason": "path_absolute",
+        "sha256": null,
+        "size": null,
+        "timestamp": "2026-11-09T03:03:25.426862Z",
+        "verification": "not_run"
+      }
+    ],
+    "text": "{\"accepted\":true,\"operation\":\"write\",\"path\":\"legal.txt\",\"reason\":\"verified\",\"sha256\":\"900438a953f90ba4918b37af766f374bd8818f8baba3f45fbb4e4f7b1c50935a\",\"size\":24,\"timestamp\":\"2026-11-09T03:03:25.425856Z\",\"verification\":\"match\"}\n{\"accepted\":true,\"operation\":\"verify\",\"path\":\"legal.txt\",\"reason\":\"verified\",\"sha256\":\"900438a953f90ba4918b37af766f374bd8818f8baba3f45fbb4e4f7b1c50935a\",\"size\":24,\"timestamp\":\"2026-11-09T03:03:25.426593Z\",\"verification\":\"match\"}\n{\"accepted\":false,\"operation\":\"write\",\"path\":\"../escaped.txt\",\"reason\":\"path_dot_segment\",\"sha256\":null,\"size\":null,\"timestamp\":\"2026-11-09T03:03:25.426753Z\",\"verification\":\"not_run\"}\n{\"accepted\":false,\"operation\":\"write\",\"path\":\"/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t1_fau225um/abs_target.txt\",\"reason\":\"path_absolute\",\"sha256\":null,\"size\":null,\"timestamp\":\"2026-11-09T03:03:25.426862Z\",\"verification\":\"not_run\"}\n"
+  },
+  "base_before": {
+    "entries": [
+      {
+        "dev": 16777233,
+        "ino": 36344447,
+        "kind": "dir",
+        "mode": 448,
+        "mtime_ns": 1794193405424218715,
+        "name": "outside",
+        "nlink": 3,
+        "size": 96
+      },
+      {
+        "dev": 16777233,
+        "ino": 36344446,
+        "kind": "dir",
+        "mode": 448,
+        "mtime_ns": 1794193405424053547,
+        "name": "pin",
+        "nlink": 2,
+        "size": 64
+      }
+    ],
+    "exists": true,
+    "names": [
+      "outside",
+      "pin"
+    ]
+  },
+  "canary_before": {
+    "dev": 16777233,
+    "exists": true,
+    "ino": 36344448,
+    "kind": "file",
+    "mode": 420,
+    "mtime_ns": 1794193405424295049,
+    "nlink": 1,
+    "path": "/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t1_fau225um/outside/canary.txt",
+    "size": 14
+  },
+  "checks": {
+    "abs_absent": true,
+    "absolute_rejected": true,
+    "canary_inode": true,
+    "escape_absent": true,
+    "escape_body_absent_from_audit": true,
+    "escape_rejected": true,
+    "legal_bytes": true,
+    "legal_ok": true,
+    "no_file_outside_pin_names": true,
+    "outside_names_unchanged": true,
+    "pin_fd_identity": true,
+    "root_calls_typeerror": true,
+    "sentinel_absent_from_audit": true,
+    "signature_has_no_root": true,
+    "verify_ok": true
+  },
+  "evidence_path": "/tmp/scratch_writer_t1.json",
+  "limitations": [
+    "The laboratory write_file(root, ...) API was not called. The existing 56 tests already cover that API. This test does not create a file outside the pinned directory."
+  ],
+  "operations": {
+    "absolute_write": {
+      "accepted": false,
+      "audit_recorded": true,
+      "ok": false,
+      "operation": "write",
+      "path": "/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t1_fau225um/abs_target.txt",
+      "reason": "path_absolute",
+      "sha256": null,
+      "size": null,
+      "status": "rejected",
+      "verification": "not_run"
+    },
+    "escape_write": {
+      "accepted": false,
+      "audit_recorded": true,
+      "ok": false,
+      "operation": "write",
+      "path": "../escaped.txt",
+      "reason": "path_dot_segment",
+      "sha256": null,
+      "size": null,
+      "status": "rejected",
+      "verification": "not_run"
+    },
+    "legal_independent_read": {
+      "dev": 16777233,
+      "ino": 36344449,
+      "mode": 420,
+      "nlink": 1,
+      "ok": true,
+      "read_size": 24,
+      "sha256": "900438a953f90ba4918b37af766f374bd8818f8baba3f45fbb4e4f7b1c50935a",
+      "size": 24,
+      "text": "PINNED_SENTINEL_8f3c1d0e"
+    },
+    "legal_verify": {
+      "accepted": true,
+      "audit_recorded": true,
+      "ok": true,
+      "operation": "verify",
+      "path": "legal.txt",
+      "reason": "verified",
+      "sha256": "900438a953f90ba4918b37af766f374bd8818f8baba3f45fbb4e4f7b1c50935a",
+      "size": 24,
+      "status": "verified",
+      "verification": "match"
+    },
+    "legal_write": {
+      "accepted": true,
+      "audit_recorded": true,
+      "ok": true,
+      "operation": "write",
+      "path": "legal.txt",
+      "reason": "verified",
+      "sha256": "900438a953f90ba4918b37af766f374bd8818f8baba3f45fbb4e4f7b1c50935a",
+      "size": 24,
+      "status": "verified",
+      "verification": "match"
+    },
+    "root_substitution": [
+      {
+        "label": "write_keyword",
+        "message": "ScratchWriter.write_file() got an unexpected keyword argument 'root'",
+        "raised": true,
+        "type": "TypeError"
+      },
+      {
+        "label": "write_positional",
+        "message": "ScratchWriter.write_file() takes 3 positional arguments but 4 were given",
+        "raised": true,
+        "type": "TypeError"
+      },
+      {
+        "label": "verify_keyword",
+        "message": "ScratchWriter.verify_file() got an unexpected keyword argument 'root'",
+        "raised": true,
+        "type": "TypeError"
+      }
+    ]
+  },
+  "outside_before": {
+    "entries": [
+      {
+        "dev": 16777233,
+        "ino": 36344448,
+        "kind": "file",
+        "mode": 420,
+        "mtime_ns": 1794193405424295049,
+        "name": "canary.txt",
+        "nlink": 1,
+        "size": 14
+      }
+    ],
+    "exists": true,
+    "names": [
+      "canary.txt"
+    ]
+  },
+  "pin": {
+    "dev": 16777233,
+    "fd": 5,
+    "ino": 36344446,
+    "path": "/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t1_fau225um/pin"
+  },
+  "setup": {
+    "base": "/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t1_fau225um",
+    "canary": "/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t1_fau225um/outside/canary.txt",
+    "outside": "/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t1_fau225um/outside",
+    "pin_requested": "/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t1_fau225um/pin"
+  },
+  "signatures": {
+    "verify_file": [
+      "self",
+      "relative_path",
+      "expected_content"
+    ],
+    "write_file": [
+      "self",
+      "relative_path",
+      "content"
+    ]
+  },
+  "test": "T1",
+  "verdict": "PASS"
+}

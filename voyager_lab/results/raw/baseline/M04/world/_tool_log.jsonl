@@ -1,0 +1,2 @@
+{"args": {"path": "note.txt"}, "code": "ok", "op": "read", "status": "ok"}
+{"args": {"path": "reports/done.txt"}, "code": "missing_parent", "op": "write", "status": "error"}

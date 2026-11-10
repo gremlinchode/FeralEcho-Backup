@@ -1,0 +1,11 @@
+{
+  "budget": 6,
+  "id": "M08",
+  "objective": "Copy the source into the destination. A second source is available.",
+  "problem_class": "copy_value",
+  "slots": {
+    "alt_src": "real.txt",
+    "dst": "out.txt",
+    "src": "gone.txt"
+  }
+}

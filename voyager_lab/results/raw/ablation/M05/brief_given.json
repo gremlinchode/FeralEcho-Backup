@@ -1,0 +1,10 @@
+{
+  "budget": 6,
+  "id": "M05",
+  "objective": "Copy the nonce into the outbox. The source is removed when it is read.",
+  "problem_class": "copy_value",
+  "slots": {
+    "dst": "outbox.txt",
+    "src": "nonce.txt"
+  }
+}

@@ -1,0 +1,2 @@
+{"args": {"path": "notes.txt"}, "code": "ok", "op": "read", "status": "ok"}
+{"args": {"path": "notes.txt"}, "code": "ok", "op": "sum_lines", "status": "ok"}

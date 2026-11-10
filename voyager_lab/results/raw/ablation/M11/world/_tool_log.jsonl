@@ -1,0 +1,4 @@
+{"args": {"path": "left.txt"}, "code": "ok", "op": "read", "status": "ok"}
+{"args": {"path": "right.txt"}, "code": "ok", "op": "read", "status": "ok"}
+{"args": {"path": "authority.txt"}, "code": "ok", "op": "read", "status": "ok"}
+{"args": {"path": "answer.txt"}, "code": "ok", "op": "write", "status": "ok"}

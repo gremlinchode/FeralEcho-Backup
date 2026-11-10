@@ -1,0 +1,218 @@
+{
+  "outcome": "EXPERIMENT NOT COMPLETED",
+  "completed_comparison": false,
+  "model_generations": 29,
+  "budget_max": 30,
+  "baseline": {
+    "passed": 4,
+    "n": 10,
+    "by_dimension": {
+      "assumption": {
+        "pass": 1,
+        "n": 2
+      },
+      "opposition": {
+        "pass": 1,
+        "n": 2
+      },
+      "evidence": {
+        "pass": 1,
+        "n": 2
+      },
+      "correction": {
+        "pass": 0,
+        "n": 2
+      },
+      "calibration": {
+        "pass": 1,
+        "n": 2
+      }
+    },
+    "dimensions_at_2_of_2": 0,
+    "fabricated_items": []
+  },
+  "candidate": {
+    "passed": 3,
+    "n": 10,
+    "by_dimension": {
+      "assumption": {
+        "pass": 0,
+        "n": 2
+      },
+      "opposition": {
+        "pass": 1,
+        "n": 2
+      },
+      "evidence": {
+        "pass": 1,
+        "n": 2
+      },
+      "correction": {
+        "pass": 1,
+        "n": 2
+      },
+      "calibration": {
+        "pass": 0,
+        "n": 2
+      }
+    },
+    "dimensions_at_2_of_2": 0,
+    "fabricated_items": []
+  },
+  "margin": -1,
+  "baseline_scores": [
+    {
+      "item_id": "A1",
+      "dimension": "assumption",
+      "pass": false,
+      "detail": "missing_assumption_or_support_judgment",
+      "fabricated": false
+    },
+    {
+      "item_id": "A2",
+      "dimension": "assumption",
+      "pass": true,
+      "detail": "empty_log_assumption_unsupported",
+      "fabricated": false
+    },
+    {
+      "item_id": "B1",
+      "dimension": "opposition",
+      "pass": true,
+      "detail": "readiness_objection",
+      "fabricated": false
+    },
+    {
+      "item_id": "B2",
+      "dimension": "opposition",
+      "pass": false,
+      "detail": "no_formal_counterargument",
+      "fabricated": false
+    },
+    {
+      "item_id": "C1",
+      "dimension": "evidence",
+      "pass": false,
+      "detail": "label_mismatch",
+      "fabricated": false
+    },
+    {
+      "item_id": "C2",
+      "dimension": "evidence",
+      "pass": true,
+      "detail": "s2_identified",
+      "fabricated": false
+    },
+    {
+      "item_id": "D1",
+      "dimension": "correction",
+      "pass": false,
+      "detail": "causal_claim_kept_or_unclear",
+      "fabricated": false
+    },
+    {
+      "item_id": "D2",
+      "dimension": "correction",
+      "pass": false,
+      "detail": "weight_changed_or_unclear",
+      "fabricated": false
+    },
+    {
+      "item_id": "E1",
+      "dimension": "calibration",
+      "pass": false,
+      "detail": "fraction_missing",
+      "fabricated": false
+    },
+    {
+      "item_id": "E2",
+      "dimension": "calibration",
+      "pass": true,
+      "detail": "abstained",
+      "fabricated": false
+    }
+  ],
+  "candidate_scores": [
+    {
+      "item_id": "A1",
+      "dimension": "assumption",
+      "pass": false,
+      "detail": "missing_assumption_or_support_judgment",
+      "fabricated": false
+    },
+    {
+      "item_id": "A2",
+      "dimension": "assumption",
+      "pass": false,
+      "detail": "missing_or_affirmed_fix",
+      "fabricated": false
+    },
+    {
+      "item_id": "B1",
+      "dimension": "opposition",
+      "pass": true,
+      "detail": "readiness_objection",
+      "fabricated": false
+    },
+    {
+      "item_id": "B2",
+      "dimension": "opposition",
+      "pass": false,
+      "detail": "no_formal_counterargument",
+      "fabricated": false
+    },
+    {
+      "item_id": "C1",
+      "dimension": "evidence",
+      "pass": false,
+      "detail": "label_mismatch",
+      "fabricated": false
+    },
+    {
+      "item_id": "C2",
+      "dimension": "evidence",
+      "pass": true,
+      "detail": "s2_identified",
+      "fabricated": false
+    },
+    {
+      "item_id": "D1",
+      "dimension": "correction",
+      "pass": false,
+      "detail": "causal_claim_kept_or_unclear",
+      "fabricated": false
+    },
+    {
+      "item_id": "D2",
+      "dimension": "correction",
+      "pass": true,
+      "detail": "scale_kept",
+      "fabricated": false
+    },
+    {
+      "item_id": "E1",
+      "dimension": "calibration",
+      "pass": false,
+      "detail": "fraction_missing",
+      "fabricated": false
+    },
+    {
+      "item_id": "E2",
+      "dimension": "calibration",
+      "pass": false,
+      "detail": "guessed_or_failed_to_abstain",
+      "fabricated": false
+    }
+  ],
+  "freeze": {
+    "protocol_sha256": "e48a01336daed49a08fa05e9332dfadb50861e92b7917e5c802f45210ac020ea",
+    "problems_sha256": "68d3b820b4fd211495be354593d9d714befb4f0098f56c5af6aaa38bd7f42fcb",
+    "grader_sha256": "fa707a9abad7a072600c92fda6ec45c57e2c401004bcc7f6eebd69e61e2fb080",
+    "harness_sha256": "017e7bf077d6b5c95c7704514d5dd4ef08711657bab388892a6890b162e69ec7",
+    "frozen_at": "2026-11-09T05:17:33.457005+00:00"
+  },
+  "finished_at": "2026-11-09T06:07:51.915140+00:00",
+  "model_fields": [
+    "echo:latest"
+  ]
+}

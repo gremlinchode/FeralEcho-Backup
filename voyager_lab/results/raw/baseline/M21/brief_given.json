@@ -1,0 +1,10 @@
+{
+  "budget": 6,
+  "id": "M21",
+  "objective": "Copy the inbox into the outbox. If the read result is unknown, do not guess.",
+  "problem_class": "copy_value",
+  "slots": {
+    "dst": "out.txt",
+    "src": "inbox.txt"
+  }
+}

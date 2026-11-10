@@ -1,0 +1,10 @@
+{
+  "item_id": "D1",
+  "dimension": "correction",
+  "arm": "stage2",
+  "skipped": true,
+  "reason": "stage1_failed",
+  "content": "",
+  "http_status": null,
+  "finished_at": "2026-11-09T06:02:51.657766+00:00"
+}

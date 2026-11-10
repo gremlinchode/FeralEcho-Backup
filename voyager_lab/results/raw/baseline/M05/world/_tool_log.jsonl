@@ -1,0 +1,5 @@
+{"args": {"path": "nonce.txt"}, "code": "ok", "op": "read", "status": "ok"}
+{"args": {"path": "nonce.txt"}, "code": "file_not_found", "op": "read", "status": "error"}
+{"args": {"path": "nonce.txt"}, "code": "file_not_found", "op": "read", "status": "error"}
+{"args": {"path": "nonce.txt"}, "code": "file_not_found", "op": "read", "status": "error"}
+{"args": {"path": "outbox.txt"}, "code": "ok", "op": "write", "status": "ok"}

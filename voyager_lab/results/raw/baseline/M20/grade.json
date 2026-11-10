@@ -1,0 +1,27 @@
+{
+  "alternate_used": false,
+  "arm": "baseline",
+  "claimed_value": "4",
+  "contradictions": 0,
+  "elapsed_ms": 48.822,
+  "exit_codes": [
+    0
+  ],
+  "launched_pids": [
+    69317
+  ],
+  "learning_applied": "none",
+  "mission_id": "M20",
+  "objective_pass": false,
+  "plan_source": "baseline",
+  "repeat_extras": 0,
+  "resumed_from_checkpoint": false,
+  "ru_maxrss": 21905408,
+  "status": "success",
+  "tags": [
+    "unfamiliar",
+    "missing_resource"
+  ],
+  "tool_calls": 2,
+  "unsupported": true
+}

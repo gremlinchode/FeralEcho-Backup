@@ -1,0 +1,26 @@
+{
+  "alternate_used": false,
+  "arm": "ablation",
+  "claimed_value": "8-1",
+  "contradictions": 0,
+  "elapsed_ms": 55.883,
+  "exit_codes": [
+    0
+  ],
+  "launched_pids": [
+    69378
+  ],
+  "learning_applied": "none",
+  "mission_id": "M19",
+  "objective_pass": true,
+  "plan_source": "library",
+  "repeat_extras": 0,
+  "resumed_from_checkpoint": false,
+  "ru_maxrss": 21757952,
+  "status": "success",
+  "tags": [
+    "unfamiliar"
+  ],
+  "tool_calls": 4,
+  "unsupported": false
+}

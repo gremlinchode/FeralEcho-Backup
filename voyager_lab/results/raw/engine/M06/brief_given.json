@@ -1,0 +1,11 @@
+{
+  "budget": 8,
+  "id": "M06",
+  "objective": "Read a and b, add them, and write the sum.",
+  "problem_class": "pipeline_sum",
+  "slots": {
+    "a": "a.txt",
+    "b": "b.txt",
+    "dst": "sum.txt"
+  }
+}

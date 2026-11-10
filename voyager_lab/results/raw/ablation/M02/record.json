@@ -1,0 +1,104 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": "5",
+  "completed_tasks": [
+    "s0",
+    "s1",
+    "s2",
+    "s3"
+  ],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "RETRIEVED",
+      "field": "a",
+      "note": "a.txt",
+      "value": "2"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "b",
+      "note": "b.txt",
+      "value": "3"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "value",
+      "note": "add",
+      "value": "5"
+    },
+    {
+      "class": "OBSERVATION",
+      "field": "output",
+      "note": "sum.txt",
+      "value": "5"
+    }
+  ],
+  "fail_keys": [],
+  "failed_attempts": [],
+  "human_retry_open": false,
+  "last_successful_checkpoint": "s3",
+  "learning_applied": "none",
+  "mission_id": "M02",
+  "next_recommended_action": "none",
+  "objective": "Read a and b, add them, and write the sum.",
+  "outstanding_tasks": [],
+  "pid_history": [
+    69358
+  ],
+  "plan_revisions": [],
+  "plan_source": "library",
+  "problem_class": "pipeline_sum",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 8,
+    "ru_maxrss": 21708800,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 4
+  },
+  "resumed_from_checkpoint": false,
+  "status": "success",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "read",
+      "path": "a.txt",
+      "save": "a",
+      "slot": "a",
+      "state": "success"
+    },
+    {
+      "id": "s1",
+      "op": "read",
+      "path": "b.txt",
+      "save": "b",
+      "slot": "b",
+      "state": "success"
+    },
+    {
+      "from": [
+        "a",
+        "b"
+      ],
+      "id": "s2",
+      "op": "add",
+      "save": "value",
+      "state": "success"
+    },
+    {
+      "from": "value",
+      "id": "s3",
+      "op": "write",
+      "path": "sum.txt",
+      "slot": "dst",
+      "state": "success"
+    }
+  ],
+  "vars": {
+    "a": "2",
+    "b": "3",
+    "value": "5"
+  }
+}

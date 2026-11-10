@@ -1,0 +1,98 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": true,
+  "alternate_used": true,
+  "claimed_value": "77",
+  "completed_tasks": [
+    "s0",
+    "s1"
+  ],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "OBSERVATION",
+      "field": "read_error:gone.txt",
+      "note": "",
+      "value": "file_not_found"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "value",
+      "note": "gone.txt",
+      "value": "77"
+    },
+    {
+      "class": "OBSERVATION",
+      "field": "output",
+      "note": "out.txt",
+      "value": "77"
+    }
+  ],
+  "fail_keys": [
+    [
+      "read",
+      {
+        "path": "gone.txt"
+      }
+    ]
+  ],
+  "failed_attempts": [
+    {
+      "args": {
+        "path": "gone.txt"
+      },
+      "code": "file_not_found",
+      "op": "read",
+      "status": "error"
+    }
+  ],
+  "human_retry_open": false,
+  "last_successful_checkpoint": "s1",
+  "learning_applied": "none",
+  "mission_id": "M08",
+  "next_recommended_action": "none",
+  "objective": "Copy the source into the destination. A second source is available.",
+  "outstanding_tasks": [],
+  "pid_history": [
+    69366
+  ],
+  "plan_revisions": [
+    {
+      "action": "read real.txt",
+      "after": "s0",
+      "because": "file not found"
+    }
+  ],
+  "plan_source": "library",
+  "problem_class": "copy_value",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 6,
+    "ru_maxrss": 21839872,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 3
+  },
+  "resumed_from_checkpoint": false,
+  "status": "success",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "read",
+      "path": "gone.txt",
+      "save": "value",
+      "slot": "src",
+      "state": "success"
+    },
+    {
+      "from": "value",
+      "id": "s1",
+      "op": "write",
+      "path": "out.txt",
+      "slot": "dst",
+      "state": "success"
+    }
+  ],
+  "vars": {
+    "value": "77"
+  }
+}

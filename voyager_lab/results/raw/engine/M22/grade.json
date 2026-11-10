@@ -1,0 +1,26 @@
+{
+  "alternate_used": false,
+  "arm": "engine",
+  "claimed_value": null,
+  "contradictions": 0,
+  "elapsed_ms": 44.761,
+  "exit_codes": [
+    0
+  ],
+  "launched_pids": [
+    69352
+  ],
+  "learning_applied": "procedure_reuse",
+  "mission_id": "M22",
+  "objective_pass": true,
+  "plan_source": "lesson",
+  "repeat_extras": 0,
+  "resumed_from_checkpoint": false,
+  "ru_maxrss": 21921792,
+  "status": "blocked",
+  "tags": [
+    "missing_resource"
+  ],
+  "tool_calls": 1,
+  "unsupported": false
+}

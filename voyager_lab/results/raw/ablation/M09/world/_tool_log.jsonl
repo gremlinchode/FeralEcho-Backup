@@ -1,0 +1,4 @@
+{"args": {"path": "data.txt"}, "code": "ok", "op": "read", "status": "ok"}
+{"args": {"path": "nested/out.txt"}, "code": "missing_parent", "op": "write", "status": "error"}
+{"args": {"path": "nested"}, "code": "ok", "op": "create_dir", "status": "ok"}
+{"args": {"path": "nested/out.txt"}, "code": "ok", "op": "write", "status": "ok"}

@@ -1,0 +1,70 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": "10",
+  "completed_tasks": [
+    "s0",
+    "s1"
+  ],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "RETRIEVED",
+      "field": "value",
+      "note": "sum_lines",
+      "value": "10"
+    },
+    {
+      "class": "OBSERVATION",
+      "field": "output",
+      "note": "fold.txt",
+      "value": "10"
+    }
+  ],
+  "fail_keys": [],
+  "failed_attempts": [],
+  "human_retry_open": false,
+  "last_successful_checkpoint": "s1",
+  "learning_applied": "none",
+  "mission_id": "M03",
+  "next_recommended_action": "none",
+  "objective": "Sum the integer lines in the source file and write the total.",
+  "outstanding_tasks": [],
+  "pid_history": [
+    69359
+  ],
+  "plan_revisions": [],
+  "plan_source": "library",
+  "problem_class": "fold_lines",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 6,
+    "ru_maxrss": 21856256,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 2
+  },
+  "resumed_from_checkpoint": false,
+  "status": "success",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "sum_lines",
+      "path": "lines.txt",
+      "save": "value",
+      "slot": "src",
+      "state": "success"
+    },
+    {
+      "from": "value",
+      "id": "s1",
+      "op": "write",
+      "path": "fold.txt",
+      "slot": "dst",
+      "state": "success"
+    }
+  ],
+  "vars": {
+    "value": "10"
+  }
+}

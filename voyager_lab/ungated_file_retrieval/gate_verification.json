@@ -1,0 +1,145 @@
+{
+  "acceptance_12_of_12": true,
+  "checked_at": "2026-11-09T04:33:42.056431+00:00",
+  "correct": 12,
+  "function_source": "def needs_dispatch(prompt: str) -> bool:\n    \"\"\"\n    Return True if the prompt is likely to benefit from tool dispatch.\n    Intentionally does NOT overlap with echo_tool_context._LISTING_SIGNALS\n    (directory listings) \u2014 those are pre-execution injection, not dispatch.\n    \"\"\"\n    low = prompt.lower()\n    return any(sig in low for sig in _DISPATCH_SIGNALS)",
+  "import_error": null,
+  "label": "Direct call of needs_dispatch loaded from the worktree source file. Not a live server execution.",
+  "mode": "direct_function",
+  "production_source_relation": "worktree_source_sha256_matches_production",
+  "rows": [
+    {
+      "condition": "A",
+      "correct": true,
+      "expected_needs_dispatch": false,
+      "needs_dispatch": false,
+      "prompt": "A single line is stored at items/item_01.txt. Quote that line and nothing else.",
+      "trial_id": "A01"
+    },
+    {
+      "condition": "A",
+      "correct": true,
+      "expected_needs_dispatch": false,
+      "needs_dispatch": false,
+      "prompt": "A single line is stored at items/item_02.txt. Quote that line and nothing else.",
+      "trial_id": "A02"
+    },
+    {
+      "condition": "A",
+      "correct": true,
+      "expected_needs_dispatch": false,
+      "needs_dispatch": false,
+      "prompt": "A single line is stored at items/item_03.txt. Quote that line and nothing else.",
+      "trial_id": "A03"
+    },
+    {
+      "condition": "A",
+      "correct": true,
+      "expected_needs_dispatch": false,
+      "needs_dispatch": false,
+      "prompt": "A single line is stored at items/item_04.txt. Quote that line and nothing else.",
+      "trial_id": "A04"
+    },
+    {
+      "condition": "A",
+      "correct": true,
+      "expected_needs_dispatch": false,
+      "needs_dispatch": false,
+      "prompt": "A single line is stored at items/item_05.txt. Quote that line and nothing else.",
+      "trial_id": "A05"
+    },
+    {
+      "condition": "A",
+      "correct": true,
+      "expected_needs_dispatch": false,
+      "needs_dispatch": false,
+      "prompt": "A single line is stored at items/item_06.txt. Quote that line and nothing else.",
+      "trial_id": "A06"
+    },
+    {
+      "condition": "B",
+      "correct": true,
+      "expected_needs_dispatch": true,
+      "needs_dispatch": true,
+      "prompt": "A single line is stored at items/item_01.txt. Read the file and quote the line, nothing else.",
+      "trial_id": "B01"
+    },
+    {
+      "condition": "B",
+      "correct": true,
+      "expected_needs_dispatch": true,
+      "needs_dispatch": true,
+      "prompt": "A single line is stored at items/item_02.txt. Read the file and quote the line, nothing else.",
+      "trial_id": "B02"
+    },
+    {
+      "condition": "B",
+      "correct": true,
+      "expected_needs_dispatch": true,
+      "needs_dispatch": true,
+      "prompt": "A single line is stored at items/item_03.txt. Read the file and quote the line, nothing else.",
+      "trial_id": "B03"
+    },
+    {
+      "condition": "B",
+      "correct": true,
+      "expected_needs_dispatch": true,
+      "needs_dispatch": true,
+      "prompt": "A single line is stored at items/item_04.txt. Read the file and quote the line, nothing else.",
+      "trial_id": "B04"
+    },
+    {
+      "condition": "B",
+      "correct": true,
+      "expected_needs_dispatch": true,
+      "needs_dispatch": true,
+      "prompt": "A single line is stored at items/item_05.txt. Read the file and quote the line, nothing else.",
+      "trial_id": "B05"
+    },
+    {
+      "condition": "B",
+      "correct": true,
+      "expected_needs_dispatch": true,
+      "needs_dispatch": true,
+      "prompt": "A single line is stored at items/item_06.txt. Read the file and quote the line, nothing else.",
+      "trial_id": "B06"
+    }
+  ],
+  "signal_count": 32,
+  "signals": [
+    "check your memory",
+    "contents of the file",
+    "do you remember",
+    "file contents",
+    "find in memory",
+    "jot this down",
+    "log a thought",
+    "log an observation",
+    "log this",
+    "log this reflection",
+    "log this thought",
+    "look up in memory",
+    "make a note",
+    "memory search",
+    "note this down",
+    "open file",
+    "read file",
+    "read the file",
+    "recall",
+    "record a thought",
+    "record this",
+    "search memory",
+    "search my memory",
+    "search your memory",
+    "show file contents",
+    "show me the file",
+    "what do you remember about",
+    "what does the file",
+    "what is in the file",
+    "what memories do you have",
+    "what's in the file",
+    "write this down"
+  ],
+  "system_prompt_signal_hits": [],
+  "total": 12
+}

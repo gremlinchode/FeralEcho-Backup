@@ -1,0 +1,74 @@
+{
+  "items": [
+    {
+      "id": "01",
+      "conversation_id_phase1": "e2a-p1-01",
+      "conversation_id_phase2": "e2a-p2-01",
+      "phase1_prompt": "Note: The dock badge mark is K7-QRV-4419.\n\nQuestion: What is the dock badge mark?\n\nReply with only the value. Use the same spelling as the note. Do not add words.",
+      "phase2_prompt": "Question: What is the dock badge mark?\n\nReply with only the value. Use the same spelling as the earlier note. Do not add words."
+    },
+    {
+      "id": "02",
+      "conversation_id_phase1": "e2a-p1-02",
+      "conversation_id_phase2": "e2a-p2-02",
+      "phase1_prompt": "Note: Crate 14 has a mass of 18.6 kilograms.\n\nQuestion: What is the mass of crate 14?\n\nReply with only the value. Use the same spelling as the note. Do not add words.",
+      "phase2_prompt": "Question: What is the mass of crate 14?\n\nReply with only the value. Use the same spelling as the earlier note. Do not add words."
+    },
+    {
+      "id": "03",
+      "conversation_id_phase1": "e2a-p1-03",
+      "conversation_id_phase2": "e2a-p2-03",
+      "phase1_prompt": "Note: Helio reports to Sable.\n\nQuestion: Who does Helio report to?\n\nReply with only the value. Use the same spelling as the note. Do not add words.",
+      "phase2_prompt": "Question: Who does Helio report to?\n\nReply with only the value. Use the same spelling as the earlier note. Do not add words."
+    },
+    {
+      "id": "04",
+      "conversation_id_phase1": "e2a-p1-04",
+      "conversation_id_phase2": "e2a-p2-04",
+      "phase1_prompt": "Note: Permit P-19 has the seal date 2026-04-17.\n\nQuestion: What is the seal date on permit P-19?\n\nReply with only the value. Use the same spelling as the note. Do not add words.",
+      "phase2_prompt": "Question: What is the seal date on permit P-19?\n\nReply with only the value. Use the same spelling as the earlier note. Do not add words."
+    },
+    {
+      "id": "05",
+      "conversation_id_phase1": "e2a-p1-05",
+      "conversation_id_phase2": "e2a-p2-05",
+      "phase1_prompt": "Note: Lane 4 is not closed.\n\nQuestion: Is lane 4 closed?\n\nReply with only the lowercase word yes or no.",
+      "phase2_prompt": "Question: Is lane 4 closed?\n\nReply with only the lowercase word yes or no."
+    },
+    {
+      "id": "06",
+      "conversation_id_phase1": "e2a-p1-06",
+      "conversation_id_phase2": "e2a-p2-06",
+      "phase1_prompt": "Note: Vat B contains more liquid than vat A.\n\nQuestion: Which vat contains more liquid?\n\nReply with only the value. Use the same spelling as the note. Do not add words.",
+      "phase2_prompt": "Question: Which vat contains more liquid?\n\nReply with only the value. Use the same spelling as the earlier note. Do not add words."
+    },
+    {
+      "id": "07",
+      "conversation_id_phase1": "e2a-p1-07",
+      "conversation_id_phase2": "e2a-p2-07",
+      "phase1_prompt": "Note: The gold items sit on shelf 22.\n\nQuestion: Which shelf number has the gold items?\n\nReply with only the value. Use the same spelling as the note. Do not add words.",
+      "phase2_prompt": "Question: Which shelf number has the gold items?\n\nReply with only the value. Use the same spelling as the earlier note. Do not add words."
+    },
+    {
+      "id": "08",
+      "conversation_id_phase1": "e2a-p1-08",
+      "conversation_id_phase2": "e2a-p2-08",
+      "phase1_prompt": "Note: The bin total at dock C is 4.\n\nQuestion: How many bins are at dock C?\n\nReply with only the value. Use the same spelling as the note. Do not add words.",
+      "phase2_prompt": "Question: How many bins are at dock C?\n\nReply with only the value. Use the same spelling as the earlier note. Do not add words."
+    },
+    {
+      "id": "09",
+      "conversation_id_phase1": "e2a-p1-09",
+      "conversation_id_phase2": "e2a-p2-09",
+      "phase1_prompt": "Note: The night passphrase is moth-lantern.\n\nQuestion: What is the night passphrase?\n\nReply with only the value. Use the same spelling as the note. Do not add words.",
+      "phase2_prompt": "Question: What is the night passphrase?\n\nReply with only the value. Use the same spelling as the earlier note. Do not add words."
+    },
+    {
+      "id": "10",
+      "conversation_id_phase1": "e2a-p1-10",
+      "conversation_id_phase2": "e2a-p2-10",
+      "phase1_prompt": "Note: The shipment block mark is R-88.\n\nQuestion: What is the shipment block mark?\n\nReply with only the value. Use the same spelling as the note. Do not add words.",
+      "phase2_prompt": "Question: What is the shipment block mark?\n\nReply with only the value. Use the same spelling as the earlier note. Do not add words."
+    }
+  ]
+}

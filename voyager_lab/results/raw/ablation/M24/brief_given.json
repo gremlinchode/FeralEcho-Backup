@@ -1,0 +1,10 @@
+{
+  "budget": 6,
+  "id": "M24",
+  "objective": "Copy the inbox into the outbox.",
+  "problem_class": "copy_value",
+  "slots": {
+    "dst": "out.txt",
+    "src": "inbox.txt"
+  }
+}

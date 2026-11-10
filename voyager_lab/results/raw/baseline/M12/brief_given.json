@@ -1,0 +1,11 @@
+{
+  "budget": 8,
+  "id": "M12",
+  "objective": "If the two reports disagree and no authority file is available, do not guess.",
+  "problem_class": "resolve_conflict",
+  "slots": {
+    "dst": "answer.txt",
+    "left": "left.txt",
+    "right": "right.txt"
+  }
+}

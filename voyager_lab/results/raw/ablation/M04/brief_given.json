@@ -1,0 +1,11 @@
+{
+  "budget": 8,
+  "id": "M04",
+  "objective": "Read the note, create the reports directory, and write the note there.",
+  "problem_class": "make_then_write",
+  "slots": {
+    "dst": "reports/done.txt",
+    "parent": "reports",
+    "src": "note.txt"
+  }
+}

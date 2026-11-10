@@ -1,0 +1,15 @@
+{
+  "missing": [],
+  "ok": true,
+  "present": [
+    "echo:latest",
+    "gemma3:4b",
+    "qwen2.5-coder:7b",
+    "deepseek-r1:7b",
+    "qwen2.5:3b",
+    "llama3.2:3b",
+    "llama3.1:8b",
+    "llama3:instruct",
+    "mistral:latest"
+  ]
+}

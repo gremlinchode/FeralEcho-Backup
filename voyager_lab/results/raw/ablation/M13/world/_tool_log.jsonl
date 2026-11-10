@@ -1,0 +1,5 @@
+{"args": {"path": ""}, "code": "path_refused", "op": "read", "status": "error"}
+{"args": {"path": "wide_a.txt"}, "code": "ok", "op": "read", "status": "ok"}
+{"args": {"path": "wide_b.txt"}, "code": "ok", "op": "read", "status": "ok"}
+{"args": {"left": "20", "right": "22"}, "code": "ok", "op": "add", "status": "ok"}
+{"args": {"path": "wide_sum.txt"}, "code": "ok", "op": "write", "status": "ok"}

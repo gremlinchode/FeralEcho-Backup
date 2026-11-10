@@ -1,0 +1,27 @@
+{
+  "alternate_used": false,
+  "arm": "baseline",
+  "claimed_value": "2",
+  "contradictions": 0,
+  "elapsed_ms": 45.55,
+  "exit_codes": [
+    0
+  ],
+  "launched_pids": [
+    69286
+  ],
+  "learning_applied": "none",
+  "mission_id": "M02",
+  "objective_pass": false,
+  "plan_source": "baseline",
+  "repeat_extras": 0,
+  "resumed_from_checkpoint": false,
+  "ru_maxrss": 21872640,
+  "status": "success",
+  "tags": [
+    "uninterrupted",
+    "multi_dependent"
+  ],
+  "tool_calls": 2,
+  "unsupported": true
+}

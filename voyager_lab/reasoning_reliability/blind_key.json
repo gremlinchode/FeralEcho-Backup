@@ -1,0 +1,105 @@
+{
+  "map": [
+    {
+      "id": "R01",
+      "item_id": "A1",
+      "arm_code": "C"
+    },
+    {
+      "id": "R02",
+      "item_id": "E1",
+      "arm_code": "C"
+    },
+    {
+      "id": "R03",
+      "item_id": "D1",
+      "arm_code": "C"
+    },
+    {
+      "id": "R04",
+      "item_id": "C1",
+      "arm_code": "C"
+    },
+    {
+      "id": "R05",
+      "item_id": "A1",
+      "arm_code": "B"
+    },
+    {
+      "id": "R06",
+      "item_id": "D2",
+      "arm_code": "C"
+    },
+    {
+      "id": "R07",
+      "item_id": "A2",
+      "arm_code": "C"
+    },
+    {
+      "id": "R08",
+      "item_id": "B1",
+      "arm_code": "B"
+    },
+    {
+      "id": "R09",
+      "item_id": "B2",
+      "arm_code": "B"
+    },
+    {
+      "id": "R10",
+      "item_id": "E2",
+      "arm_code": "B"
+    },
+    {
+      "id": "R11",
+      "item_id": "C2",
+      "arm_code": "B"
+    },
+    {
+      "id": "R12",
+      "item_id": "D2",
+      "arm_code": "B"
+    },
+    {
+      "id": "R13",
+      "item_id": "C1",
+      "arm_code": "B"
+    },
+    {
+      "id": "R14",
+      "item_id": "E2",
+      "arm_code": "C"
+    },
+    {
+      "id": "R15",
+      "item_id": "D1",
+      "arm_code": "B"
+    },
+    {
+      "id": "R16",
+      "item_id": "C2",
+      "arm_code": "C"
+    },
+    {
+      "id": "R17",
+      "item_id": "E1",
+      "arm_code": "B"
+    },
+    {
+      "id": "R18",
+      "item_id": "A2",
+      "arm_code": "B"
+    },
+    {
+      "id": "R19",
+      "item_id": "B2",
+      "arm_code": "C"
+    },
+    {
+      "id": "R20",
+      "item_id": "B1",
+      "arm_code": "C"
+    }
+  ],
+  "note": "B baseline, C candidate stage 2. Not sent to the model."
+}

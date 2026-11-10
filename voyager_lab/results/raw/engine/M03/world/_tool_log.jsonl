@@ -1,0 +1,2 @@
+{"args": {"path": "lines.txt"}, "code": "ok", "op": "sum_lines", "status": "ok"}
+{"args": {"path": "fold.txt"}, "code": "ok", "op": "write", "status": "ok"}

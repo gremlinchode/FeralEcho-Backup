@@ -1,0 +1,37 @@
+{
+  "persisted": true,
+  "in_process_identity_status": "manifest_valid",
+  "in_process_identity_verified": true,
+  "ntotal": 157450,
+  "id_order_len": 157450,
+  "declared_order": "json.load key order of copy_live/memory_meta.json",
+  "declared_order_is_old_faiss_row_order": false,
+  "encode_seconds": 564.031,
+  "live_before": {
+    "index": {
+      "inode": 36642366,
+      "size": 241844781,
+      "mtime_ns": 1794282174794109321
+    },
+    "meta": {
+      "inode": 36642365,
+      "size": 136452441,
+      "mtime_ns": 1794282174749374587
+    },
+    "sidecar_exists": false
+  },
+  "live_after": {
+    "index": {
+      "inode": 36650760,
+      "size": 241846317,
+      "mtime_ns": 1794282591254729241
+    },
+    "meta": {
+      "inode": 36650687,
+      "size": 136455510,
+      "mtime_ns": 1794282590252782184
+    },
+    "sidecar_exists": false
+  },
+  "live_unchanged_during_reembed": false
+}

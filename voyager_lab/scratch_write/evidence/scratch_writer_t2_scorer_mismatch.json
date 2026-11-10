@@ -1,0 +1,120 @@
+{
+  "evidence_path": "/tmp/scratch_writer_t2.json",
+  "limitations": [
+    "Seeing the temp name proves the rename overlapped the temp's lifetime, which includes the write. It does not prove the rename fell in the interval between a passing check and os.link.",
+    "A rename that the poller refused because write_file had already returned is not scored.",
+    "Cross-process audit interleaving was not tested."
+  ],
+  "observed": {
+    "base": "/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t2_01_s_rrf72g",
+    "fatal": false,
+    "fd_after": {
+      "dev": 16777233,
+      "ino": 36347521,
+      "path": "/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t2_01_s_rrf72g/moved"
+    },
+    "moved_audit": {
+      "present": false,
+      "records": [],
+      "text": null
+    },
+    "moved_ident": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 36347521,
+      "kind": "dir",
+      "mode": 448,
+      "mtime_ns": 1794193518296501990,
+      "nlink": 2,
+      "path": "/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t2_01_s_rrf72g/moved",
+      "size": 64
+    },
+    "moved_listing": {
+      "entries": [],
+      "exists": true,
+      "names": []
+    },
+    "moved_path": "/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t2_01_s_rrf72g/moved",
+    "pin_dev": 16777233,
+    "pin_ino": 36347521,
+    "pin_path": "/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t2_01_s_rrf72g/pin",
+    "poller_error": null,
+    "refused_post_return": false,
+    "renamed_during_call": true,
+    "replacement_audit": {
+      "present": false,
+      "records": [],
+      "text": null
+    },
+    "replacement_ident": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 36347523,
+      "kind": "dir",
+      "mode": 448,
+      "mtime_ns": 1794193518296476407,
+      "nlink": 2,
+      "path": "/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t2_01_s_rrf72g/pin",
+      "size": 64
+    },
+    "replacement_listing": {
+      "entries": [],
+      "exists": true,
+      "names": []
+    },
+    "result": {
+      "accepted": false,
+      "audit_recorded": false,
+      "ok": false,
+      "operation": "write",
+      "path": "published.txt",
+      "reason": "identity_mismatch",
+      "sha256": null,
+      "size": null,
+      "status": "rejected",
+      "verification": "not_run"
+    },
+    "saw_temp": true,
+    "temp_name": ".swtmp_d84e37908168e443a1d0f9c010c05f74",
+    "trial": 1,
+    "writer_error": null
+  },
+  "payload_bytes": 1048576,
+  "payload_sha256": "bf63d8a95fcc2e64619813aae35fdcbe871fdd9264caa3f365eb3aed0f679129",
+  "preserved_directory": "/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t2_01_s_rrf72g",
+  "scored": {
+    "checks": {
+      "accepted_false": true,
+      "audit_recorded_false": true,
+      "cleanup_matches_listing": false,
+      "file_not_reported_verified": true,
+      "moved_inode_is_pin": true,
+      "no_success_audit": true,
+      "ok_false": true,
+      "renamed_during_call": true,
+      "replacement_empty": true,
+      "replacement_inode_differs": true
+    },
+    "pass": false,
+    "success_audit": []
+  },
+  "setup": "A racing thread lists the pinned directory and, while write_file is still on the pinned_writer stack and the temp name is visible, renames that directory aside and mkdirs a replacement at the pinned path. Payload is 1_048_576 'Z' characters. No sleep was added to the writer.",
+  "test": "T2",
+  "trials": [
+    {
+      "audit_recorded": false,
+      "moved_names": [],
+      "ok": false,
+      "poller_error": null,
+      "reason": "identity_mismatch",
+      "refused_post_return": false,
+      "renamed_during_call": true,
+      "replacement_names": [],
+      "saw_temp": true,
+      "status": "rejected",
+      "trial": 1,
+      "writer_error": null
+    }
+  ],
+  "verdict": "FAIL"
+}

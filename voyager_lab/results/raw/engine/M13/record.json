@@ -1,0 +1,110 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": "42",
+  "completed_tasks": [
+    "s0",
+    "s1",
+    "s2",
+    "s3"
+  ],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "ASSUMPTION",
+      "field": "hypothesis",
+      "note": "initial hypothesis",
+      "value": "copy_value"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "a",
+      "note": "wide_a.txt",
+      "value": "20"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "b",
+      "note": "wide_b.txt",
+      "value": "22"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "value",
+      "note": "add",
+      "value": "42"
+    },
+    {
+      "class": "OBSERVATION",
+      "field": "output",
+      "note": "wide_sum.txt",
+      "value": "42"
+    }
+  ],
+  "fail_keys": [],
+  "failed_attempts": [],
+  "human_retry_open": false,
+  "last_successful_checkpoint": "s3",
+  "learning_applied": "procedure_reuse",
+  "mission_id": "M13",
+  "next_recommended_action": "none",
+  "objective": "Read a and b, add them, and write the sum.",
+  "outstanding_tasks": [],
+  "pid_history": [
+    69339
+  ],
+  "plan_revisions": [],
+  "plan_source": "lesson",
+  "problem_class": "pipeline_sum",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 8,
+    "ru_maxrss": 21987328,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 4
+  },
+  "resumed_from_checkpoint": false,
+  "status": "success",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "read",
+      "path": "wide_a.txt",
+      "save": "a",
+      "slot": "a",
+      "state": "success"
+    },
+    {
+      "id": "s1",
+      "op": "read",
+      "path": "wide_b.txt",
+      "save": "b",
+      "slot": "b",
+      "state": "success"
+    },
+    {
+      "from": [
+        "a",
+        "b"
+      ],
+      "id": "s2",
+      "op": "add",
+      "save": "value",
+      "state": "success"
+    },
+    {
+      "from": "value",
+      "id": "s3",
+      "op": "write",
+      "path": "wide_sum.txt",
+      "slot": "dst",
+      "state": "success"
+    }
+  ],
+  "vars": {
+    "a": "20",
+    "b": "22",
+    "value": "42"
+  }
+}

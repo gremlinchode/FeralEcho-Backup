@@ -1,0 +1,12 @@
+{
+  "budget": 4,
+  "hypothesis_class": "copy_value",
+  "id": "M15",
+  "objective": "Read a and b, add them, and write the sum.",
+  "problem_class": "pipeline_sum",
+  "slots": {
+    "a": "a.txt",
+    "b": "b.txt",
+    "dst": "sum.txt"
+  }
+}

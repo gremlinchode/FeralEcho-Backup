@@ -1,0 +1,26 @@
+{
+  "alternate_used": true,
+  "arm": "engine",
+  "claimed_value": "77",
+  "contradictions": 0,
+  "elapsed_ms": 49.891,
+  "exit_codes": [
+    0
+  ],
+  "launched_pids": [
+    69334
+  ],
+  "learning_applied": "procedure_reuse",
+  "mission_id": "M08",
+  "objective_pass": true,
+  "plan_source": "lesson",
+  "repeat_extras": 0,
+  "resumed_from_checkpoint": false,
+  "ru_maxrss": 21692416,
+  "status": "success",
+  "tags": [
+    "missing_resource"
+  ],
+  "tool_calls": 3,
+  "unsupported": false
+}

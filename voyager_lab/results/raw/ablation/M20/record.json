@@ -1,0 +1,133 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": null,
+  "completed_tasks": [
+    "s1",
+    "s2",
+    "s3"
+  ],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "ASSUMPTION",
+      "field": "hypothesis",
+      "note": "initial hypothesis",
+      "value": "copy_value"
+    },
+    {
+      "class": "ASSUMPTION",
+      "field": "probe:",
+      "note": "path_refused",
+      "value": "path refused"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "a",
+      "note": "a.txt",
+      "value": "4"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "b",
+      "note": "b.txt",
+      "value": "4"
+    },
+    {
+      "class": "INFERENCE",
+      "field": "value",
+      "note": "join",
+      "value": "4-4"
+    }
+  ],
+  "fail_keys": [
+    [
+      "read",
+      {
+        "path": ""
+      }
+    ]
+  ],
+  "failed_attempts": [
+    {
+      "args": {
+        "path": ""
+      },
+      "code": "path_refused",
+      "op": "read",
+      "status": "error"
+    }
+  ],
+  "human_retry_open": false,
+  "last_successful_checkpoint": "s3",
+  "learning_applied": "none",
+  "mission_id": "M20",
+  "next_recommended_action": "budget exhausted",
+  "objective": "Read a and b and write them joined by a hyphen.",
+  "outstanding_tasks": [
+    "s0",
+    "s4"
+  ],
+  "pid_history": [
+    69379
+  ],
+  "plan_revisions": [],
+  "plan_source": "library",
+  "problem_class": "join_pair",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 3,
+    "ru_maxrss": 21757952,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 3
+  },
+  "resumed_from_checkpoint": false,
+  "status": "blocked",
+  "tasks": [
+    {
+      "id": "s0",
+      "missing_slot": "src",
+      "op": "read",
+      "path": null,
+      "probe": true,
+      "save": "value",
+      "slot": "src",
+      "state": "failed"
+    },
+    {
+      "id": "s1",
+      "op": "read",
+      "path": "a.txt",
+      "save": "a",
+      "slot": "a",
+      "state": "success"
+    },
+    {
+      "id": "s2",
+      "op": "read",
+      "path": "b.txt",
+      "save": "b",
+      "slot": "b",
+      "state": "success"
+    },
+    {
+      "id": "s3",
+      "op": "join",
+      "state": "success"
+    },
+    {
+      "from": "value",
+      "id": "s4",
+      "op": "write",
+      "path": "join.txt",
+      "slot": "dst",
+      "state": "pending"
+    }
+  ],
+  "vars": {
+    "a": "4",
+    "b": "4",
+    "value": "4-4"
+  }
+}

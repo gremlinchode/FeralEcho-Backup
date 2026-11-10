@@ -1,0 +1,10 @@
+{
+  "budget": 6,
+  "id": "M03",
+  "objective": "Sum the integer lines in the source file and write the total.",
+  "problem_class": "fold_lines",
+  "slots": {
+    "dst": "fold.txt",
+    "src": "lines.txt"
+  }
+}

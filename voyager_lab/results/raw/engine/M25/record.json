@@ -1,0 +1,119 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": "30",
+  "completed_tasks": [
+    "s0",
+    "s1",
+    "s2",
+    "s3",
+    "s4"
+  ],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "RETRIEVED",
+      "field": "a",
+      "note": "a.txt",
+      "value": "4"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "b",
+      "note": "b.txt",
+      "value": "6"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "superseded_value",
+      "note": "add",
+      "value": "10"
+    },
+    {
+      "class": "INFERENCE",
+      "field": "value",
+      "note": "scaled by 3",
+      "value": "30"
+    },
+    {
+      "class": "OBSERVATION",
+      "field": "output",
+      "note": "prod.txt",
+      "value": "30"
+    }
+  ],
+  "fail_keys": [],
+  "failed_attempts": [],
+  "human_retry_open": false,
+  "last_successful_checkpoint": "s4",
+  "learning_applied": "programmed_composition",
+  "mission_id": "M25",
+  "next_recommended_action": "none",
+  "objective": "Add a and b, multiply by k, and write the product.",
+  "outstanding_tasks": [],
+  "pid_history": [
+    69356
+  ],
+  "plan_revisions": [],
+  "plan_source": "programmed_composition",
+  "problem_class": "pipeline_sum__scale",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 8,
+    "ru_maxrss": 21725184,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 4
+  },
+  "resumed_from_checkpoint": false,
+  "status": "success",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "read",
+      "path": "a.txt",
+      "save": "a",
+      "slot": "a",
+      "state": "success"
+    },
+    {
+      "id": "s1",
+      "op": "read",
+      "path": "b.txt",
+      "save": "b",
+      "slot": "b",
+      "state": "success"
+    },
+    {
+      "from": [
+        "a",
+        "b"
+      ],
+      "id": "s2",
+      "op": "add",
+      "save": "value",
+      "state": "success"
+    },
+    {
+      "id": "s3",
+      "op": "scale",
+      "path": "3",
+      "save": "value",
+      "slot": "k",
+      "state": "success"
+    },
+    {
+      "from": "value",
+      "id": "s4",
+      "op": "write",
+      "path": "prod.txt",
+      "slot": "dst",
+      "state": "success"
+    }
+  ],
+  "vars": {
+    "a": "4",
+    "b": "6",
+    "value": "30"
+  }
+}

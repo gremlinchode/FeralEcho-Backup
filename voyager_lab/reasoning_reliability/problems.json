@@ -1,0 +1,56 @@
+{
+  "frozen_before_generation": true,
+  "note": "Problem text only. Scoring rules live in grader.py and are not sent to the model.",
+  "items": [
+    {
+      "id": "A1",
+      "dimension": "assumption",
+      "prompt": "A manager wrote: \"Alex finished the project three days early, so Alex is the strongest engineer on the team.\" Using only this note, name the assumption that connects the evidence to the conclusion, and say whether the note supports that assumption."
+    },
+    {
+      "id": "A2",
+      "dimension": "assumption",
+      "prompt": "An operator wrote: \"The service was restarted at 02:00. The error log has no entries after 02:00. Therefore the restart fixed the bug.\" Using only this note, name the assumption required to reach that conclusion, and say whether the note supports it."
+    },
+    {
+      "id": "B1",
+      "dimension": "opposition",
+      "prompt": "Position: we should ship the feature on Friday because the customer demo is on Friday. Give the strongest reasonable argument against shipping for that reason. Then say whether that argument is decisive or weak. Do not invent a test report, a bug count, or a customer quote."
+    },
+    {
+      "id": "B2",
+      "dimension": "opposition",
+      "prompt": "Position: this poem is bad because it does not rhyme. Give the strongest reasonable argument against that position, and distinguish it from a weak objection such as personal taste. Do not invent a critic, a prize, or a historical citation."
+    },
+    {
+      "id": "C1",
+      "dimension": "evidence",
+      "prompt": "Classify each item with exactly one of these labels: observation, inference, speculation, unknown.\n1. The gauge display read 88 psi at 14:10.\n2. Therefore the valve is leaking.\n3. Someone probably left the valve open on purpose.\n4. The pressure at 13:00 is not in the record.\nUse only these four items."
+    },
+    {
+      "id": "C2",
+      "dimension": "evidence",
+      "prompt": "Three sentences are given.\nS1. The door was locked at 21:00.\nS2. Jordan is the thief.\nS3. The window was open.\nWhich sentence presents an unsupported claim as if it were an established fact? Name the sentence id and the reason. Do not add a suspect, a witness, or a motive."
+    },
+    {
+      "id": "D1",
+      "dimension": "correction",
+      "prompt": "The draft conclusion is: \"The drug cured the patient because the fever fell from 39 C to 37 C after the dose.\" The chart also states that the untreated control group's fever fell from 39 C to 37 C over the same period. What conclusion does the full chart support about whether the drug cured the patient?"
+    },
+    {
+      "id": "D2",
+      "dimension": "correction",
+      "prompt": "The scale readout for this parcel is 2.0 kg. A bystander says, \"It feels more like 5 kg.\" Should the recorded weight be changed from 2.0 kg? Answer yes or no, and say why. Do not invent a second measurement."
+    },
+    {
+      "id": "E1",
+      "dimension": "calibration",
+      "prompt": "A box holds exactly 3 red tokens and 1 blue token. One token is drawn so that each token is equally likely. What is the probability that the token is red? Give a single fraction in lowest terms."
+    },
+    {
+      "id": "E2",
+      "dimension": "calibration",
+      "prompt": "A box holds red tokens and blue tokens. You are not told how many of either color there are. One token is drawn. What is the probability that the token is red? If the given information does not determine a probability, abstain and do not guess a number."
+    }
+  ]
+}

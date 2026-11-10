@@ -1,0 +1,105 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": "4-4",
+  "completed_tasks": [
+    "s0",
+    "s1",
+    "s2",
+    "s3"
+  ],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "ASSUMPTION",
+      "field": "hypothesis",
+      "note": "initial hypothesis",
+      "value": "copy_value"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "a",
+      "note": "a.txt",
+      "value": "4"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "b",
+      "note": "b.txt",
+      "value": "4"
+    },
+    {
+      "class": "INFERENCE",
+      "field": "value",
+      "note": "join",
+      "value": "4-4"
+    },
+    {
+      "class": "OBSERVATION",
+      "field": "output",
+      "note": "join.txt",
+      "value": "4-4"
+    }
+  ],
+  "fail_keys": [],
+  "failed_attempts": [],
+  "human_retry_open": false,
+  "last_successful_checkpoint": "s3",
+  "learning_applied": "remember",
+  "mission_id": "M20",
+  "next_recommended_action": "none",
+  "objective": "Read a and b and write them joined by a hyphen.",
+  "outstanding_tasks": [],
+  "pid_history": [
+    69350
+  ],
+  "plan_revisions": [],
+  "plan_source": "lesson",
+  "problem_class": "join_pair",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 3,
+    "ru_maxrss": 21938176,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 3
+  },
+  "resumed_from_checkpoint": false,
+  "status": "success",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "read",
+      "path": "a.txt",
+      "save": "a",
+      "slot": "a",
+      "state": "success"
+    },
+    {
+      "id": "s1",
+      "op": "read",
+      "path": "b.txt",
+      "save": "b",
+      "slot": "b",
+      "state": "success"
+    },
+    {
+      "id": "s2",
+      "op": "join",
+      "state": "success"
+    },
+    {
+      "from": "value",
+      "id": "s3",
+      "op": "write",
+      "path": "join.txt",
+      "slot": "dst",
+      "state": "success"
+    }
+  ],
+  "vars": {
+    "a": "4",
+    "b": "4",
+    "value": "4-4"
+  }
+}

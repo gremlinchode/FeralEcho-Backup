@@ -1,0 +1,87 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": null,
+  "completed_tasks": [
+    "s0",
+    "s1"
+  ],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "ASSUMPTION",
+      "field": "hypothesis",
+      "note": "initial hypothesis",
+      "value": "copy_value"
+    },
+    {
+      "class": "ASSUMPTION",
+      "field": "probe:notes.txt",
+      "note": "ok",
+      "value": "3\n5\n7"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "value",
+      "note": "sum_lines",
+      "value": "15"
+    }
+  ],
+  "fail_keys": [],
+  "failed_attempts": [],
+  "human_retry_open": false,
+  "last_successful_checkpoint": "s1",
+  "learning_applied": "none",
+  "mission_id": "M16",
+  "next_recommended_action": "budget exhausted",
+  "objective": "Sum the integer lines in the source file and write the total.",
+  "outstanding_tasks": [
+    "s2"
+  ],
+  "pid_history": [
+    69374
+  ],
+  "plan_revisions": [],
+  "plan_source": "library",
+  "problem_class": "fold_lines",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 2,
+    "ru_maxrss": 21905408,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 2
+  },
+  "resumed_from_checkpoint": false,
+  "status": "blocked",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "read",
+      "path": "notes.txt",
+      "probe": true,
+      "save": "value",
+      "slot": "src",
+      "state": "success"
+    },
+    {
+      "id": "s1",
+      "op": "sum_lines",
+      "path": "notes.txt",
+      "save": "value",
+      "slot": "src",
+      "state": "success"
+    },
+    {
+      "from": "value",
+      "id": "s2",
+      "op": "write",
+      "path": "out.txt",
+      "slot": "dst",
+      "state": "pending"
+    }
+  ],
+  "vars": {
+    "value": "15"
+  }
+}

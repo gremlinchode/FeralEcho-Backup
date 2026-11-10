@@ -1,0 +1,71 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": "8841",
+  "completed_tasks": [
+    "s0",
+    "s1"
+  ],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "RETRIEVED",
+      "field": "value",
+      "note": "nonce.txt",
+      "value": "8841"
+    },
+    {
+      "class": "OBSERVATION",
+      "field": "output",
+      "note": "outbox.txt",
+      "value": "8841"
+    }
+  ],
+  "fail_keys": [],
+  "failed_attempts": [],
+  "human_retry_open": false,
+  "last_successful_checkpoint": "s1",
+  "learning_applied": "none",
+  "mission_id": "M05",
+  "next_recommended_action": "none",
+  "objective": "Copy the nonce into the outbox. The source is removed when it is read.",
+  "outstanding_tasks": [],
+  "pid_history": [
+    69361,
+    69362
+  ],
+  "plan_revisions": [],
+  "plan_source": "library",
+  "problem_class": "copy_value",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 6,
+    "ru_maxrss": 21708800,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 2
+  },
+  "resumed_from_checkpoint": true,
+  "status": "success",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "read",
+      "path": "nonce.txt",
+      "save": "value",
+      "slot": "src",
+      "state": "success"
+    },
+    {
+      "from": "value",
+      "id": "s1",
+      "op": "write",
+      "path": "outbox.txt",
+      "slot": "dst",
+      "state": "success"
+    }
+  ],
+  "vars": {
+    "value": "8841"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "bundle_sha256": "b8b1bc1fe7056294739bd834c3e4329807b50ef6cdffab67f68f6e32e2af9b9d",
+  "hashed_files": {
+    "voyager/atomic.py": {
+      "bytes": 615,
+      "sha256": "7ea575167d477d0f1816f82ec89d9d54591cea770448015009f011743ba6fb00"
+    },
+    "voyager/baseline.py": {
+      "bytes": 3360,
+      "sha256": "a5322d0e9eac296eae15c1215e6c92e6a777687cc6044f8d2362485fc85ca2a3"
+    },
+    "voyager/engine.py": {
+      "bytes": 19977,
+      "sha256": "8ddc23b64bcdff997b307df3c6be7c8d4167dfd18bcafff0293df19c33b63cf3"
+    },
+    "voyager/grader.py": {
+      "bytes": 3451,
+      "sha256": "eeb5b34b956e80e5a2ccafc1c0ab4ba33816c0ffeb16aa32c935b4dcc7556e58"
+    },
+    "voyager/harness.py": {
+      "bytes": 6869,
+      "sha256": "904bd607f8453617a586b9c2e5346c8b730fcd98c48125d9cba82a17e062315d"
+    },
+    "voyager/procedures.py": {
+      "bytes": 3979,
+      "sha256": "fe8b43dcdd083dae5804fb9254f74afb39dd7317e8f7742dd9b0cbb3dc19d0dd"
+    },
+    "voyager/rubric.py": {
+      "bytes": 8276,
+      "sha256": "030be268d55685aeeb212b67d6fe6e2adb13143f1a9230e68cf1a6342c406902"
+    },
+    "voyager/suite_spec.py": {
+      "bytes": 11702,
+      "sha256": "87994a06342bf815fe3914b07384a198c84ca723df13fad394ec165c4dedb6de"
+    },
+    "voyager/worker.py": {
+      "bytes": 1398,
+      "sha256": "3695250e882dae67a133aee477d95db5d95de5ef29531b1efd65656add49d8c6"
+    },
+    "voyager/world.py": {
+      "bytes": 6629,
+      "sha256": "b7cf4977aceed919e6a538fbb5ae02cab4f66d8a29d192a5e84d4605ccd58a05"
+    }
+  },
+  "note": "Written before any official arm. Scoring is not revised after results."
+}

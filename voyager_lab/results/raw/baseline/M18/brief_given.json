@@ -1,0 +1,10 @@
+{
+  "budget": 8,
+  "id": "M18",
+  "objective": "Copy the inbox into the outbox. Writing requires a human token that arrives later.",
+  "problem_class": "copy_value",
+  "slots": {
+    "dst": "out.txt",
+    "src": "inbox.txt"
+  }
+}

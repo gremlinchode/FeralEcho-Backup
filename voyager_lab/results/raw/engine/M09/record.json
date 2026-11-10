@@ -1,0 +1,92 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": true,
+  "alternate_used": true,
+  "claimed_value": "go",
+  "completed_tasks": [
+    "s0",
+    "s1"
+  ],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "RETRIEVED",
+      "field": "value",
+      "note": "data.txt",
+      "value": "go"
+    },
+    {
+      "class": "OBSERVATION",
+      "field": "output",
+      "note": "nested/out.txt",
+      "value": "go"
+    }
+  ],
+  "fail_keys": [
+    [
+      "write",
+      {
+        "path": "nested/out.txt"
+      }
+    ]
+  ],
+  "failed_attempts": [
+    {
+      "args": {
+        "path": "nested/out.txt"
+      },
+      "code": "missing_parent",
+      "op": "write",
+      "status": "error"
+    }
+  ],
+  "human_retry_open": false,
+  "last_successful_checkpoint": "s1",
+  "learning_applied": "procedure_reuse",
+  "mission_id": "M09",
+  "next_recommended_action": "none",
+  "objective": "Copy the source into nested/out.txt.",
+  "outstanding_tasks": [],
+  "pid_history": [
+    69335
+  ],
+  "plan_revisions": [
+    {
+      "action": "create_dir nested",
+      "after": "s1",
+      "because": "missing_parent"
+    }
+  ],
+  "plan_source": "lesson",
+  "problem_class": "copy_value",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 8,
+    "ru_maxrss": 21938176,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 4
+  },
+  "resumed_from_checkpoint": false,
+  "status": "success",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "read",
+      "path": "data.txt",
+      "save": "value",
+      "slot": "src",
+      "state": "success"
+    },
+    {
+      "from": "value",
+      "id": "s1",
+      "op": "write",
+      "path": "nested/out.txt",
+      "slot": "dst",
+      "state": "success"
+    }
+  ],
+  "vars": {
+    "value": "go"
+  }
+}

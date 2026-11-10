@@ -1,0 +1,116 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": "9",
+  "completed_tasks": [
+    "s0",
+    "s1",
+    "s2",
+    "s3",
+    "s4"
+  ],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "RETRIEVED",
+      "field": "left",
+      "note": "left.txt",
+      "value": "4"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "right",
+      "note": "right.txt",
+      "value": "9"
+    },
+    {
+      "class": "INFERENCE",
+      "field": "_conflict",
+      "note": "compare",
+      "value": "true"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "value",
+      "note": "authority.txt",
+      "value": "9"
+    },
+    {
+      "class": "OBSERVATION",
+      "field": "output",
+      "note": "answer.txt",
+      "value": "9"
+    }
+  ],
+  "fail_keys": [],
+  "failed_attempts": [],
+  "human_retry_open": false,
+  "last_successful_checkpoint": "s4",
+  "learning_applied": "none",
+  "mission_id": "M11",
+  "next_recommended_action": "none",
+  "objective": "If the two reports disagree, write the authority value. If they agree, write the shared value.",
+  "outstanding_tasks": [],
+  "pid_history": [
+    69369
+  ],
+  "plan_revisions": [],
+  "plan_source": "library",
+  "problem_class": "resolve_conflict",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 8,
+    "ru_maxrss": 21708800,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 4
+  },
+  "resumed_from_checkpoint": false,
+  "status": "success",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "read",
+      "path": "left.txt",
+      "save": "left",
+      "slot": "left",
+      "state": "success"
+    },
+    {
+      "id": "s1",
+      "op": "read",
+      "path": "right.txt",
+      "save": "right",
+      "slot": "right",
+      "state": "success"
+    },
+    {
+      "id": "s2",
+      "op": "compare",
+      "state": "success"
+    },
+    {
+      "id": "s3",
+      "only_if": "conflict",
+      "op": "read",
+      "path": "authority.txt",
+      "save": "value",
+      "slot": "authority",
+      "state": "success"
+    },
+    {
+      "from": "value",
+      "id": "s4",
+      "op": "write",
+      "path": "answer.txt",
+      "slot": "dst",
+      "state": "success"
+    }
+  ],
+  "vars": {
+    "_conflict": true,
+    "left": "4",
+    "right": "9",
+    "value": "9"
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": null,
+  "completed_tasks": [],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "UNKNOWN",
+      "field": "unknown:inbox.txt",
+      "note": "unknown_result",
+      "value": ""
+    }
+  ],
+  "fail_keys": [
+    [
+      "read",
+      {
+        "path": "inbox.txt"
+      }
+    ]
+  ],
+  "failed_attempts": [
+    {
+      "args": {
+        "path": "inbox.txt"
+      },
+      "code": "unknown_result",
+      "op": "read",
+      "status": "unknown"
+    }
+  ],
+  "human_retry_open": false,
+  "last_successful_checkpoint": null,
+  "learning_applied": "procedure_reuse",
+  "mission_id": "M21",
+  "next_recommended_action": "read result unknown; not writing a guess",
+  "objective": "Copy the inbox into the outbox. If the read result is unknown, do not guess.",
+  "outstanding_tasks": [
+    "s0",
+    "s1"
+  ],
+  "pid_history": [
+    69351
+  ],
+  "plan_revisions": [],
+  "plan_source": "lesson",
+  "problem_class": "copy_value",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 6,
+    "ru_maxrss": 21954560,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 1
+  },
+  "resumed_from_checkpoint": false,
+  "status": "unknown",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "read",
+      "path": "inbox.txt",
+      "save": "value",
+      "slot": "src",
+      "state": "failed"
+    },
+    {
+      "from": "value",
+      "id": "s1",
+      "op": "write",
+      "path": "out.txt",
+      "slot": "dst",
+      "state": "pending"
+    }
+  ],
+  "vars": {}
+}

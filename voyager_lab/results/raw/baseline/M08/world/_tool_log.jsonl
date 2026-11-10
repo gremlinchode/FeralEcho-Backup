@@ -1,0 +1,4 @@
+{"args": {"path": "gone.txt"}, "code": "file_not_found", "op": "read", "status": "error"}
+{"args": {"path": "gone.txt"}, "code": "file_not_found", "op": "read", "status": "error"}
+{"args": {"path": "gone.txt"}, "code": "file_not_found", "op": "read", "status": "error"}
+{"args": {"path": "out.txt"}, "code": "ok", "op": "write", "status": "ok"}

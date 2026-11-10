@@ -1,0 +1,128 @@
+{
+  "completed": 10,
+  "correct": 8,
+  "gate": true,
+  "incomplete": false,
+  "items": [
+    {
+      "item_id": "01",
+      "key": "K7-QRV-4419",
+      "attempt_count": 1,
+      "completed_count": 1,
+      "prompt_matches_frozen": true,
+      "correct": true,
+      "done_text": "K7-QRV-4419",
+      "task_type": "general",
+      "status": "scored",
+      "trace_id": "fd69a6f1-1d67-44ac-8343-6388723f9918"
+    },
+    {
+      "item_id": "02",
+      "key": "18.6 kilograms",
+      "attempt_count": 1,
+      "completed_count": 1,
+      "prompt_matches_frozen": true,
+      "correct": true,
+      "done_text": "18.6 kilograms",
+      "task_type": "general",
+      "status": "scored",
+      "trace_id": "5d5f5da7-cfc9-4a87-bcff-4f5765c4050c"
+    },
+    {
+      "item_id": "03",
+      "key": "Sable",
+      "attempt_count": 1,
+      "completed_count": 1,
+      "prompt_matches_frozen": true,
+      "correct": false,
+      "done_text": "Helio reports to Sable.",
+      "task_type": "general",
+      "status": "scored",
+      "trace_id": "acc943d8-96d1-430e-88c1-b9863b8cd0c5"
+    },
+    {
+      "item_id": "04",
+      "key": "2026-04-17",
+      "attempt_count": 1,
+      "completed_count": 1,
+      "prompt_matches_frozen": true,
+      "correct": true,
+      "done_text": "2026-04-17",
+      "task_type": "general",
+      "status": "scored",
+      "trace_id": "e653b7b1-74ff-4e30-8066-98dfb178f239"
+    },
+    {
+      "item_id": "05",
+      "key": "no",
+      "attempt_count": 1,
+      "completed_count": 1,
+      "prompt_matches_frozen": true,
+      "correct": true,
+      "done_text": "no",
+      "task_type": "general",
+      "status": "scored",
+      "trace_id": "57cbfffa-2b78-4d4b-8db3-e8ea142e734f"
+    },
+    {
+      "item_id": "06",
+      "key": "Vat B",
+      "attempt_count": 1,
+      "completed_count": 1,
+      "prompt_matches_frozen": true,
+      "correct": true,
+      "done_text": "Vat B",
+      "task_type": "general",
+      "status": "scored",
+      "trace_id": "9d50fc7b-3af2-44d3-b9a1-0c00d0041723"
+    },
+    {
+      "item_id": "07",
+      "key": "22",
+      "attempt_count": 1,
+      "completed_count": 1,
+      "prompt_matches_frozen": true,
+      "correct": true,
+      "done_text": "22",
+      "task_type": "general",
+      "status": "scored",
+      "trace_id": "f5130bc7-f759-4914-8b8c-dd20defcdb61"
+    },
+    {
+      "item_id": "08",
+      "key": "4",
+      "attempt_count": 1,
+      "completed_count": 1,
+      "prompt_matches_frozen": true,
+      "correct": true,
+      "done_text": "4",
+      "task_type": "general",
+      "status": "scored",
+      "trace_id": "b2267c9a-8c3f-4658-af65-9bb0d585a233"
+    },
+    {
+      "item_id": "09",
+      "key": "moth-lantern",
+      "attempt_count": 1,
+      "completed_count": 1,
+      "prompt_matches_frozen": true,
+      "correct": false,
+      "done_text": "Moth-lantern.",
+      "task_type": "general",
+      "status": "scored",
+      "trace_id": "cc8b1af7-1b97-4d00-b5e4-76cc47ef7fff"
+    },
+    {
+      "item_id": "10",
+      "key": "R-88",
+      "attempt_count": 1,
+      "completed_count": 1,
+      "prompt_matches_frozen": true,
+      "correct": true,
+      "done_text": "R-88",
+      "task_type": "general",
+      "status": "scored",
+      "trace_id": "9183b39e-1d09-4b10-8a53-028280940abf"
+    }
+  ]
+}

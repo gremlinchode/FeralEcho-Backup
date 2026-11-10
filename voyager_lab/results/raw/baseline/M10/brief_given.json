@@ -1,0 +1,11 @@
+{
+  "budget": 6,
+  "id": "M10",
+  "objective": "Copy a complete source into the destination. Do not keep a partial read.",
+  "problem_class": "copy_value",
+  "slots": {
+    "alt_src": "full.txt",
+    "dst": "out.txt",
+    "src": "inbox.txt"
+  }
+}

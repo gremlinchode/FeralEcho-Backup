@@ -1,0 +1,24 @@
+{
+  "phase": "phase2",
+  "started_at": "2026-11-09T22:02:59.801898+00:00",
+  "gate_stdout": "completed=10 correct=8 gate=true incomplete=false\n",
+  "listener": {
+    "port_open": true,
+    "pid": 65139,
+    "command": "python3.1",
+    "listener_pids": [
+      65139
+    ],
+    "ollama_model": "not_in_environment",
+    "lsof_error": null
+  },
+  "posts_used_at_start": 10,
+  "contingency_used_at_start": 0,
+  "posts_used_total": 20,
+  "contingency_used_total": 0,
+  "delay_deadline": "2026-11-09T22:33:34.185489+00:00",
+  "attribute_exit_code": 0,
+  "attribute_stdout": "attribute=ok\n",
+  "attribute_stderr": "",
+  "finished_at": "2026-11-09T22:36:10.190965+00:00"
+}

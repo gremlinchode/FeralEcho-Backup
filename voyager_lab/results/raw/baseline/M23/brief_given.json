@@ -1,0 +1,11 @@
+{
+  "budget": 8,
+  "id": "M23",
+  "objective": "Read the body, create the reports directory, and write the body there.",
+  "problem_class": "make_then_write",
+  "slots": {
+    "dst": "reports/done.txt",
+    "parent": "reports",
+    "src": "body.txt"
+  }
+}

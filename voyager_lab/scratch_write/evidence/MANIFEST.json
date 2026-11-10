@@ -1,0 +1,109 @@
+{
+  "package": "scratch_writer_milestone",
+  "git_commit": "dc8d6eb9b6479ef323614cd6820bb050a14299eb",
+  "preservation_note": "Byte copies of the original JSON files. Originals under /tmp were left in place. No test was rerun to create this package. The T2 directory has no files; it was not copied.",
+  "records": [
+    {
+      "filename": "scratch_writer_t1.json",
+      "sha256": "3f1ca84ef0434129eeba50d17a39fda7c8393c7e483eaf6cffaf5c056a8bb8f0",
+      "file_size": 10012,
+      "original_location": "/tmp/scratch_writer_t1.json",
+      "preservation_location": "voyager_lab/scratch_write/evidence/scratch_writer_t1.json",
+      "test_identifier": "T1",
+      "record_class": "passing_run",
+      "available": true,
+      "copied": true,
+      "byte_identical_to_original": true
+    },
+    {
+      "filename": "scratch_writer_t8.json",
+      "sha256": "a1f668d7a6f0223875b7d2894365045e6380490642921c4885cb80688868edd6",
+      "file_size": 12145,
+      "original_location": "/tmp/scratch_writer_t8.json",
+      "preservation_location": "voyager_lab/scratch_write/evidence/scratch_writer_t8.json",
+      "test_identifier": "T8",
+      "record_class": "passing_run",
+      "available": true,
+      "copied": true,
+      "byte_identical_to_original": true
+    },
+    {
+      "filename": "scratch_writer_t2.json",
+      "sha256": "94d183397af92b8f55b22ad71bfa2d379c07dc6e01339374183e93f141c434e5",
+      "file_size": 3737,
+      "original_location": "/tmp/scratch_writer_t2.json",
+      "preservation_location": "voyager_lab/scratch_write/evidence/scratch_writer_t2.json",
+      "test_identifier": "T2",
+      "record_class": "passing_run",
+      "available": true,
+      "copied": true,
+      "byte_identical_to_original": true
+    },
+    {
+      "filename": "scratch_writer_t8_scoring_bug.json",
+      "sha256": "aa7b85d37e736699104af2b6e95fbeba093f5759cb4bfe90c589cfb7db9be6f2",
+      "file_size": 12097,
+      "original_location": "/tmp/scratch_writer_t8_scoring_bug.json",
+      "preservation_location": "voyager_lab/scratch_write/evidence/scratch_writer_t8_scoring_bug.json",
+      "test_identifier": "T8",
+      "record_class": "failed_first_attempt",
+      "available": true,
+      "copied": true,
+      "byte_identical_to_original": true
+    },
+    {
+      "filename": "scratch_writer_t2_scorer_mismatch.json",
+      "sha256": "81ab8602fdc63ec514b9cf9a33da2c562d3462989fc0db6243ee95db4544f07e",
+      "file_size": 3845,
+      "original_location": "/tmp/scratch_writer_t2_scorer_mismatch.json",
+      "preservation_location": "voyager_lab/scratch_write/evidence/scratch_writer_t2_scorer_mismatch.json",
+      "test_identifier": "T2",
+      "record_class": "failed_first_attempt",
+      "available": true,
+      "copied": true,
+      "byte_identical_to_original": true
+    },
+    {
+      "filename": null,
+      "sha256": null,
+      "file_size": null,
+      "original_location": "/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t2_01_s_rrf72g",
+      "preservation_location": null,
+      "test_identifier": "T2",
+      "record_class": "supporting_evidence",
+      "available": true,
+      "copied": false,
+      "reason": "The first T2 trial directory still exists and contains no files. A copy would not preserve inode identity. The original evidence is scratch_writer_t2_scorer_mismatch.json, which records this path in preserved_directory. Left in place.",
+      "preservation_time_listing": {
+        "label": "New observation while preserving. Not a reconstructed trial result.",
+        "nodes": [
+          {
+            "path": "/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t2_01_s_rrf72g",
+            "inode": 36347520,
+            "nlink": 4,
+            "size": 128,
+            "mode": "0700",
+            "child_directories": ["moved", "pin"],
+            "files": []
+          },
+          {
+            "path": "/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t2_01_s_rrf72g/pin",
+            "inode": 36347523,
+            "nlink": 2,
+            "size": 64,
+            "mode": "0700",
+            "files": []
+          },
+          {
+            "path": "/private/var/folders/vg/3mw0sd2j7f12frh367wggw340000gn/T/swpin_t2_01_s_rrf72g/moved",
+            "inode": 36347521,
+            "nlink": 2,
+            "size": 64,
+            "mode": "0700",
+            "files": []
+          }
+        ]
+      }
+    }
+  ]
+}

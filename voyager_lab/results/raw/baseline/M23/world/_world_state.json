@@ -1,0 +1,11 @@
+{
+  "completed_calls": 2,
+  "consume_on_read": [],
+  "down_tools": [],
+  "fail_reads_remaining": {},
+  "human_gate": false,
+  "kill_after": 2,
+  "kill_spent": false,
+  "partial_reads": {},
+  "unknown_reads": []
+}

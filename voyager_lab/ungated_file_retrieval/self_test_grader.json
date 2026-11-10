@@ -1,0 +1,13 @@
+{
+  "absolute_outside_refused": true,
+  "all_passed": true,
+  "answer_without_tool_fails": true,
+  "extra_word_fails": true,
+  "other_secret_fails": true,
+  "perfect_passes": true,
+  "quotes_fail_strict_rule": true,
+  "quotes_noted_as_diagnostic": true,
+  "read_ok": true,
+  "traversal_refused": true,
+  "wrong_path_fails": true
+}

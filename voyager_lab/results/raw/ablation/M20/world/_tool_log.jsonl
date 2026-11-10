@@ -1,0 +1,3 @@
+{"args": {"path": ""}, "code": "path_refused", "op": "read", "status": "error"}
+{"args": {"path": "a.txt"}, "code": "ok", "op": "read", "status": "ok"}
+{"args": {"path": "b.txt"}, "code": "ok", "op": "read", "status": "ok"}

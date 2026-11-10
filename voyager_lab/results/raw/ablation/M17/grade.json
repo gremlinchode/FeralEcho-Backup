@@ -1,0 +1,26 @@
+{
+  "alternate_used": false,
+  "arm": "ablation",
+  "claimed_value": null,
+  "contradictions": 0,
+  "elapsed_ms": 56.047,
+  "exit_codes": [
+    0
+  ],
+  "launched_pids": [
+    69375
+  ],
+  "learning_applied": "none",
+  "mission_id": "M17",
+  "objective_pass": true,
+  "plan_source": "library",
+  "repeat_extras": 0,
+  "resumed_from_checkpoint": false,
+  "ru_maxrss": 21938176,
+  "status": "blocked",
+  "tags": [
+    "human"
+  ],
+  "tool_calls": 2,
+  "unsupported": false
+}

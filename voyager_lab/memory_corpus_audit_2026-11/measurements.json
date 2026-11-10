@@ -1,0 +1,2180 @@
+{
+  "diagnostic_rebuilt_store": {
+    "binding": {
+      "id_order_len_equals_header_ntotal": true,
+      "id_order_len_equals_meta_keys": true,
+      "meta_keys_equal_header_ntotal": true,
+      "sidecar_index_sha256_equals_file": true
+    },
+    "finished_at": "2026-11-10T05:20:20.049402+00:00",
+    "index": {
+      "after": {
+        "exists": true,
+        "inode": 36652234,
+        "mtime_ns": 1794282801299180862,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho-voyager/voyager_lab/memory_retrieval_diagnostic_2026-11/rebuilt/faiss.index",
+        "size": 241843245
+      },
+      "before": {
+        "exists": true,
+        "inode": 36652234,
+        "mtime_ns": 1794282801299180862,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho-voyager/voyager_lab/memory_retrieval_diagnostic_2026-11/rebuilt/faiss.index",
+        "size": 241843245
+      },
+      "bytes_read": 241843245,
+      "header": {
+        "dim_at_offset_4": 384,
+        "file_size": 241843245,
+        "fourcc_hex": "49784649",
+        "fourcc_latin1": "IxFI",
+        "header_ntotal_matches_size_arithmetic": true,
+        "implied_header_len": 45,
+        "nbytes_examined": 64,
+        "ntotal_at_offset_8": 157450,
+        "ntotal_from_size_minus_45": 157450,
+        "size_minus_45_divisible_by_stride": true
+      },
+      "opened": {
+        "inode": 36652234,
+        "mtime_ns": 1794282801299180862,
+        "size": 241843245
+      },
+      "opened_inode_matches_before": true,
+      "opened_size_matches_bytes": true,
+      "path_inode_changed_during_read": false,
+      "path_size_changed_during_read": false,
+      "sha256": "887a9fa7871ad3ccb880dbc2acc63235fbf5c451a801f8758eb1241ea029506f"
+    },
+    "label": "ten_fact_diagnostic_rebuilt_reference_only",
+    "measured_at": "2026-11-10T05:20:15.048318+00:00",
+    "meta": {
+      "after": {
+        "exists": true,
+        "inode": 36652231,
+        "mtime_ns": 1794282801278917831,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho-voyager/voyager_lab/memory_retrieval_diagnostic_2026-11/rebuilt/memory_meta.json",
+        "size": 136449185
+      },
+      "before": {
+        "exists": true,
+        "inode": 36652231,
+        "mtime_ns": 1794282801278917831,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho-voyager/voyager_lab/memory_retrieval_diagnostic_2026-11/rebuilt/memory_meta.json",
+        "size": 136449185
+      },
+      "bytes_read": 136449185,
+      "opened": {
+        "inode": 36652231,
+        "mtime_ns": 1794282801278917831,
+        "size": 136449185
+      },
+      "opened_inode_matches_before": true,
+      "opened_size_matches_bytes": true,
+      "path_inode_changed_during_read": false,
+      "path_size_changed_during_read": false,
+      "profile": {
+        "duplicate_text_groups": 3118,
+        "first_key": "762209c7-677f-4b35-bb68-7473855afaa1",
+        "id_order_ids_missing_from_meta": 0,
+        "id_order_ids_present_in_meta": 157450,
+        "id_order_len": 157450,
+        "id_order_unique": 157450,
+        "inner_meta_key_presence": {
+          "backfill": 3791,
+          "is_thought_provoking": 1809,
+          "memory_source": 133734,
+          "migrated_from_legacy_backfill_burst": 19,
+          "migrated_from_legacy_self_model_tag": 212,
+          "migration_ts": 231,
+          "prompt": 19754,
+          "retention": 7468,
+          "role": 132501,
+          "seed_ids": 10,
+          "source": 19754,
+          "sync_ts": 3035,
+          "task_type": 7468,
+          "timestamp": 157418,
+          "type": 20387,
+          "validation_warning": 21139
+        },
+        "inner_meta_not_dict": 0,
+        "key_count": 157450,
+        "last_key": "1d4548ef-174e-4f78-ad3f-e521f92c7d29",
+        "memory_source_counts": {
+          "<missing>": 23716,
+          "autonomous": 59065,
+          "claude_research": 1541,
+          "code_analysis": 60702,
+          "dream_v2": 10,
+          "environment": 1350,
+          "self_model_reflection": 325,
+          "sync_air": 3035,
+          "tool_manager": 225,
+          "user_conversation": 7481
+        },
+        "memory_source_missing": 23716,
+        "meta_keys_not_in_id_order": 0,
+        "non_dict_values": 0,
+        "records_in_duplicate_text_groups": 101934,
+        "repeated_json_keys": 0,
+        "role_counts": {
+          "<missing>": 24949,
+          "code_analysis": 60702,
+          "dream": 24137,
+          "echo": 5640,
+          "environment": 1350,
+          "experiment": 282,
+          "fetch": 28678,
+          "harmony": 4789,
+          "research": 1390,
+          "sandbox_failure": 1,
+          "sandbox_run": 388,
+          "self_model_reflection": 325,
+          "sync": 2784,
+          "synthesis": 1,
+          "tool_error": 225,
+          "user": 1809
+        },
+        "role_missing": 24949,
+        "text_empty": 0,
+        "text_missing_or_null": 0,
+        "text_nonempty": 157450,
+        "text_not_str": 0,
+        "timestamp_max": "2026-11-10T03:36:28.248800+00:00",
+        "timestamp_min": "2026-07-02T21:40:53.854995+00:00",
+        "timestamp_missing": 32,
+        "timestamp_present": 157418,
+        "unique_keys": 157450,
+        "unique_nonempty_text_sha256": 58634,
+        "uuid_shaped_keys": 0,
+        "validation_warning_true": 21139
+      },
+      "sha256": "5cb458d440855e4305dcaa457abb4f0681a2dbf5df8c1dd69bb39cc8a43ff248"
+    },
+    "sidecar": {
+      "binding_sha256": "a3c64a5a04ebd0dd983bc49f1f18a933dc4bb2073abbd8b06dbd0aa0119751cc",
+      "file": {
+        "after": {
+          "exists": true,
+          "inode": 36652235,
+          "mtime_ns": 1794282801427435011,
+          "nlink": 1,
+          "path": "/Users/richietate/Desktop/FeralEcho-voyager/voyager_lab/memory_retrieval_diagnostic_2026-11/rebuilt/faiss.index.identity.json",
+          "size": 6928012
+        },
+        "before": {
+          "exists": true,
+          "inode": 36652235,
+          "mtime_ns": 1794282801427435011,
+          "nlink": 1,
+          "path": "/Users/richietate/Desktop/FeralEcho-voyager/voyager_lab/memory_retrieval_diagnostic_2026-11/rebuilt/faiss.index.identity.json",
+          "size": 6928012
+        },
+        "bytes_read": 6928012,
+        "opened": {
+          "inode": 36652235,
+          "mtime_ns": 1794282801427435011,
+          "size": 6928012
+        },
+        "opened_inode_matches_before": true,
+        "opened_size_matches_bytes": true,
+        "path_inode_changed_during_read": false,
+        "path_size_changed_during_read": false,
+        "sha256": "6e68bf3062b6d0824b571d912464aae6f064198f493d7fb6afe5e83425b60baa"
+      },
+      "id_order_len": 157450,
+      "id_order_unique": 157450,
+      "index_sha256": "887a9fa7871ad3ccb880dbc2acc63235fbf5c451a801f8758eb1241ea029506f",
+      "schema": 1,
+      "top_keys": [
+        "binding_sha256",
+        "id_order",
+        "index_sha256",
+        "schema"
+      ]
+    },
+    "sidecar_present": true
+  },
+  "directory_inventory": {
+    "data": {
+      "exists": true,
+      "root": "/Users/richietate/Desktop/FeralEcho/data",
+      "subdirs": [
+        {
+          "bytes": 9150,
+          "files": 1,
+          "name": "bible_art"
+        }
+      ],
+      "top_files": [
+        {
+          "inode": 635182,
+          "is_link": false,
+          "mtime_ns": 1782446327578185068,
+          "name": ".DS_Store",
+          "size": 6148
+        },
+        {
+          "inode": 635185,
+          "is_link": false,
+          "mtime_ns": 1794249850700660943,
+          "name": "codebase.db",
+          "size": 3428352
+        },
+        {
+          "inode": 635186,
+          "is_link": false,
+          "mtime_ns": 1794249850062863348,
+          "name": "codebase_map.json",
+          "size": 3442356
+        },
+        {
+          "inode": 635187,
+          "is_link": false,
+          "mtime_ns": 1778870392588166636,
+          "name": "faiss.index",
+          "size": 10952749
+        },
+        {
+          "inode": 635188,
+          "is_link": false,
+          "mtime_ns": 1778871420938574142,
+          "name": "faiss.index.tfidf_archive",
+          "size": 10952749
+        },
+        {
+          "inode": 635189,
+          "is_link": false,
+          "mtime_ns": 1778870392693024047,
+          "name": "memory_meta.json",
+          "size": 6587816
+        },
+        {
+          "inode": 635190,
+          "is_link": false,
+          "mtime_ns": 1778871420954581871,
+          "name": "memory_meta.json.tfidf_archive",
+          "size": 6587816
+        },
+        {
+          "inode": 5867121,
+          "is_link": false,
+          "mtime_ns": 1794287699537139071,
+          "name": "question_garden.jsonl",
+          "size": 15921080
+        },
+        {
+          "inode": 635192,
+          "is_link": false,
+          "mtime_ns": 1783256480053704858,
+          "name": "self_model.txt",
+          "size": 1608
+        },
+        {
+          "inode": 635193,
+          "is_link": false,
+          "mtime_ns": 1792274784857376820,
+          "name": "symbiote_location.json",
+          "size": 87
+        }
+      ]
+    },
+    "echo_studio_home": {
+      "exists": true,
+      "root": "/Users/richietate/.echo_studio",
+      "subdirs": [],
+      "top_files": [
+        {
+          "inode": 4441411,
+          "is_link": false,
+          "mtime_ns": 1794281649249639166,
+          "name": "echo_studio.db",
+          "size": 4923392
+        }
+      ]
+    },
+    "memory": {
+      "exists": true,
+      "root": "/Users/richietate/Desktop/FeralEcho/memory",
+      "subdirs": [
+        {
+          "bytes": 77713074,
+          "files": 144,
+          "name": "archive"
+        },
+        {
+          "bytes": 100486846,
+          "files": 4,
+          "name": "backups"
+        },
+        {
+          "bytes": 621,
+          "files": 1,
+          "name": "behavioral_directives_backups"
+        },
+        {
+          "bytes": 81259438,
+          "files": 1001,
+          "name": "experiments"
+        },
+        {
+          "bytes": 147,
+          "files": 3,
+          "name": "genesis"
+        },
+        {
+          "bytes": 728340,
+          "files": 69,
+          "name": "history"
+        },
+        {
+          "bytes": 0,
+          "files": 0,
+          "name": "models"
+        },
+        {
+          "bytes": 26356,
+          "files": 5,
+          "name": "skill_ledger"
+        },
+        {
+          "bytes": 28683882,
+          "files": 40,
+          "name": "snapshots"
+        },
+        {
+          "bytes": 377117,
+          "files": 1,
+          "name": "stillness"
+        },
+        {
+          "bytes": 0,
+          "files": 0,
+          "name": "test"
+        }
+      ],
+      "top_files": [
+        {
+          "inode": 635296,
+          "is_link": false,
+          "mtime_ns": 1785419243640825353,
+          "name": ".DS_Store",
+          "size": 8196
+        },
+        {
+          "inode": 635298,
+          "is_link": false,
+          "mtime_ns": 1764724631565599617,
+          "name": "INTERACTION_ECHO.log",
+          "size": 371
+        },
+        {
+          "inode": 635297,
+          "is_link": false,
+          "mtime_ns": 1764724631565032603,
+          "name": "INTERACTION_USER.log",
+          "size": 394
+        },
+        {
+          "inode": 635299,
+          "is_link": false,
+          "mtime_ns": 1794287978791652055,
+          "name": "SELF_EDIT.log",
+          "size": 35963617
+        },
+        {
+          "inode": 635300,
+          "is_link": false,
+          "mtime_ns": 1794287979354456770,
+          "name": "SELF_EDIT_MASTERY_.log",
+          "size": 105121335
+        },
+        {
+          "inode": 15256337,
+          "is_link": false,
+          "mtime_ns": 1788247346715253518,
+          "name": "SELF_EDIT_MASTERY_.log.1.gz",
+          "size": 870446
+        },
+        {
+          "inode": 5498271,
+          "is_link": false,
+          "mtime_ns": 1794287978789458455,
+          "name": "apply_to_code_invocations.jsonl",
+          "size": 1298147
+        },
+        {
+          "inode": 36656190,
+          "is_link": false,
+          "mtime_ns": 1794284319833049007,
+          "name": "autonomous_loop_momentum.json",
+          "size": 37
+        },
+        {
+          "inode": 16973929,
+          "is_link": false,
+          "mtime_ns": 1788472247336449265,
+          "name": "behavioral_directives.json",
+          "size": 38
+        },
+        {
+          "inode": 16973842,
+          "is_link": false,
+          "mtime_ns": 1788472247338866366,
+          "name": "behavioral_directives_audit.jsonl",
+          "size": 1957
+        },
+        {
+          "inode": 36483917,
+          "is_link": false,
+          "mtime_ns": 1794251569052192312,
+          "name": "chat_thread_pacing.json",
+          "size": 29341
+        },
+        {
+          "inode": 4514637,
+          "is_link": false,
+          "mtime_ns": 1783385647474230822,
+          "name": "checkin_threads.json",
+          "size": 262
+        },
+        {
+          "inode": 3839486,
+          "is_link": false,
+          "mtime_ns": 1782852075513810977,
+          "name": "christian_naturalist_reference.txt",
+          "size": 124140
+        },
+        {
+          "inode": 4189895,
+          "is_link": false,
+          "mtime_ns": 1794284316306598018,
+          "name": "claude_research_cursor.json",
+          "size": 220
+        },
+        {
+          "inode": 4189881,
+          "is_link": false,
+          "mtime_ns": 1794284316306999646,
+          "name": "claude_research_last_attempt.json",
+          "size": 222
+        },
+        {
+          "inode": 635311,
+          "is_link": false,
+          "mtime_ns": 1794185614082903458,
+          "name": "claude_shard.jsonl",
+          "size": 151805
+        },
+        {
+          "inode": 635310,
+          "is_link": false,
+          "mtime_ns": 1794185614083119584,
+          "name": "claude_shard_friction.log",
+          "size": 58932
+        },
+        {
+          "inode": 36496254,
+          "is_link": false,
+          "mtime_ns": 1794253129209385188,
+          "name": "code_scan_hash_cache.json",
+          "size": 119536
+        },
+        {
+          "inode": 3440956,
+          "is_link": false,
+          "mtime_ns": 1794286028835449186,
+          "name": "consolidation_log.jsonl",
+          "size": 512671
+        },
+        {
+          "inode": 3946143,
+          "is_link": false,
+          "mtime_ns": 1794288007376007486,
+          "name": "council_cursor.json",
+          "size": 69
+        },
+        {
+          "inode": 5912817,
+          "is_link": false,
+          "mtime_ns": 1794287772420665469,
+          "name": "council_deliberations.jsonl",
+          "size": 35764322
+        },
+        {
+          "inode": 7438412,
+          "is_link": false,
+          "mtime_ns": 1793706991324872591,
+          "name": "council_deliberations.jsonl.1.gz",
+          "size": 7418663
+        },
+        {
+          "inode": 8099206,
+          "is_link": false,
+          "mtime_ns": 1794088407800991069,
+          "name": "council_ratings.jsonl",
+          "size": 133260
+        },
+        {
+          "inode": 5867012,
+          "is_link": false,
+          "mtime_ns": 1784262229352858239,
+          "name": "dissent_log.jsonl",
+          "size": 1200
+        },
+        {
+          "inode": 635312,
+          "is_link": false,
+          "mtime_ns": 1794284324844117448,
+          "name": "dream_bridge.log",
+          "size": 90719577
+        },
+        {
+          "inode": 4596977,
+          "is_link": false,
+          "mtime_ns": 1784149563029936695,
+          "name": "dream_state.json",
+          "size": 550
+        },
+        {
+          "inode": 36673112,
+          "is_link": false,
+          "mtime_ns": 1794287924292579374,
+          "name": "drift_detectors.pkl",
+          "size": 1034
+        },
+        {
+          "inode": 635313,
+          "is_link": false,
+          "mtime_ns": 1784729829119612514,
+          "name": "dual_meta.json",
+          "size": 74
+        },
+        {
+          "inode": 36672786,
+          "is_link": false,
+          "mtime_ns": 1794287893800088434,
+          "name": "echo_claim_thread.json",
+          "size": 359
+        },
+        {
+          "inode": 34407384,
+          "is_link": false,
+          "mtime_ns": 1794287893800492229,
+          "name": "echo_claims.jsonl",
+          "size": 110846
+        },
+        {
+          "inode": 6107762,
+          "is_link": false,
+          "mtime_ns": 1794287893796689284,
+          "name": "echo_messages.jsonl",
+          "size": 5453279
+        },
+        {
+          "inode": 36616662,
+          "is_link": false,
+          "mtime_ns": 1794278380207142085,
+          "name": "echo_projects_autonomy_state.json",
+          "size": 113
+        },
+        {
+          "inode": 36673540,
+          "is_link": false,
+          "mtime_ns": 1794287994894511105,
+          "name": "echo_sentinel.json",
+          "size": 163
+        },
+        {
+          "inode": 34791308,
+          "is_link": false,
+          "mtime_ns": 1793732521305290103,
+          "name": "echo_server.pid",
+          "size": 5
+        },
+        {
+          "inode": 3503275,
+          "is_link": false,
+          "mtime_ns": 1794287924302048068,
+          "name": "echo_state.npy",
+          "size": 164
+        },
+        {
+          "inode": 3503276,
+          "is_link": false,
+          "mtime_ns": 1794287924302411654,
+          "name": "echo_state_history.npy",
+          "size": 3728
+        },
+        {
+          "inode": 4194643,
+          "is_link": false,
+          "mtime_ns": 1794288020843204937,
+          "name": "echo_watchdog.log",
+          "size": 12425257
+        },
+        {
+          "inode": 6812284,
+          "is_link": false,
+          "mtime_ns": 1794152004746205766,
+          "name": "echo_watchdog.log.1.gz",
+          "size": 8445694
+        },
+        {
+          "inode": 6792828,
+          "is_link": false,
+          "mtime_ns": 1784615159398671337,
+          "name": "echo_watchdog_manual_restart.log",
+          "size": 401971
+        },
+        {
+          "inode": 36671434,
+          "is_link": false,
+          "mtime_ns": 1794287645468709385,
+          "name": "faiss.index",
+          "size": 241904685
+        },
+        {
+          "inode": 36673546,
+          "is_link": false,
+          "mtime_ns": 1794287997559256460,
+          "name": "hearing_signature.json",
+          "size": 96457
+        },
+        {
+          "inode": 635315,
+          "is_link": false,
+          "mtime_ns": 1794287978658764454,
+          "name": "interaction_log.jsonl",
+          "size": 26525701
+        },
+        {
+          "inode": 7765425,
+          "is_link": false,
+          "mtime_ns": 1793706990432909124,
+          "name": "interaction_log.jsonl.1.gz",
+          "size": 13740841
+        },
+        {
+          "inode": 36673111,
+          "is_link": false,
+          "mtime_ns": 1794287924292200288,
+          "name": "introspection_state.json",
+          "size": 3862
+        },
+        {
+          "inode": 7000345,
+          "is_link": false,
+          "mtime_ns": 1793229492634388578,
+          "name": "janitor_council_log.jsonl",
+          "size": 315269
+        },
+        {
+          "inode": 6821983,
+          "is_link": false,
+          "mtime_ns": 1793736209131636870,
+          "name": "janitor_state.json",
+          "size": 30
+        },
+        {
+          "inode": 635316,
+          "is_link": false,
+          "mtime_ns": 1784729829119565472,
+          "name": "learning_events.jsonl",
+          "size": 2566698
+        },
+        {
+          "inode": 36673110,
+          "is_link": false,
+          "mtime_ns": 1794287924291463116,
+          "name": "liveness_ledger.json",
+          "size": 21457
+        },
+        {
+          "inode": 6812407,
+          "is_link": false,
+          "mtime_ns": 1794250022239044612,
+          "name": "log_retention_state.json",
+          "size": 35
+        },
+        {
+          "inode": 7281448,
+          "is_link": false,
+          "mtime_ns": 1784786796546287037,
+          "name": "memory_ablation_run.log",
+          "size": 10620
+        },
+        {
+          "inode": 635318,
+          "is_link": false,
+          "mtime_ns": 1794284327168372394,
+          "name": "memory_journal.log",
+          "size": 754586
+        },
+        {
+          "inode": 635317,
+          "is_link": false,
+          "mtime_ns": 1794286028664746078,
+          "name": "memory_journal_active.log",
+          "size": 0
+        },
+        {
+          "inode": 36671431,
+          "is_link": false,
+          "mtime_ns": 1794287645392385325,
+          "name": "memory_meta.json",
+          "size": 136497506
+        },
+        {
+          "inode": 16008675,
+          "is_link": false,
+          "mtime_ns": 1788335699989919878,
+          "name": "memory_meta_backup_before_backfill_migration_20260902T075543Z.json",
+          "size": 89172395
+        },
+        {
+          "inode": 15896023,
+          "is_link": false,
+          "mtime_ns": 1788325181611657318,
+          "name": "memory_meta_backup_before_reflection_migration_20260902T050420Z.json",
+          "size": 89031859
+        },
+        {
+          "inode": 36475012,
+          "is_link": false,
+          "mtime_ns": 1794250487264091515,
+          "name": "message_outbox.jsonl",
+          "size": 0
+        },
+        {
+          "inode": 4489120,
+          "is_link": false,
+          "mtime_ns": 1783335732393996200,
+          "name": "messaging_settings.json",
+          "size": 58
+        },
+        {
+          "inode": 34791310,
+          "is_link": false,
+          "mtime_ns": 1793732521436650783,
+          "name": "mlx_crash_avoidance.json",
+          "size": 229
+        },
+        {
+          "inode": 3438958,
+          "is_link": false,
+          "mtime_ns": 1782889891800770437,
+          "name": "modelfile_proposals.jsonl",
+          "size": 2358
+        },
+        {
+          "inode": 3281762,
+          "is_link": false,
+          "mtime_ns": 1794287979195633396,
+          "name": "optuna.db",
+          "size": 14151680
+        },
+        {
+          "inode": 3480491,
+          "is_link": false,
+          "mtime_ns": 1794284318287198890,
+          "name": "prediction_log.jsonl",
+          "size": 256128
+        },
+        {
+          "inode": 3487080,
+          "is_link": false,
+          "mtime_ns": 1794283356893131224,
+          "name": "principle_violations.log",
+          "size": 226116
+        },
+        {
+          "inode": 36671435,
+          "is_link": false,
+          "mtime_ns": 1794287645617069683,
+          "name": "prompt_history_state.json",
+          "size": 135487
+        },
+        {
+          "inode": 635321,
+          "is_link": false,
+          "mtime_ns": 1794276100954021516,
+          "name": "quarantine_journal.jsonl",
+          "size": 36471226
+        },
+        {
+          "inode": 18365871,
+          "is_link": false,
+          "mtime_ns": 1788657303942807621,
+          "name": "raoc_pilot_trials.jsonl",
+          "size": 32934
+        },
+        {
+          "inode": 635322,
+          "is_link": false,
+          "mtime_ns": 1794286875871429302,
+          "name": "reflection_journal.jsonl",
+          "size": 15989286
+        },
+        {
+          "inode": 635389,
+          "is_link": false,
+          "mtime_ns": 1761856496747981212,
+          "name": "reflection_journal_trimmed.jsonl",
+          "size": 0
+        },
+        {
+          "inode": 635390,
+          "is_link": false,
+          "mtime_ns": 1794287979240242556,
+          "name": "reflection_shard.jsonl",
+          "size": 56840766
+        },
+        {
+          "inode": 6812329,
+          "is_link": false,
+          "mtime_ns": 1793051502849370987,
+          "name": "reflection_shard.jsonl.1.gz",
+          "size": 13790531
+        },
+        {
+          "inode": 3913445,
+          "is_link": false,
+          "mtime_ns": 1782921396455913969,
+          "name": "reflection_shard.jsonl.pre_pending_cleanup",
+          "size": 53157632
+        },
+        {
+          "inode": 3951824,
+          "is_link": false,
+          "mtime_ns": 1794287574693573091,
+          "name": "restore_alerts.jsonl",
+          "size": 1042625
+        },
+        {
+          "inode": 3941691,
+          "is_link": false,
+          "mtime_ns": 1782942515913502729,
+          "name": "restore_log.jsonl",
+          "size": 1559
+        },
+        {
+          "inode": 16465627,
+          "is_link": false,
+          "mtime_ns": 1794281646235345544,
+          "name": "retrieval_provenance.jsonl",
+          "size": 462274
+        },
+        {
+          "inode": 3941690,
+          "is_link": false,
+          "mtime_ns": 1794287978894708353,
+          "name": "river_brain.pkl",
+          "size": 5849776
+        },
+        {
+          "inode": 3896128,
+          "is_link": false,
+          "mtime_ns": 1794287978662492857,
+          "name": "river_brain.pkl.lock",
+          "size": 0
+        },
+        {
+          "inode": 7281452,
+          "is_link": false,
+          "mtime_ns": 1784772105340421521,
+          "name": "river_brain.pkl.pre_ablation_backup_20260722T190227Z",
+          "size": 1755162
+        },
+        {
+          "inode": 16656212,
+          "is_link": false,
+          "mtime_ns": 1788425042091665871,
+          "name": "river_brain.pkl.pre_ablation_backup_nonpersonal_20260903T014446Z",
+          "size": 3285752
+        },
+        {
+          "inode": 18486558,
+          "is_link": false,
+          "mtime_ns": 1788723875015491711,
+          "name": "river_brain.pkl.pre_ablation_backup_nonpersonal_20260906T124504Z",
+          "size": 3667015
+        },
+        {
+          "inode": 3909538,
+          "is_link": false,
+          "mtime_ns": 1782918757322829917,
+          "name": "river_brain.pkl.pre_coding_reset",
+          "size": 332175
+        },
+        {
+          "inode": 3894416,
+          "is_link": false,
+          "mtime_ns": 1782889865355149424,
+          "name": "river_brain.pkl.pre_reset_backup_20260701",
+          "size": 3107022
+        },
+        {
+          "inode": 3941703,
+          "is_link": false,
+          "mtime_ns": 1782940377318675439,
+          "name": "river_brain.pkl.restore_tmp",
+          "size": 332467
+        },
+        {
+          "inode": 3345379,
+          "is_link": false,
+          "mtime_ns": 1782427641670804003,
+          "name": "river_brain.pkl.zeroed_backup",
+          "size": 2893
+        },
+        {
+          "inode": 36672697,
+          "is_link": false,
+          "mtime_ns": 1794287846454984107,
+          "name": "salience_state.json",
+          "size": 15281
+        },
+        {
+          "inode": 635392,
+          "is_link": false,
+          "mtime_ns": 1794287549025776613,
+          "name": "scheduler_selections.log",
+          "size": 4305837
+        },
+        {
+          "inode": 3483914,
+          "is_link": false,
+          "mtime_ns": 1794284640969030079,
+          "name": "scripture_warnings.log",
+          "size": 3353853
+        },
+        {
+          "inode": 5788897,
+          "is_link": false,
+          "mtime_ns": 1794287699711623477,
+          "name": "seam_log.jsonl",
+          "size": 2355742
+        },
+        {
+          "inode": 36671953,
+          "is_link": false,
+          "mtime_ns": 1794287699710822221,
+          "name": "seam_state.json",
+          "size": 10920
+        },
+        {
+          "inode": 30805598,
+          "is_link": false,
+          "mtime_ns": 1794284327167834015,
+          "name": "search_provenance.jsonl",
+          "size": 947032
+        },
+        {
+          "inode": 18594072,
+          "is_link": false,
+          "mtime_ns": 1794287978792645604,
+          "name": "self_edit_attempt_ledger.jsonl",
+          "size": 5858472
+        },
+        {
+          "inode": 36593475,
+          "is_link": false,
+          "mtime_ns": 1794273260798458429,
+          "name": "self_edit_cooldown.json",
+          "size": 47
+        },
+        {
+          "inode": 25252083,
+          "is_link": false,
+          "mtime_ns": 1789947326066019206,
+          "name": "self_edit_outcomes.jsonl",
+          "size": 98014
+        },
+        {
+          "inode": 635395,
+          "is_link": false,
+          "mtime_ns": 1789945793109841878,
+          "name": "self_edit_reflections.log",
+          "size": 964795
+        },
+        {
+          "inode": 36673662,
+          "is_link": false,
+          "mtime_ns": 1794288020880564920,
+          "name": "self_model.json",
+          "size": 21082
+        },
+        {
+          "inode": 18805494,
+          "is_link": false,
+          "mtime_ns": 1794251268078447095,
+          "name": "self_model_claims.jsonl",
+          "size": 16913
+        },
+        {
+          "inode": 4659046,
+          "is_link": false,
+          "mtime_ns": 1783535016299893984,
+          "name": "self_report_verification.log",
+          "size": 520
+        },
+        {
+          "inode": 3487939,
+          "is_link": false,
+          "mtime_ns": 1789838043840864276,
+          "name": "shadow_accuracy.jsonl",
+          "size": 800529
+        },
+        {
+          "inode": 3744688,
+          "is_link": false,
+          "mtime_ns": 1789751640065317924,
+          "name": "shadow_corrections.log",
+          "size": 10829
+        },
+        {
+          "inode": 3487206,
+          "is_link": false,
+          "mtime_ns": 1789838884311837362,
+          "name": "shadow_self_model.json",
+          "size": 18343
+        },
+        {
+          "inode": 36671424,
+          "is_link": false,
+          "mtime_ns": 1794287643469647626,
+          "name": "signal_hash_cache.json",
+          "size": 8774
+        },
+        {
+          "inode": 7095363,
+          "is_link": false,
+          "mtime_ns": 1784725289338607627,
+          "name": "snapshot_baseline.json",
+          "size": 926
+        },
+        {
+          "inode": 6243230,
+          "is_link": false,
+          "mtime_ns": 1792274784856959484,
+          "name": "symbiote_status.json",
+          "size": 781
+        },
+        {
+          "inode": 36671840,
+          "is_link": false,
+          "mtime_ns": 1794287671807315997,
+          "name": "sync_seen.jsonl",
+          "size": 198184
+        },
+        {
+          "inode": 3545140,
+          "is_link": false,
+          "mtime_ns": 1794287676181880904,
+          "name": "sync_state.json",
+          "size": 51
+        },
+        {
+          "inode": 18285265,
+          "is_link": false,
+          "mtime_ns": 1794287978653212080,
+          "name": "synthesis_integrity_log.jsonl",
+          "size": 32647301
+        },
+        {
+          "inode": 5322332,
+          "is_link": false,
+          "mtime_ns": 1794150761565776048,
+          "name": "task_type_classifier.pkl",
+          "size": 56086
+        },
+        {
+          "inode": 5322331,
+          "is_link": false,
+          "mtime_ns": 1794150761549484748,
+          "name": "task_type_classifier.pkl.lock",
+          "size": 0
+        },
+        {
+          "inode": 3870493,
+          "is_link": false,
+          "mtime_ns": 1794201278655136243,
+          "name": "thought_log.jsonl",
+          "size": 897
+        },
+        {
+          "inode": 3870473,
+          "is_link": false,
+          "mtime_ns": 1794201278655549787,
+          "name": "tool_dispatch.log",
+          "size": 11767
+        },
+        {
+          "inode": 36637268,
+          "is_link": false,
+          "mtime_ns": 1794281457513653797,
+          "name": "touch_signature.json",
+          "size": 132105
+        },
+        {
+          "inode": 3957512,
+          "is_link": false,
+          "mtime_ns": 1783214348850499923,
+          "name": "user_rating_cursor.json",
+          "size": 51
+        },
+        {
+          "inode": 635396,
+          "is_link": false,
+          "mtime_ns": 1794287643470403298,
+          "name": "validator_audit.log",
+          "size": 28023675
+        },
+        {
+          "inode": 30259306,
+          "is_link": false,
+          "mtime_ns": 1794287900894213056,
+          "name": "verified_learning.jsonl",
+          "size": 438404
+        },
+        {
+          "inode": 36673545,
+          "is_link": false,
+          "mtime_ns": 1794287997562182564,
+          "name": "vision_signature.json",
+          "size": 127063
+        },
+        {
+          "inode": 4079752,
+          "is_link": false,
+          "mtime_ns": 1794185864020594369,
+          "name": "wolf_dryrun.jsonl",
+          "size": 125046
+        },
+        {
+          "inode": 3938398,
+          "is_link": false,
+          "mtime_ns": 1782939112382999221,
+          "name": "wolf_dryrun_window.json",
+          "size": 302
+        },
+        {
+          "inode": 635398,
+          "is_link": false,
+          "mtime_ns": 1782561396910465079,
+          "name": "wolf_friction_cursor.json",
+          "size": 64
+        },
+        {
+          "inode": 36638028,
+          "is_link": false,
+          "mtime_ns": 1794281646238824947,
+          "name": "working_self.json",
+          "size": 943
+        },
+        {
+          "inode": 36638027,
+          "is_link": false,
+          "mtime_ns": 1794281646236704138,
+          "name": "working_self.jsonl",
+          "size": 170039
+        },
+        {
+          "inode": 5643390,
+          "is_link": false,
+          "mtime_ns": 1794287699705861727,
+          "name": "workspace_log.jsonl",
+          "size": 8602401
+        },
+        {
+          "inode": 36472710,
+          "is_link": false,
+          "mtime_ns": 1794250199478880540,
+          "name": "world_model_diagnostics.json",
+          "size": 405
+        }
+      ]
+    }
+  },
+  "echo_studio_db": {
+    "path": "/Users/richietate/.echo_studio/echo_studio.db",
+    "row_counts": {
+      "conversations": 91,
+      "drafts": 87,
+      "messages": 3284,
+      "recent_files": 0,
+      "saved_prompts": 0,
+      "sqlite_sequence": 1
+    },
+    "stat": {
+      "exists": true,
+      "inode": 4441411,
+      "mtime_ns": 1794281649249639166,
+      "nlink": 1,
+      "path": "/Users/richietate/.echo_studio/echo_studio.db",
+      "size": 4923392
+    },
+    "tables": [
+      "conversations",
+      "drafts",
+      "messages",
+      "recent_files",
+      "saved_prompts",
+      "sqlite_sequence"
+    ]
+  },
+  "freeze_store": {
+    "binding": {
+      "id_order_len_equals_header_ntotal": true,
+      "id_order_len_equals_meta_keys": true,
+      "meta_keys_equal_header_ntotal": true,
+      "sidecar_index_sha256_equals_file": true
+    },
+    "finished_at": "2026-11-10T05:20:10.651891+00:00",
+    "index": {
+      "after": {
+        "exists": true,
+        "inode": 34029978,
+        "mtime_ns": 1793591505506534304,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho-offline-recovery-20261026/suffix-recovery-20261102/store/faiss.index",
+        "size": 233315373
+      },
+      "before": {
+        "exists": true,
+        "inode": 34029978,
+        "mtime_ns": 1793591505506534304,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho-offline-recovery-20261026/suffix-recovery-20261102/store/faiss.index",
+        "size": 233315373
+      },
+      "bytes_read": 233315373,
+      "header": {
+        "dim_at_offset_4": 384,
+        "file_size": 233315373,
+        "fourcc_hex": "49784649",
+        "fourcc_latin1": "IxFI",
+        "header_ntotal_matches_size_arithmetic": true,
+        "implied_header_len": 45,
+        "nbytes_examined": 64,
+        "ntotal_at_offset_8": 151898,
+        "ntotal_from_size_minus_45": 151898,
+        "size_minus_45_divisible_by_stride": true
+      },
+      "opened": {
+        "inode": 34029978,
+        "mtime_ns": 1793591505506534304,
+        "size": 233315373
+      },
+      "opened_inode_matches_before": true,
+      "opened_size_matches_bytes": true,
+      "path_inode_changed_during_read": false,
+      "path_size_changed_during_read": false,
+      "sha256": "0dc600d738c77458883d60f14ef0d43c8ae2845609506ed3d50b06857427a2d8"
+    },
+    "label": "suffix_freeze_20261102",
+    "measured_at": "2026-11-10T05:20:06.095547+00:00",
+    "meta": {
+      "after": {
+        "exists": true,
+        "inode": 34029977,
+        "mtime_ns": 1793591505462247537,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho-offline-recovery-20261026/suffix-recovery-20261102/store/memory_meta.json",
+        "size": 130779333
+      },
+      "before": {
+        "exists": true,
+        "inode": 34029977,
+        "mtime_ns": 1793591505462247537,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho-offline-recovery-20261026/suffix-recovery-20261102/store/memory_meta.json",
+        "size": 130779333
+      },
+      "bytes_read": 130779333,
+      "opened": {
+        "inode": 34029977,
+        "mtime_ns": 1793591505462247537,
+        "size": 130779333
+      },
+      "opened_inode_matches_before": true,
+      "opened_size_matches_bytes": true,
+      "path_inode_changed_during_read": false,
+      "path_size_changed_during_read": false,
+      "profile": {
+        "duplicate_text_groups": 2660,
+        "first_key": "762209c7-677f-4b35-bb68-7473855afaa1",
+        "id_order_ids_missing_from_meta": 0,
+        "id_order_ids_present_in_meta": 151898,
+        "id_order_len": 151898,
+        "id_order_unique": 151898,
+        "inner_meta_key_presence": {
+          "backfill": 3791,
+          "is_thought_provoking": 1693,
+          "memory_source": 128182,
+          "migrated_from_legacy_backfill_burst": 19,
+          "migrated_from_legacy_self_model_tag": 212,
+          "migration_ts": 231,
+          "prompt": 18624,
+          "retention": 7205,
+          "role": 128079,
+          "seed_ids": 10,
+          "source": 18624,
+          "sync_ts": 2894,
+          "task_type": 7205,
+          "timestamp": 151866,
+          "type": 19228,
+          "validation_warning": 21129
+        },
+        "inner_meta_not_dict": 0,
+        "key_count": 151898,
+        "last_key": "f3cf97b3-6cee-465f-8d4e-0d694869416b",
+        "memory_source_counts": {
+          "<missing>": 23716,
+          "autonomous": 54055,
+          "claude_research": 1447,
+          "code_analysis": 60688,
+          "dream_v2": 10,
+          "environment": 1332,
+          "self_model_reflection": 316,
+          "sync_air": 2894,
+          "tool_manager": 222,
+          "user_conversation": 7218
+        },
+        "memory_source_missing": 23716,
+        "meta_keys_not_in_id_order": 0,
+        "non_dict_values": 0,
+        "records_in_duplicate_text_groups": 98903,
+        "repeated_json_keys": 0,
+        "role_counts": {
+          "<missing>": 23819,
+          "code_analysis": 60688,
+          "dream": 24137,
+          "echo": 5493,
+          "environment": 1332,
+          "experiment": 262,
+          "fetch": 25156,
+          "harmony": 4479,
+          "research": 1296,
+          "sandbox_failure": 1,
+          "sandbox_run": 360,
+          "self_model_reflection": 316,
+          "sync": 2643,
+          "synthesis": 1,
+          "tool_error": 222,
+          "user": 1693
+        },
+        "role_missing": 23819,
+        "text_empty": 0,
+        "text_missing_or_null": 0,
+        "text_nonempty": 151898,
+        "text_not_str": 0,
+        "timestamp_max": "2026-11-02T03:45:59.414560+00:00",
+        "timestamp_min": "2026-07-02T21:40:53.854995+00:00",
+        "timestamp_missing": 32,
+        "timestamp_present": 151866,
+        "unique_keys": 151898,
+        "unique_nonempty_text_sha256": 55655,
+        "uuid_shaped_keys": 0,
+        "validation_warning_true": 21129
+      },
+      "sha256": "813209d9b0868d85e288233c973955879dbcefb92bc9e07d7df903dc05203bc4"
+    },
+    "sidecar": {
+      "binding_sha256": "34332e14095cc9c3b40d9ff7ef6c9138ecbaaa626a94dea662d33869f12e6ea0",
+      "file": {
+        "after": {
+          "exists": true,
+          "inode": 34029979,
+          "mtime_ns": 1793591505721757883,
+          "nlink": 1,
+          "path": "/Users/richietate/Desktop/FeralEcho-offline-recovery-20261026/suffix-recovery-20261102/store/faiss.index.identity.json",
+          "size": 6683724
+        },
+        "before": {
+          "exists": true,
+          "inode": 34029979,
+          "mtime_ns": 1793591505721757883,
+          "nlink": 1,
+          "path": "/Users/richietate/Desktop/FeralEcho-offline-recovery-20261026/suffix-recovery-20261102/store/faiss.index.identity.json",
+          "size": 6683724
+        },
+        "bytes_read": 6683724,
+        "opened": {
+          "inode": 34029979,
+          "mtime_ns": 1793591505721757883,
+          "size": 6683724
+        },
+        "opened_inode_matches_before": true,
+        "opened_size_matches_bytes": true,
+        "path_inode_changed_during_read": false,
+        "path_size_changed_during_read": false,
+        "sha256": "c9e293edeed42233f59db395aec81a3857ff9e63f1aec4eac379095c5a7c3fb7"
+      },
+      "id_order_len": 151898,
+      "id_order_unique": 151898,
+      "index_sha256": "0dc600d738c77458883d60f14ef0d43c8ae2845609506ed3d50b06857427a2d8",
+      "schema": 1,
+      "top_keys": [
+        "binding_sha256",
+        "id_order",
+        "index_sha256",
+        "schema"
+      ]
+    },
+    "sidecar_present": true
+  },
+  "legacy_data_store": {
+    "binding": null,
+    "finished_at": "2026-11-10T05:20:15.048244+00:00",
+    "index": {
+      "after": {
+        "exists": true,
+        "inode": 635187,
+        "mtime_ns": 1778870392588166636,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/data/faiss.index",
+        "size": 10952749
+      },
+      "before": {
+        "exists": true,
+        "inode": 635187,
+        "mtime_ns": 1778870392588166636,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/data/faiss.index",
+        "size": 10952749
+      },
+      "bytes_read": 10952749,
+      "header": {
+        "dim_at_offset_4": 512,
+        "file_size": 10952749,
+        "fourcc_hex": "49784649",
+        "fourcc_latin1": "IxFI",
+        "header_layout_unexpected": true,
+        "nbytes_examined": 64,
+        "ntotal_at_offset_8": 5348
+      },
+      "opened": {
+        "inode": 635187,
+        "mtime_ns": 1778870392588166636,
+        "size": 10952749
+      },
+      "opened_inode_matches_before": true,
+      "opened_size_matches_bytes": true,
+      "path_inode_changed_during_read": false,
+      "path_size_changed_during_read": false,
+      "sha256": "65903b32b3a5a5353f3f92253e0ee39ff0e825910e2025ac8631282e5b9b5863"
+    },
+    "label": "data_legacy",
+    "measured_at": "2026-11-10T05:20:14.931593+00:00",
+    "meta": {
+      "after": {
+        "exists": true,
+        "inode": 635189,
+        "mtime_ns": 1778870392693024047,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/data/memory_meta.json",
+        "size": 6587816
+      },
+      "before": {
+        "exists": true,
+        "inode": 635189,
+        "mtime_ns": 1778870392693024047,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/data/memory_meta.json",
+        "size": 6587816
+      },
+      "bytes_read": 6587816,
+      "opened": {
+        "inode": 635189,
+        "mtime_ns": 1778870392693024047,
+        "size": 6587816
+      },
+      "opened_inode_matches_before": true,
+      "opened_size_matches_bytes": true,
+      "path_inode_changed_during_read": false,
+      "path_size_changed_during_read": false,
+      "profile": {
+        "duplicate_text_groups": 8,
+        "first_key": "761eb950-44b5-419d-9714-df87f4eea805",
+        "inner_meta_key_presence": {},
+        "inner_meta_not_dict": 0,
+        "key_count": 5348,
+        "last_key": "23ca49b6-7dc4-42eb-9a69-508151183432",
+        "memory_source_counts": {
+          "<missing>": 5348
+        },
+        "memory_source_missing": 5348,
+        "non_dict_values": 0,
+        "records_in_duplicate_text_groups": 111,
+        "repeated_json_keys": 0,
+        "role_counts": {
+          "<missing>": 5348
+        },
+        "role_missing": 5348,
+        "text_empty": 0,
+        "text_missing_or_null": 0,
+        "text_nonempty": 5348,
+        "text_not_str": 0,
+        "timestamp_max": null,
+        "timestamp_min": null,
+        "timestamp_missing": 5348,
+        "timestamp_present": 0,
+        "unique_keys": 5348,
+        "unique_nonempty_text_sha256": 5245,
+        "uuid_shaped_keys": 0,
+        "validation_warning_true": 0
+      },
+      "sha256": "7c6c2d7ddd69957f0a4a234e07f0f944bcc1620e8c5c092694534c98b03584de"
+    },
+    "sidecar": null,
+    "sidecar_present": false
+  },
+  "line_counts": [
+    {
+      "after": {
+        "exists": true,
+        "inode": 635315,
+        "mtime_ns": 1794287978658764454,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/interaction_log.jsonl",
+        "size": 26525701
+      },
+      "lines": 4375,
+      "opened_inode": 635315,
+      "opened_size": 26525701,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/interaction_log.jsonl",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 635312,
+        "mtime_ns": 1794284324844117448,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/dream_bridge.log",
+        "size": 90719577
+      },
+      "lines": 559978,
+      "opened_inode": 635312,
+      "opened_size": 90719577,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/dream_bridge.log",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 635318,
+        "mtime_ns": 1794284327168372394,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/memory_journal.log",
+        "size": 754586
+      },
+      "lines": 5487,
+      "opened_inode": 635318,
+      "opened_size": 754586,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/memory_journal.log",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 635317,
+        "mtime_ns": 1794286028664746078,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/memory_journal_active.log",
+        "size": 0
+      },
+      "lines": 0,
+      "opened_inode": 635317,
+      "opened_size": 0,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/memory_journal_active.log",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 635321,
+        "mtime_ns": 1794276100954021516,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/quarantine_journal.jsonl",
+        "size": 36471226
+      },
+      "lines": 49288,
+      "opened_inode": 635321,
+      "opened_size": 36471226,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/quarantine_journal.jsonl",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 635322,
+        "mtime_ns": 1794286875871429302,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/reflection_journal.jsonl",
+        "size": 15989286
+      },
+      "lines": 12060,
+      "opened_inode": 635322,
+      "opened_size": 15989286,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/reflection_journal.jsonl",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 635390,
+        "mtime_ns": 1794287979240242556,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/reflection_shard.jsonl",
+        "size": 56840766
+      },
+      "lines": 12899,
+      "opened_inode": 635390,
+      "opened_size": 56840766,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/reflection_shard.jsonl",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 5912817,
+        "mtime_ns": 1794287772420665469,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/council_deliberations.jsonl",
+        "size": 35764322
+      },
+      "lines": 3527,
+      "opened_inode": 5912817,
+      "opened_size": 35764322,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/council_deliberations.jsonl",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 635316,
+        "mtime_ns": 1784729829119565472,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/learning_events.jsonl",
+        "size": 2566698
+      },
+      "lines": 919,
+      "opened_inode": 635316,
+      "opened_size": 2566698,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/learning_events.jsonl",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 5867121,
+        "mtime_ns": 1794287699537139071,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/data/question_garden.jsonl",
+        "size": 15921080
+      },
+      "lines": 23562,
+      "opened_inode": 5867121,
+      "opened_size": 15921080,
+      "path": "/Users/richietate/Desktop/FeralEcho/data/question_garden.jsonl",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 5643390,
+        "mtime_ns": 1794287699705861727,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/workspace_log.jsonl",
+        "size": 8602401
+      },
+      "lines": 26101,
+      "opened_inode": 5643390,
+      "opened_size": 8602401,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/workspace_log.jsonl",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 5788897,
+        "mtime_ns": 1794287699711623477,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/seam_log.jsonl",
+        "size": 2355742
+      },
+      "lines": 17557,
+      "opened_inode": 5788897,
+      "opened_size": 2355742,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/seam_log.jsonl",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 6107762,
+        "mtime_ns": 1794287893796689284,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/echo_messages.jsonl",
+        "size": 5453279
+      },
+      "lines": 2371,
+      "opened_inode": 6107762,
+      "opened_size": 5453279,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/echo_messages.jsonl",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 25252083,
+        "mtime_ns": 1789947326066019206,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/self_edit_outcomes.jsonl",
+        "size": 98014
+      },
+      "lines": 194,
+      "opened_inode": 25252083,
+      "opened_size": 98014,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/self_edit_outcomes.jsonl",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 36638027,
+        "mtime_ns": 1794281646236704138,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/working_self.jsonl",
+        "size": 170039
+      },
+      "lines": 150,
+      "opened_inode": 36638027,
+      "opened_size": 170039,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/working_self.jsonl",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 8099206,
+        "mtime_ns": 1794088407800991069,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/council_ratings.jsonl",
+        "size": 133260
+      },
+      "lines": 227,
+      "opened_inode": 8099206,
+      "opened_size": 133260,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/council_ratings.jsonl",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 3440956,
+        "mtime_ns": 1794286028835449186,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/consolidation_log.jsonl",
+        "size": 512671
+      },
+      "lines": 3277,
+      "opened_inode": 3440956,
+      "opened_size": 512671,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/consolidation_log.jsonl",
+      "path_changed_during_count": false
+    },
+    {
+      "after": {
+        "exists": true,
+        "inode": 36671840,
+        "mtime_ns": 1794287671807315997,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/sync_seen.jsonl",
+        "size": 198184
+      },
+      "lines": 3049,
+      "opened_inode": 36671840,
+      "opened_size": 198184,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/sync_seen.jsonl",
+      "path_changed_during_count": false
+    }
+  ],
+  "live_store": {
+    "counts": {
+      "header_equals_meta_keys": true,
+      "header_ntotal": 157490,
+      "meta_keys": 157490,
+      "size_implied_ntotal": 157490,
+      "verified_binding_coverage": 0,
+      "verified_id_order_len": 0
+    },
+    "index": {
+      "after": {
+        "exists": true,
+        "inode": 36671434,
+        "mtime_ns": 1794287645468709385,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/faiss.index",
+        "size": 241904685
+      },
+      "before": {
+        "exists": true,
+        "inode": 36671434,
+        "mtime_ns": 1794287645468709385,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/faiss.index",
+        "size": 241904685
+      },
+      "bytes_read": 241904685,
+      "header": {
+        "dim_at_offset_4": 384,
+        "file_size": 241904685,
+        "fourcc_hex": "49784649",
+        "fourcc_latin1": "IxFI",
+        "header_ntotal_matches_size_arithmetic": true,
+        "implied_header_len": 45,
+        "nbytes_examined": 64,
+        "ntotal_at_offset_8": 157490,
+        "ntotal_from_size_minus_45": 157490,
+        "size_minus_45_divisible_by_stride": true
+      },
+      "opened": {
+        "inode": 36671434,
+        "mtime_ns": 1794287645468709385,
+        "size": 241904685
+      },
+      "opened_inode_matches_before": true,
+      "opened_size_matches_bytes": true,
+      "path_inode_changed_during_read": false,
+      "path_size_changed_during_read": false,
+      "sha256": "4abab200c591a6bf56264105d6170c855a539db001ff21e7262e5290b19945d6"
+    },
+    "label": "production_memory",
+    "meta_file": {
+      "after": {
+        "exists": true,
+        "inode": 36671431,
+        "mtime_ns": 1794287645392385325,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/memory_meta.json",
+        "size": 136497506
+      },
+      "before": {
+        "exists": true,
+        "inode": 36671431,
+        "mtime_ns": 1794287645392385325,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/memory_meta.json",
+        "size": 136497506
+      },
+      "bytes_read": 136497506,
+      "opened": {
+        "inode": 36671431,
+        "mtime_ns": 1794287645392385325,
+        "size": 136497506
+      },
+      "opened_inode_matches_before": true,
+      "opened_size_matches_bytes": true,
+      "path_inode_changed_during_read": false,
+      "path_size_changed_during_read": false,
+      "sha256": "912b7b1e320d11f1f45c256b7eb97b20dd301be2ac6b317d919368413fddb2cc"
+    },
+    "meta_profile_wrapped": {
+      "duplicate_text_groups": 3121,
+      "first_key": "762209c7-677f-4b35-bb68-7473855afaa1",
+      "inner_meta_key_presence": {
+        "backfill": 3791,
+        "is_thought_provoking": 1809,
+        "memory_source": 133774,
+        "migrated_from_legacy_backfill_burst": 19,
+        "migrated_from_legacy_self_model_tag": 212,
+        "migration_ts": 231,
+        "prompt": 19767,
+        "retention": 7468,
+        "role": 132528,
+        "seed_ids": 10,
+        "source": 19767,
+        "sync_ts": 3036,
+        "task_type": 7468,
+        "timestamp": 157458,
+        "type": 20400,
+        "validation_warning": 21139
+      },
+      "inner_meta_not_dict": 0,
+      "key_count": 157490,
+      "last_key": "a7881d80-0a80-4989-b423-6bc82e3fa50b",
+      "memory_source_counts": {
+        "<missing>": 23716,
+        "autonomous": 59103,
+        "claude_research": 1542,
+        "code_analysis": 60702,
+        "dream_v2": 10,
+        "environment": 1350,
+        "self_model_reflection": 325,
+        "sync_air": 3036,
+        "tool_manager": 225,
+        "user_conversation": 7481
+      },
+      "memory_source_missing": 23716,
+      "non_dict_values": 0,
+      "records_in_duplicate_text_groups": 101959,
+      "repeated_json_keys": 0,
+      "role_counts": {
+        "<missing>": 24962,
+        "code_analysis": 60702,
+        "dream": 24137,
+        "echo": 5640,
+        "environment": 1350,
+        "experiment": 282,
+        "fetch": 28702,
+        "harmony": 4790,
+        "research": 1391,
+        "sandbox_failure": 1,
+        "sandbox_run": 388,
+        "self_model_reflection": 325,
+        "sync": 2785,
+        "synthesis": 1,
+        "tool_error": 225,
+        "user": 1809
+      },
+      "role_missing": 24962,
+      "text_empty": 0,
+      "text_missing_or_null": 0,
+      "text_nonempty": 157490,
+      "text_not_str": 0,
+      "timestamp_max": "2026-11-10T05:14:03.470526+00:00",
+      "timestamp_min": "2026-07-02T21:40:53.854995+00:00",
+      "timestamp_missing": 32,
+      "timestamp_present": 157458,
+      "unique_keys": 157490,
+      "unique_nonempty_text_sha256": 58652,
+      "uuid_shaped_keys": 0,
+      "validation_warning_true": 21139
+    },
+    "pair_stat_after_read": {
+      "index": {
+        "exists": true,
+        "inode": 36671434,
+        "mtime_ns": 1794287645468709385,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/faiss.index",
+        "size": 241904685
+      },
+      "meta": {
+        "exists": true,
+        "inode": 36671431,
+        "mtime_ns": 1794287645392385325,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/memory_meta.json",
+        "size": 136497506
+      },
+      "sidecar": {
+        "exists": false,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/faiss.index.identity.json"
+      }
+    },
+    "pair_stat_before_open": {
+      "index": {
+        "exists": true,
+        "inode": 36671434,
+        "mtime_ns": 1794287645468709385,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/faiss.index",
+        "size": 241904685
+      },
+      "meta": {
+        "exists": true,
+        "inode": 36671431,
+        "mtime_ns": 1794287645392385325,
+        "nlink": 1,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/memory_meta.json",
+        "size": 136497506
+      },
+      "sidecar": {
+        "exists": false,
+        "path": "/Users/richietate/Desktop/FeralEcho/memory/faiss.index.identity.json"
+      }
+    },
+    "sidecar_existed_after": false,
+    "sidecar_existed_before": false
+  },
+  "measured_at_end": "2026-11-10T05:20:20.907322+00:00",
+  "measured_at_start": "2026-11-10T05:20:06.095028+00:00",
+  "method": {
+    "faiss_library_imported": false,
+    "flask_or_memory_bridge_imported": false,
+    "model_generations": 0,
+    "processes_signaled": false,
+    "production_writes": false,
+    "read_via": "os.open O_RDONLY then read the opened inode to EOF",
+    "why_inode_read": "vector_memory._persist replaces each file with os.replace. An already-open descriptor keeps the replaced inode. That generation can still be behind the path by the time the read finishes, and the three files are not one transaction."
+  },
+  "question_garden": {
+    "after": {
+      "exists": true,
+      "inode": 5867121,
+      "mtime_ns": 1794287699537139071,
+      "nlink": 1,
+      "path": "/Users/richietate/Desktop/FeralEcho/data/question_garden.jsonl",
+      "size": 15921080
+    },
+    "empty_lines": 0,
+    "json_fail": 0,
+    "json_ok": 23562,
+    "key_presence": {
+      "category": 23562,
+      "children": 23562,
+      "compost_reason": 27,
+      "composted_at": 27,
+      "investigation_plan": 19097,
+      "last_asked": 23562,
+      "parent_questions": 23562,
+      "planted": 23562,
+      "quality_scores": 23562,
+      "question": 23562,
+      "resolution_score": 23562,
+      "source": 23562,
+      "status": 23562,
+      "times_asked": 23562
+    },
+    "last_record_keys": [
+      "category",
+      "children",
+      "investigation_plan",
+      "last_asked",
+      "parent_questions",
+      "planted",
+      "quality_scores",
+      "question",
+      "resolution_score",
+      "source",
+      "status",
+      "times_asked"
+    ],
+    "last_source": "echo",
+    "lines": 23562,
+    "list_field_positive": 0,
+    "list_field_zero": 0,
+    "no_recognized_candidate_field": 23562,
+    "opened_inode": 5867121,
+    "opened_size": 15921080,
+    "path": "/Users/richietate/Desktop/FeralEcho/data/question_garden.jsonl",
+    "path_changed_during_count": false,
+    "status_counts": {
+      "active": 23535,
+      "composted": 27
+    }
+  },
+  "retrieval_provenance": {
+    "after": {
+      "exists": true,
+      "inode": 16465627,
+      "mtime_ns": 1794281646235345544,
+      "nlink": 1,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/retrieval_provenance.jsonl",
+      "size": 462274
+    },
+    "empty_lines": 0,
+    "json_fail": 0,
+    "json_ok": 688,
+    "key_presence": {
+      "candidates_considered": 688,
+      "memories_injected": 688,
+      "query_preview": 688,
+      "source": 688,
+      "timestamp": 688,
+      "trace_id": 688
+    },
+    "last_record_keys": [
+      "candidates_considered",
+      "memories_injected",
+      "query_preview",
+      "source",
+      "timestamp",
+      "trace_id"
+    ],
+    "last_source": "memory_bridge",
+    "last_timestamp": "2026-11-10T03:34:06.234790",
+    "last_trace_id": "8604b69b-394f-4b19-8c90-a92a75a769bf",
+    "lines": 688,
+    "list_field_positive": 0,
+    "list_field_zero": 0,
+    "no_recognized_candidate_field": 688,
+    "opened_inode": 16465627,
+    "opened_size": 462274,
+    "path": "/Users/richietate/Desktop/FeralEcho/memory/retrieval_provenance.jsonl",
+    "path_changed_during_count": false,
+    "status_counts": {}
+  },
+  "search_provenance": {
+    "after": {
+      "exists": true,
+      "inode": 30805598,
+      "mtime_ns": 1794284327167834015,
+      "nlink": 1,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/search_provenance.jsonl",
+      "size": 947032
+    },
+    "empty_lines": 0,
+    "json_fail": 0,
+    "json_ok": 2796,
+    "key_presence": {
+      "injected_count": 2796,
+      "injected_preview": 2796,
+      "retrieval_key": 2796,
+      "source_url": 2796,
+      "timestamp": 2796
+    },
+    "last_record_keys": [
+      "injected_count",
+      "injected_preview",
+      "retrieval_key",
+      "source_url",
+      "timestamp"
+    ],
+    "last_timestamp": "2026-11-10T04:18:47.167712+00:00",
+    "lines": 2796,
+    "list_field_positive": 0,
+    "list_field_zero": 0,
+    "no_recognized_candidate_field": 2796,
+    "opened_inode": 30805598,
+    "opened_size": 947032,
+    "path": "/Users/richietate/Desktop/FeralEcho/memory/search_provenance.jsonl",
+    "path_changed_during_count": false,
+    "status_counts": {}
+  },
+  "sentinel_after": {
+    "last_heartbeat_utc": "2026-11-10T05:19:54.894205Z",
+    "pid": 65139,
+    "stage": "serving",
+    "start_utc": "2026-11-03T19:02:01.305169Z",
+    "uptime_s": 555474
+  },
+  "tmp_siblings": {
+    "faiss.index.identity.json": {
+      "exists": false,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/faiss.index.identity.json"
+    },
+    "faiss.index.identity.json.tmp": {
+      "exists": false,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/faiss.index.identity.json.tmp"
+    },
+    "faiss.index.tmp": {
+      "exists": false,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/faiss.index.tmp"
+    },
+    "memory_meta.json.tmp": {
+      "exists": false,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/memory_meta.json.tmp"
+    }
+  }
+}

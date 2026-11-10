@@ -1,0 +1,2 @@
+{"args": {"path": "a.txt"}, "code": "ok", "op": "read", "status": "ok"}
+{"args": {"path": "join.txt"}, "code": "ok", "op": "write", "status": "ok"}

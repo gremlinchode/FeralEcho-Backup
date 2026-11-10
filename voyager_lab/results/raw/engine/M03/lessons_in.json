@@ -1,0 +1,52 @@
+{
+  "copy_value": {
+    "example_slots": {
+      "dst": "outbox.txt",
+      "src": "inbox.txt"
+    },
+    "trace": [
+      {
+        "op": "read",
+        "save": "value",
+        "slot": "src"
+      },
+      {
+        "from": "value",
+        "op": "write",
+        "slot": "dst"
+      }
+    ]
+  },
+  "pipeline_sum": {
+    "example_slots": {
+      "a": "a.txt",
+      "b": "b.txt",
+      "dst": "sum.txt"
+    },
+    "trace": [
+      {
+        "op": "read",
+        "save": "a",
+        "slot": "a"
+      },
+      {
+        "op": "read",
+        "save": "b",
+        "slot": "b"
+      },
+      {
+        "from": [
+          "a",
+          "b"
+        ],
+        "op": "add",
+        "save": "value"
+      },
+      {
+        "from": "value",
+        "op": "write",
+        "slot": "dst"
+      }
+    ]
+  }
+}

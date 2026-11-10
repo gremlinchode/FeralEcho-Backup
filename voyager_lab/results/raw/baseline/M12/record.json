@@ -1,0 +1,40 @@
+{
+  "alternate_used": false,
+  "claimed_value": "4",
+  "completed_tasks": [],
+  "controller": "baseline_single_source",
+  "evidence": [
+    {
+      "class": "RETRIEVED",
+      "field": "value",
+      "note": "left.txt",
+      "value": "4"
+    }
+  ],
+  "failed_attempts": [],
+  "last_successful_checkpoint": null,
+  "learning_applied": "none",
+  "mission_id": "M12",
+  "next_recommended_action": "none",
+  "objective": "If the two reports disagree and no authority file is available, do not guess.",
+  "outstanding_tasks": [],
+  "pid_history": [
+    69306
+  ],
+  "plan_revisions": [],
+  "plan_source": "baseline",
+  "problem_class": "resolve_conflict",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 8,
+    "ru_maxrss": 21692416,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 2
+  },
+  "resumed_from_checkpoint": false,
+  "status": "success",
+  "tasks": [],
+  "vars": {
+    "value": "4"
+  }
+}

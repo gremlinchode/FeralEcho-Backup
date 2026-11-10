@@ -1,0 +1,906 @@
+{
+  "availability": {
+    "missing": [],
+    "ok": true,
+    "present": [
+      "echo:latest",
+      "gemma3:4b",
+      "qwen2.5-coder:7b",
+      "deepseek-r1:7b",
+      "qwen2.5:3b",
+      "llama3.2:3b",
+      "llama3.1:8b",
+      "llama3:instruct",
+      "mistral:latest"
+    ]
+  },
+  "finished_at": "2026-11-09T04:34:13.761873+00:00",
+  "gate_acceptance": true,
+  "gate_correct": "12/12",
+  "gate_mode": "direct_function",
+  "model_call_budget": 30,
+  "model_calls_used": 30,
+  "rows": [
+    {
+      "condition": "A",
+      "final_answer": "The line stored at items/item_01.txt is: \"This is a test line.\"",
+      "first_request_contains_expected": true,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 1,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": true,
+        "tool_call_count": 1,
+        "tool_names": [
+          "read_file"
+        ],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_01.txt. Quote that line and nothing else.",
+      "record_status": "completed",
+      "tool_trace": [
+        {
+          "arguments": {
+            "path": "items/item_01.txt"
+          },
+          "bytes_ok": true,
+          "error_type": null,
+          "executed": true,
+          "name": "read_file",
+          "path_ok": true,
+          "round": 1
+        }
+      ],
+      "trial_id": "A01"
+    },
+    {
+      "condition": "A",
+      "final_answer": "The line stored at items/item_02.txt is: \"558a1245dceece1c650b942c540888a8\"",
+      "first_request_contains_expected": true,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": true,
+        "executed_count": 1,
+        "expected_contained": true,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": true,
+        "tool_call_count": 1,
+        "tool_names": [
+          "read_file"
+        ],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_02.txt. Quote that line and nothing else.",
+      "record_status": "completed",
+      "tool_trace": [
+        {
+          "arguments": {
+            "path": "items/item_02.txt"
+          },
+          "bytes_ok": true,
+          "error_type": null,
+          "executed": true,
+          "name": "read_file",
+          "path_ok": true,
+          "round": 1
+        }
+      ],
+      "trial_id": "A02"
+    },
+    {
+      "condition": "A",
+      "final_answer": "The line stored at items/item_03.txt is: 3c1ff3a20df22d466defa5c3316f5a77",
+      "first_request_contains_expected": true,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": true,
+        "executed_count": 1,
+        "expected_contained": true,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": true,
+        "tool_call_count": 1,
+        "tool_names": [
+          "read_file"
+        ],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_03.txt. Quote that line and nothing else.",
+      "record_status": "completed",
+      "tool_trace": [
+        {
+          "arguments": {
+            "path": "items/item_03.txt"
+          },
+          "bytes_ok": true,
+          "error_type": null,
+          "executed": true,
+          "name": "read_file",
+          "path_ok": true,
+          "round": 1
+        }
+      ],
+      "trial_id": "A03"
+    },
+    {
+      "condition": "A",
+      "final_answer": "The line stored at items/item_04.txt is: 3739328e65649e48bac79fe68af16547",
+      "first_request_contains_expected": true,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": true,
+        "executed_count": 1,
+        "expected_contained": true,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": true,
+        "tool_call_count": 1,
+        "tool_names": [
+          "read_file"
+        ],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_04.txt. Quote that line and nothing else.",
+      "record_status": "completed",
+      "tool_trace": [
+        {
+          "arguments": {
+            "path": "items/item_04.txt"
+          },
+          "bytes_ok": true,
+          "error_type": null,
+          "executed": true,
+          "name": "read_file",
+          "path_ok": true,
+          "round": 1
+        }
+      ],
+      "trial_id": "A04"
+    },
+    {
+      "condition": "A",
+      "final_answer": "The line stored at items/item_05.txt is: \"This is a test line.\"",
+      "first_request_contains_expected": true,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 1,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": true,
+        "tool_call_count": 1,
+        "tool_names": [
+          "read_file"
+        ],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_05.txt. Quote that line and nothing else.",
+      "record_status": "completed",
+      "tool_trace": [
+        {
+          "arguments": {
+            "path": "items/item_05.txt"
+          },
+          "bytes_ok": true,
+          "error_type": null,
+          "executed": true,
+          "name": "read_file",
+          "path_ok": true,
+          "round": 1
+        }
+      ],
+      "trial_id": "A05"
+    },
+    {
+      "condition": "A",
+      "final_answer": "The line stored at items/item_06.txt is: 5e22353fa88b51b76478d56e48bbc997",
+      "first_request_contains_expected": true,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": true,
+        "executed_count": 1,
+        "expected_contained": true,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": true,
+        "tool_call_count": 1,
+        "tool_names": [
+          "read_file"
+        ],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_06.txt. Quote that line and nothing else.",
+      "record_status": "completed",
+      "tool_trace": [
+        {
+          "arguments": {
+            "path": "items/item_06.txt"
+          },
+          "bytes_ok": true,
+          "error_type": null,
+          "executed": true,
+          "name": "read_file",
+          "path_ok": true,
+          "round": 1
+        }
+      ],
+      "trial_id": "A06"
+    },
+    {
+      "condition": "B",
+      "final_answer": "The line in the file is: \"6de7a73bd98f5a01532d8b2f8608a397\"",
+      "first_request_contains_expected": true,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": true,
+        "executed_count": 1,
+        "expected_contained": true,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": true,
+        "tool_call_count": 1,
+        "tool_names": [
+          "read_file"
+        ],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_01.txt. Read the file and quote the line, nothing else.",
+      "record_status": "completed",
+      "tool_trace": [
+        {
+          "arguments": {
+            "path": "items/item_01.txt"
+          },
+          "bytes_ok": true,
+          "error_type": null,
+          "executed": true,
+          "name": "read_file",
+          "path_ok": true,
+          "round": 1
+        }
+      ],
+      "trial_id": "B01"
+    },
+    {
+      "condition": "B",
+      "final_answer": "The line in the file is: \"This is a test line.\"",
+      "first_request_contains_expected": true,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 1,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": true,
+        "tool_call_count": 1,
+        "tool_names": [
+          "read_file"
+        ],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_02.txt. Read the file and quote the line, nothing else.",
+      "record_status": "completed",
+      "tool_trace": [
+        {
+          "arguments": {
+            "path": "items/item_02.txt"
+          },
+          "bytes_ok": true,
+          "error_type": null,
+          "executed": true,
+          "name": "read_file",
+          "path_ok": true,
+          "round": 1
+        }
+      ],
+      "trial_id": "B02"
+    },
+    {
+      "condition": "B",
+      "final_answer": "The line in the file is: \n\nb8460e6ff415d1b4882b48b8c8ca9f6a",
+      "first_request_contains_expected": true,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": true,
+        "executed_count": 1,
+        "expected_contained": true,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": true,
+        "tool_call_count": 1,
+        "tool_names": [
+          "read_file"
+        ],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_03.txt. Read the file and quote the line, nothing else.",
+      "record_status": "completed",
+      "tool_trace": [
+        {
+          "arguments": {
+            "path": "items/item_03.txt"
+          },
+          "bytes_ok": true,
+          "error_type": null,
+          "executed": true,
+          "name": "read_file",
+          "path_ok": true,
+          "round": 1
+        }
+      ],
+      "trial_id": "B03"
+    },
+    {
+      "condition": "B",
+      "final_answer": "The line in the file is: \"544cdb4401f0859d864b032815855746\"",
+      "first_request_contains_expected": true,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": true,
+        "executed_count": 1,
+        "expected_contained": true,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": true,
+        "tool_call_count": 1,
+        "tool_names": [
+          "read_file"
+        ],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_04.txt. Read the file and quote the line, nothing else.",
+      "record_status": "completed",
+      "tool_trace": [
+        {
+          "arguments": {
+            "path": "items/item_04.txt"
+          },
+          "bytes_ok": true,
+          "error_type": null,
+          "executed": true,
+          "name": "read_file",
+          "path_ok": true,
+          "round": 1
+        }
+      ],
+      "trial_id": "B04"
+    },
+    {
+      "condition": "B",
+      "final_answer": "The line in the file is: \"This is a test line.\"",
+      "first_request_contains_expected": true,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 1,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": true,
+        "tool_call_count": 1,
+        "tool_names": [
+          "read_file"
+        ],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_05.txt. Read the file and quote the line, nothing else.",
+      "record_status": "completed",
+      "tool_trace": [
+        {
+          "arguments": {
+            "path": "items/item_05.txt"
+          },
+          "bytes_ok": true,
+          "error_type": null,
+          "executed": true,
+          "name": "read_file",
+          "path_ok": true,
+          "round": 1
+        }
+      ],
+      "trial_id": "B05"
+    },
+    {
+      "condition": "B",
+      "final_answer": "The line in the file is: \"382fec0acda863c675a46ac42f28f81b\"",
+      "first_request_contains_expected": true,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": true,
+        "executed_count": 1,
+        "expected_contained": true,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": true,
+        "tool_call_count": 1,
+        "tool_names": [
+          "read_file"
+        ],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_06.txt. Read the file and quote the line, nothing else.",
+      "record_status": "completed",
+      "tool_trace": [
+        {
+          "arguments": {
+            "path": "items/item_06.txt"
+          },
+          "bytes_ok": true,
+          "error_type": null,
+          "executed": true,
+          "name": "read_file",
+          "path_ok": true,
+          "round": 1
+        }
+      ],
+      "trial_id": "B06"
+    },
+    {
+      "condition": "C",
+      "final_answer": "\"Hello, world!\"",
+      "first_request_contains_expected": false,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 0,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "tool_call_count=0",
+          "no_successful_read_of_assigned_file",
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": false,
+        "tool_call_count": 0,
+        "tool_names": [],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_01.txt. Quote that line and nothing else.",
+      "record_status": "completed",
+      "tool_trace": [],
+      "trial_id": "C01"
+    },
+    {
+      "condition": "C",
+      "final_answer": "\"Hello, world!\"",
+      "first_request_contains_expected": false,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 0,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "tool_call_count=0",
+          "no_successful_read_of_assigned_file",
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": false,
+        "tool_call_count": 0,
+        "tool_names": [],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_02.txt. Quote that line and nothing else.",
+      "record_status": "completed",
+      "tool_trace": [],
+      "trial_id": "C02"
+    },
+    {
+      "condition": "C",
+      "final_answer": "\"Item 3: This is a test item.\"",
+      "first_request_contains_expected": false,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 0,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "tool_call_count=0",
+          "no_successful_read_of_assigned_file",
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": false,
+        "tool_call_count": 0,
+        "tool_names": [],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_03.txt. Quote that line and nothing else.",
+      "record_status": "completed",
+      "tool_trace": [],
+      "trial_id": "C03"
+    },
+    {
+      "condition": "C",
+      "final_answer": "\"Item 04: This is a test item.\"",
+      "first_request_contains_expected": false,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 0,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "tool_call_count=0",
+          "no_successful_read_of_assigned_file",
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": false,
+        "tool_call_count": 0,
+        "tool_names": [],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_04.txt. Quote that line and nothing else.",
+      "record_status": "completed",
+      "tool_trace": [],
+      "trial_id": "C04"
+    },
+    {
+      "condition": "C",
+      "final_answer": "\"Item 05: This is a test item.\"",
+      "first_request_contains_expected": false,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 0,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "tool_call_count=0",
+          "no_successful_read_of_assigned_file",
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": false,
+        "tool_call_count": 0,
+        "tool_names": [],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_05.txt. Quote that line and nothing else.",
+      "record_status": "completed",
+      "tool_trace": [],
+      "trial_id": "C05"
+    },
+    {
+      "condition": "C",
+      "final_answer": "\"Item 06: This is a test item.\"",
+      "first_request_contains_expected": false,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 0,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "tool_call_count=0",
+          "no_successful_read_of_assigned_file",
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": false,
+        "tool_call_count": 0,
+        "tool_names": [],
+        "unsupported_exact_answer": false
+      },
+      "model": "llama3.1:8b",
+      "prompt": "A single line is stored at items/item_06.txt. Quote that line and nothing else.",
+      "record_status": "completed",
+      "tool_trace": [],
+      "trial_id": "C06"
+    },
+    {
+      "condition": "D",
+      "final_answer": "",
+      "first_request_contains_expected": false,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 0,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "not_run",
+          "tool_call_count=0",
+          "no_successful_read_of_assigned_file",
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": false,
+        "tool_call_count": 0,
+        "tool_names": [],
+        "unsupported_exact_answer": false
+      },
+      "model": "echo:latest",
+      "prompt": "A single line is stored at items/item_01.txt. Quote that line and nothing else.",
+      "record_status": "not_run",
+      "tool_trace": [],
+      "trial_id": "D01"
+    },
+    {
+      "condition": "D",
+      "final_answer": "",
+      "first_request_contains_expected": false,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 0,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "not_run",
+          "tool_call_count=0",
+          "no_successful_read_of_assigned_file",
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": false,
+        "tool_call_count": 0,
+        "tool_names": [],
+        "unsupported_exact_answer": false
+      },
+      "model": "echo:latest",
+      "prompt": "A single line is stored at items/item_02.txt. Quote that line and nothing else.",
+      "record_status": "not_run",
+      "tool_trace": [],
+      "trial_id": "D02"
+    },
+    {
+      "condition": "D",
+      "final_answer": "",
+      "first_request_contains_expected": false,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 0,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "not_run",
+          "tool_call_count=0",
+          "no_successful_read_of_assigned_file",
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": false,
+        "tool_call_count": 0,
+        "tool_names": [],
+        "unsupported_exact_answer": false
+      },
+      "model": "echo:latest",
+      "prompt": "A single line is stored at items/item_03.txt. Quote that line and nothing else.",
+      "record_status": "not_run",
+      "tool_trace": [],
+      "trial_id": "D03"
+    },
+    {
+      "condition": "D",
+      "final_answer": "",
+      "first_request_contains_expected": false,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 0,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "not_run",
+          "tool_call_count=0",
+          "no_successful_read_of_assigned_file",
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": false,
+        "tool_call_count": 0,
+        "tool_names": [],
+        "unsupported_exact_answer": false
+      },
+      "model": "echo:latest",
+      "prompt": "A single line is stored at items/item_04.txt. Quote that line and nothing else.",
+      "record_status": "not_run",
+      "tool_trace": [],
+      "trial_id": "D04"
+    },
+    {
+      "condition": "D",
+      "final_answer": "",
+      "first_request_contains_expected": false,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 0,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "not_run",
+          "tool_call_count=0",
+          "no_successful_read_of_assigned_file",
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": false,
+        "tool_call_count": 0,
+        "tool_names": [],
+        "unsupported_exact_answer": false
+      },
+      "model": "echo:latest",
+      "prompt": "A single line is stored at items/item_05.txt. Quote that line and nothing else.",
+      "record_status": "not_run",
+      "tool_trace": [],
+      "trial_id": "D05"
+    },
+    {
+      "condition": "D",
+      "final_answer": "",
+      "first_request_contains_expected": false,
+      "grade": {
+        "answer_exact": false,
+        "contamination_exact_or_contained": false,
+        "executed_count": 0,
+        "expected_contained": false,
+        "file_text_matches_expected_line": true,
+        "other_answers_present": [],
+        "pass": false,
+        "quoted_exact_diagnostic": false,
+        "reasons": [
+          "not_run",
+          "tool_call_count=0",
+          "no_successful_read_of_assigned_file",
+          "answer_not_exact"
+        ],
+        "successful_assigned_read": false,
+        "tool_call_count": 0,
+        "tool_names": [],
+        "unsupported_exact_answer": false
+      },
+      "model": "echo:latest",
+      "prompt": "A single line is stored at items/item_06.txt. Quote that line and nothing else.",
+      "record_status": "not_run",
+      "tool_trace": [],
+      "trial_id": "D06"
+    }
+  ],
+  "scores": {
+    "A": {
+      "passed": 0,
+      "planned": 6,
+      "ran": 6,
+      "score": "0/6"
+    },
+    "B": {
+      "passed": 0,
+      "planned": 6,
+      "ran": 6,
+      "score": "0/6"
+    },
+    "C": {
+      "exact_answers": 0,
+      "planned": 6,
+      "ran": 6,
+      "score": "0/6"
+    },
+    "D": {
+      "exact_answers": 0,
+      "planned": 6,
+      "ran": 0,
+      "score": "0/6"
+    }
+  },
+  "self_test_passed": true,
+  "status": "completed",
+  "system_prompt_signal_hits": [],
+  "thresholds": {
+    "A": "5/6",
+    "B": "5/6",
+    "C": "0/6 exact",
+    "gate": "12/12"
+  }
+}

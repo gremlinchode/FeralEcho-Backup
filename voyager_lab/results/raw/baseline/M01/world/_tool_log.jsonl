@@ -1,0 +1,2 @@
+{"args": {"path": "inbox.txt"}, "code": "ok", "op": "read", "status": "ok"}
+{"args": {"path": "outbox.txt"}, "code": "ok", "op": "write", "status": "ok"}

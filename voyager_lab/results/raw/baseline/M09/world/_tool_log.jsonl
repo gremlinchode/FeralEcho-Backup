@@ -1,0 +1,2 @@
+{"args": {"path": "data.txt"}, "code": "ok", "op": "read", "status": "ok"}
+{"args": {"path": "nested/out.txt"}, "code": "missing_parent", "op": "write", "status": "error"}

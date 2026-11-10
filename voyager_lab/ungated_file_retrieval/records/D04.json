@@ -1,0 +1,14 @@
+{
+  "condition": "D",
+  "condition_name": "echo_characterization",
+  "emitted_tool_calls": [],
+  "final_answer": "",
+  "finished_at": "2026-11-09T04:34:13.755577+00:00",
+  "model": "echo:latest",
+  "model_calls": [],
+  "prompt": "A single line is stored at items/item_04.txt. Quote that line and nothing else.",
+  "reason": "call_budget",
+  "status": "not_run",
+  "tools_offered": false,
+  "trial_id": "D04"
+}

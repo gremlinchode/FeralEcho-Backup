@@ -1,0 +1,78 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": null,
+  "completed_tasks": [],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "OBSERVATION",
+      "field": "read_error:inbox.txt",
+      "note": "",
+      "value": "io_error"
+    }
+  ],
+  "fail_keys": [
+    [
+      "read",
+      {
+        "path": "inbox.txt"
+      }
+    ]
+  ],
+  "failed_attempts": [
+    {
+      "args": {
+        "path": "inbox.txt"
+      },
+      "code": "io_error",
+      "op": "read",
+      "status": "error"
+    }
+  ],
+  "human_retry_open": false,
+  "last_successful_checkpoint": null,
+  "learning_applied": "none",
+  "mission_id": "M24",
+  "next_recommended_action": "io_error; repeat refused",
+  "objective": "Copy the inbox into the outbox.",
+  "outstanding_tasks": [
+    "s0",
+    "s1"
+  ],
+  "pid_history": [
+    69384
+  ],
+  "plan_revisions": [],
+  "plan_source": "library",
+  "problem_class": "copy_value",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 6,
+    "ru_maxrss": 21872640,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 1
+  },
+  "resumed_from_checkpoint": false,
+  "status": "failed",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "read",
+      "path": "inbox.txt",
+      "save": "value",
+      "slot": "src",
+      "state": "failed"
+    },
+    {
+      "from": "value",
+      "id": "s1",
+      "op": "write",
+      "path": "out.txt",
+      "slot": "dst",
+      "state": "pending"
+    }
+  ],
+  "vars": {}
+}

@@ -1,0 +1,20 @@
+{
+  "copy_value": {
+    "example_slots": {
+      "dst": "outbox.txt",
+      "src": "inbox.txt"
+    },
+    "trace": [
+      {
+        "op": "read",
+        "save": "value",
+        "slot": "src"
+      },
+      {
+        "from": "value",
+        "op": "write",
+        "slot": "dst"
+      }
+    ]
+  }
+}

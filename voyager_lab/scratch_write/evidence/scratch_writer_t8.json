@@ -1,0 +1,439 @@
+{
+  "after": {
+    "absent_probe": {
+      "exists": false,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/pinned_probe_8f3c1d0e.txt"
+    },
+    "faiss_index": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 36343287,
+      "kind": "file",
+      "mode": 420,
+      "mtime_ns": 1794193134142855521,
+      "nlink": 1,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/faiss.index",
+      "size": 240826413
+    },
+    "memory_meta": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 36343158,
+      "kind": "file",
+      "mode": 420,
+      "mtime_ns": 1794193134065796598,
+      "nlink": 1,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/memory_meta.json",
+      "size": 135792931
+    },
+    "production_app_core": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 624891,
+      "kind": "dir",
+      "mode": 511,
+      "mtime_ns": 1794191967416168294,
+      "nlink": 89,
+      "path": "/Users/richietate/Desktop/FeralEcho/app/core",
+      "size": 2848
+    },
+    "production_memory": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 635294,
+      "kind": "dir",
+      "mode": 511,
+      "mtime_ns": 1794193509991944984,
+      "nlink": 133,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory",
+      "size": 4256
+    },
+    "production_root": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 624644,
+      "kind": "dir",
+      "mode": 493,
+      "mtime_ns": 1793690798345632841,
+      "nlink": 195,
+      "path": "/Users/richietate/Desktop/FeralEcho",
+      "size": 6240
+    },
+    "voyager_package": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 36251042,
+      "kind": "dir",
+      "mode": 493,
+      "mtime_ns": 1794179305643654837,
+      "nlink": 13,
+      "path": "/Users/richietate/Desktop/FeralEcho-voyager/voyager_lab/voyager",
+      "size": 416
+    },
+    "voyager_results": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 36268097,
+      "kind": "dir",
+      "mode": 493,
+      "mtime_ns": 1794179724623526744,
+      "nlink": 8,
+      "path": "/Users/richietate/Desktop/FeralEcho-voyager/voyager_lab/results",
+      "size": 256
+    },
+    "voyager_summary": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 36269403,
+      "kind": "file",
+      "mode": 384,
+      "mtime_ns": 1794179724623157658,
+      "nlink": 1,
+      "path": "/Users/richietate/Desktop/FeralEcho-voyager/voyager_lab/results/summary.json",
+      "size": 57749
+    },
+    "voyager_worktree": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 36248631,
+      "kind": "dir",
+      "mode": 493,
+      "mtime_ns": 1794176995726503861,
+      "nlink": 126,
+      "path": "/Users/richietate/Desktop/FeralEcho-voyager",
+      "size": 4032
+    }
+  },
+  "attempts": [
+    {
+      "expected_kind": "dir",
+      "name": "production_root",
+      "path": "/Users/richietate/Desktop/FeralEcho",
+      "pin_returned": false,
+      "raised": "root_protected",
+      "reason_ok": true,
+      "want": "root_protected"
+    },
+    {
+      "expected_kind": "dir",
+      "name": "production_memory",
+      "path": "/Users/richietate/Desktop/FeralEcho/memory",
+      "pin_returned": false,
+      "raised": "root_protected",
+      "reason_ok": true,
+      "want": "root_protected"
+    },
+    {
+      "expected_kind": "dir",
+      "name": "production_app_core",
+      "path": "/Users/richietate/Desktop/FeralEcho/app/core",
+      "pin_returned": false,
+      "raised": "root_protected",
+      "reason_ok": true,
+      "want": "root_protected"
+    },
+    {
+      "expected_kind": "dir",
+      "name": "voyager_worktree",
+      "path": "/Users/richietate/Desktop/FeralEcho-voyager",
+      "pin_returned": false,
+      "raised": "root_protected",
+      "reason_ok": true,
+      "want": "root_protected"
+    },
+    {
+      "expected_kind": "dir",
+      "name": "voyager_package",
+      "path": "/Users/richietate/Desktop/FeralEcho-voyager/voyager_lab/voyager",
+      "pin_returned": false,
+      "raised": "root_protected",
+      "reason_ok": true,
+      "want": "root_protected"
+    },
+    {
+      "expected_kind": "dir",
+      "name": "voyager_results",
+      "path": "/Users/richietate/Desktop/FeralEcho-voyager/voyager_lab/results",
+      "pin_returned": false,
+      "raised": "root_protected",
+      "reason_ok": true,
+      "want": "root_protected"
+    },
+    {
+      "expected_kind": "file",
+      "name": "faiss_index",
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/faiss.index",
+      "pin_returned": false,
+      "raised": "root_not_directory",
+      "reason_ok": true,
+      "want": "root_not_directory"
+    },
+    {
+      "expected_kind": "file",
+      "name": "memory_meta",
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/memory_meta.json",
+      "pin_returned": false,
+      "raised": "root_not_directory",
+      "reason_ok": true,
+      "want": "root_not_directory"
+    },
+    {
+      "expected_kind": "file",
+      "name": "voyager_summary",
+      "path": "/Users/richietate/Desktop/FeralEcho-voyager/voyager_lab/results/summary.json",
+      "pin_returned": false,
+      "raised": "root_not_directory",
+      "reason_ok": true,
+      "want": "root_not_directory"
+    },
+    {
+      "expected_kind": "missing",
+      "name": "absent_probe",
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/pinned_probe_8f3c1d0e.txt",
+      "pin_returned": false,
+      "raised": "root_missing",
+      "reason_ok": true,
+      "want": "root_missing"
+    }
+  ],
+  "before": {
+    "absent_probe": {
+      "exists": false,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/pinned_probe_8f3c1d0e.txt"
+    },
+    "faiss_index": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 36343287,
+      "kind": "file",
+      "mode": 420,
+      "mtime_ns": 1794193134142855521,
+      "nlink": 1,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/faiss.index",
+      "size": 240826413
+    },
+    "memory_meta": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 36343158,
+      "kind": "file",
+      "mode": 420,
+      "mtime_ns": 1794193134065796598,
+      "nlink": 1,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory/memory_meta.json",
+      "size": 135792931
+    },
+    "production_app_core": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 624891,
+      "kind": "dir",
+      "mode": 511,
+      "mtime_ns": 1794191967416168294,
+      "nlink": 89,
+      "path": "/Users/richietate/Desktop/FeralEcho/app/core",
+      "size": 2848
+    },
+    "production_memory": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 635294,
+      "kind": "dir",
+      "mode": 511,
+      "mtime_ns": 1794193509991944984,
+      "nlink": 133,
+      "path": "/Users/richietate/Desktop/FeralEcho/memory",
+      "size": 4256
+    },
+    "production_root": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 624644,
+      "kind": "dir",
+      "mode": 493,
+      "mtime_ns": 1793690798345632841,
+      "nlink": 195,
+      "path": "/Users/richietate/Desktop/FeralEcho",
+      "size": 6240
+    },
+    "voyager_package": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 36251042,
+      "kind": "dir",
+      "mode": 493,
+      "mtime_ns": 1794179305643654837,
+      "nlink": 13,
+      "path": "/Users/richietate/Desktop/FeralEcho-voyager/voyager_lab/voyager",
+      "size": 416
+    },
+    "voyager_results": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 36268097,
+      "kind": "dir",
+      "mode": 493,
+      "mtime_ns": 1794179724623526744,
+      "nlink": 8,
+      "path": "/Users/richietate/Desktop/FeralEcho-voyager/voyager_lab/results",
+      "size": 256
+    },
+    "voyager_summary": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 36269403,
+      "kind": "file",
+      "mode": 384,
+      "mtime_ns": 1794179724623157658,
+      "nlink": 1,
+      "path": "/Users/richietate/Desktop/FeralEcho-voyager/voyager_lab/results/summary.json",
+      "size": 57749
+    },
+    "voyager_worktree": {
+      "dev": 16777233,
+      "exists": true,
+      "ino": 36248631,
+      "kind": "dir",
+      "mode": 493,
+      "mtime_ns": 1794176995726503861,
+      "nlink": 126,
+      "path": "/Users/richietate/Desktop/FeralEcho-voyager",
+      "size": 4032
+    }
+  },
+  "checks": {
+    "every_open_refused": true,
+    "inodes_stable": true,
+    "no_pin_returned": true,
+    "os_open_not_called_on_protected": true,
+    "probe_names_absent": true,
+    "protected_paths_still_present": true
+  },
+  "content_identity": "PASS",
+  "deltas": {
+    "absent_probe": {
+      "exists_after": false,
+      "exists_before": false,
+      "inode_changed": false,
+      "kind_after": null,
+      "kind_before": null,
+      "mtime_changed": false,
+      "size_changed": false
+    },
+    "faiss_index": {
+      "exists_after": true,
+      "exists_before": true,
+      "inode_changed": false,
+      "kind_after": "file",
+      "kind_before": "file",
+      "mtime_changed": false,
+      "size_changed": false
+    },
+    "memory_meta": {
+      "exists_after": true,
+      "exists_before": true,
+      "inode_changed": false,
+      "kind_after": "file",
+      "kind_before": "file",
+      "mtime_changed": false,
+      "size_changed": false
+    },
+    "production_app_core": {
+      "exists_after": true,
+      "exists_before": true,
+      "inode_changed": false,
+      "kind_after": "dir",
+      "kind_before": "dir",
+      "mtime_changed": false,
+      "size_changed": false
+    },
+    "production_memory": {
+      "exists_after": true,
+      "exists_before": true,
+      "inode_changed": false,
+      "kind_after": "dir",
+      "kind_before": "dir",
+      "mtime_changed": false,
+      "size_changed": false
+    },
+    "production_root": {
+      "exists_after": true,
+      "exists_before": true,
+      "inode_changed": false,
+      "kind_after": "dir",
+      "kind_before": "dir",
+      "mtime_changed": false,
+      "size_changed": false
+    },
+    "voyager_package": {
+      "exists_after": true,
+      "exists_before": true,
+      "inode_changed": false,
+      "kind_after": "dir",
+      "kind_before": "dir",
+      "mtime_changed": false,
+      "size_changed": false
+    },
+    "voyager_results": {
+      "exists_after": true,
+      "exists_before": true,
+      "inode_changed": false,
+      "kind_after": "dir",
+      "kind_before": "dir",
+      "mtime_changed": false,
+      "size_changed": false
+    },
+    "voyager_summary": {
+      "exists_after": true,
+      "exists_before": true,
+      "inode_changed": false,
+      "kind_after": "file",
+      "kind_before": "file",
+      "mtime_changed": false,
+      "size_changed": false
+    },
+    "voyager_worktree": {
+      "exists_after": true,
+      "exists_before": true,
+      "inode_changed": false,
+      "kind_after": "dir",
+      "kind_before": "dir",
+      "mtime_changed": false,
+      "size_changed": false
+    }
+  },
+  "evidence_path": "/tmp/scratch_writer_t8.json",
+  "limitations": [
+    "Identity is lstat only. FAISS and memory bodies were not read or hashed.",
+    "A live server may change memory or FAISS size or mtime during the samples. An inode change is a failure. A size or mtime change with no os.open of that path is recorded as UNKNOWN and is not attributed to this writer.",
+    "Full production directory listings are not copied into the evidence file. Probe-name absence and directory identity are recorded."
+  ],
+  "probe_after": {
+    "absent_probe": false,
+    "faiss_index": false,
+    "memory_meta": false,
+    "production_app_core": false,
+    "production_memory": false,
+    "production_root": false,
+    "voyager_package": false,
+    "voyager_results": false,
+    "voyager_summary": false,
+    "voyager_worktree": false
+  },
+  "probe_before": {
+    "absent_probe": false,
+    "faiss_index": false,
+    "memory_meta": false,
+    "production_app_core": false,
+    "production_memory": false,
+    "production_root": false,
+    "voyager_package": false,
+    "voyager_results": false,
+    "voyager_summary": false,
+    "voyager_worktree": false
+  },
+  "protected_open_attempts": [],
+  "setup": "open_pinned_root on protected paths; os.open guard records and refuses those paths",
+  "test": "T8",
+  "verdict": "PASS"
+}

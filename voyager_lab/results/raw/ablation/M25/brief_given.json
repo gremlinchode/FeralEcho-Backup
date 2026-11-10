@@ -1,0 +1,12 @@
+{
+  "budget": 8,
+  "id": "M25",
+  "objective": "Add a and b, multiply by k, and write the product.",
+  "problem_class": "pipeline_sum__scale",
+  "slots": {
+    "a": "a.txt",
+    "b": "b.txt",
+    "dst": "prod.txt",
+    "k": "3"
+  }
+}

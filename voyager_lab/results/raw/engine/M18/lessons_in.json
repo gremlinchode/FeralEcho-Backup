@@ -1,0 +1,127 @@
+{
+  "copy_value": {
+    "example_slots": {
+      "dst": "outbox.txt",
+      "src": "inbox.txt"
+    },
+    "trace": [
+      {
+        "op": "read",
+        "save": "value",
+        "slot": "src"
+      },
+      {
+        "from": "value",
+        "op": "write",
+        "slot": "dst"
+      }
+    ]
+  },
+  "fold_lines": {
+    "example_slots": {
+      "dst": "fold.txt",
+      "src": "lines.txt"
+    },
+    "trace": [
+      {
+        "op": "sum_lines",
+        "save": "value",
+        "slot": "src"
+      },
+      {
+        "from": "value",
+        "op": "write",
+        "slot": "dst"
+      }
+    ]
+  },
+  "make_then_write": {
+    "example_slots": {
+      "dst": "reports/done.txt",
+      "parent": "reports",
+      "src": "note.txt"
+    },
+    "trace": [
+      {
+        "op": "read",
+        "save": "value",
+        "slot": "src"
+      },
+      {
+        "op": "create_dir",
+        "slot": "parent"
+      },
+      {
+        "from": "value",
+        "op": "write",
+        "slot": "dst"
+      }
+    ]
+  },
+  "pipeline_sum": {
+    "example_slots": {
+      "a": "a.txt",
+      "b": "b.txt",
+      "dst": "sum.txt"
+    },
+    "trace": [
+      {
+        "op": "read",
+        "save": "a",
+        "slot": "a"
+      },
+      {
+        "op": "read",
+        "save": "b",
+        "slot": "b"
+      },
+      {
+        "from": [
+          "a",
+          "b"
+        ],
+        "op": "add",
+        "save": "value"
+      },
+      {
+        "from": "value",
+        "op": "write",
+        "slot": "dst"
+      }
+    ]
+  },
+  "resolve_conflict": {
+    "example_slots": {
+      "authority": "authority.txt",
+      "dst": "answer.txt",
+      "left": "left.txt",
+      "right": "right.txt"
+    },
+    "trace": [
+      {
+        "op": "read",
+        "save": "left",
+        "slot": "left"
+      },
+      {
+        "op": "read",
+        "save": "right",
+        "slot": "right"
+      },
+      {
+        "op": "compare"
+      },
+      {
+        "only_if": "conflict",
+        "op": "read",
+        "save": "value",
+        "slot": "authority"
+      },
+      {
+        "from": "value",
+        "op": "write",
+        "slot": "dst"
+      }
+    ]
+  }
+}

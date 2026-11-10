@@ -1,0 +1,3 @@
+{"args": {"path": "body.txt"}, "code": "ok", "op": "read", "status": "ok"}
+{"args": {"path": "reports"}, "code": "ok", "op": "create_dir", "status": "ok"}
+{"args": {"path": "reports/done.txt"}, "code": "ok", "op": "write", "status": "ok"}

@@ -1,0 +1,35 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": null,
+  "completed_tasks": [],
+  "controller": "deterministic_grammar",
+  "evidence": [],
+  "fail_keys": [],
+  "failed_attempts": [],
+  "human_retry_open": false,
+  "last_successful_checkpoint": null,
+  "learning_applied": "none",
+  "mission_id": "M25",
+  "next_recommended_action": "no procedure for this class",
+  "objective": "Add a and b, multiply by k, and write the product.",
+  "outstanding_tasks": [],
+  "pid_history": [
+    69385
+  ],
+  "plan_revisions": [],
+  "plan_source": "no_procedure",
+  "problem_class": "pipeline_sum__scale",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 8,
+    "ru_maxrss": 21790720,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 0
+  },
+  "resumed_from_checkpoint": false,
+  "status": "unknown",
+  "tasks": [],
+  "vars": {}
+}

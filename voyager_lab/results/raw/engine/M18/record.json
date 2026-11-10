@@ -1,0 +1,87 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": "ship",
+  "completed_tasks": [
+    "s0",
+    "s1"
+  ],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "RETRIEVED",
+      "field": "value",
+      "note": "inbox.txt",
+      "value": "ship"
+    },
+    {
+      "class": "OBSERVATION",
+      "field": "output",
+      "note": "out.txt",
+      "value": "ship"
+    }
+  ],
+  "fail_keys": [
+    [
+      "write",
+      {
+        "path": "out.txt"
+      }
+    ]
+  ],
+  "failed_attempts": [
+    {
+      "args": {
+        "path": "out.txt"
+      },
+      "code": "human_required",
+      "op": "write",
+      "status": "blocked"
+    }
+  ],
+  "human_retry_open": false,
+  "last_successful_checkpoint": "s1",
+  "learning_applied": "procedure_reuse",
+  "mission_id": "M18",
+  "next_recommended_action": "none",
+  "objective": "Copy the inbox into the outbox. Writing requires a human token that arrives later.",
+  "outstanding_tasks": [],
+  "pid_history": [
+    69347,
+    69348
+  ],
+  "plan_revisions": [],
+  "plan_source": "lesson",
+  "problem_class": "copy_value",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 8,
+    "ru_maxrss": 21676032,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 3
+  },
+  "resumed_from_checkpoint": true,
+  "status": "success",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "read",
+      "path": "inbox.txt",
+      "save": "value",
+      "slot": "src",
+      "state": "success"
+    },
+    {
+      "from": "value",
+      "id": "s1",
+      "op": "write",
+      "path": "out.txt",
+      "slot": "dst",
+      "state": "success"
+    }
+  ],
+  "vars": {
+    "value": "ship"
+  }
+}

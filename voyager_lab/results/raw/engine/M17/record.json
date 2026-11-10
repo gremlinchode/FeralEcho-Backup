@@ -1,0 +1,82 @@
+{
+  "allow_human_retry": true,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": null,
+  "completed_tasks": [
+    "s0"
+  ],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "RETRIEVED",
+      "field": "value",
+      "note": "inbox.txt",
+      "value": "hi"
+    }
+  ],
+  "fail_keys": [
+    [
+      "write",
+      {
+        "path": "out.txt"
+      }
+    ]
+  ],
+  "failed_attempts": [
+    {
+      "args": {
+        "path": "out.txt"
+      },
+      "code": "human_required",
+      "op": "write",
+      "status": "blocked"
+    }
+  ],
+  "human_retry_open": true,
+  "last_successful_checkpoint": "s0",
+  "learning_applied": "procedure_reuse",
+  "mission_id": "M17",
+  "next_recommended_action": "await human token then retry write",
+  "objective": "Copy the inbox into the outbox. Writing requires a human token.",
+  "outstanding_tasks": [
+    "s1"
+  ],
+  "pid_history": [
+    69343
+  ],
+  "plan_revisions": [],
+  "plan_source": "lesson",
+  "problem_class": "copy_value",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 6,
+    "ru_maxrss": 21774336,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 2
+  },
+  "resumed_from_checkpoint": false,
+  "status": "blocked",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "read",
+      "path": "inbox.txt",
+      "save": "value",
+      "slot": "src",
+      "state": "success"
+    },
+    {
+      "code": "human_required",
+      "from": "value",
+      "id": "s1",
+      "op": "write",
+      "path": "out.txt",
+      "slot": "dst",
+      "state": "blocked"
+    }
+  ],
+  "vars": {
+    "value": "hi"
+  }
+}

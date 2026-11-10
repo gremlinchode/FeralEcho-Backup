@@ -1,0 +1,40 @@
+{
+  "alternate_used": false,
+  "claimed_value": "ship",
+  "completed_tasks": [],
+  "controller": "baseline_single_source",
+  "evidence": [
+    {
+      "class": "RETRIEVED",
+      "field": "value",
+      "note": "inbox.txt",
+      "value": "ship"
+    }
+  ],
+  "failed_attempts": [],
+  "last_successful_checkpoint": null,
+  "learning_applied": "none",
+  "mission_id": "M18",
+  "next_recommended_action": "none",
+  "objective": "Copy the inbox into the outbox. Writing requires a human token that arrives later.",
+  "outstanding_tasks": [],
+  "pid_history": [
+    69315
+  ],
+  "plan_revisions": [],
+  "plan_source": "baseline",
+  "problem_class": "copy_value",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 8,
+    "ru_maxrss": 21790720,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 4
+  },
+  "resumed_from_checkpoint": false,
+  "status": "success",
+  "tasks": [],
+  "vars": {
+    "value": "ship"
+  }
+}

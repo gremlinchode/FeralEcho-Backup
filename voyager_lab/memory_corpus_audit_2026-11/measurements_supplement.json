@@ -1,0 +1,89 @@
+{
+  "note": "Supplement to measurements.json. The uuid_shaped_keys field in that file is invalid: the checker required every character including hyphens to be hex. A second read of the same live metadata inode corrected it.",
+  "live_uuid_recount": {
+    "when_utc": "2026-11-10T05:22:42.971310+00:00",
+    "inode": 36671431,
+    "size": 136497506,
+    "same_inode_and_size_as_measurements": true,
+    "keys": 157490,
+    "uuid_lowercase_hyphenated": 157490,
+    "other": 0
+  },
+  "retrieval_provenance_recount": {
+    "lines": 688,
+    "candidates_considered_positive": 446,
+    "candidates_considered_zero": 242,
+    "last_positive_timestamp": "2026-10-28T04:04:29.156643",
+    "last_positive_candidates_considered": 15,
+    "last_positive_memories_injected": 5,
+    "records_after_last_positive": 241,
+    "nonzero_candidates_after_last_positive": 0,
+    "injected_nonempty_after_last_positive": 0,
+    "first_timestamp_after_last_positive": "2026-10-29T02:21:39.525310",
+    "last_record_timestamp": "2026-11-10T03:34:06.234790",
+    "injected_empty_while_candidates_positive": 11,
+    "injected_nonempty_while_candidates_zero": 0,
+    "file_order_time_inversions": 0
+  },
+  "data_legacy_header_dim_512": {
+    "dim_at_offset_4": 512,
+    "ntotal_at_offset_8": 5348,
+    "file_size": 10952749,
+    "stride": 2048,
+    "size_minus_45_equals_ntotal_times_stride": true,
+    "parser_flag_header_layout_unexpected": "The measurement parser only accepts dim 384. The dim-512 arithmetic was checked separately and matches."
+  },
+  "generations": {
+    "freeze_index": {
+      "inode": 34029978,
+      "size": 233315373,
+      "mtime_utc": "2026-11-02T03:51:45.506534+00:00"
+    },
+    "freeze_meta": {
+      "inode": 34029977,
+      "size": 130779333,
+      "mtime_utc": "2026-11-02T03:51:45.462247+00:00"
+    },
+    "live_index": {
+      "inode": 36671434,
+      "size": 241904685,
+      "mtime_utc": "2026-11-10T05:14:05.468709+00:00"
+    },
+    "live_meta": {
+      "inode": 36671431,
+      "size": 136497506,
+      "mtime_utc": "2026-11-10T05:14:05.392385+00:00"
+    },
+    "data_index": {
+      "inode": 635187,
+      "size": 10952749,
+      "mtime_utc": "2026-05-15T18:39:52.588167+00:00"
+    },
+    "data_meta": {
+      "inode": 635189,
+      "size": 6587816,
+      "mtime_utc": "2026-05-15T18:39:52.693024+00:00"
+    },
+    "rebuilt_index": {
+      "inode": 36652234,
+      "size": 241843245,
+      "mtime_utc": "2026-11-10T03:53:21.299181+00:00"
+    },
+    "rebuilt_meta": {
+      "inode": 36652231,
+      "size": 136449185,
+      "mtime_utc": "2026-11-10T03:53:21.278918+00:00"
+    }
+  },
+  "post_measurement_stat_utc": "2026-11-10T05:22:42.971310+00:00",
+  "post_measurement_live_index_inode": 36671434,
+  "post_measurement_live_index_size": 241904685,
+  "post_measurement_live_meta_inode": 36671431,
+  "post_measurement_live_meta_size": 136497506,
+  "post_measurement_sidecar": "absent",
+  "post_measurement_tmp_siblings": "absent",
+  "listener_pid": 65139,
+  "listener_still_python_run_py": true,
+  "echo_studio_pid": 86938,
+  "echo_studio_still_running": true
+}

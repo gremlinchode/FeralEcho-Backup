@@ -1,0 +1,11 @@
+{
+  "budget": 8,
+  "id": "M09",
+  "objective": "Copy the source into nested/out.txt.",
+  "problem_class": "copy_value",
+  "slots": {
+    "dst": "nested/out.txt",
+    "parent": "nested",
+    "src": "data.txt"
+  }
+}

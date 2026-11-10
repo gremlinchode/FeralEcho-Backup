@@ -1,0 +1,40 @@
+{
+  "alternate_used": false,
+  "claimed_value": "3\n5\n7",
+  "completed_tasks": [],
+  "controller": "baseline_single_source",
+  "evidence": [
+    {
+      "class": "RETRIEVED",
+      "field": "value",
+      "note": "notes.txt",
+      "value": "3\n5\n7"
+    }
+  ],
+  "failed_attempts": [],
+  "last_successful_checkpoint": null,
+  "learning_applied": "none",
+  "mission_id": "M16",
+  "next_recommended_action": "none",
+  "objective": "Sum the integer lines in the source file and write the total.",
+  "outstanding_tasks": [],
+  "pid_history": [
+    69311
+  ],
+  "plan_revisions": [],
+  "plan_source": "baseline",
+  "problem_class": "fold_lines",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 2,
+    "ru_maxrss": 21692416,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 2
+  },
+  "resumed_from_checkpoint": false,
+  "status": "success",
+  "tasks": [],
+  "vars": {
+    "value": "3\n5\n7"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "budget": 8,
+  "id": "M11",
+  "objective": "If the two reports disagree, write the authority value. If they agree, write the shared value.",
+  "problem_class": "resolve_conflict",
+  "slots": {
+    "authority": "authority.txt",
+    "dst": "answer.txt",
+    "left": "left.txt",
+    "right": "right.txt"
+  }
+}

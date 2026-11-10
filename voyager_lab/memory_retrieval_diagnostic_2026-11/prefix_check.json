@@ -1,0 +1,23 @@
+{
+  "measured_at_local": "2026-11-09T19:36",
+  "copy_index": "copy_live/faiss.index",
+  "copy_meta": "copy_live/memory_meta.json",
+  "certified_index": "/Users/richietate/Desktop/FeralEcho-offline-recovery-20261026/suffix-recovery-20261102/store/faiss.index",
+  "documented_cert_sha256": "8616b11551352502deea15eb0648e902f63df6fb33e4c8ba31b616b74ce8639c",
+  "rehashed_cert_sha256": "0dc600d738c77458883d60f14ef0d43c8ae2845609506ed3d50b06857427a2d8",
+  "documented_hash_matches_rehash": false,
+  "cert_size": 233315373,
+  "copy_index_size": 241843245,
+  "pure_byte_prefix": false,
+  "matched_prefix_bytes": 0,
+  "first_mismatch_offset": 8,
+  "note": "Literal whole-file prefix failed at byte 8. A header-adjusted payload comparison was not treated as a pass. This result selects the re-embed branch.",
+  "cert_head_hex": "49784649800100005a5102000000000000001000000000000000100000000000010000000000077a0300000000e1902b3d95008d3defc494bd51c7743d1e9f09",
+  "copy_head_hex": "49784649800100000a67020000000000000010000000000000001000000000000100000000008f9a0300000000e1902b3d95008d3defc494bd51c7743d1e9f09",
+  "copy_ntotal": 157450,
+  "copy_dim": 384,
+  "copy_index_type": "IndexFlatIP",
+  "meta_len": 157450,
+  "ntotal_equals_meta_len": true,
+  "ten_user_ids_present_with_section3_hashes": true
+}

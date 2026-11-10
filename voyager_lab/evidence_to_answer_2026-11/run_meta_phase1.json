@@ -1,0 +1,32 @@
+{
+  "phase": "phase1",
+  "started_at": "2026-11-09T21:57:49.214642+00:00",
+  "listener": {
+    "port_open": true,
+    "pid": 65139,
+    "command": "python3.1",
+    "listener_pids": [
+      65139
+    ],
+    "ollama_model": "not_in_environment",
+    "lsof_error": null
+  },
+  "ollama_show": {
+    "ok": true,
+    "bytes": 30391,
+    "modified_at": "2026-07-01T00:58:13.426962203-07:00",
+    "parameters": "num_ctx                        8192\nnum_keep                       24\nstop                           \"<|start_header_id|>\"\nstop                           \"<|end_header_id|>\"\nstop                           \"<|eot_id|>\"",
+    "digest": null,
+    "family": "llama",
+    "parameter_size": "8.0B",
+    "quantization_level": "Q4_0"
+  },
+  "posts_used": 10,
+  "contingency_used": 0,
+  "generation_budget": 22,
+  "contingency_budget": 2,
+  "score_exit_code": 0,
+  "score_stdout": "completed=10 correct=8 gate=true incomplete=false\n",
+  "score_stderr": "",
+  "finished_at": "2026-11-09T22:02:34.268411+00:00"
+}

@@ -1,0 +1,13 @@
+{
+  "completed_calls": 2,
+  "consume_on_read": [
+    "nonce.txt"
+  ],
+  "down_tools": [],
+  "fail_reads_remaining": {},
+  "human_gate": false,
+  "kill_after": 1,
+  "kill_spent": true,
+  "partial_reads": {},
+  "unknown_reads": []
+}

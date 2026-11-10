@@ -1,0 +1,34 @@
+{
+  "candidate_template": "A single line is stored at items/item_{nn}.txt. Quote that line and nothing else.",
+  "followup_rule": "One follow-up HTTP call only if the model emitted tool_calls. No third round. Tools stay available on the follow-up so an extra call is observable and fails the exactly-one rule.",
+  "forbidden_checked": [
+    "run_tool_dispatch",
+    "127.0.0.1:5000",
+    "localhost:5000",
+    "faiss"
+  ],
+  "max_model_calls": 30,
+  "ollama_chat": "http://127.0.0.1:11434/api/chat",
+  "options": {
+    "num_ctx": 4096,
+    "num_predict": 256,
+    "temperature": 0
+  },
+  "order": [
+    "A",
+    "B",
+    "C",
+    "D"
+  ],
+  "pass_rule_ab": "Exactly one model-emitted tool call; it is read_file; the resolved path is the assigned file; the tool result equals the file bytes; final answer strip equals the 32-character line; no other trial secret appears.",
+  "quote_wrapping": "fails the pass rule; quoted_exact_diagnostic is not a pass",
+  "scaffold_template": "A single line is stored at items/item_{nn}.txt. Read the file and quote the line, nothing else.",
+  "system_prompt": "Answer the user. Do not invent data you were not given. Use a provided tool only if you decide it is needed.",
+  "thresholds": {
+    "A": "5/6",
+    "B": "5/6",
+    "C": "0/6 exact",
+    "gate": "12/12"
+  },
+  "written_at": "2026-11-09T04:33:42.024167+00:00"
+}

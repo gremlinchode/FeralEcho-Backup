@@ -1,0 +1,26 @@
+{
+  "alternate_used": true,
+  "arm": "ablation",
+  "claimed_value": "go",
+  "contradictions": 0,
+  "elapsed_ms": 45.976,
+  "exit_codes": [
+    0
+  ],
+  "launched_pids": [
+    69367
+  ],
+  "learning_applied": "none",
+  "mission_id": "M09",
+  "objective_pass": true,
+  "plan_source": "library",
+  "repeat_extras": 0,
+  "resumed_from_checkpoint": false,
+  "ru_maxrss": 21872640,
+  "status": "success",
+  "tags": [
+    "failed_operation"
+  ],
+  "tool_calls": 4,
+  "unsupported": false
+}

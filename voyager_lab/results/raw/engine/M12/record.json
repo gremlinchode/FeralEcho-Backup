@@ -1,0 +1,105 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": null,
+  "completed_tasks": [
+    "s0",
+    "s1",
+    "s2"
+  ],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "RETRIEVED",
+      "field": "left",
+      "note": "left.txt",
+      "value": "4"
+    },
+    {
+      "class": "RETRIEVED",
+      "field": "right",
+      "note": "right.txt",
+      "value": "9"
+    },
+    {
+      "class": "INFERENCE",
+      "field": "_conflict",
+      "note": "compare",
+      "value": "true"
+    }
+  ],
+  "fail_keys": [],
+  "failed_attempts": [],
+  "human_retry_open": false,
+  "last_successful_checkpoint": "s2",
+  "learning_applied": "procedure_reuse",
+  "mission_id": "M12",
+  "next_recommended_action": "unresolved conflict; authority slot missing",
+  "objective": "If the two reports disagree and no authority file is available, do not guess.",
+  "outstanding_tasks": [
+    "s3",
+    "s4"
+  ],
+  "pid_history": [
+    69338
+  ],
+  "plan_revisions": [],
+  "plan_source": "lesson",
+  "problem_class": "resolve_conflict",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 8,
+    "ru_maxrss": 22036480,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 2
+  },
+  "resumed_from_checkpoint": false,
+  "status": "unknown",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "read",
+      "path": "left.txt",
+      "save": "left",
+      "slot": "left",
+      "state": "success"
+    },
+    {
+      "id": "s1",
+      "op": "read",
+      "path": "right.txt",
+      "save": "right",
+      "slot": "right",
+      "state": "success"
+    },
+    {
+      "id": "s2",
+      "op": "compare",
+      "state": "success"
+    },
+    {
+      "id": "s3",
+      "missing_slot": "authority",
+      "only_if": "conflict",
+      "op": "read",
+      "path": null,
+      "save": "value",
+      "slot": "authority",
+      "state": "pending"
+    },
+    {
+      "from": "value",
+      "id": "s4",
+      "op": "write",
+      "path": "answer.txt",
+      "slot": "dst",
+      "state": "pending"
+    }
+  ],
+  "vars": {
+    "_conflict": true,
+    "left": "4",
+    "right": "9"
+  }
+}

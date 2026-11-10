@@ -1,0 +1,12 @@
+{
+  "budget": 8,
+  "hypothesis_class": "copy_value",
+  "id": "M19",
+  "objective": "Read a and b and write them joined by a hyphen.",
+  "problem_class": "join_pair",
+  "slots": {
+    "a": "a.txt",
+    "b": "b.txt",
+    "dst": "join.txt"
+  }
+}

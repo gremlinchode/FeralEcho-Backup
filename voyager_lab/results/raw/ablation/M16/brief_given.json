@@ -1,0 +1,11 @@
+{
+  "budget": 2,
+  "hypothesis_class": "copy_value",
+  "id": "M16",
+  "objective": "Sum the integer lines in the source file and write the total.",
+  "problem_class": "fold_lines",
+  "slots": {
+    "dst": "out.txt",
+    "src": "notes.txt"
+  }
+}

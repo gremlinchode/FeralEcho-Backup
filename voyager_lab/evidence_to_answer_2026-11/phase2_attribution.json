@@ -1,0 +1,217 @@
+{
+  "scan_complete": true,
+  "provenance_status": "ok",
+  "provenance_unparseable_lines": 0,
+  "items": [
+    {
+      "item_id": "01",
+      "stored": "Yes",
+      "storage_contradiction": false,
+      "storage_matches": [
+        {
+          "text_hash": "5aeece192c0e",
+          "role": "user",
+          "source": "user_conversation",
+          "timestamp": "2026-11-09T21:58:28.196230+00:00",
+          "match": true
+        }
+      ],
+      "retrieved": "No",
+      "retrieval_status": "ok",
+      "retrieval_matches": [],
+      "used": "No",
+      "used_reason": "completed",
+      "trace_id": "dfdbb22d-2eb5-44eb-8139-4799facfe653",
+      "query_preview_used": false
+    },
+    {
+      "item_id": "02",
+      "stored": "Yes",
+      "storage_contradiction": false,
+      "storage_matches": [
+        {
+          "text_hash": "f6e677371d0d",
+          "role": "user",
+          "source": "user_conversation",
+          "timestamp": "2026-11-09T21:58:51.809328+00:00",
+          "match": true
+        }
+      ],
+      "retrieved": "No",
+      "retrieval_status": "ok",
+      "retrieval_matches": [],
+      "used": "No",
+      "used_reason": "completed",
+      "trace_id": "61b329ab-1305-42d2-951c-795438568598",
+      "query_preview_used": false
+    },
+    {
+      "item_id": "03",
+      "stored": "Yes",
+      "storage_contradiction": false,
+      "storage_matches": [
+        {
+          "text_hash": "254ada88570e",
+          "role": "user",
+          "source": "user_conversation",
+          "timestamp": "2026-11-09T21:59:10.616709+00:00",
+          "match": true
+        }
+      ],
+      "retrieved": "No",
+      "retrieval_status": "ok",
+      "retrieval_matches": [],
+      "used": "No",
+      "used_reason": "completed",
+      "trace_id": "4bb23150-547f-48f9-a11f-826d92a2f0ab",
+      "query_preview_used": false
+    },
+    {
+      "item_id": "04",
+      "stored": "Yes",
+      "storage_contradiction": false,
+      "storage_matches": [
+        {
+          "text_hash": "e71037e8fcdc",
+          "role": "user",
+          "source": "user_conversation",
+          "timestamp": "2026-11-09T22:01:14.061924+00:00",
+          "match": true
+        }
+      ],
+      "retrieved": "No",
+      "retrieval_status": "ok",
+      "retrieval_matches": [],
+      "used": "No",
+      "used_reason": "completed",
+      "trace_id": "140a6073-eff7-4894-be5f-496375ba24e0",
+      "query_preview_used": false
+    },
+    {
+      "item_id": "05",
+      "stored": "Yes",
+      "storage_contradiction": false,
+      "storage_matches": [
+        {
+          "text_hash": "02d0c62ade8b",
+          "role": "user",
+          "source": "user_conversation",
+          "timestamp": "2026-11-09T22:01:25.644398+00:00",
+          "match": true
+        }
+      ],
+      "retrieved": "No",
+      "retrieval_status": "ok",
+      "retrieval_matches": [],
+      "used": "Yes",
+      "used_reason": "completed",
+      "trace_id": "727a8d33-92bc-4948-a3b5-2021b1754244",
+      "query_preview_used": false
+    },
+    {
+      "item_id": "06",
+      "stored": "Yes",
+      "storage_contradiction": false,
+      "storage_matches": [
+        {
+          "text_hash": "31bc63a1affe",
+          "role": "user",
+          "source": "user_conversation",
+          "timestamp": "2026-11-09T22:01:30.808760+00:00",
+          "match": true
+        }
+      ],
+      "retrieved": "No",
+      "retrieval_status": "ok",
+      "retrieval_matches": [],
+      "used": "No",
+      "used_reason": "completed",
+      "trace_id": "fea4e80e-87fb-492c-b162-9972585677e4",
+      "query_preview_used": false
+    },
+    {
+      "item_id": "07",
+      "stored": "Yes",
+      "storage_contradiction": false,
+      "storage_matches": [
+        {
+          "text_hash": "3c63d277f342",
+          "role": "user",
+          "source": "user_conversation",
+          "timestamp": "2026-11-09T22:01:34.418744+00:00",
+          "match": true
+        }
+      ],
+      "retrieved": "No",
+      "retrieval_status": "ok",
+      "retrieval_matches": [],
+      "used": "No",
+      "used_reason": "completed",
+      "trace_id": "3136546c-8290-4859-9652-cb09ce7bec67",
+      "query_preview_used": false
+    },
+    {
+      "item_id": "08",
+      "stored": "Yes",
+      "storage_contradiction": false,
+      "storage_matches": [
+        {
+          "text_hash": "4ba1c6a1d6a0",
+          "role": "user",
+          "source": "user_conversation",
+          "timestamp": "2026-11-09T22:01:38.496511+00:00",
+          "match": true
+        }
+      ],
+      "retrieved": "No",
+      "retrieval_status": "ok",
+      "retrieval_matches": [],
+      "used": "No",
+      "used_reason": "completed",
+      "trace_id": "ee351b95-dd90-4a23-9039-ed89b0343540",
+      "query_preview_used": false
+    },
+    {
+      "item_id": "09",
+      "stored": "Yes",
+      "storage_contradiction": false,
+      "storage_matches": [
+        {
+          "text_hash": "72040f561398",
+          "role": "user",
+          "source": "user_conversation",
+          "timestamp": "2026-11-09T22:02:20.231273+00:00",
+          "match": true
+        }
+      ],
+      "retrieved": "No",
+      "retrieval_status": "ok",
+      "retrieval_matches": [],
+      "used": "No",
+      "used_reason": "completed",
+      "trace_id": "16c8dfa7-2b65-477a-8724-1b6d01abb489",
+      "query_preview_used": false
+    },
+    {
+      "item_id": "10",
+      "stored": "Yes",
+      "storage_contradiction": false,
+      "storage_matches": [
+        {
+          "text_hash": "479cfd462810",
+          "role": "user",
+          "source": "user_conversation",
+          "timestamp": "2026-11-09T22:02:31.194483+00:00",
+          "match": true
+        }
+      ],
+      "retrieved": "No",
+      "retrieval_status": "ok",
+      "retrieval_matches": [],
+      "used": "No",
+      "used_reason": "completed",
+      "trace_id": "4ac1cd03-58d9-4602-85fd-7e8d74491caf",
+      "query_preview_used": false
+    }
+  ]
+}

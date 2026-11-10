@@ -1,0 +1,84 @@
+{
+  "allow_human_retry": false,
+  "alternate_unlocked": false,
+  "alternate_used": false,
+  "claimed_value": "ready",
+  "completed_tasks": [
+    "s0",
+    "s1",
+    "s2"
+  ],
+  "controller": "deterministic_grammar",
+  "evidence": [
+    {
+      "class": "RETRIEVED",
+      "field": "value",
+      "note": "note.txt",
+      "value": "ready"
+    },
+    {
+      "class": "OBSERVATION",
+      "field": "dir",
+      "note": "created",
+      "value": "reports"
+    },
+    {
+      "class": "OBSERVATION",
+      "field": "output",
+      "note": "reports/done.txt",
+      "value": "ready"
+    }
+  ],
+  "fail_keys": [],
+  "failed_attempts": [],
+  "human_retry_open": false,
+  "last_successful_checkpoint": "s2",
+  "learning_applied": "none",
+  "mission_id": "M04",
+  "next_recommended_action": "none",
+  "objective": "Read the note, create the reports directory, and write the note there.",
+  "outstanding_tasks": [],
+  "pid_history": [
+    69327
+  ],
+  "plan_revisions": [],
+  "plan_source": "library",
+  "problem_class": "make_then_write",
+  "resources": {
+    "elapsed_ms": 0,
+    "max_tool_calls": 8,
+    "ru_maxrss": 21692416,
+    "ru_maxrss_unit": "macos_bytes",
+    "tool_calls": 3
+  },
+  "resumed_from_checkpoint": false,
+  "status": "success",
+  "tasks": [
+    {
+      "id": "s0",
+      "op": "read",
+      "path": "note.txt",
+      "save": "value",
+      "slot": "src",
+      "state": "success"
+    },
+    {
+      "id": "s1",
+      "op": "create_dir",
+      "path": "reports",
+      "slot": "parent",
+      "state": "success"
+    },
+    {
+      "from": "value",
+      "id": "s2",
+      "op": "write",
+      "path": "reports/done.txt",
+      "slot": "dst",
+      "state": "success"
+    }
+  ],
+  "vars": {
+    "value": "ready"
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "started_at": "2026-11-10T06:00:05.657286+00:00",
+  "cases": [
+    {
+      "name": "copy self-test",
+      "result": "PASS",
+      "exit": 0
+    },
+    {
+      "name": "A send records unacked id",
+      "result": "PASS",
+      "id": "m5-20261110T060005Z-ff0fb4bc"
+    },
+    {
+      "name": "B receives A's message",
+      "result": "PASS"
+    },
+    {
+      "name": "B inbox keeps the message before any ack",
+      "result": "PASS"
+    },
+    {
+      "name": "B reply has its own id",
+      "result": "PASS",
+      "id": "ark-20261110T060005Z-20446aea"
+    },
+    {
+      "name": "A receives reply and records B's ack",
+      "result": "PASS"
+    },
+    {
+      "name": "A ack of reply appends",
+      "result": "PASS"
+    },
+    {
+      "name": "B records A's ack",
+      "result": "PASS"
+    },
+    {
+      "name": "second read does not deliver the message again",
+      "result": "PASS"
+    },
+    {
+      "name": "lost cursor replays the same id",
+      "result": "PASS"
+    },
+    {
+      "name": "appended messages stay in file order",
+      "result": "PASS",
+      "first": "m5-20261110T060006Z-e4d9efc4",
+      "second": "m5-20261110T060006Z-1ea46087"
+    },
+    {
+      "name": "dropped endpoint is unreachable and does not invent acks",
+      "result": "PASS",
+      "exit": 1
+    },
+    {
+      "name": "HTTP 503 is unreachable and does not invent acks",
+      "result": "PASS",
+      "exit": 1
+    },
+    {
+      "name": "closed port is unreachable and does not invent acks",
+      "result": "PASS",
+      "exit": 1
+    },
+    {
+      "name": "status recovers when the endpoint returns",
+      "result": "PASS"
+    },
+    {
+      "name": "new process keeps the character cursor",
+      "result": "PASS"
+    },
+    {
+      "name": "ack print matches an outbox change",
+      "result": "FAIL",
+      "print_says_recorded": true,
+      "outbox_has_id": false
+    }
+  ],
+  "finished_at": "2026-11-10T06:00:06.967100+00:00",
+  "pass": 16,
+  "fail": 1
+}
